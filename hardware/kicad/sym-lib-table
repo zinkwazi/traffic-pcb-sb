@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "map_lbr")(type "KiCad")(uri "${KIPRJMOD}/map_lbr.pretty/map_lbr.kicad_sym")(options "")(descr ""))
+)
