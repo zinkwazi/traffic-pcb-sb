@@ -1,0 +1,1 @@
+This is firmware written under the ESP-IDF SDK for ESP32 microcontrollers. The easiest way to get started with ESP-IDF is to download the ESP-IDF extension in Visual Studio Code. A more in-depth guide will be written soon.
