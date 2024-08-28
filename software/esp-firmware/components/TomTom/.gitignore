@@ -1,0 +1,3 @@
+# do not leak API keys!
+# write this file yourself based on 'secretsTemplate.h'!
+secrets.h
