@@ -2170,12 +2170,6 @@
 		(uuid "018cd009-99d8-4b37-9c62-9e68443146f5")
 	)
 	(junction
-		(at 44.45 81.28)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "01b5aa65-9143-4d09-bdf0-315ea95c7cd4")
-	)
-	(junction
 		(at 259.08 168.91)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2618,12 +2612,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "312a41dc-389e-4c51-9386-ef79d14b974e")
-	)
-	(junction
-		(at 48.26 78.74)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "31da6e72-09b9-4c5b-9277-58d6d78b403c")
 	)
 	(junction
 		(at 196.85 118.11)
@@ -5061,7 +5049,7 @@
 	)
 	(wire
 		(pts
-			(xy 33.02 81.28) (xy 44.45 81.28)
+			(xy 33.02 81.28) (xy 60.96 81.28)
 		)
 		(stroke
 			(width 0)
@@ -8431,16 +8419,6 @@
 	)
 	(wire
 		(pts
-			(xy 48.26 78.74) (xy 60.96 78.74)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "664dc218-dbab-4868-9cb8-763f4b9bbedd")
-	)
-	(wire
-		(pts
 			(xy 248.92 168.91) (xy 247.65 168.91)
 		)
 		(stroke
@@ -10871,16 +10849,6 @@
 	)
 	(wire
 		(pts
-			(xy 44.45 77.47) (xy 44.45 81.28)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a4732cd2-cf61-43a4-ac3d-4bd51b578c45")
-	)
-	(wire
-		(pts
 			(xy 259.08 54.61) (xy 259.08 73.66)
 		)
 		(stroke
@@ -12671,16 +12639,6 @@
 	)
 	(wire
 		(pts
-			(xy 44.45 81.28) (xy 60.96 81.28)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d2ba4b11-d953-405a-a99d-231f3e20de09")
-	)
-	(wire
-		(pts
 			(xy 158.75 135.89) (xy 158.75 137.16)
 		)
 		(stroke
@@ -13551,16 +13509,6 @@
 	)
 	(wire
 		(pts
-			(xy 48.26 77.47) (xy 48.26 78.74)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "eace8469-db4d-495d-84ac-3a3323470103")
-	)
-	(wire
-		(pts
 			(xy 247.65 187.96) (xy 247.65 189.23)
 		)
 		(stroke
@@ -14401,7 +14349,7 @@
 	)
 	(wire
 		(pts
-			(xy 33.02 78.74) (xy 48.26 78.74)
+			(xy 33.02 78.74) (xy 60.96 78.74)
 		)
 		(stroke
 			(width 0)
@@ -15739,71 +15687,6 @@
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/8dd6618c-1a80-4fae-a98a-23e19309c792"
 					(reference "LED270")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:+5V")
-		(at 44.45 72.39 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "069b3f0c-c291-4a91-9573-cc15a76a5ca6")
-		(property "Reference" "#PWR082"
-			(at 44.45 76.2 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "+5V"
-			(at 44.45 68.58 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 44.45 72.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 44.45 72.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"+5V\""
-			(at 44.45 72.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "9fe5078c-c691-48cd-b345-d55f911ce269")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/8dd6618c-1a80-4fae-a98a-23e19309c792"
-					(reference "#PWR082")
 					(unit 1)
 				)
 			)
@@ -22442,73 +22325,6 @@
 	)
 	(symbol
 		(lib_id "Device:R_Small_US")
-		(at 44.45 74.93 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "a0b5968e-540d-4c81-9be5-21712df9f15d")
-		(property "Reference" "R108"
-			(at 46.355 72.39 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "4.7k"
-			(at 46.355 77.47 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 44.45 74.93 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 44.45 74.93 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 44.45 74.93 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "b0474c4d-38a6-4895-92c9-0edb661e8d88")
-		)
-		(pin "2"
-			(uuid "745d80b3-e3a0-4394-9523-091b9d137555")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/8dd6618c-1a80-4fae-a98a-23e19309c792"
-					(reference "R108")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
 		(at 137.16 137.16 90)
 		(unit 1)
 		(exclude_from_sim no)
@@ -23584,71 +23400,6 @@
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/8dd6618c-1a80-4fae-a98a-23e19309c792"
 					(reference "LED320")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:+5V")
-		(at 48.26 72.39 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "bba4246e-e5dc-435b-afd8-de131f89c822")
-		(property "Reference" "#PWR083"
-			(at 48.26 76.2 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "+5V"
-			(at 48.26 68.58 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 48.26 72.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 48.26 72.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"+5V\""
-			(at 48.26 72.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "5d363868-0a02-4667-8038-f7c09a00e0eb")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/8dd6618c-1a80-4fae-a98a-23e19309c792"
-					(reference "#PWR083")
 					(unit 1)
 				)
 			)
@@ -25919,73 +25670,6 @@
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/8dd6618c-1a80-4fae-a98a-23e19309c792"
 					(reference "LED301")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 48.26 74.93 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "fbd70501-87c4-437b-8e7c-f9cfd300400e")
-		(property "Reference" "R109"
-			(at 50.165 72.39 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "4.7k"
-			(at 50.165 77.47 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 48.26 74.93 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 48.26 74.93 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 48.26 74.93 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "3f5031cb-3592-4d5e-9d81-f1aa478dee1a")
-		)
-		(pin "2"
-			(uuid "64aa9f10-b050-453a-99d5-6f2cbae7fc42")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/8dd6618c-1a80-4fae-a98a-23e19309c792"
-					(reference "R109")
 					(unit 1)
 				)
 			)
