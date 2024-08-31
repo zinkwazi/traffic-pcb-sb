@@ -4439,16 +4439,6 @@
 	)
 	(wire
 		(pts
-			(xy 284.48 99.06) (xy 292.1 99.06)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "03601541-8a7c-4c69-9178-76d3646f8b1d")
-	)
-	(wire
-		(pts
 			(xy 199.39 91.44) (xy 199.39 90.17)
 		)
 		(stroke
@@ -4486,16 +4476,6 @@
 			(type default)
 		)
 		(uuid "07807379-69df-4c48-a72f-4f90948590a0")
-	)
-	(wire
-		(pts
-			(xy 284.48 109.22) (xy 292.1 109.22)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "083b7bb7-0828-45ea-a2c0-93bf4edfdc48")
 	)
 	(wire
 		(pts
@@ -4669,6 +4649,16 @@
 	)
 	(wire
 		(pts
+			(xy 284.48 96.52) (xy 292.1 96.52)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1b805948-39c5-4c96-905e-92cf6141bebd")
+	)
+	(wire
+		(pts
 			(xy 163.83 57.15) (xy 170.18 57.15)
 		)
 		(stroke
@@ -4696,6 +4686,16 @@
 			(type default)
 		)
 		(uuid "1fd7495f-ced8-41db-82c7-11e50f7a8bbf")
+	)
+	(wire
+		(pts
+			(xy 284.48 99.06) (xy 292.1 99.06)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "20473c77-99d2-40e2-a0a3-17ca4c92a1ee")
 	)
 	(wire
 		(pts
@@ -4729,16 +4729,6 @@
 	)
 	(wire
 		(pts
-			(xy 284.48 106.68) (xy 292.1 106.68)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "2a676853-95da-4cdf-bc01-d5198bdc2fd1")
-	)
-	(wire
-		(pts
 			(xy 125.73 54.61) (xy 128.27 54.61)
 		)
 		(stroke
@@ -4746,16 +4736,6 @@
 			(type default)
 		)
 		(uuid "2a91864c-309f-4a81-88ab-c14fb9e4810e")
-	)
-	(wire
-		(pts
-			(xy 284.48 96.52) (xy 292.1 96.52)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "2ad5077a-533c-4343-a2d4-e7b1fb3f6fc2")
 	)
 	(wire
 		(pts
@@ -4959,16 +4939,6 @@
 	)
 	(wire
 		(pts
-			(xy 284.48 104.14) (xy 292.1 104.14)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "439c0e4a-70b6-4fce-8120-02af8abcf5af")
-	)
-	(wire
-		(pts
 			(xy 284.48 81.28) (xy 295.91 81.28)
 		)
 		(stroke
@@ -4976,16 +4946,6 @@
 			(type default)
 		)
 		(uuid "43b82667-6ea2-43c4-8a4a-9c8f366e3666")
-	)
-	(wire
-		(pts
-			(xy 284.48 111.76) (xy 292.1 111.76)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "44a06112-ca52-4c26-8edb-21712ed06d33")
 	)
 	(wire
 		(pts
@@ -5619,6 +5579,16 @@
 	)
 	(wire
 		(pts
+			(xy 284.48 104.14) (xy 292.1 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d22a4ccc-86b3-497e-a79f-cc241fe3a1ba")
+	)
+	(wire
+		(pts
 			(xy 59.69 44.45) (xy 63.5 44.45)
 		)
 		(stroke
@@ -5789,6 +5759,16 @@
 	)
 	(wire
 		(pts
+			(xy 284.48 68.58) (xy 288.29 68.58)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e8e3512a-3dd5-43c2-88b1-8fca804c1195")
+	)
+	(wire
+		(pts
 			(xy 172.72 96.52) (xy 177.8 96.52)
 		)
 		(stroke
@@ -5869,6 +5849,16 @@
 	)
 	(wire
 		(pts
+			(xy 284.48 71.12) (xy 288.29 71.12)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f6cee3a5-f967-448c-b1ce-68fb5d02ca57")
+	)
+	(wire
+		(pts
 			(xy 313.69 66.04) (xy 325.12 66.04)
 		)
 		(stroke
@@ -5936,6 +5926,16 @@
 			(type default)
 		)
 		(uuid "fd33c6e0-9051-4d91-806b-0e6f33c12446")
+	)
+	(wire
+		(pts
+			(xy 284.48 106.68) (xy 292.1 106.68)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fd9c5cd8-0095-4233-9cd5-72822cee6b2f")
 	)
 	(wire
 		(pts
@@ -6008,13 +6008,13 @@
 		(uuid a343004f-661e-4800-9590-f5268659e0e0)
 	)
 	(label "SDB1"
-		(at 292.1 96.52 180)
+		(at 288.29 68.58 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right bottom)
+			(justify left bottom)
 		)
 		(uuid "062d2899-3e5e-49b6-bdb6-32af4aee7ccd")
 	)
@@ -6195,13 +6195,13 @@
 		(uuid "4a2f86d8-fc6c-4744-94b0-892245f2b56d")
 	)
 	(label "INT1"
-		(at 292.1 99.06 180)
+		(at 288.29 71.12 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right bottom)
+			(justify left bottom)
 		)
 		(uuid "4ae07c16-b023-4139-bb69-1537d8e86560")
 	)
@@ -6250,7 +6250,7 @@
 		(uuid "69489656-6968-4807-a449-c488cea67507")
 	)
 	(label "INT3"
-		(at 292.1 111.76 180)
+		(at 292.1 106.68 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -6283,7 +6283,7 @@
 		(uuid "6f0df665-f39f-4927-b4a4-02096fafe4aa")
 	)
 	(label "SDB3"
-		(at 292.1 109.22 180)
+		(at 292.1 104.14 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -6393,7 +6393,7 @@
 		(uuid "98b44943-e43c-4dd4-af8c-a2acf1106472")
 	)
 	(label "SDB2"
-		(at 292.1 104.14 180)
+		(at 292.1 96.52 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -6525,7 +6525,7 @@
 		(uuid "d499fb6a-02d6-4c3b-abc8-ad6dca5a8eaf")
 	)
 	(label "INT2"
-		(at 292.1 106.68 180)
+		(at 292.1 99.06 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
