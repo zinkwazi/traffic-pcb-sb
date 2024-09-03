@@ -13018,9 +13018,9 @@
 		(at 363.22 40.64 90)
 		(unit 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
-		(dnp no)
+		(dnp yes)
 		(uuid "f7f38abf-574c-4bd8-8ac0-118d26b5b948")
 		(property "Reference" "C10"
 			(at 360.68 38.735 90)
