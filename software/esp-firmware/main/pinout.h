@@ -31,6 +31,7 @@
 #define INT3_PIN        GPIO_NUM_39 // Input only, SENSOR_VN
 
 /* I2C Pins */
+#define I2C_PORT        (-1) // auto-select available I2C port
 #define SCL_PIN         GPIO_NUM_26
 #define SDA_PIN         GPIO_NUM_27
 
