@@ -5,6 +5,7 @@
 #ifndef TOMTOM_H_
 #define TOMTOM_H_
 
+/* IDF component includes */
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -17,6 +18,7 @@
 #include "esp_log.h"
 #include "cJSON.h"
 
+/* Tomtom component includes */
 #include "api_config.h"
 
 /* Public component interface */

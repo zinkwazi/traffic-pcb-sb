@@ -9,8 +9,8 @@
  */
 
 #include "tomtom.h"
-#include "api_config.h"
 
+/* IDF component includes */
 #include <stdio.h>
 #include <stdint.h>
 #include "freertos/FreeRTOS.h"
@@ -24,6 +24,9 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "cJSON.h"
+
+/* Tomtom component includes */
+#include "api_config.h"
 
 /**
  * A struct to pass the result of tomtomHandler

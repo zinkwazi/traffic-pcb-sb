@@ -1,4 +1,4 @@
-This is firmware written under the ESP-IDF SDK for ESP32 microcontrollers. The easiest way to get started with ESP-IDF is to download the ESP-IDF extension in Visual Studio Code, which will be discussed below.
+This is firmware written under the ESP-IDF SDK (v5.3.1) for ESP32 microcontrollers. The easiest way to get started with ESP-IDF is to download the ESP-IDF extension in Visual Studio Code, which will be discussed below.
 
 ### Useful Resources
 - [ESP-IDF Installation Guide](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/index.html#manual-installation) 

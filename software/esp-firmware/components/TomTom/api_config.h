@@ -15,11 +15,13 @@
 #ifndef APICONFIG_H_
 #define APICONFIG_H_
 
-#include "secrets.h"
-
+/* IDF component includes */
 #include "esp_wifi.h"
 #include "lwip/sys.h"
 #include "esp_http_client.h"
+
+/* Tomtom component includes */
+#include "secrets.h"
 
 /* Secrets from 'secrets.h' */
 #define WIFI_SSID SECRET_WIFI_SSID

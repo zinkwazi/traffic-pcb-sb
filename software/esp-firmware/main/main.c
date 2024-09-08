@@ -1,4 +1,12 @@
+/**
+ * main.c
+ * 
+ * This file contains the entrypoint task
+ * for the application (app_main) and
+ * configuration including function hooks.
+ */
 
+/* IDF component includes */
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
@@ -16,12 +24,17 @@
 #include "nvs_flash.h"
 #include "lwip/err.h"
 #include "lwip/sys.h"
+
+/* Main component includes */
+#include "pinout.h"
+
+/* Component includes */
 #include "api_config.h"
 #include "tomtom.h"
 
 void app_main(void)
 {
-    //Initialize NVS
+    // Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
       ESP_ERROR_CHECK(nvs_flash_erase());
@@ -52,7 +65,6 @@ void app_main(void)
     fflush(stdout);
 
     for (;;) {
-      // TODO: pet the watchdog
-      taskYIELD();
+      vTaskDelay(INT_MAX);
     }
 }
