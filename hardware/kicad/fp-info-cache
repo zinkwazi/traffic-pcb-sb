@@ -1,4 +1,4 @@
-23755608241769417
+23760788779453160
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -96627,6 +96627,27 @@ Varistor VF
 0
 2
 2
+footprints
+SOT23-BSS84AK_NEX
+
+BSS84AK_215 
+0
+3
+3
+footprints
+SOT23-BSS84AK_NEX-L
+
+BSS84AK_215 
+0
+3
+3
+footprints
+SOT23-BSS84AK_NEX-M
+
+BSS84AK_215 
+0
+3
+3
 map_lbr
 LED_0805_2012Metric_Clean
 LED SMD 0805 (2012 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: https://docs.google.com/spreadsheets/d/1BsfQQcO9C6DZCsRaXUlFlo91Tg2WpOkGARC1WS5S8t0/edit?usp=sharing), generated with kicad-footprint-generator
