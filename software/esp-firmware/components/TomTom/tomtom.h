@@ -22,11 +22,19 @@
 #include "api_config.h"
 
 /* Public component interface */
-esp_err_t tomtomRequestPerform(uint *result);
+enum Direction {
+    NORTH,
+    SOUTH,
+};
+
+typedef enum Direction Direction;
+
+esp_err_t tomtomRequestSpeed(uint *result, unsigned short ledNum, Direction dir);
 esp_err_t establishWifiConnection(void);
 void helloWorldExample(void);
 
 /* Private component functions */
+esp_err_t tomtomRequestPerform(uint *result, const char *url);
 esp_err_t tomtomHandler(esp_http_client_event_t *evt);
 
 /* static variables */

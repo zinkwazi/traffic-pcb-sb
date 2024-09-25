@@ -31,6 +31,7 @@
 /* Component includes */
 #include "api_config.h"
 #include "tomtom.h"
+#include "led_locations.h"
 
 void app_main(void)
 {
@@ -60,7 +61,7 @@ void app_main(void)
     }
 
     uint result = 0;
-    ESP_ERROR_CHECK(tomtomRequestPerform(&result));
+    ESP_ERROR_CHECK(tomtomRequestSpeed(&result, 1, SOUTH));
     printf("speed: %d\n", result);
     fflush(stdout);
 

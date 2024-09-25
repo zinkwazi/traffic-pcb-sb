@@ -1,5 +1,5 @@
 /**
- * secretsTemplate.h
+ * secrets_template.h
  * 
  * This file should be used as a template for 'secrets.h'.
  */
