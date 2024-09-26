@@ -16,6 +16,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
+#include "esp_check.h"
 #include "esp_wifi.h"
 #include "lwip/sys.h"
 #include "esp_http_client.h"
@@ -28,6 +29,8 @@
 /* Tomtom component includes */
 #include "api_config.h"
 #include "led_locations.h"
+
+#define TAG "TomTom"
 
 #define DOUBLE_STR_SIZE (12) // max: -123.123456
 
@@ -57,16 +60,26 @@
  * Requires: String is of minimum size URL_LENGTH.
  */
 esp_err_t tomtomFormRequestURL(char *urlStr, const LEDLoc *led) {
-    if (urlStr == NULL || led == NULL) {
-        return ESP_FAIL;
-    }
+    uint i;
+    int lenDouble;
+    /* input guards */
+    ESP_RETURN_ON_FALSE(
+        (urlStr != NULL && led != NULL), ESP_FAIL,
+        TAG, "tomtomFormRequestURL given a NULL input"
+    );
+    /* begin forming request URL */
     strcpy(urlStr, API_URL_PREFIX);
-    int lenDouble = snprintf(&urlStr[LAT_NDX], DOUBLE_STR_SIZE, "%lf", led->latitude);
-    if (lenDouble <= 0) {
-        return ESP_FAIL; // error occurred while converting double to string
-    } else if (lenDouble > DOUBLE_STR_SIZE) {
-        return ESP_FAIL; // expected shorter double string size, buffer is too short for URL
-    } else if (lenDouble < DOUBLE_STR_SIZE) {
+    /* append latitude into string */
+    lenDouble = snprintf(&urlStr[LAT_NDX], DOUBLE_STR_SIZE, "%lf", led->latitude);
+    ESP_RETURN_ON_FALSE(
+        (lenDouble > 0), ESP_FAIL,
+        TAG, "failed to convert double to string"
+    );
+    ESP_RETURN_ON_FALSE(
+        (lenDouble <= DOUBLE_STR_SIZE), ESP_FAIL,
+        TAG, "expected shorter string size to represent double"
+    );
+    if (lenDouble < DOUBLE_STR_SIZE) {
         // pad the string with '0' to remove garbage starting from null terminator
         for (uint i = LAT_NDX + lenDouble; i < LAT_NDX + DOUBLE_STR_SIZE - 1; i++) {
             urlStr[i] = '0';
@@ -74,14 +87,19 @@ esp_err_t tomtomFormRequestURL(char *urlStr, const LEDLoc *led) {
         urlStr[LAT_NDX + DOUBLE_STR_SIZE - 1] = '\0'; // allows concatenation
     }
     strcat(urlStr, API_URL_BETWEEN);
+    /* append longitude into string */
     lenDouble = snprintf(&urlStr[LONG_NDX], DOUBLE_STR_SIZE, "%lf", led->longitude);
-    if (lenDouble <= 0) {
-        return ESP_FAIL; // error occurred while converting double to string
-    } else if (lenDouble > DOUBLE_STR_SIZE) {
-        return ESP_FAIL; // expected shorter double string size, buffer is too short for URL
-    } else if (lenDouble < DOUBLE_STR_SIZE) {
+    ESP_RETURN_ON_FALSE(
+        (lenDouble > 0), ESP_FAIL,
+        TAG, "failed to convert double to string"
+    );
+    ESP_RETURN_ON_FALSE(
+        (lenDouble <= DOUBLE_STR_SIZE), ESP_FAIL,
+        TAG, "expected shorter string size to represent double"
+    );
+    if (lenDouble < DOUBLE_STR_SIZE) {
         // pad the string with '0' to remove garbage starting from null terminator
-        for (uint i = LAT_NDX + lenDouble; i < LAT_NDX + DOUBLE_STR_SIZE - 1; i++) {
+        for (i = LAT_NDX + lenDouble; i < LAT_NDX + DOUBLE_STR_SIZE - 1; i++) {
             urlStr[i] = '0';
         }
         urlStr[LONG_NDX + DOUBLE_STR_SIZE - 1] = '\0'; // allows concatenation
@@ -91,9 +109,15 @@ esp_err_t tomtomFormRequestURL(char *urlStr, const LEDLoc *led) {
 }
 
 const LEDLoc* getLED(unsigned short ledNum, Direction dir) {
-    // map led num 329 and 330 to reasonable numbers
+    /* map led num 329 and 330 to reasonable numbers */ 
     ledNum = (ledNum == 329) ? 325 : ledNum;
     ledNum = (ledNum == 330) ? 326 : ledNum;
+    /* input guards */
+    if (ledNum < 1 || ledNum > 326) {
+        ESP_LOGE("tomtom", "requested led location for invalid LED hardware number");
+        return NULL;
+    }
+    /* get correct LED location */
     switch (dir) {
         case NORTH:
             return &northLEDLocs[ledNum - 1];
@@ -110,31 +134,30 @@ const LEDLoc* getLED(unsigned short ledNum, Direction dir) {
  * associated with the hardware led number.
  */
 esp_err_t tomtomRequestSpeed(uint *result, unsigned short ledNum, Direction dir) {
-    // map led num 329 and 330 to reasonable numbers
-    ledNum = (ledNum == 329) ? 325 : ledNum;
-    ledNum = (ledNum == 330) ? 326 : ledNum;
-    // gaurd input
-    if (ledNum < 1 || ledNum > 326) {
-        ESP_LOGE("tomtom", "requested speed for invalid LED hardware number");
-        return ESP_FAIL;
-    }
-    if (result == NULL) {
-        ESP_LOGE("tomtom", "requested speed with NULL result pointer");
-        return ESP_FAIL;
-    }
-    // form request URL
     char urlStr[URL_LENGTH];
-    const LEDLoc *led = getLED(ledNum, dir);
-    if (led == NULL) {
-        ESP_LOGE("tomtom", "requested speed for invalid LED");
-        return ESP_FAIL;
-    }
-    if (tomtomFormRequestURL(urlStr, led) == ESP_FAIL) {
-        ESP_LOGE("tomtom", "failed to form request URL");
-        return ESP_FAIL;
-    }
-    // perform API request
-    return tomtomRequestPerform(result, urlStr);
+    const LEDLoc *led;
+    /* debug logging */
+    ESP_LOGD(TAG, "tomtomRequestSpeed(%p,%u,%d)", result, ledNum, dir);
+    /* input guards */
+    ESP_RETURN_ON_FALSE(
+        (result != NULL), ESP_FAIL,
+        TAG, "tomtomRequestSpeed provided NULL result pointer"
+    );
+    led = getLED(ledNum, dir);
+    ESP_RETURN_ON_FALSE(
+        (led != NULL), ESP_FAIL,
+        TAG, "tomtomRequestSpeed provided invalid led location"
+    );
+    /* create http URL and perform request */
+    ESP_RETURN_ON_ERROR(
+        tomtomFormRequestURL(urlStr, led),
+        TAG, "failed to form request url"
+    );
+    ESP_RETURN_ON_ERROR(
+        tomtomRequestPerform(result, urlStr),
+        TAG, "failed to perform API request"
+    );
+    return ESP_OK;
 }
 
 /**
@@ -149,34 +172,37 @@ struct requestResult {
 /**
  * Handler for recieving responses from the TomTom API.
  */
-esp_err_t tomtomHandler(esp_http_client_event_t *evt) {
-    struct requestResult *reqResult = (struct requestResult *) evt->user_data;
-    if (reqResult == NULL) {
-        return ESP_FAIL;
-    }
+esp_err_t tomtomHandler(esp_http_client_event_t *evt)
+{
     static char buffer[RCV_BUFFER_SIZE];
     static uint content_size;
+    cJSON *json, *curr;
+    struct requestResult *reqResult = (struct requestResult *) evt->user_data;
+    /* input guards */
+    ESP_RETURN_ON_FALSE(
+        (reqResult != NULL), ESP_FAIL,
+        TAG, "API handler called with NULL result pointer"
+    );
     switch (evt->event_id) {
         case HTTP_EVENT_ON_CONNECTED:
             memset(buffer, 0, RCV_BUFFER_SIZE);
             content_size = 0;
             break;
         case HTTP_EVENT_ON_DATA:
-            if (evt->data == NULL) {
-            } else {
+            if (evt->data != NULL) {
                 memcpy(buffer + content_size, evt->data, evt->data_len);
                 content_size += evt->data_len;
             }
             break;
         case HTTP_EVENT_ON_FINISH:
-            cJSON *json = cJSON_Parse(buffer);
+            json = cJSON_Parse(buffer);
             if (json == NULL) {
                 ESP_LOGE("tomtom", "request response could not be parsed as JSON");
                 reqResult->error = ESP_FAIL;
                 return ESP_FAIL;
             }
             json = json->child;
-            for (cJSON *curr = json->child; !cJSON_IsNull(curr); curr = curr->next) {
+            for (curr = json->child; !cJSON_IsNull(curr); curr = curr->next) {
                 if (strcmp(curr->string, "currentSpeed") != 0) {
                     continue;
                 }
@@ -230,27 +256,10 @@ static void connect_handler(void *arg, esp_event_base_t event_base,
  * - default WIFI STA created (esp_netif_create_default_wifi_sta called).
  * - WIFI task started (esp_wifi_init called).
  */
-esp_err_t establishWifiConnection(void) {
-    esp_err_t ret = ESP_OK;
-    s_wifiEventGroup = xEventGroupCreate();
-    esp_event_handler_instance_t instanceAnyID;
-    esp_event_handler_instance_t instanceAnyIP;
-    ret = esp_event_handler_instance_register(WIFI_EVENT,
-                                             ESP_EVENT_ANY_ID,
-                                             connect_handler,
-                                             NULL,
-                                             &instanceAnyID);
-    if (ret == ESP_FAIL) {
-        return ret;
-    }
-    ret = esp_event_handler_instance_register(IP_EVENT,
-                                              IP_EVENT_STA_GOT_IP,
-                                              connect_handler,
-                                              NULL,
-                                              &instanceAnyIP);
-    if (ret == ESP_FAIL) {
-        return ret;
-    }
+esp_err_t establishWifiConnection(void)
+{
+    esp_event_handler_instance_t instanceAnyID, instanceAnyIP;
+    EventBits_t bits;
     wifi_config_t wifi_cfg = {
         .sta = {
             .ssid = WIFI_SSID,
@@ -259,24 +268,50 @@ esp_err_t establishWifiConnection(void) {
             .threshold.authmode = WIFI_AUTH_MODE,
         },
     };
-    ret = esp_wifi_set_mode(WIFI_MODE_STA);
-    if (ret == ESP_FAIL) {
-        return ret;
-    }
-    ret = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
-    if (ret == ESP_FAIL) {
-        return ret;
-    }
-    ret = esp_wifi_start();
-    if (ret == ESP_FAIL) {
-        return ret;
-    }
-    EventBits_t bits = xEventGroupWaitBits(s_wifiEventGroup,
-                                           WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
-                                           pdFALSE,
-                                           pdFALSE,
-                                           portMAX_DELAY);
-    return (bits & WIFI_FAIL_BIT) ? ESP_FAIL : ESP_OK;
+    /* debug logging */
+    ESP_LOGD(TAG, "establishWifiConnection()");
+    /* register wifi event handlers */
+    s_wifiEventGroup = xEventGroupCreate();
+    ESP_RETURN_ON_ERROR(
+        esp_event_handler_instance_register(WIFI_EVENT,
+                                            ESP_EVENT_ANY_ID,
+                                            connect_handler,
+                                            NULL,
+                                            &instanceAnyID),
+        TAG, "Failed to register ANY_ID wifi event handler"
+    );
+    ESP_RETURN_ON_ERROR(
+        esp_event_handler_instance_register(IP_EVENT,
+                                            IP_EVENT_STA_GOT_IP,
+                                            connect_handler,
+                                            NULL,
+                                            &instanceAnyIP),
+        TAG, "Failed to register ANY_IP wifi event handler"
+    );
+    /* attempt to connect to AP */
+    ESP_RETURN_ON_ERROR(
+        esp_wifi_set_mode(WIFI_MODE_STA),
+        TAG, "failed to set wifi to STA mode"
+    );
+    ESP_RETURN_ON_ERROR(
+        esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg),
+        TAG, "Failed to set the wifi configuration with AP_SSID:%s and PASS:%s", 
+        wifi_cfg.sta.ssid, wifi_cfg.sta.password
+    );
+    ESP_RETURN_ON_ERROR(
+        esp_wifi_start(),
+        TAG, "Failed to start wifi"
+    );
+    bits = xEventGroupWaitBits(s_wifiEventGroup,
+                               WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
+                               pdFALSE,
+                               pdFALSE,
+                               portMAX_DELAY);
+    ESP_RETURN_ON_FALSE(
+        (bits & ~WIFI_FAIL_BIT), ESP_FAIL,
+        TAG, "recieved wifi fail bit from default event group"
+    );
+    return ESP_OK;
 }
 
 /**
@@ -294,16 +329,12 @@ esp_err_t establishWifiConnection(void) {
  * - WIFI connection (establishWifiConnection called).
  * - TLS initialized (esp_tls_init called).
  */
-esp_err_t tomtomRequestPerform(uint *result, const char *url) {
-    if (result == NULL) {
-        return ESP_FAIL;
-    }
-
+esp_err_t tomtomRequestPerform(uint *result, const char *url)
+{
     struct requestResult reqResult = {
         .error = ESP_FAIL,
         .result = 0,
     };
-
     const esp_http_client_config_t s_defaultTomtomConfig = {
         .url = url,
         .auth_type = API_AUTH_TYPE,
@@ -312,13 +343,31 @@ esp_err_t tomtomRequestPerform(uint *result, const char *url) {
         .crt_bundle_attach = esp_crt_bundle_attach,
         .user_data = &reqResult,
     };
-
-    printf("%s\n", s_defaultTomtomConfig.url);
+    /* debug logging */
+    ESP_LOGD(TAG, "tomtomRequestPerform(%p,%s)", result, url);
+    /* input guards */
+    ESP_RETURN_ON_FALSE(
+        (result != NULL), ESP_FAIL,
+        TAG, "tomtomRequestPerform called with NULL result pointer"
+    );
+    /* perform API request */
     esp_http_client_handle_t httpClientHandle = esp_http_client_init(&s_defaultTomtomConfig);
-    if (esp_http_client_perform(httpClientHandle) == ESP_FAIL) { // blocks when requesting
-        return ESP_FAIL;
-    }
-    esp_http_client_cleanup(httpClientHandle);
+    ESP_RETURN_ON_FALSE(
+        (httpClientHandle != NULL), ESP_FAIL,
+        TAG, "failed to create http client handle"
+    );
+    ESP_RETURN_ON_ERROR(
+        esp_http_client_perform(httpClientHandle), // blocks when requesting
+        TAG, "failed to perform http request"
+    );
+    ESP_RETURN_ON_ERROR(
+        esp_http_client_cleanup(httpClientHandle),
+        TAG, "failed to cleanup http client handle"
+    );
+    ESP_RETURN_ON_FALSE(
+        (reqResult.error == ESP_OK), ESP_FAIL,
+        TAG, "recieved an error from the http client event handler"
+    );
     *result = reqResult.result;
     return ESP_OK;
 }
