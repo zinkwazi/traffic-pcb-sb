@@ -48,7 +48,6 @@
 #define CONFIG_REG_ADDR             0x00
 #define CURRENT_CNTRL_REG_ADDR      0x01
 #define PULL_SEL_REG_ADDR           0x02
-// #define OPEN_SHORT_REG_ADDR (figure out what this is)
 #define PWM_FREQ_REG_ADDR           0x36
 #define RESET_REG_ADDR              0x3F
 
@@ -58,63 +57,18 @@
 #define LOGIC_LEVEL_CNTRL_BITS      0x08
 #define SWX_SETTING_BITS            0xF0
 
-enum SoftwareShutdown {
-    SOFTWARE_SHUTDOWN = 0,
-    NORMAL_OPERATION = 1,
-};
-
-enum ShortDetectionEnable {
-    DISABLE_DETECTION = 0,
-    OPEN_DETECTION = 1,
-    SHORT_DETECTION = 2,
-    REDUNDANT_OPEN_DETECTION = 3,
-};
-
-enum LogicLevel {
-    STANDARD = 0,
-    ALTERNATE = 1,
-};
-
-enum SWXSetting {
-    NINE = 0,
-    EIGHT = 1,
-    SEVEN = 2,
-    SIX = 3,
-    FIVE = 4,
-    FOUR = 5,
-    THREE = 6,
-    TWO = 7,
-    CURRENT_SINK_ONLY = 8,
-};
-
 /* Pull Up/Down Register Bits */
 #define PUR_BITS        0x07
 #define PDR_BITS        0x70
 
-enum ResistorSetting {
-    NONE = 0,
-    HALF_K = 1,
-    ONE_K = 2,
-    TWO_K = 3,
-    FOUR_K = 4,
-    EIGHT_K = 5,
-    SIXTEEN_K = 6,
-    THIRTY_TWO_K = 7,
-};
-
 /* PWM Frequency Setting Register Bits */
 #define PWM_BITS        0x0F
-
-enum PWMFrequency {
-    TWENTY_NINE_K = 0,
-    THREE_POINT_SIX_K = 2,
-    ONE_POINT_EIGHT_K = 7,
-    NINE_HUNDRED = 11,
-};
 
 /* Reset Register */
 #define RESET_KEY       0xAE
 
+
+static QueueHandle_t I2CQueue = NULL; // uninitialized until gatekeeper task is created
 // TODO: Check whether these are NULL on 
 //       reset or only on new flash.
 static i2c_master_bus_handle_t master_bus = NULL;
@@ -125,22 +79,49 @@ static i2c_master_dev_handle_t matrix3_handle = NULL;
 /**
  * This task manages interaction with the I2C peripheral,
  * which should be interacted with only through the functions
- * below, which abstract queueing interaction with the dots
- * matrices.
+ * below. These functions abstract queueing interaction with 
+ * the dots matrices.
  */
 void vI2CGatekeeperTask(void *pvParameters) {
-    
-    
-
-    // This task should never end
-    for (;;) {
-        vTaskDelay(INT_MAX);
+    struct I2CGatekeeperTaskParameters *params = (struct I2CGatekeeperTaskParameters *) pvParameters;
+    I2CCommand command;
+    esp_err_t err;
+    for (;;) {  // This task should never end
+        if (pdPASS != xQueueReceive(params->I2CQueueHandle, &command, INT_MAX)) {
+            ESP_LOGD(TAG, "I2C Gatekeeper timed out while waiting for command on queue");
+            continue;
+        }
+        executeI2CCommand(&command);
     }
     ESP_LOGE(TAG, "I2C gatekeeper task is exiting! This should be impossible!");
     vTaskDelete(NULL); // exit safely (should never happen)
 }
 
-
+/**
+ * This function maps the I2CCommandFunc enum to actual functions
+ * and executes them, performing error callbacks when necessary.
+ */
+void executeI2CCommand(I2CCommand *command) {
+    esp_err_t err = ESP_OK;
+    switch (command->func) {
+        case INITIALIZE_BUS:
+            err = dotsInitializeBus();
+            break;
+        case ASSERT_CONNECTED:
+            err = dotsAssertConnected();
+            break;
+        default:
+            ESP_LOGW(TAG, "I2C gatekeeper recieved an invalid command");
+            return;
+    }
+    if (err != ESP_OK) {
+        if (command->errCallback != NULL) {
+            command->errCallback(err);
+        } else {
+            ESP_LOGE(TAG, "I2C gatekeeper recieved a null error callback function!");
+        }
+    }
+}
 
 esp_err_t dotsInitializeBus(void)
 {
@@ -195,4 +176,24 @@ esp_err_t dotsAssertConnected(void) {
         TAG, "failed to detect matrix2 on i2c bus"
     );
     return ESP_OK;
+}
+
+esp_err_t dotsChangePWMFrequency(enum PWMFrequency freq) {
+
+}
+
+esp_err_t dotsChangeResistorSetting(enum ResistorSetting setting) {
+
+}
+
+esp_err_t dotsSoftwareShutdown(void) {
+
+}
+
+esp_err_t dotsNormalOperation(void) {
+
+}
+
+esp_err_t dotsShortDetectionEnable(void) {
+
 }
