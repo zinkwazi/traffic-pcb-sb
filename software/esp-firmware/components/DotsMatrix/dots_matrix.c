@@ -17,18 +17,134 @@
 #include "driver/i2c_master.h"
 #include "esp_system.h"
 #include "esp_log.h"
+#include "esp_check.h"
 
 /* Component includes */
 #include "pinout.h"
 
-static i2c_master_bus_handle_t master_bus;
-static i2c_master_dev_handle_t matrix1_handle;
-static i2c_master_dev_handle_t matrix2_handle;
-static i2c_master_dev_handle_t matrix3_handle;
+#define TAG "DotsMatrix"
+
+#define MAT_UPPER_ADDR  0b01100000
+#define MAT1_LOWER_ADDR 0x00
+#define MAT2_LOWER_ADDR 0x11
+#define MAT3_LOWER_ADDR 0x10
+#define MAT1_ADDR (MAT_UPPER_ADDR | MAT1_LOWER_ADDR)
+#define MAT2_ADDR (MAT_UPPER_ADDR | MAT2_LOWER_ADDR)
+#define MAT3_ADDR (MAT_UPPER_ADDR | MAT3_LOWER_ADDR)
+
+#define BUS_SPEED_HZ  400000 // 400kHz maximum
+#define SCL_WAIT_US   0  // use default value
+#define PROBE_WAIT_MS 100
+
+/* Matrix Driver IC High Level Registers */
+#define CMD_REG_ADDR                0xFD
+#define CMD_REG_WRITE_LOCK_ADDR     0xFE
+#define CMD_REG_WRITE_KEY           0b11000101
+#define INTR_MSK_REG_ADDR           0xF0
+#define INTR_STAT_REG_ADDR          0xF1
+#define ID_REG_ADDR                 0xFC
+
+/* Matrix Driver IC Function Registers */
+#define CONFIG_REG_ADDR             0x00
+#define CURRENT_CNTRL_REG_ADDR      0x01
+#define PULL_SEL_REG_ADDR           0x02
+// #define OPEN_SHORT_REG_ADDR (figure out what this is)
+#define PWM_FREQ_REG_ADDR           0x36
+#define RESET_REG_ADDR              0x3F
+
+/* Configuration Register Bits */
+#define SOFTWARE_SHUTDOWN_BITS      0x01
+#define OPEN_SHORT_DETECT_EN_BITS   0x06
+#define LOGIC_LEVEL_CNTRL_BITS      0x08
+#define SWX_SETTING_BITS            0xF0
+
+enum SoftwareShutdown {
+    SOFTWARE_SHUTDOWN = 0,
+    NORMAL_OPERATION = 1,
+};
+
+enum ShortDetectionEnable {
+    DISABLE_DETECTION = 0,
+    OPEN_DETECTION = 1,
+    SHORT_DETECTION = 2,
+    REDUNDANT_OPEN_DETECTION = 3,
+};
+
+enum LogicLevel {
+    STANDARD = 0,
+    ALTERNATE = 1,
+};
+
+enum SWXSetting {
+    NINE = 0,
+    EIGHT = 1,
+    SEVEN = 2,
+    SIX = 3,
+    FIVE = 4,
+    FOUR = 5,
+    THREE = 6,
+    TWO = 7,
+    CURRENT_SINK_ONLY = 8,
+};
+
+/* Pull Up/Down Register Bits */
+#define PUR_BITS        0x07
+#define PDR_BITS        0x70
+
+enum ResistorSetting {
+    NONE = 0,
+    HALF_K = 1,
+    ONE_K = 2,
+    TWO_K = 3,
+    FOUR_K = 4,
+    EIGHT_K = 5,
+    SIXTEEN_K = 6,
+    THIRTY_TWO_K = 7,
+};
+
+/* PWM Frequency Setting Register Bits */
+#define PWM_BITS        0x0F
+
+enum PWMFrequency {
+    TWENTY_NINE_K = 0,
+    THREE_POINT_SIX_K = 2,
+    ONE_POINT_EIGHT_K = 7,
+    NINE_HUNDRED = 11,
+};
+
+/* Reset Register */
+#define RESET_KEY       0xAE
+
+// TODO: Check whether these are NULL on 
+//       reset or only on new flash.
+static i2c_master_bus_handle_t master_bus = NULL;
+static i2c_master_dev_handle_t matrix1_handle = NULL;
+static i2c_master_dev_handle_t matrix2_handle = NULL;
+static i2c_master_dev_handle_t matrix3_handle = NULL;
+
+/**
+ * This task manages interaction with the I2C peripheral,
+ * which should be interacted with only through the functions
+ * below, which abstract queueing interaction with the dots
+ * matrices.
+ */
+void vI2CGatekeeperTask(void *pvParameters) {
+    
+    
+
+    // This task should never end
+    for (;;) {
+        vTaskDelay(INT_MAX);
+    }
+    ESP_LOGE(TAG, "I2C gatekeeper task is exiting! This should be impossible!");
+    vTaskDelete(NULL); // exit safely (should never happen)
+}
+
+
 
 esp_err_t dotsInitializeBus(void)
 {
-    const i2c_master_bus_config_t master_bus_config = {
+    i2c_master_bus_config_t master_bus_config = {
         .i2c_port = I2C_PORT,
         .sda_io_num = SDA_PIN,
         .scl_io_num = SCL_PIN,
@@ -37,50 +153,46 @@ esp_err_t dotsInitializeBus(void)
         .intr_priority = 0, // may be one of level 1, 2, or 3 when set to 0
         .flags.enable_internal_pullup = false,
     };
-
-    // i2c_master_bus_handle_t master_bus;
-    esp_err_t err = i2c_new_master_bus(&master_bus_config, &master_bus);
-    if (err != ESP_OK) {
-        return err;
-    }
-
-    
-    const i2c_device_config_t matrix1_config = {
+    i2c_device_config_t matrix_config = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = 0x00,
-        .scl_speed_hz = 400000, // 400kHz maximum
-        .scl_wait_us = 0, // use default value
+        .device_address = MAT1_ADDR,
+        .scl_speed_hz = BUS_SPEED_HZ,
+        .scl_wait_us = SCL_WAIT_US, // use default value
     };
-
-    const i2c_device_config_t matrix2_config = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = 0x11,
-        .scl_speed_hz = 400000, // 400kHz maximum
-        .scl_wait_us = 0, // use default value
-    };
-
-    const i2c_device_config_t matrix3_config = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = 0x10,
-        .scl_speed_hz = 400000, // 400kHz maximum
-        .scl_wait_us = 0, // use default value
-    };
-    
-    err = i2c_master_bus_add_device(master_bus, &matrix1_config, &matrix1_handle);
-    if (err != ESP_OK) {
-        return err;
-    }
-    err = i2c_master_bus_add_device(master_bus, &matrix2_config, &matrix2_handle);
-    if (err != ESP_OK) {
-        return err;
-    }
-    err = i2c_master_bus_add_device(master_bus, &matrix3_config, &matrix3_handle);
-    if (err != ESP_OK) {
-        return err;
-    }
+    /* Initialize I2C bus */
+    ESP_RETURN_ON_ERROR(
+        i2c_new_master_bus(&master_bus_config, &master_bus),
+        TAG, "failed to initialize new i2c master bus struct"
+    );
+    ESP_RETURN_ON_ERROR(
+        i2c_master_bus_add_device(master_bus, &matrix_config, &matrix1_handle),
+        TAG, "failed to add matrix1 device to i2c bus"
+    );
+    matrix_config.device_address = MAT2_ADDR;
+    ESP_RETURN_ON_ERROR(
+        i2c_master_bus_add_device(master_bus, &matrix_config, &matrix2_handle),
+        TAG, "failed to add matrix2 device to i2c bus"
+    );
+    matrix_config.device_address = MAT3_ADDR;
+    ESP_RETURN_ON_ERROR(
+        i2c_master_bus_add_device(master_bus, &matrix_config, &matrix3_handle),
+        TAG, "failed to add matrix3 device to i2c bus"
+    );
     return ESP_OK;
 }
 
 esp_err_t dotsAssertConnected(void) {
+    ESP_RETURN_ON_ERROR(
+        i2c_master_probe(master_bus, MAT1_ADDR, PROBE_WAIT_MS),
+        TAG, "failed to detect matrix1 on i2c bus"
+    );
+    ESP_RETURN_ON_ERROR(
+        i2c_master_probe(master_bus, MAT2_ADDR, PROBE_WAIT_MS),
+        TAG, "failed to detect matrix2 on i2c bus"
+    );
+    ESP_RETURN_ON_ERROR(
+        i2c_master_probe(master_bus, MAT2_ADDR, PROBE_WAIT_MS),
+        TAG, "failed to detect matrix2 on i2c bus"
+    );
     return ESP_OK;
 }

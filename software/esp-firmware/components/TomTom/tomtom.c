@@ -81,7 +81,7 @@ esp_err_t tomtomFormRequestURL(char *urlStr, const LEDLoc *led) {
     );
     if (lenDouble < DOUBLE_STR_SIZE) {
         // pad the string with '0' to remove garbage starting from null terminator
-        for (uint i = LAT_NDX + lenDouble; i < LAT_NDX + DOUBLE_STR_SIZE - 1; i++) {
+        for (i = LAT_NDX + lenDouble; i < LAT_NDX + DOUBLE_STR_SIZE - 1; i++) {
             urlStr[i] = '0';
         }
         urlStr[LAT_NDX + DOUBLE_STR_SIZE - 1] = '\0'; // allows concatenation

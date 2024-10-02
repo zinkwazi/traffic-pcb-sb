@@ -61,7 +61,7 @@ void app_main(void)
     }
 
     uint result = 0;
-    ESP_ERROR_CHECK(tomtomRequestSpeed(&result, 1, SOUTH));
+    ESP_ERROR_CHECK(tomtomRequestSpeed(&result, 3, SOUTH));
     printf("speed: %d\n", result);
     fflush(stdout);
 
