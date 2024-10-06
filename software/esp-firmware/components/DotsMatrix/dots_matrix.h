@@ -63,11 +63,12 @@ enum SWXSetting {
 
 /**
  * This enum defines all possible commands
- * to be given to the I2C gatekeeper. An
- * enum is used instead of a function pointer
- * to prevent a malicious task from breaking
- * the gatekeeper in some way. Each entry in
- * the enum corresponds to a function below.
+ * that can be given to the I2C gatekeeper. 
+ * An enum is used instead of a function 
+ * pointer to prevent a malicious task from
+ * breaking the gatekeeper in some way. Each 
+ * entry in the enum corresponds to a function 
+ * below.
  */
 enum I2CCommandFunc {
     INITIALIZE_BUS, // dotsInitializeBus
@@ -118,10 +119,12 @@ esp_err_t dotsSetPWMFrequency(enum PWMFrequency freq);
 esp_err_t dotsReset(void);
 
 /* Internal functions */
-inline void dotsSetBits(uint8_t *reg, uint8_t bitMask, uint8_t value);
+void dotsSetBits(uint8_t *reg, uint8_t bitMask, uint8_t value);
 esp_err_t dotsSetPage(i2c_master_dev_handle_t device, uint8_t page);
 esp_err_t dotsGetRegister(uint8_t *result, i2c_master_dev_handle_t device, uint8_t page, uint8_t addr);
+esp_err_t dotsGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3, uint8_t page, uint8_t addr);
 esp_err_t dotsSetRegister(i2c_master_dev_handle_t device, uint8_t page, uint8_t addr, uint8_t data);
-
+esp_err_t dotsSetRegisters(uint8_t page, uint8_t addr, uint8_t data);
+esp_err_t dotsSetRegistersSeparate(uint8_t page, uint8_t addr, uint8_t mat1val, uint8_t mat2val, uint8_t mat3val);
 
 #endif /* DOTS_MATRIX_H_ */
