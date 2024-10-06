@@ -42,20 +42,6 @@ static int s_retryNum;
 static EventGroupHandle_t s_wifiEventGroup;
 
 /**
- * Sets the tomtom API configuration to what is set
- * in 'api_config.h'. Configuration can manually be changed later.
- * Importantly, this causes s_tomtomConfig to be a SHALLOW
- * copy of s_defaultTomtomConfig.
- */
-static inline void useDefaultTomtomConfig(void) {
-    // s_tomtomConfig.url = s_defaultTomtomConfig.url;
-    // s_tomtomConfig.auth_type = s_defaultTomtomConfig.auth_type;
-    // s_tomtomConfig.method = s_defaultTomtomConfig.method;
-    // s_tomtomConfig.event_handler = s_defaultTomtomConfig.event_handler;
-    // s_tomtomConfig.buffer_size = s_defaultTomtomConfig.buffer_size;
-}
-
-/**
  * Resets tomtom static variables to their initial state.
  * I remember something from my class about this not
  * always happening when the reset button is pressed,
@@ -65,7 +51,6 @@ static inline void useDefaultTomtomConfig(void) {
 static inline void resetStaticVars(void) {
     s_retryNum = 0;
     s_wifiEventGroup = NULL;
-    useDefaultTomtomConfig();
 }
 
 #endif /* TOMTOM_H_ */

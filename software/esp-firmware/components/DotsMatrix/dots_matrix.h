@@ -32,7 +32,7 @@ enum ResistorSetting {
     THIRTY_TWO_K = 7,
 };
 
-enum SoftwareShutdown {
+enum Operation {
     SOFTWARE_SHUTDOWN = 0,
     NORMAL_OPERATION = 1,
 };
@@ -72,6 +72,15 @@ enum SWXSetting {
 enum I2CCommandFunc {
     INITIALIZE_BUS, // dotsInitializeBus
     ASSERT_CONNECTED, // dotsAssertConnected
+    SET_OPERATING_MODE, // dotsSetOperatingMode
+    SET_OPEN_SHORT_DETECTION, // dotsSetOpenShortDetection
+    SET_LOGIC_LEVEL, // dotsSetLogicLevel
+    SET_SWX_SETTING, // dotsSetSWxSetting
+    SET_GLOBAL_CURRENT_CONTROL, // dotsSetGlobalCurrentControl
+    SET_RESISTOR_PULLUP, // dotsSetResistorPullupSetting
+    SET_RESISTOR_PULLDOWN, // dotsSetResistorPulldownSetting
+    SET_PWM_FREQUENCY, // dotsSetPWMFrequency
+    RESET, // dotsReset
 };
 
 typedef enum I2CCommandFunc I2CCommandFunc;
@@ -91,15 +100,28 @@ struct I2CGatekeeperTaskParameters {
 
 typedef struct I2CGatekeeperTaskParameters I2CGatekeeperTaskParameters;
 
+/* Gatekeeper interaction functions */
 void vI2CGatekeeperTask(void *pvParameters);
 void executeI2CCommand(I2CCommand *command);
 
+/* Functions available as gatekeeper commands */
 esp_err_t dotsInitializeBus(void);
 esp_err_t dotsAssertConnected(void);
-esp_err_t dotsChangePWMFrequency(enum PWMFrequency freq);
-esp_err_t dotsChangeResistorSetting(enum ResistorSetting setting);
-esp_err_t dotsSoftwareShutdown(void);
-esp_err_t dotsNormalOperation(void);
-esp_err_t dotsShortDetectionEnable(void);
+esp_err_t dotsSetOperatingMode(enum Operation setting);
+esp_err_t dotsSetOpenShortDetection(enum ShortDetectionEnable setting);
+esp_err_t dotsSetLogicLevel(enum LogicLevel setting);
+esp_err_t dotsSetSWxSetting(enum SWXSetting setting);
+esp_err_t dotsSetGlobalCurrentControl(uint8_t value);
+esp_err_t dotsSetResistorPullupSetting(enum ResistorSetting setting);
+esp_err_t dotsSetResistorPulldownSetting(enum ResistorSetting setting);
+esp_err_t dotsSetPWMFrequency(enum PWMFrequency freq);
+esp_err_t dotsReset(void);
+
+/* Internal functions */
+inline void dotsSetBits(uint8_t *reg, uint8_t bitMask, uint8_t value);
+esp_err_t dotsSetPage(i2c_master_dev_handle_t device, uint8_t page);
+esp_err_t dotsGetRegister(uint8_t *result, i2c_master_dev_handle_t device, uint8_t page, uint8_t addr);
+esp_err_t dotsSetRegister(i2c_master_dev_handle_t device, uint8_t page, uint8_t addr, uint8_t data);
+
 
 #endif /* DOTS_MATRIX_H_ */
