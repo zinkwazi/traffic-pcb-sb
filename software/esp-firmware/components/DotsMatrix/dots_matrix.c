@@ -1,8 +1,8 @@
 /**
- * dots_matrix.c
+ * d_matrix.c
  * 
  * This file contains a hardware abstraction layer
- * for the dots matrix led driver ICs. The esp32
+ * for the d matrix led driver ICs. The esp32
  * interacts with these ICs through I2C.
  * 
  * See: https://www.lumissil.com/assets/pdf/core/IS31FL3741A_DS.pdf.
@@ -21,8 +21,9 @@
 
 /* Component includes */
 #include "pinout.h"
+#include "led_registers.h"
 
-#define TAG "DotsMatrix"
+#define TAG "dots_matrix"
 
 #define I2C_TIMEOUT_MS (100)
 
@@ -78,119 +79,7 @@
 
 #define FILL_BUFFER(reg, data) buffer[0] = reg; buffer[1] = data;
 
-struct PageState {
-    uint8_t mat1;
-    uint8_t mat2;
-    uint8_t mat3;
-};
-
-// TODO: replace static variables with thread local storage
-static struct PageState currState;
-static QueueHandle_t I2CQueue; // uninitialized until gatekeeper task is created
-// TODO: Check whether these are NULL on 
-//       reset or only on new flash.
-static i2c_master_bus_handle_t master_bus;
-static i2c_master_dev_handle_t matrix1_handle;
-static i2c_master_dev_handle_t matrix2_handle;
-static i2c_master_dev_handle_t matrix3_handle;
-
-static inline void resetStaticVars(void) {
-    currState.mat1 = 0;
-    currState.mat2 = 0;
-    currState.mat3 = 0;
-    I2CQueue = NULL;
-    master_bus = NULL;
-    matrix1_handle = NULL;
-    matrix2_handle = NULL;
-    matrix3_handle = NULL;
-}
-
-/**
- * This task manages interaction with the I2C peripheral,
- * which should be interacted with only through the functions
- * below. These functions abstract queueing interaction with 
- * the dots matrices.
- */
-void vI2CGatekeeperTask(void *pvParameters) {
-    struct I2CGatekeeperTaskParameters *params = (struct I2CGatekeeperTaskParameters *) pvParameters;
-    I2CCommand command;
-    esp_err_t err;
-    /* One time setup */
-    resetStaticVars();
-    err = dotsInitializeBus();
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Could not initialize I2C bus");
-    }
-    err = dotsAssertConnected();
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Could not find dots matrices on I2C bus... retrying...");
-    }
-    while (err != ESP_OK) {
-        err = dotsAssertConnected();
-    }
-    /* Wait for commands and execute them forever */
-    for (;;) {  // This task should never end
-        if (pdPASS != xQueueReceive(params->I2CQueueHandle, &command, INT_MAX)) {
-            ESP_LOGD(TAG, "I2C Gatekeeper timed out while waiting for command on queue");
-            continue;
-        }
-        executeI2CCommand(&command);
-    }
-    ESP_LOGE(TAG, "I2C gatekeeper task is exiting! This should be impossible!");
-    vTaskDelete(NULL); // exit safely (should never happen)
-}
-
-/**
- * This function maps the I2CCommandFunc enum to actual functions
- * and executes them, performing error callbacks when necessary.
- */
-void executeI2CCommand(I2CCommand *command) {
-    esp_err_t err = ESP_OK;
-    switch (command->func) {
-        case INITIALIZE_BUS:
-            err = dotsInitializeBus();
-            break;
-        case ASSERT_CONNECTED:
-            err = dotsAssertConnected();
-            break;
-        case SET_OPERATING_MODE:
-            err = dotsSetOperatingMode(*((enum Operation*) command->params));
-            break;
-        case SET_OPEN_SHORT_DETECTION:
-            err = dotsSetOpenShortDetection(*((enum ShortDetectionEnable*) command->params));
-            break;
-        case SET_LOGIC_LEVEL:
-            err = dotsSetLogicLevel(*((enum LogicLevel*) command->params));
-            break;
-        case SET_SWX_SETTING:
-            err = dotsSetSWxSetting(*((enum SWXSetting*) command->params));
-            break;
-        case SET_GLOBAL_CURRENT_CONTROL:
-            err = dotsSetGlobalCurrentControl(*((uint8_t*) command->params));
-            break;
-        case SET_RESISTOR_PULLUP:
-            err = dotsSetResistorPullupSetting(*((enum ResistorSetting*) command->params));
-            break;
-        case SET_RESISTOR_PULLDOWN:
-            err = dotsSetResistorPulldownSetting(*((enum ResistorSetting*) command->params));
-            break;
-        case SET_PWM_FREQUENCY:
-            err = dotsSetPWMFrequency(*((enum PWMFrequency*) command->params));
-            break;
-        default:
-            ESP_LOGW(TAG, "I2C gatekeeper recieved an invalid command");
-            return;
-    }
-    if (err != ESP_OK) {
-        if (command->errCallback != NULL) {
-            command->errCallback(err); // TODO: replace this with a more secure error handling method
-        } else {
-            ESP_LOGE(TAG, "I2C gatekeeper recieved a null error callback function!");
-        }
-    }
-}
-
-esp_err_t dotsInitializeBus(void) {
+esp_err_t dInitializeBus(void) {
     i2c_master_bus_config_t master_bus_config = {
         .i2c_port = I2C_PORT,
         .sda_io_num = SDA_PIN,
@@ -228,7 +117,7 @@ esp_err_t dotsInitializeBus(void) {
     return ESP_OK;
 }
 
-esp_err_t dotsAssertConnected(void) {
+esp_err_t dAssertConnected(void) {
     ESP_RETURN_ON_ERROR(
         i2c_master_probe(master_bus, MAT1_ADDR, PROBE_WAIT_MS),
         TAG, "failed to detect matrix1 on i2c bus"
@@ -255,7 +144,7 @@ esp_err_t dotsAssertConnected(void) {
  *           greater than what bitMask can contain, this value
  *           will silently be shortened.
  */
-void dotsSetBits(uint8_t *reg, uint8_t bitMask, uint8_t value) {
+void dSetBits(uint8_t *reg, uint8_t bitMask, uint8_t value) {
     /* Align value to bitMask */
     for (uint8_t currShift = 0; currShift < 8; currShift++) {
         if (bitMask % (0x01 << currShift) != 0x00) {
@@ -276,7 +165,7 @@ void dotsSetBits(uint8_t *reg, uint8_t bitMask, uint8_t value) {
  * the device is already in the requested page, the function 
  * will return ESP_OK without performing any I2C transactions.
  */
-esp_err_t dotsSetPage(i2c_master_dev_handle_t device, uint8_t page) {
+esp_err_t dSetPage(i2c_master_dev_handle_t device, uint8_t page) {
     uint8_t buffer[2];
     /* input guards */
     ESP_RETURN_ON_FALSE(
@@ -322,14 +211,14 @@ esp_err_t dotsSetPage(i2c_master_dev_handle_t device, uint8_t page) {
  *  - page: The page the target register exists in.
  *  - addr: The address of the target register.
  */
-esp_err_t dotsGetRegister(uint8_t *result, i2c_master_dev_handle_t device, uint8_t page, uint8_t addr) {
+esp_err_t dGetRegister(uint8_t *result, i2c_master_dev_handle_t device, uint8_t page, uint8_t addr) {
     /* input guards */
     ESP_RETURN_ON_FALSE(
         (result != NULL), ESP_FAIL,
         TAG, "encountered unexpected NULL function parameter"
     );
     /* Set page and read config registers */
-    dotsSetPage(device, page);
+    dSetPage(device, page);
     ESP_RETURN_ON_ERROR(
         i2c_master_transmit_receive(device, &addr, 1, result, 1, I2C_TIMEOUT_MS),
         TAG, "failed to read matrix register"
@@ -356,7 +245,7 @@ esp_err_t dotsGetRegister(uint8_t *result, i2c_master_dev_handle_t device, uint8
  *          by the results are unmodified, however pages may
  *          have been modified.
  */
-esp_err_t dotsGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3, uint8_t page, uint8_t addr) {
+esp_err_t dGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3, uint8_t page, uint8_t addr) {
     uint8_t localRes1, localRes2, localRes3; // if something fails, do not modify results
     /* guard input */
     ESP_RETURN_ON_FALSE(
@@ -366,19 +255,19 @@ esp_err_t dotsGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3,
     /* get registers */
     if (result1 != NULL) {
         ESP_RETURN_ON_ERROR(
-            dotsGetRegister(&localRes1, matrix1_handle, page, addr),
+            dGetRegister(&localRes1, matrix1_handle, page, addr),
             TAG, "failed to read matrix 1 register"
         );
     }
     if (result2 != NULL) {
         ESP_RETURN_ON_ERROR(
-            dotsGetRegister(&localRes2, matrix2_handle, page, addr),
+            dGetRegister(&localRes2, matrix2_handle, page, addr),
             TAG, "failed to read matrix 2 register"
         );
     }
     if (result3 != NULL) {
         ESP_RETURN_ON_ERROR(
-            dotsGetRegister(&localRes3, matrix3_handle, page, addr),
+            dGetRegister(&localRes3, matrix3_handle, page, addr),
             TAG, "failed to read matrix 3 register"
         );
     }
@@ -408,7 +297,7 @@ esp_err_t dotsGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3,
  * Returns: ESP_OK if successful. Otherwise, the page of the current
  *          device may have been changed.
  */
-esp_err_t dotsSetRegister(i2c_master_dev_handle_t device, uint8_t page, uint8_t addr, uint8_t data) {
+esp_err_t dSetRegister(i2c_master_dev_handle_t device, uint8_t page, uint8_t addr, uint8_t data) {
     uint8_t buffer[2];
     /* gaurd input */
     ESP_RETURN_ON_FALSE(
@@ -422,19 +311,19 @@ esp_err_t dotsSetRegister(i2c_master_dev_handle_t device, uint8_t page, uint8_t 
     /* ensure that matrix is on the correct page */
     if (device == matrix1_handle && page != currState.mat1) {
         ESP_RETURN_ON_ERROR(
-            dotsSetPage(device, page),
+            dSetPage(device, page),
             TAG, "failed to change matrix 1 page"
         );
         currState.mat1 = page;
     } else if (device == matrix2_handle && page != currState.mat2) {
         ESP_RETURN_ON_ERROR(
-            dotsSetPage(device, page),
+            dSetPage(device, page),
             TAG, "failed to change matrix 2 page"
         );
         currState.mat2 = page;
     } else if (device == matrix3_handle && page != currState.mat3) {
         ESP_RETURN_ON_ERROR(
-            dotsSetPage(device, page),
+            dSetPage(device, page),
             TAG, "failed to change matrix 3 page"
         );
         currState.mat3 = page;
@@ -457,7 +346,7 @@ esp_err_t dotsSetRegister(i2c_master_dev_handle_t device, uint8_t page, uint8_t 
  *          multiple matrices, but not all. Additionally,
  *          the page of each matrix may have been changed.
  */
-esp_err_t dotsSetRegisters(uint8_t page, uint8_t addr, uint8_t data) {
+esp_err_t dSetRegisters(uint8_t page, uint8_t addr, uint8_t data) {
     /* guard input */
     ESP_RETURN_ON_FALSE(
         (page <= 4), ESP_FAIL,
@@ -465,15 +354,15 @@ esp_err_t dotsSetRegisters(uint8_t page, uint8_t addr, uint8_t data) {
     );
     /* set registers */
     ESP_RETURN_ON_ERROR(
-        dotsSetRegister(matrix1_handle, page, addr, data),
+        dSetRegister(matrix1_handle, page, addr, data),
         TAG, "could not set matrix 1 register"
     );
     ESP_RETURN_ON_ERROR(
-        dotsSetRegister(matrix2_handle, page, addr, data),
+        dSetRegister(matrix2_handle, page, addr, data),
         TAG, "could not set matrix 2 register"
     );
     ESP_RETURN_ON_ERROR(
-        dotsSetRegister(matrix3_handle, page, addr, data),
+        dSetRegister(matrix3_handle, page, addr, data),
         TAG, "could not set matrix 3 register"
     );
     return ESP_OK;
@@ -493,17 +382,17 @@ esp_err_t dotsSetRegisters(uint8_t page, uint8_t addr, uint8_t data) {
  *          configuration of each matrix may have
  *          been changed, but not all.
  */
-esp_err_t dotsSetRegistersSeparate(uint8_t page, uint8_t addr, uint8_t mat1val, uint8_t mat2val, uint8_t mat3val) {
+esp_err_t dSetRegistersSeparate(uint8_t page, uint8_t addr, uint8_t mat1val, uint8_t mat2val, uint8_t mat3val) {
     ESP_RETURN_ON_ERROR(
-        dotsSetRegister(matrix1_handle, page, addr, mat1val),
+        dSetRegister(matrix1_handle, page, addr, mat1val),
         TAG, "failed to change matrix 1 config register"
     );
     ESP_RETURN_ON_ERROR(
-        dotsSetRegister(matrix2_handle, page, addr, mat2val),
+        dSetRegister(matrix2_handle, page, addr, mat2val),
         TAG, "failed to change matrix 2 config register"
     );
     ESP_RETURN_ON_ERROR(
-        dotsSetRegister(matrix3_handle, page, addr, mat3val),
+        dSetRegister(matrix3_handle, page, addr, mat3val),
         TAG, "failed to change matrix 3 config register"
     );
     return ESP_OK;
@@ -516,18 +405,18 @@ esp_err_t dotsSetRegistersSeparate(uint8_t page, uint8_t addr, uint8_t mat1val, 
  * Returns: ESP_OK if successful. Otherwise, the configuration
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dotsSetOperatingMode(enum Operation setting) {
+esp_err_t dSetOperatingMode(enum Operation setting) {
     uint8_t mat1Cfg, mat2Cfg, mat3Cfg;
     /* Read current configuration states */
     ESP_RETURN_ON_ERROR(
-        dotsGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR),
+        dGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR),
         TAG, "failed to retrieve current matrix configurations"
     );
     /* Generate and set new configuration states */
-    dotsSetBits(&mat1Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t) setting);
-    dotsSetBits(&mat2Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t) setting);
-    dotsSetBits(&mat3Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t) setting);
-    return dotsSetRegistersSeparate(CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
+    dSetBits(&mat1Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t) setting);
+    dSetBits(&mat2Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t) setting);
+    dSetBits(&mat3Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t) setting);
+    return dSetRegistersSeparate(CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
 }
 
 /**
@@ -537,18 +426,18 @@ esp_err_t dotsSetOperatingMode(enum Operation setting) {
  * Returns: ESP_OK if successful. Otherwise, the configuration
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dotsSetOpenShortDetection(enum ShortDetectionEnable setting) {
+esp_err_t dSetOpenShortDetection(enum ShortDetectionEnable setting) {
     uint8_t mat1Cfg, mat2Cfg, mat3Cfg;
     /* Read current configuration states */
     ESP_RETURN_ON_ERROR(
-        dotsGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR),
+        dGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR),
         TAG, "failed to retrieve current matrix configurations"
     );
     /* Generate and set new configuration states */
-    dotsSetBits(&mat1Cfg, OPEN_SHORT_DETECT_EN_BITS, (uint8_t) setting);
-    dotsSetBits(&mat2Cfg, OPEN_SHORT_DETECT_EN_BITS, (uint8_t) setting);
-    dotsSetBits(&mat3Cfg, OPEN_SHORT_DETECT_EN_BITS, (uint8_t) setting);
-    return dotsSetRegistersSeparate(CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
+    dSetBits(&mat1Cfg, OPEN_SHORT_DETECT_EN_BITS, (uint8_t) setting);
+    dSetBits(&mat2Cfg, OPEN_SHORT_DETECT_EN_BITS, (uint8_t) setting);
+    dSetBits(&mat3Cfg, OPEN_SHORT_DETECT_EN_BITS, (uint8_t) setting);
+    return dSetRegistersSeparate(CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
 }
 
 /**
@@ -558,18 +447,18 @@ esp_err_t dotsSetOpenShortDetection(enum ShortDetectionEnable setting) {
  * Returns: ESP_OK if successful. Otherwise, the configuration
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dotsSetLogicLevel(enum LogicLevel setting) {
+esp_err_t dSetLogicLevel(enum LogicLevel setting) {
     uint8_t mat1Cfg, mat2Cfg, mat3Cfg;
     /* Read current configuration states */
     ESP_RETURN_ON_ERROR(
-        dotsGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR),
+        dGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR),
         TAG, "failed to retrieve current matrix configurations"
     );
     /* Generate and set new configuration states */
-    dotsSetBits(&mat1Cfg, LOGIC_LEVEL_CNTRL_BITS, (uint8_t) setting);
-    dotsSetBits(&mat2Cfg, LOGIC_LEVEL_CNTRL_BITS, (uint8_t) setting);
-    dotsSetBits(&mat3Cfg, LOGIC_LEVEL_CNTRL_BITS, (uint8_t) setting);
-    return dotsSetRegistersSeparate(CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
+    dSetBits(&mat1Cfg, LOGIC_LEVEL_CNTRL_BITS, (uint8_t) setting);
+    dSetBits(&mat2Cfg, LOGIC_LEVEL_CNTRL_BITS, (uint8_t) setting);
+    dSetBits(&mat3Cfg, LOGIC_LEVEL_CNTRL_BITS, (uint8_t) setting);
+    return dSetRegistersSeparate(CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
 }
 
 /**
@@ -579,18 +468,18 @@ esp_err_t dotsSetLogicLevel(enum LogicLevel setting) {
  * Returns: ESP_OK if successful. Otherwise, the configuration
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dotsSetSWxSetting(enum SWXSetting setting) {
+esp_err_t dSetSWxSetting(enum SWXSetting setting) {
     uint8_t mat1Cfg, mat2Cfg, mat3Cfg;
     /* Read current configuration states */
     ESP_RETURN_ON_ERROR(
-        dotsGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR),
+        dGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR),
         TAG, "failed to retrieve current matrix configurations"
     );
     /* Generate and set new configuration states */
-    dotsSetBits(&mat1Cfg, SWX_SETTING_BITS, (uint8_t) setting);
-    dotsSetBits(&mat2Cfg, SWX_SETTING_BITS, (uint8_t) setting);
-    dotsSetBits(&mat3Cfg, SWX_SETTING_BITS, (uint8_t) setting);
-    return dotsSetRegistersSeparate(CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
+    dSetBits(&mat1Cfg, SWX_SETTING_BITS, (uint8_t) setting);
+    dSetBits(&mat2Cfg, SWX_SETTING_BITS, (uint8_t) setting);
+    dSetBits(&mat3Cfg, SWX_SETTING_BITS, (uint8_t) setting);
+    return dSetRegistersSeparate(CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
 }
 
 /**
@@ -600,9 +489,9 @@ esp_err_t dotsSetSWxSetting(enum SWXSetting setting) {
  * Returns: ESP_OK if successful. Otherwise, the register value
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dotsSetGlobalCurrentControl(uint8_t value) {
+esp_err_t dSetGlobalCurrentControl(uint8_t value) {
     ESP_RETURN_ON_ERROR(
-        dotsSetRegisters(CONFIG_PAGE, CURRENT_CNTRL_REG_ADDR, (uint8_t) value),
+        dSetRegisters(CONFIG_PAGE, CURRENT_CNTRL_REG_ADDR, (uint8_t) value),
         TAG, "failed to set matrix global current control registers"
     );
     return ESP_OK;
@@ -615,18 +504,18 @@ esp_err_t dotsSetGlobalCurrentControl(uint8_t value) {
  * Returns: ESP_OK if successful. Otherwise, the register value
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dotsSetResistorPullupSetting(enum ResistorSetting setting) {
+esp_err_t dSetResistorPullupSetting(enum ResistorSetting setting) {
     uint8_t mat1Reg, mat2Reg, mat3Reg;
     /* Read current resistor states */
     ESP_RETURN_ON_ERROR(
-        dotsGetRegisters(&mat1Reg, &mat2Reg, &mat3Reg, CONFIG_PAGE, PULL_SEL_REG_ADDR),
+        dGetRegisters(&mat1Reg, &mat2Reg, &mat3Reg, CONFIG_PAGE, PULL_SEL_REG_ADDR),
         TAG, "failed to retrieve current matrix resistor states"
     );
     /* Generate and set new resistor states */
-    dotsSetBits(&mat1Reg, PUR_BITS, (uint8_t) setting);
-    dotsSetBits(&mat2Reg, PUR_BITS, (uint8_t) setting);
-    dotsSetBits(&mat3Reg, PUR_BITS, (uint8_t) setting);
-    return dotsSetRegistersSeparate(CONFIG_PAGE, PULL_SEL_REG_ADDR, mat1Reg, mat2Reg, mat3Reg);
+    dSetBits(&mat1Reg, PUR_BITS, (uint8_t) setting);
+    dSetBits(&mat2Reg, PUR_BITS, (uint8_t) setting);
+    dSetBits(&mat3Reg, PUR_BITS, (uint8_t) setting);
+    return dSetRegistersSeparate(CONFIG_PAGE, PULL_SEL_REG_ADDR, mat1Reg, mat2Reg, mat3Reg);
 }
 
 /**
@@ -636,23 +525,26 @@ esp_err_t dotsSetResistorPullupSetting(enum ResistorSetting setting) {
  * Returns: ESP_OK if successful. Otherwise, the register value
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dotsSetResistorPulldownSetting(enum ResistorSetting setting) {
+esp_err_t dSetResistorPulldownSetting(enum ResistorSetting setting) {
     uint8_t mat1Reg, mat2Reg, mat3Reg;
     /* Read current resistor states */
     ESP_RETURN_ON_ERROR(
-        dotsGetRegisters(&mat1Reg, &mat2Reg, &mat3Reg, CONFIG_PAGE, PULL_SEL_REG_ADDR),
+        dGetRegisters(&mat1Reg, &mat2Reg, &mat3Reg, CONFIG_PAGE, PULL_SEL_REG_ADDR),
         TAG, "failed to retrieve current matrix resistor states"
     );
     /* Generate and set new resistor states */
-    dotsSetBits(&mat1Reg, PDR_BITS, (uint8_t) setting);
-    dotsSetBits(&mat2Reg, PDR_BITS, (uint8_t) setting);
-    dotsSetBits(&mat3Reg, PDR_BITS, (uint8_t) setting);
-    return dotsSetRegistersSeparate(CONFIG_PAGE, PULL_SEL_REG_ADDR, mat1Reg, mat2Reg, mat3Reg);
+    dSetBits(&mat1Reg, PDR_BITS, (uint8_t) setting);
+    dSetBits(&mat2Reg, PDR_BITS, (uint8_t) setting);
+    dSetBits(&mat3Reg, PDR_BITS, (uint8_t) setting);
+    return dSetRegistersSeparate(CONFIG_PAGE, PULL_SEL_REG_ADDR, mat1Reg, mat2Reg, mat3Reg);
 }
 
-esp_err_t dotsSetPWMFrequency(enum PWMFrequency freq) {
+/** 
+ * Sets the PWM frequency of all matrix ICs. 
+ */
+esp_err_t dSetPWMFrequency(enum PWMFrequency freq) {
     ESP_RETURN_ON_ERROR(
-        dotsSetRegisters(CONFIG_PAGE, PWM_FREQ_REG_ADDR, (uint8_t) freq),
+        dSetRegisters(CONFIG_PAGE, PWM_FREQ_REG_ADDR, (uint8_t) freq),
         TAG, "failed to set PWM frequency registers"
     );
     return ESP_OK;
@@ -664,10 +556,99 @@ esp_err_t dotsSetPWMFrequency(enum PWMFrequency freq) {
  * Returns: ESP_OK if successful. Otherwise, some of
  *          the matrices may have been reset, but not all.
  */
-esp_err_t dotsReset(void) {
+esp_err_t dReset(void) {
     ESP_RETURN_ON_ERROR(
-        dotsSetRegisters(CONFIG_PAGE, RESET_REG_ADDR, RESET_KEY),
+        dSetRegisters(CONFIG_PAGE, RESET_REG_ADDR, RESET_KEY),
         TAG, "failed to set reset registers to reset key"
+    );
+    return ESP_OK;
+}
+
+/**
+ * Sets the color of the LED corresponding to Kicad hardware
+ * number ledNum. Internally, this changes the PWM duty in
+ * 256 steps.
+ */
+esp_err_t dSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue) {
+    /* map led num 329 and 330 to reasonable numbers */ 
+    ledNum = (ledNum == 329) ? 325 : ledNum;
+    ledNum = (ledNum == 330) ? 326 : ledNum;
+    /* guard input */
+    ESP_RETURN_ON_FALSE(
+        (ledNum > 0 && ledNum < 327), ESP_FAIL,
+        TAG, "requested to set color for invalid led hardware number"
+    );
+    /* determine the correct PWM registers */
+    LEDReg reg = LEDNumToReg[ledNum];
+    i2c_master_dev_handle_t matrix_handle = NULL;
+    if (ledNum >= 1 && ledNum <= 117) {
+        matrix_handle = matrix1_handle;
+    } else if (ledNum >= 118 && ledNum <= 234) {
+        matrix_handle = matrix2_handle;
+    } else if (ledNum >= 235 && ledNum <= 326) {
+        matrix_handle = matrix3_handle;
+    }
+    ESP_RETURN_ON_FALSE(
+        (matrix_handle != NULL), ESP_FAIL,
+        TAG, "could not determine matrix handle for led hardware number"
+    );
+    /* set PWM registers to provided values */
+    ESP_RETURN_ON_ERROR(
+        dSetRegister(matrix_handle, reg.page, reg.red, red),
+        TAG, "could not set red PWM value"
+    );
+    ESP_RETURN_ON_ERROR(
+        dSetRegister(matrix_handle, reg.page, reg.green, green),
+        TAG, "could not set green PWM value"
+    );
+    ESP_RETURN_ON_ERROR(
+        dSetRegister(matrix_handle, reg.page, reg.blue, blue),
+        TAG, "could not set blue PWM value"
+    );
+    return ESP_OK;
+}
+
+/**
+ * Controls the DC output current of the LED corresponding
+ * to Kicad hardware number ledNum. See pg. 13 of the datasheet
+ * for exact calculations. This can be considered a dimming
+ * function.
+ */
+esp_err_t dSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue) {
+    /* map led num 329 and 330 to reasonable numbers */ 
+    ledNum = (ledNum == 329) ? 325 : ledNum;
+    ledNum = (ledNum == 330) ? 326 : ledNum;
+    /* guard input */
+    ESP_RETURN_ON_FALSE(
+        (ledNum > 0 && ledNum < 327), ESP_FAIL,
+        TAG, "requested to set color for invalid led hardware number"
+    );
+    /* determine the correct PWM registers */
+    LEDReg reg = LEDNumToReg[ledNum];
+    i2c_master_dev_handle_t matrix_handle = NULL;
+    if (ledNum >= 1 && ledNum <= 117) {
+        matrix_handle = matrix1_handle;
+    } else if (ledNum >= 118 && ledNum <= 234) {
+        matrix_handle = matrix2_handle;
+    } else if (ledNum >= 235 && ledNum <= 326) {
+        matrix_handle = matrix3_handle;
+    }
+    ESP_RETURN_ON_FALSE(
+        (matrix_handle != NULL), ESP_FAIL,
+        TAG, "could not determine matrix handle for led hardware number"
+    );
+    /* set PWM registers to provided values */
+    ESP_RETURN_ON_ERROR(
+        dSetRegister(matrix_handle, reg.page + 2, reg.red, red),
+        TAG, "could not set red PWM value"
+    );
+    ESP_RETURN_ON_ERROR(
+        dSetRegister(matrix_handle, reg.page + 2, reg.green, green),
+        TAG, "could not set green PWM value"
+    );
+    ESP_RETURN_ON_ERROR(
+        dSetRegister(matrix_handle, reg.page + 2, reg.blue, blue),
+        TAG, "could not set blue PWM value"
     );
     return ESP_OK;
 }

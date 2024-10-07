@@ -33,7 +33,7 @@
 #include "api_config.h"
 #include "tomtom.h"
 #include "led_locations.h"
-#include "dots_matrix.h"
+#include "dots_commands.h"
 
 #define TAG "app_main"
 
