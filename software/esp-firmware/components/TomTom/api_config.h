@@ -43,7 +43,7 @@
 
 /* Connection method configuration */
 #define MAX_RETRY_WIFI_CONNECT (10)
-#define RCV_BUFFER_SIZE (10000)
+#define RCV_BUFFER_SIZE (20)
 #define WIFI_CONNECTED_BIT (BIT0) /* wifi event group bit */
 #define WIFI_FAIL_BIT (BIT1) /* wifi event group bit */
 

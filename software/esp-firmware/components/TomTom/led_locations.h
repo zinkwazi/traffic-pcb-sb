@@ -20,7 +20,7 @@ typedef struct LEDLoc LEDLoc;
 /* An array containing all southbound LED mappings */
 static const LEDLoc southLEDLocs[] = {
     {34.420842, -119.702440}, // default point
-    {34.456611, -119.976601}, // breaks http request??
+    {34.456611, -119.976601},
     {34.457053, -119.976493},
     {34.441698, -119.949172},
 };

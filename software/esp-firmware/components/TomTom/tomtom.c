@@ -33,6 +33,7 @@
 #define TAG "TomTom"
 
 #define DOUBLE_STR_SIZE (12) // max: -123.123456
+#define MAX_SPEED_SIZE (4) // allows for speeds of 999
 
 /* The URL before the latitude of the point */
 #define API_URL_PREFIX (API_ENDPOINT_URL API_STYLE "/10/json?key=" \
@@ -108,7 +109,19 @@ esp_err_t tomtomFormRequestURL(char *urlStr, const LEDLoc *led) {
     return ESP_OK;
 }
 
-const LEDLoc* getLED(unsigned short ledNum, Direction dir) {
+/**
+ * Gets the physical coordinates of the road segment
+ * corresponding to the LED designated by ledNum, which
+ * is the hardware number in Kicad of the LED.
+ * 
+ * Parameters:
+ *  - ledNum: The Kicad hardware number of the LED.
+ *  - dir: The direction of travel of the road segment.
+ * 
+ * Returns: A pointer to a struct containing the longitude
+ *          and latitude denoting the road segment.
+ */
+const LEDLoc* getLED(uint16_t ledNum, Direction dir) {
     /* map led num 329 and 330 to reasonable numbers */ 
     ledNum = (ledNum == 329) ? 325 : ledNum;
     ledNum = (ledNum == 330) ? 326 : ledNum;
@@ -131,9 +144,16 @@ const LEDLoc* getLED(unsigned short ledNum, Direction dir) {
 
 /**
  * Performs a blocking Tomtom API request and returns the speed
- * associated with the hardware led number.
+ * associated with the hardware led number and direction of travel.
+ * 
+ * Parameters:
+ *  - result: A pointer to where the requested speed will be returned.
+ *  - ledNum: The Kicad hardware number of the LED.
+ *  - dir: The direction of travel of the road segment.
+ * 
+ * Returns: ESP_OK if successful.
  */
-esp_err_t tomtomRequestSpeed(uint *result, unsigned short ledNum, Direction dir) {
+esp_err_t tomtomRequestSpeed(uint *result, uint16_t ledNum, Direction dir) {
     char urlStr[URL_LENGTH];
     const LEDLoc *led;
     /* debug logging */
@@ -161,8 +181,9 @@ esp_err_t tomtomRequestSpeed(uint *result, unsigned short ledNum, Direction dir)
 }
 
 /**
- * A struct to pass the result of tomtomHandler
- * to the calling function. 
+ * Helper struct for tomtomHandler, which is used
+ * to return the results of the function totomtomRequestPerform,
+ * which recieves results through a void pointer.
  */
 struct requestResult {
     uint result;
@@ -170,13 +191,24 @@ struct requestResult {
 };
 
 /**
- * Handler for recieving responses from the TomTom API.
+ * Handler for recieving responses from the TomTom 
+ * API. This function is invoked occasionally while 
+ * tomtomRequestPerform is executing.
  */
 esp_err_t tomtomHandler(esp_http_client_event_t *evt)
 {
-    static char buffer[RCV_BUFFER_SIZE];
-    static uint content_size;
-    cJSON *json, *curr;
+    /* Stores the last bytes of the previous data event, which 
+    will be used to determine if the beginning of the current 
+    data event contains the speed data being targeted */
+    static char prevDataBuffer[RCV_BUFFER_SIZE];
+    /* Stores the retreived target speed characters from the response. */
+    char speedBuffer[MAX_SPEED_SIZE];
+    /* This string is used to denote where the beginning
+    of the target data is in the http response */
+    static char targetPrefix[] = "\"currentSpeed\":";
+    /* This character denotes the end of the target data */
+    static char targetPostfix = ',';
+    int dataNdx, speedNdx, prefixNdx;
     struct requestResult *reqResult = (struct requestResult *) evt->user_data;
     /* input guards */
     ESP_RETURN_ON_FALSE(
@@ -185,37 +217,74 @@ esp_err_t tomtomHandler(esp_http_client_event_t *evt)
     );
     switch (evt->event_id) {
         case HTTP_EVENT_ON_CONNECTED:
-            memset(buffer, 0, RCV_BUFFER_SIZE);
-            content_size = 0;
+            memset(prevDataBuffer, 0, RCV_BUFFER_SIZE);
             break;
         case HTTP_EVENT_ON_DATA:
-            if (evt->data != NULL) {
-                memcpy(buffer + content_size, evt->data, evt->data_len);
-                content_size += evt->data_len;
+            /* iterate through previous data buffer to determine proper 
+            prefix index to start at in the current data buffer */
+            ESP_LOGI(TAG, "iterating through previous data buffer");
+            for (dataNdx = 0, prefixNdx = 0; dataNdx < strlen(prevDataBuffer) && prefixNdx < strlen(targetPrefix); dataNdx++, prefixNdx++) {
+                if (prevDataBuffer[dataNdx] != targetPrefix[prefixNdx]) {
+                    if (prefixNdx > 0) {
+                        dataNdx--; // restart search at this index
+                    }
+                    prefixNdx = -1; // the data is incorrect, restart search
+                }  
+            }
+            ESP_LOGI(TAG, "done iterating through previous data buffer");
+            if (prefixNdx == strlen(targetPrefix)) {
+                /* prevDataBuffer contains targetPrefix and the remaining
+                bytes are a portion of the target speed characters */
+                for (speedNdx = 0; dataNdx < strlen(prevDataBuffer) && prevDataBuffer[dataNdx] != targetPostfix; dataNdx++, speedNdx++) {
+                    if (speedNdx >= strlen(speedBuffer)) {
+                        ESP_LOGE(TAG, "length of speed from http response was unexpectedly long");
+                        return ESP_FAIL;
+                    }
+                    speedBuffer[speedNdx] = prevDataBuffer[dataNdx];
+                }
+                speedBuffer[speedNdx] = '\0'; // complete string until it can be finished
+            }
+            /* iterate through current data buffer to find the 
+            prefix location, starting at the prefixNdx determined
+            by the search through the previous data buffer */
+            ESP_LOGI(TAG, "iterating through current data buffer");
+            ESP_LOGI(TAG, "data:\n%s", (char *) evt->data);
+            ESP_LOGI(TAG, "target prefix len: %d", strlen(targetPrefix));
+            for (dataNdx = 0; dataNdx < evt->data_len && prefixNdx < strlen(targetPrefix); dataNdx++, prefixNdx++) {
+                if (((char *) evt->data)[dataNdx] != targetPrefix[prefixNdx]) {
+                    // ESP_LOGI(TAG, "restarting search at index:%d", dataNdx);
+                    if (prefixNdx > 0) {
+                        dataNdx--; // restart search at this index
+                    }
+                    prefixNdx = -1; // the data is incorrect, restart search
+                }
+            }
+            ESP_LOGI(TAG, "done iterating through current data buffer");
+            if (prefixNdx == strlen(targetPrefix)) {
+                /* the current data buffer contains targetPrefix, thus 
+                extract the speed and return if targetPostfix is found */
+                ESP_LOGI(TAG, "found prefix in current data buffer, iterating through speed");
+                for (speedNdx = 0; dataNdx < evt->data_len && ((char *) evt->data)[dataNdx] != targetPostfix; speedNdx++, dataNdx++) {
+                    if (speedNdx >= strlen(speedBuffer)) {
+                        ESP_LOGE(TAG, "length of speed from http response was unexpectedly long");
+                        return ESP_FAIL;
+                    }
+                    speedBuffer[speedNdx] = ((char *) evt->data)[dataNdx];
+                }
+                if (((char *) evt->data)[dataNdx] == targetPostfix) {
+                    speedBuffer[speedNdx] = '\0';
+                    reqResult->result = atoi(speedBuffer); // TODO: replace with a safe alternative to atoi
+                    reqResult->error = ESP_OK;
+                    ESP_LOGI(TAG, "finished finding speed, outputting result");
+                    return ESP_OK;
+                }
+                speedBuffer[speedNdx] = '\0';
+            } else {
+                /* the current data buffer does not contain targetPrefix */
+                strcpy(prevDataBuffer, &((char *) evt->data)[evt->data_len - RCV_BUFFER_SIZE]);
             }
             break;
         case HTTP_EVENT_ON_FINISH:
-            json = cJSON_Parse(buffer);
-            if (json == NULL) {
-                ESP_LOGE("tomtom", "request response could not be parsed as JSON");
-                reqResult->error = ESP_FAIL;
-                return ESP_FAIL;
-            }
-            json = json->child;
-            for (curr = json->child; !cJSON_IsNull(curr); curr = curr->next) {
-                if (strcmp(curr->string, "currentSpeed") != 0) {
-                    continue;
-                }
-                if (!cJSON_IsNumber(curr)) {
-                    ESP_LOGE("tomtom", "request response contains speed that is not a number");
-                    reqResult->error = ESP_FAIL;
-                    return ESP_FAIL;
-                } else {
-                    reqResult->error = ESP_OK;
-                    reqResult->result = curr->valueint;
-                }
-                break;
-            }
             break;
         default: 
             break;
@@ -320,6 +389,11 @@ esp_err_t establishWifiConnection(void)
  * be configured in 'api_config.h'. Blocks while waiting
  * for a response from the server.
  * 
+ * Parameters:
+ *  - result: A pointer to where the result of 
+ *            the request will be placed.
+ *  - url: The URL to request data from.
+ * 
  * Returns:
  * ESP_OK if executed successfully and the segment speed
  * is stored in result. ESP_FAIL otherwise and result 
@@ -335,7 +409,7 @@ esp_err_t tomtomRequestPerform(uint *result, const char *url)
         .error = ESP_FAIL,
         .result = 0,
     };
-    const esp_http_client_config_t s_defaultTomtomConfig = {
+    const esp_http_client_config_t tomtomConfig = {
         .url = url,
         .auth_type = API_AUTH_TYPE,
         .method = API_METHOD,
@@ -351,7 +425,7 @@ esp_err_t tomtomRequestPerform(uint *result, const char *url)
         TAG, "tomtomRequestPerform called with NULL result pointer"
     );
     /* perform API request */
-    esp_http_client_handle_t httpClientHandle = esp_http_client_init(&s_defaultTomtomConfig);
+    esp_http_client_handle_t httpClientHandle = esp_http_client_init(&tomtomConfig);
     ESP_RETURN_ON_FALSE(
         (httpClientHandle != NULL), ESP_FAIL,
         TAG, "failed to create http client handle"
