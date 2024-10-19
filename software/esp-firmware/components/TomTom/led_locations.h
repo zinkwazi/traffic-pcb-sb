@@ -23,7 +23,6 @@ typedef struct LEDLoc LEDLoc;
 
 /* An array containing all southbound LED mappings */
 static const LEDLoc southLEDLocs[] = {
-    {0, 0, 0}, // default point
     {34.456611,-119.976601,73}, // 1
     {34.441698,-119.949172,73}, // 2
     {0,0,-2}, // 3
@@ -353,7 +352,6 @@ static const LEDLoc southLEDLocs[] = {
 
 /* An array containing all northbound LED mappings */
 static const LEDLoc northLEDLocs[] = {
-    {0, 0, 0}, // default point, 0
     {34.457053,-119.976493,72}, // 1
     {34.439879,-119.933952,72}, // 2
     {0,0,-2}, // 3
@@ -442,8 +440,8 @@ static const LEDLoc northLEDLocs[] = {
     {0,0,-85}, // 86
     {34.046911,-118.930416,60}, // 87
     {0,0,-87}, // 88
-    {34.040809,-118.888455,54}, // 88
-    {0,0,-88}, // 89
+    {34.040809,-118.888455,54}, // 89
+    {0,0,-88}, // 90
     {34.282505,-118.780055,73}, // 91
     {34.282498,-118.756577,73}, // 92
     {34.282066,-118.718667,72}, // 93

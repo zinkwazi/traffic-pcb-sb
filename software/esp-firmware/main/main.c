@@ -41,6 +41,8 @@
 #define I2C_GATEKEEPER_PRIO (ESP_TASK_MAIN_PRIO + 1) // always start an I2C command if possible
 #define I2C_QUEUE_SIZE 20
 
+#define NUM_LEDS 326
+
 void app_main(void)
 {
     /* initialize NVS */
@@ -64,28 +66,37 @@ void app_main(void)
         goto spin_forever;
     }
     /* Create I2C gatekeeper */
-    static I2CGatekeeperTaskParameters i2cGatekeeperTaskParams;
-    TaskHandle_t I2CGatekeeperHandle;
-    i2cGatekeeperTaskParams.I2CQueueHandle = xQueueCreate(I2C_QUEUE_SIZE, sizeof(I2CCommand));
-    if (i2cGatekeeperTaskParams.I2CQueueHandle == NULL) {
-      ESP_LOGE(TAG, "Failed to create I2C command queue");
-      goto spin_forever;
+    // static I2CGatekeeperTaskParameters i2cGatekeeperTaskParams;
+    // TaskHandle_t I2CGatekeeperHandle;
+    // i2cGatekeeperTaskParams.I2CQueueHandle = xQueueCreate(I2C_QUEUE_SIZE, sizeof(I2CCommand));
+    // if (i2cGatekeeperTaskParams.I2CQueueHandle == NULL) {
+    //   ESP_LOGE(TAG, "Failed to create I2C command queue");
+    //   goto spin_forever;
+    // }
+    // if (pdPASS != xTaskCreate(vI2CGatekeeperTask, "I2CGatekeeper", I2C_GATEKEEPER_STACK, 
+    //                           &i2cGatekeeperTaskParams, I2C_GATEKEEPER_PRIO, &I2CGatekeeperHandle))
+    // {
+    //   ESP_LOGE(TAG, "Failed to create I2C Gatekeeper");
+    //   goto spin_forever;
+    // }
+    // if (I2CGatekeeperHandle == NULL) {
+    //   ESP_LOGE(TAG, "Failed to retrieve I2C Gatekeeper handle");
+    //   goto spin_forever;
+    // }
+    /* request all LED speeds */
+    for (int i = 1; i < NUM_LEDS; i++) {
+      uint result = 0;
+      tomtomRequestSpeed(&result, i, NORTH);
+      printf("North LED %d speed: %d\n", i, result);
+      fflush(stdout);
     }
-    if (pdPASS != xTaskCreate(vI2CGatekeeperTask, "I2CGatekeeper", I2C_GATEKEEPER_STACK, 
-                              &i2cGatekeeperTaskParams, I2C_GATEKEEPER_PRIO, &I2CGatekeeperHandle))
-    {
-      ESP_LOGE(TAG, "Failed to create I2C Gatekeeper");
-      goto spin_forever;
+    for (int i = 1; i < NUM_LEDS; i++) {
+      uint result = 0;
+      tomtomRequestSpeed(&result, i, SOUTH);
+      printf("South LED %d speed: %d\n", i, result);
+      fflush(stdout);
     }
-    if (I2CGatekeeperHandle == NULL) {
-      ESP_LOGE(TAG, "Failed to retrieve I2C Gatekeeper handle");
-      goto spin_forever;
-    }
-    /* Request speed from TomTom API */
-    uint result = 0;
-    ESP_ERROR_CHECK(tomtomRequestSpeed(&result, 3, SOUTH));
-    printf("speed: %d\n", result);
-    fflush(stdout);
+
     /* This task has nothing left to do, but should not exit */
 spin_forever:
     for (;;) {
