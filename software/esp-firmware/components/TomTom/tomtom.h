@@ -29,12 +29,14 @@ enum Direction {
 
 typedef enum Direction Direction;
 
-esp_err_t tomtomRequestSpeed(uint *result, unsigned short ledNum, Direction dir);
+
 esp_err_t establishWifiConnection(void);
-void helloWorldExample(void);
+esp_http_client_handle_t tomtomCreateHttpHandle(void);
+esp_err_t tomtomDestroyHttpHandle(esp_http_client_handle_t tomtomHandle);
+esp_err_t tomtomRequestSpeed(uint *result, esp_http_client_handle_t tomtomHandle, uint16_t ledNum, Direction dir);
 
 /* Private component functions */
-esp_err_t tomtomRequestPerform(uint *result, const char *url);
+esp_err_t tomtomRequestPerform(uint *result, esp_http_client_handle_t tomtomHandle, const char *url);
 esp_err_t tomtomHandler(esp_http_client_event_t *evt);
 
 /* static variables */

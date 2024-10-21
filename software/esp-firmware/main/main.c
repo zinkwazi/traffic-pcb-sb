@@ -43,6 +43,10 @@
 
 #define NUM_LEDS 326
 
+/**
+ * The entrypoint task of the application, which initializes 
+ * other tasks, then handles TomTom API calls.
+ */
 void app_main(void)
 {
     /* initialize NVS */
@@ -61,10 +65,10 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_wifi_init(&default_wifi_cfg));
     ESP_ERROR_CHECK(establishWifiConnection());
     esp_tls_t *tls = esp_tls_init();
-    if (tls == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate esp_tls handle");
-        goto spin_forever;
-    }
+    ESP_GOTO_ON_FALSE(
+      (tls != NULL), ESP_FAIL, spinforever,
+      TAG, "failed to allocate esp_tls handle"
+    );
     /* Create I2C gatekeeper */
     // static I2CGatekeeperTaskParameters i2cGatekeeperTaskParams;
     // TaskHandle_t I2CGatekeeperHandle;
@@ -84,21 +88,26 @@ void app_main(void)
     //   goto spin_forever;
     // }
     /* request all LED speeds */
+    esp_http_client_handle_t tomtomHandle = tomtomCreateHttpHandle();
+    ESP_GOTO_ON_FALSE(
+      (tomtomHandle != NULL), ESP_FAIL, spinforever,
+      TAG, "failed to allocate tomtom http handle"
+    );
     for (int i = 1; i < NUM_LEDS; i++) {
       uint result = 0;
-      tomtomRequestSpeed(&result, i, NORTH);
+      tomtomRequestSpeed(&result, tomtomHandle, i, NORTH);
       printf("North LED %d speed: %d\n", i, result);
       fflush(stdout);
     }
     for (int i = 1; i < NUM_LEDS; i++) {
       uint result = 0;
-      tomtomRequestSpeed(&result, i, SOUTH);
+      tomtomRequestSpeed(&result, tomtomHandle, i, SOUTH);
       printf("South LED %d speed: %d\n", i, result);
       fflush(stdout);
     }
 
     /* This task has nothing left to do, but should not exit */
-spin_forever:
+spinforever:
     for (;;) {
       vTaskDelay(INT_MAX);
     }
