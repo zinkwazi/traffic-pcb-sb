@@ -40,35 +40,46 @@ struct SetScalingParams {
  */
 void executeI2CCommand(I2CCommand *command) {
     esp_err_t err = ESP_OK;
+    ESP_LOGI(TAG, "executing I2C command...");
     switch (command->func) {
         case SET_OPERATING_MODE:
+            ESP_LOGI(TAG, "setting operating mode");
             err = dSetOperatingMode(*((enum Operation*) command->params));
             break;
         case SET_OPEN_SHORT_DETECTION:
+            ESP_LOGI(TAG, "changing open/short detection");
             err = dSetOpenShortDetection(*((enum ShortDetectionEnable*) command->params));
             break;
         case SET_LOGIC_LEVEL:
+            ESP_LOGI(TAG, "changing logic level");
             err = dSetLogicLevel(*((enum LogicLevel*) command->params));
             break;
         case SET_SWX_SETTING:
+            ESP_LOGI(TAG, "changing SWx setting");
             err = dSetSWxSetting(*((enum SWXSetting*) command->params));
             break;
         case SET_GLOBAL_CURRENT_CONTROL:
+            ESP_LOGI(TAG, "changing global current control setting");
             err = dSetGlobalCurrentControl(*((uint8_t*) command->params));
             break;
         case SET_RESISTOR_PULLUP:
+            ESP_LOGI(TAG, "changing resistor pullup setting");
             err = dSetResistorPullupSetting(*((enum ResistorSetting*) command->params));
             break;
         case SET_RESISTOR_PULLDOWN:
+            ESP_LOGI(TAG, "changing resistor pulldown setting");
             err = dSetResistorPulldownSetting(*((enum ResistorSetting*) command->params));
             break;
         case SET_PWM_FREQUENCY:
+            ESP_LOGI(TAG, "changing PWM frequency");
             err = dSetPWMFrequency(*((enum PWMFrequency*) command->params));
             break;
         case RESET:
+            ESP_LOGI(TAG, "resetting matrices");
             err = dReset();
             break;
         case SET_COLOR:
+            ESP_LOGI(TAG, "changing dot color");
             struct SetColorParams *setColorParams = (struct SetColorParams*) command->params;
             err = dSetColor(setColorParams->ledNum, 
                             setColorParams->red, 
@@ -76,6 +87,7 @@ void executeI2CCommand(I2CCommand *command) {
                             setColorParams->blue);
             break;
         case SET_SCALING:
+            ESP_LOGI(TAG, "changing dot scaling");
             struct SetScalingParams *setScalingParams = (struct SetScalingParams*) command->params;
             err = dSetScaling(setScalingParams->ledNum,
                               setScalingParams->red, 
@@ -111,12 +123,13 @@ void vI2CGatekeeperTask(void *pvParameters) {
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Could not initialize I2C bus");
     }
-    err = dAssertConnected();
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Could not find d matrices on I2C bus... retrying...");
-    }
+    err = ESP_FAIL;
     while (err != ESP_OK) {
         err = dAssertConnected();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "could not find i2c matrices... retrying...");
+            vTaskDelay(500 / portTICK_PERIOD_MS);
+        }
     }
     /* Wait for commands and execute them forever */
     for (;;) {  // This task should never end
@@ -361,10 +374,9 @@ esp_err_t dotsSetColor(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_
         .params = heapParams,
         .errCallback = NULL
     };
-    if (xQueueSendToBack(queue, &command, 0) != pdTRUE) {
-        ESP_LOGE(TAG, "failed to add command to queue");
-        return ESP_FAIL;
-    };
+    while (xQueueSendToBack(queue, &command, INT_MAX) != pdTRUE) {
+        ESP_LOGE(TAG, "failed to add command to queue... retrying...");
+    }
     return ESP_OK;
 }
 
@@ -389,9 +401,8 @@ esp_err_t dotsSetScaling(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint
         .params = heapParams,
         .errCallback = NULL
     };
-    if (xQueueSendToBack(queue, &command, 0) != pdTRUE) {
-        ESP_LOGE(TAG, "failed to add command to queue");
-        return ESP_FAIL;
-    };
+    while (xQueueSendToBack(queue, &command, INT_MAX) != pdTRUE) {
+        ESP_LOGE(TAG, "failed to add command to queue... retrying...");
+    }
     return ESP_OK;
 }

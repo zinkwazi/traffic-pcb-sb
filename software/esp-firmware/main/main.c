@@ -66,48 +66,74 @@ void app_main(void)
     ESP_ERROR_CHECK(establishWifiConnection());
     esp_tls_t *tls = esp_tls_init();
     ESP_GOTO_ON_FALSE(
-      (tls != NULL), ESP_FAIL, spinforever,
+      (tls != NULL), ESP_FAIL, spin_forever,
       TAG, "failed to allocate esp_tls handle"
     );
     /* Create I2C gatekeeper */
-    // static I2CGatekeeperTaskParameters i2cGatekeeperTaskParams;
-    // TaskHandle_t I2CGatekeeperHandle;
-    // i2cGatekeeperTaskParams.I2CQueueHandle = xQueueCreate(I2C_QUEUE_SIZE, sizeof(I2CCommand));
-    // if (i2cGatekeeperTaskParams.I2CQueueHandle == NULL) {
-    //   ESP_LOGE(TAG, "Failed to create I2C command queue");
-    //   goto spin_forever;
-    // }
-    // if (pdPASS != xTaskCreate(vI2CGatekeeperTask, "I2CGatekeeper", I2C_GATEKEEPER_STACK, 
-    //                           &i2cGatekeeperTaskParams, I2C_GATEKEEPER_PRIO, &I2CGatekeeperHandle))
-    // {
-    //   ESP_LOGE(TAG, "Failed to create I2C Gatekeeper");
-    //   goto spin_forever;
-    // }
-    // if (I2CGatekeeperHandle == NULL) {
-    //   ESP_LOGE(TAG, "Failed to retrieve I2C Gatekeeper handle");
-    //   goto spin_forever;
-    // }
-    /* request all LED speeds */
+    static I2CGatekeeperTaskParameters i2cGatekeeperTaskParams;
+    TaskHandle_t I2CGatekeeperHandle;
+    QueueHandle_t I2CQueue = xQueueCreate(I2C_QUEUE_SIZE, sizeof(I2CCommand));
+    i2cGatekeeperTaskParams.I2CQueueHandle = I2CQueue;
+    if (i2cGatekeeperTaskParams.I2CQueueHandle == NULL) {
+      ESP_LOGE(TAG, "Failed to create I2C command queue");
+      goto spin_forever;
+    }
+    if (pdPASS != xTaskCreate(vI2CGatekeeperTask, "I2CGatekeeper", I2C_GATEKEEPER_STACK, 
+                              &i2cGatekeeperTaskParams, I2C_GATEKEEPER_PRIO, &I2CGatekeeperHandle))
+    {
+      ESP_LOGE(TAG, "Failed to create I2C Gatekeeper");
+      goto spin_forever;
+    }
+    if (I2CGatekeeperHandle == NULL) {
+      ESP_LOGE(TAG, "Failed to retrieve I2C Gatekeeper handle");
+      goto spin_forever;
+    }
+    /* Configure DOTS matrices */
+    ESP_LOGI(TAG, "resetting matrices");
+    ESP_ERROR_CHECK(dotsReset(I2CQueue));
+    ESP_LOGI(TAG, "changing global current control");
+    ESP_ERROR_CHECK(dotsSetGlobalCurrentControl(I2CQueue, 0x08));
+    ESP_LOGI(TAG, "setting operating mode to normal");
+    ESP_ERROR_CHECK(dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION));
+    /* request all LED speeds and display results */
     esp_http_client_handle_t tomtomHandle = tomtomCreateHttpHandle();
     ESP_GOTO_ON_FALSE(
-      (tomtomHandle != NULL), ESP_FAIL, spinforever,
+      (tomtomHandle != NULL), ESP_FAIL, spin_forever,
       TAG, "failed to allocate tomtom http handle"
     );
     for (int i = 1; i < NUM_LEDS; i++) {
       uint result = 0;
       tomtomRequestSpeed(&result, tomtomHandle, i, NORTH);
-      printf("North LED %d speed: %d\n", i, result);
-      fflush(stdout);
+      ESP_LOGI(TAG, "North LED %d speed: %d", i, result);
+      if (result < 30) {
+        ESP_ERROR_CHECK(dotsSetScaling(I2CQueue, i, 0xFF, 0xFF, 0xFF));
+        ESP_ERROR_CHECK(dotsSetColor(I2CQueue, i, 0xFF, 0x00, 0x00));
+      } else if (result < 60) {
+        ESP_ERROR_CHECK(dotsSetScaling(I2CQueue, i, 0xFF, 0xFF, 0xFF));
+        ESP_ERROR_CHECK(dotsSetColor(I2CQueue, i, 0xFF, 0x55, 0x00));
+      } else {
+        ESP_ERROR_CHECK(dotsSetScaling(I2CQueue, i, 0xFF, 0xFF, 0xFF));
+        ESP_ERROR_CHECK(dotsSetColor(I2CQueue, i, 0x00, 0xFF, 0x00));
+      }
     }
-    for (int i = 1; i < NUM_LEDS; i++) {
-      uint result = 0;
-      tomtomRequestSpeed(&result, tomtomHandle, i, SOUTH);
-      printf("South LED %d speed: %d\n", i, result);
-      fflush(stdout);
-    }
+    // for (int i = 1; i < NUM_LEDS; i++) {
+    //   uint result = 0;
+    //   tomtomRequestSpeed(&result, tomtomHandle, i, SOUTH);
+    //   ESP_LOGI(TAG, "North LED %d speed: %d", i, result);
+    //   if (result < 40) {
+    //     ESP_ERROR_CHECK(dotsSetScaling(I2CQueue, i, 0xFF, 0xFF, 0xFF));
+    //     ESP_ERROR_CHECK(dotsSetColor(I2CQueue, i, 0xFF, 0x00, 0x00));
+    //   } else if (result < 65) {
+    //     ESP_ERROR_CHECK(dotsSetScaling(I2CQueue, i, 0xFF, 0xFF, 0xFF));
+    //     ESP_ERROR_CHECK(dotsSetColor(I2CQueue, i, 0xFF, 0x55, 0x00));
+    //   } else {
+    //     ESP_ERROR_CHECK(dotsSetScaling(I2CQueue, i, 0xFF, 0xFF, 0xFF));
+    //     ESP_ERROR_CHECK(dotsSetColor(I2CQueue, i, 0x00, 0xFF, 0x00));
+    //   }
+    // }
 
     /* This task has nothing left to do, but should not exit */
-spinforever:
+spin_forever:
     for (;;) {
       vTaskDelay(INT_MAX);
     }

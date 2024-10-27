@@ -27,17 +27,21 @@
 
 #define I2C_TIMEOUT_MS (100)
 
-#define MAT_UPPER_ADDR  0b011000
-#define MAT1_LOWER_ADDR 0x00
-#define MAT2_LOWER_ADDR 0x11
-#define MAT3_LOWER_ADDR 0x10
-#define MAT1_ADDR (MAT_UPPER_ADDR | MAT1_LOWER_ADDR)
-#define MAT2_ADDR (MAT_UPPER_ADDR | MAT2_LOWER_ADDR)
-#define MAT3_ADDR (MAT_UPPER_ADDR | MAT3_LOWER_ADDR)
+#define MAT_UPPER_ADDR  0b0110000
+#define MAT1_LOWER_ADDR 0b00
+#define MAT2_LOWER_ADDR 0b11
+#define MAT3_LOWER_ADDR 0b10
+// #define MAT1_ADDR (MAT_UPPER_ADDR | MAT1_LOWER_ADDR)
+// #define MAT2_ADDR (MAT_UPPER_ADDR | MAT2_LOWER_ADDR)
+// #define MAT3_ADDR (MAT_UPPER_ADDR | MAT3_LOWER_ADDR)
+
+#define MAT1_ADDR 0b0110000
+#define MAT2_ADDR 0b0110011
+#define MAT3_ADDR 0b0110010
 
 #define BUS_SPEED_HZ  400000 // 400kHz maximum
 #define SCL_WAIT_US   0  // use default value
-#define PROBE_WAIT_MS 100
+#define PROBE_WAIT_MS 1000
 
 /* Matrix Driver IC High Level Registers */
 #define CMD_REG_ADDR                0xFD
@@ -118,18 +122,50 @@ esp_err_t dInitializeBus(void) {
 }
 
 esp_err_t dAssertConnected(void) {
+    uint8_t id = 0;
+    /* probe matrix 1 */
     ESP_RETURN_ON_ERROR(
         i2c_master_probe(master_bus, MAT1_ADDR, PROBE_WAIT_MS),
         TAG, "failed to detect matrix1 on i2c bus"
     );
     ESP_RETURN_ON_ERROR(
-        i2c_master_probe(master_bus, MAT2_ADDR, PROBE_WAIT_MS),
-        TAG, "failed to detect matrix2 on i2c bus"
+        dGetRegister(&id, matrix1_handle, 1, ID_REG_ADDR),
+        TAG, "failed to retrieve matrix1 id"
     );
+    ESP_RETURN_ON_FALSE(
+        (id != MAT1_ADDR), ESP_FAIL,
+        TAG, "matrix1 returned id: 0x%x", id
+    );
+    ESP_LOGI(TAG, "matrix1 returned id: 0x%x", id);
+    /* probe matrix 2 */
     ESP_RETURN_ON_ERROR(
         i2c_master_probe(master_bus, MAT2_ADDR, PROBE_WAIT_MS),
         TAG, "failed to detect matrix2 on i2c bus"
     );
+    ESP_RETURN_ON_ERROR(
+        dGetRegister(&id, matrix2_handle, 1, ID_REG_ADDR),
+        TAG, "failed to retrieve matrix2 id"
+    );
+    ESP_RETURN_ON_FALSE(
+        (id != MAT2_ADDR), ESP_FAIL,
+        TAG, "matrix2 returned id: 0x%x", id
+    );
+    ESP_LOGI(TAG, "matrix2 returned id: 0x%x", id);
+    /* probe matrix 3 */
+    ESP_RETURN_ON_ERROR(
+        i2c_master_probe(master_bus, MAT3_ADDR, PROBE_WAIT_MS),
+        TAG, "failed to detect matrix3 on i2c bus"
+    );
+    ESP_RETURN_ON_ERROR(
+        dGetRegister(&id, matrix3_handle, 1, ID_REG_ADDR),
+        TAG, "failed to retrieve matrix3 id"
+    );
+    ESP_RETURN_ON_FALSE(
+        (id != MAT3_ADDR), ESP_FAIL,
+        TAG, "matrix3 returned id: 0x%x", id
+    );
+    ESP_LOGI(TAG, "matrix3 returned id: 0x%x", id);
+    ESP_LOGI(TAG, "i2c probes detected all matrices");
     return ESP_OK;
 }
 
@@ -147,10 +183,10 @@ esp_err_t dAssertConnected(void) {
 void dSetBits(uint8_t *reg, uint8_t bitMask, uint8_t value) {
     /* Align value to bitMask */
     for (uint8_t currShift = 0; currShift < 8; currShift++) {
-        if (bitMask % (0x01 << currShift) != 0x00) {
-            value <<= currShift;
+        if (bitMask % (0x01 << currShift) == 0x00) {
             break;
         }
+        value <<= currShift;
     }
     /* Update prev mask bits */
     *reg &= ~bitMask; // clear previous mask bits
@@ -191,6 +227,17 @@ esp_err_t dSetPage(i2c_master_dev_handle_t device, uint8_t page) {
     ESP_RETURN_ON_ERROR(
         i2c_master_transmit(device, buffer, 2, I2C_TIMEOUT_MS),
         TAG, "failed to unlock command register"
+    );
+    /* confirm unlocked command register */
+    FILL_BUFFER(CMD_REG_WRITE_LOCK_ADDR, 0);
+    ESP_RETURN_ON_ERROR(
+        i2c_master_transmit_receive(device, &(buffer[0]), 1, &(buffer[1]), 1, I2C_TIMEOUT_MS),
+        TAG, "failed to retrieve command register lock value"
+    );
+    ESP_RETURN_ON_FALSE(
+        (buffer[1] == CMD_REG_WRITE_KEY), ESP_FAIL,
+        TAG, "actual matrix lock value (0x%x) does not match updated lock value (0x%x)",
+        buffer[1], CMD_REG_WRITE_KEY
     );
     /* update page */
     FILL_BUFFER(CMD_REG_ADDR, page);
