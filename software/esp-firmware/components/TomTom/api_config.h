@@ -33,7 +33,7 @@
 #define WIFI_AUTH_MODE WIFI_AUTH_WPA2_PSK
 
 /* API configuration */
-#define API_ENDPOINT_URL "https://api.tomtom.com/traffic/services/4/flowSegmentData/"
+#define API_ENDPOINT_URL "/traffic/services/4/flowSegmentData/"
 #define API_METHOD HTTP_METHOD_GET
 #define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
 #define API_UNIT "mph" /* accepts "mph" and "kmph" */

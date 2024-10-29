@@ -53,7 +53,7 @@ struct I2CCommand {
 typedef struct I2CCommand I2CCommand;
 
 struct I2CGatekeeperTaskParameters {
-    QueueHandle_t I2CQueueHandle;
+    QueueHandle_t I2CQueueHandle; // holds I2CCommand
 };
 
 typedef struct I2CGatekeeperTaskParameters I2CGatekeeperTaskParameters;

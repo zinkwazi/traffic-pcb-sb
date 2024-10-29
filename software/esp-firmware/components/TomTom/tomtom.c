@@ -454,6 +454,7 @@ esp_err_t tomtomRequestPerform(uint *result, esp_http_client_handle_t tomtomHand
         TAG, "tomtomRequestPerform called with NULL url"
     );
     /* update client handle with URL */
+    ESP_LOGI(TAG, "url: %s", url);
     ESP_RETURN_ON_ERROR(
         esp_http_client_set_url(tomtomHandle, url),
         TAG, "failed to set url of http client handle"
