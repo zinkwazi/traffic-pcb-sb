@@ -96,14 +96,18 @@ void app_main(void)
     ESP_LOGI(TAG, "setting operating mode to normal");
     ESP_ERROR_CHECK(dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION));
     /* request all LED speeds and display results */
-    esp_http_client_handle_t tomtomHandle = tomtomCreateHttpHandle();
+    struct requestResult storage = {
+      .error = ESP_FAIL,
+      .result = 0,
+    };
+    esp_http_client_handle_t tomtomHandle = tomtomCreateHttpHandle((struct requestResult *) &storage);
     ESP_GOTO_ON_FALSE(
       (tomtomHandle != NULL), ESP_FAIL, spin_forever,
       TAG, "failed to allocate tomtom http handle"
     );
     for (int i = 1; i < NUM_LEDS; i++) {
       uint result = 0;
-      tomtomRequestSpeed(&result, tomtomHandle, i, NORTH);
+      tomtomRequestSpeed(&result, tomtomHandle, &storage, i, NORTH);
       ESP_LOGI(TAG, "North LED %d speed: %d", i, result);
       if (result < 30) {
         ESP_ERROR_CHECK(dotsSetScaling(I2CQueue, i, 0xFF, 0xFF, 0xFF));
@@ -116,6 +120,7 @@ void app_main(void)
         ESP_ERROR_CHECK(dotsSetColor(I2CQueue, i, 0x00, 0xFF, 0x00));
       }
     }
+    esp_http_client_close(tomtomHandle);
     // for (int i = 1; i < NUM_LEDS; i++) {
     //   uint result = 0;
     //   tomtomRequestSpeed(&result, tomtomHandle, i, SOUTH);
