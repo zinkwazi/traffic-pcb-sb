@@ -21,10 +21,10 @@
 #include "lwip/sys.h"
 #include "esp_http_client.h"
 #include "esp_crt_bundle.h"
+#include "esp_random.h"
 #include "esp_system.h"
 #include "esp_event.h"
 #include "esp_log.h"
-#include "cJSON.h"
 
 /* Tomtom component includes */
 #include "api_config.h"
@@ -491,8 +491,6 @@ esp_err_t tomtomRequestPerform(uint *result, esp_http_client_handle_t tomtomHand
         TAG, "tomtomRequestPerform called with NULL url"
     );
     /* update client handle with URL */
-    ESP_LOGI(TAG, "url: %s", url);
-    ESP_LOGI(TAG, "setting url: %s", url);
     ESP_RETURN_ON_ERROR(
         esp_http_client_set_url(tomtomHandle, url),
         TAG, "failed to set url of http client handle"
@@ -501,6 +499,11 @@ esp_err_t tomtomRequestPerform(uint *result, esp_http_client_handle_t tomtomHand
     storage->error = ESP_FAIL;
     storage->result = 0;
     /* perform API request */
+#ifdef USE_FAKE_DATA
+    storage->error = ESP_OK;
+    storage->result = esp_random() % 75;
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+#else
     ESP_RETURN_ON_ERROR(
         esp_http_client_perform(tomtomHandle),
         TAG, "failed to make HTTPS request to TomTom"
@@ -509,6 +512,7 @@ esp_err_t tomtomRequestPerform(uint *result, esp_http_client_handle_t tomtomHand
         (esp_http_client_get_status_code(tomtomHandle) == 200), ESP_FAIL,
         TAG, "received bad status code from TomTom"
     );
+#endif /* USE_FAKE_DATA */
     ESP_RETURN_ON_FALSE(
         (storage->error == ESP_OK), ESP_FAIL,
         TAG, "received an error code from tomtom http handler"

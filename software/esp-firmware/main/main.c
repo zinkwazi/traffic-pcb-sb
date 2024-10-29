@@ -48,6 +48,97 @@
 
 #define NUM_LEDS 326
 
+esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir) {
+  esp_err_t ret = ESP_OK;
+  DotCommand dot;
+  int startNdx; int endNdx;
+  /* input guards */
+  ESP_RETURN_ON_FALSE(
+    (dotQueue != NULL), ESP_FAIL,
+    TAG, "updateLEDs received NULL dot queue handle"
+  );
+  /* update direction LEDs */
+  switch (dir) {
+    case NORTH:
+      startNdx = NUM_LEDS;
+      endNdx = 1;
+      ESP_GOTO_ON_ERROR(
+        gpio_set_level(LED_NORTH_PIN, 1), error_with_dir_leds_off,
+        TAG, "failed to turn on north led"
+      );
+      ESP_GOTO_ON_ERROR(
+        gpio_set_level(LED_EAST_PIN, 0), error_with_dir_leds_off,
+        TAG, "failed to turn off east led"
+      );
+      ESP_GOTO_ON_ERROR(
+        gpio_set_level(LED_SOUTH_PIN, 0), error_with_dir_leds_off,
+        TAG, "failed to turn off south led"
+      );
+      ESP_GOTO_ON_ERROR(
+        gpio_set_level(LED_WEST_PIN, 1), error_with_dir_leds_off,
+        TAG, "failed to turn on west led"
+      );
+      break;
+    case SOUTH:
+      startNdx = 1;
+      endNdx = NUM_LEDS;
+      ESP_GOTO_ON_ERROR(
+        gpio_set_level(LED_NORTH_PIN, 0), error_with_dir_leds_off,
+        TAG, "failed to turn off north led"
+      );
+      ESP_GOTO_ON_ERROR(
+        gpio_set_level(LED_EAST_PIN, 1), error_with_dir_leds_off,
+        TAG, "failed to turn on east led"
+      );
+      ESP_GOTO_ON_ERROR(
+        gpio_set_level(LED_SOUTH_PIN, 1), error_with_dir_leds_off,
+        TAG, "failed to turn on south led"
+      );
+      ESP_GOTO_ON_ERROR(
+        gpio_set_level(LED_WEST_PIN, 0), error_with_dir_leds_off,
+        TAG, "failed to turn off west led"
+      );
+      break;
+    default:
+      ESP_LOGE(TAG, "updateLEDs received unknown direction");
+      goto error_with_dir_leds_off;
+      break;
+  }
+  /* send commands to update all dot LEDs */
+  dot.dir = dir;
+  if (startNdx <= endNdx) {
+    for (int i = startNdx; i <= endNdx; i++) {
+      dot.ledNum = i;
+      while (pdPASS != xQueueSendToBack(dotQueue, &dot, INT_MAX)) {
+        ESP_LOGI(TAG, "failed to add dot to queue, retrying...");
+      }
+    }
+  } else {
+    for (int i = startNdx; i >= endNdx; i--) {
+      dot.ledNum = i;
+      while (pdPASS != xQueueSendToBack(dotQueue, &dot, INT_MAX)) {
+        ESP_LOGI(TAG, "failed to add dot to queue, retrying...");
+      }
+    }
+  }
+  
+  /* wait for all LEDs to be updated */
+  while (uxQueueMessagesWaiting(dotQueue) > 0) {
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+  }
+  return ret;
+error_with_dir_leds_off:
+  /* wait for all LEDs to be updated */
+  while (uxQueueMessagesWaiting(dotQueue) > 0) {
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+  }
+  ESP_ERROR_CHECK(gpio_set_level(LED_NORTH_PIN, 0));
+  ESP_ERROR_CHECK(gpio_set_level(LED_EAST_PIN, 0));
+  ESP_ERROR_CHECK(gpio_set_level(LED_SOUTH_PIN, 0));
+  ESP_ERROR_CHECK(gpio_set_level(LED_WEST_PIN, 0));
+  return ret;
+}
+
 /**
  * The entrypoint task of the application, which initializes 
  * other tasks, then handles TomTom API calls.
@@ -139,14 +230,37 @@ void app_main(void)
     {
       ESP_LOGE(TAG, "Failed to create worker 3 task!");
     }
-    /* request updates for all LEDs */
-    for (int i = 1; i < NUM_LEDS; i++) {
-      ESP_LOGI(TAG, "adding dot %d to queue", i);
-      uint16_t item = (uint16_t) i;
-      while (pdPASS != xQueueSendToBack(dotQueue, &item, INT_MAX)) {
-        ESP_LOGI(TAG, "failed to add dot to queue, retrying...");
-      }
+    ESP_LOGI(TAG, "creating worker4 task");
+    if (pdPASS != xTaskCreate(vDotWorkerTask, "worker4", DOTS_WORKER_STACK,
+                              &worker3TaskParams, DOTS_WORKER_PRIO, &worker3)) 
+    {
+      ESP_LOGE(TAG, "Failed to create worker 4 task!");
     }
+    ESP_LOGI(TAG, "creating worker5 task");
+    if (pdPASS != xTaskCreate(vDotWorkerTask, "worker5", DOTS_WORKER_STACK,
+                              &worker3TaskParams, DOTS_WORKER_PRIO, &worker3)) 
+    {
+      ESP_LOGE(TAG, "Failed to create worker 5 task!");
+    }
+    /* Configure Traffic direction pins and set default direction */
+    ESP_ERROR_CHECK(gpio_set_direction(LED_NORTH_PIN, GPIO_MODE_OUTPUT));
+    ESP_ERROR_CHECK(gpio_set_direction(LED_EAST_PIN, GPIO_MODE_OUTPUT));
+    ESP_ERROR_CHECK(gpio_set_direction(LED_SOUTH_PIN, GPIO_MODE_OUTPUT));
+    ESP_ERROR_CHECK(gpio_set_direction(LED_WEST_PIN, GPIO_MODE_OUTPUT));
+    ESP_ERROR_CHECK(gpio_set_level(LED_NORTH_PIN, 0));
+    ESP_ERROR_CHECK(gpio_set_level(LED_EAST_PIN, 0));
+    ESP_ERROR_CHECK(gpio_set_level(LED_SOUTH_PIN, 0));
+    ESP_ERROR_CHECK(gpio_set_level(LED_WEST_PIN, 0));
+    /* request updates for all LEDs */
+    updateLEDs(dotQueue, NORTH);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    /* clear LEDs */
+    for (int i = 1; i < NUM_LEDS; i++) {
+      dotsSetColor(I2CQueue, i, 0x00, 0x00, 0x00);
+    }
+    /* request updates for all LEDS */
+    updateLEDs(dotQueue, SOUTH);
+    vTaskDelay(10000 / portTICK_PERIOD_MS);
     /* This task has nothing left to do, but should not exit */
 spin_forever:
     for (;;) {

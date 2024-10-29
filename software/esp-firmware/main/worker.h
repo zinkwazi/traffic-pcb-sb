@@ -19,9 +19,16 @@
 
 #define RETRY_CREATE_HTTP_HANDLE_TICKS 500
 
+struct DotCommand {
+    uint16_t ledNum;
+    Direction dir;
+};
+
+typedef struct DotCommand DotCommand;
+
 struct dotWorkerTaskParams {
     /* Holds dot update requests for dot worker tasks */
-    QueueHandle_t dotQueue; // holds uint16_t
+    QueueHandle_t dotQueue; // holds DotCommand
     /* Holds commands for the I2C gatekeeper */
     QueueHandle_t I2CQueue; // holds I2CCommand
 };
@@ -33,7 +40,6 @@ struct dotWorkerTaskParams {
  * to update the color of the dot.
  */
 void vDotWorkerTask(void *pvParameters) {
-    ESP_LOGI(TAG, "worker task created");
     QueueHandle_t dotQueue = ((struct dotWorkerTaskParams*) pvParameters)->dotQueue;
     QueueHandle_t I2CQueue = ((struct dotWorkerTaskParams*) pvParameters)->I2CQueue;
     struct requestResult storage = {
@@ -45,32 +51,28 @@ void vDotWorkerTask(void *pvParameters) {
         vTaskDelay(RETRY_CREATE_HTTP_HANDLE_TICKS);
         tomtomHandle = tomtomCreateHttpHandle(&storage);
     }
-    uint16_t dot = 0; // 0 represents invalid dot, ie. no work
+    DotCommand dot;
     uint speed = 0;
     /* Wait for commands and execute them forever */
     for (;;) {  // This task should never end
-        ESP_LOGI(TAG, "waiting for dots on queue");
         if (xQueueReceive(dotQueue, &dot, INT_MAX) == pdFALSE) {
             continue;
         }
-        if (dot == 0) {
-            continue;
-        }
-        if (tomtomRequestSpeed(&speed, tomtomHandle, &storage, dot, NORTH) != ESP_OK) {
-            ESP_LOGE(TAG, "failed to request led %d speed from TomTom", dot);
+        if (tomtomRequestSpeed(&speed, tomtomHandle, &storage, dot.ledNum, dot.dir) != ESP_OK) {
+            ESP_LOGE(TAG, "failed to request led %d speed from TomTom", dot.ledNum);
             continue;
         }
         if (speed < 30) {
-            if (dotsSetColor(I2CQueue, dot, 0xFF, 0x00, 0x00) != ESP_OK) {
-                ESP_LOGE(TAG, "failed to change led %d color", dot);
+            if (dotsSetColor(I2CQueue, dot.ledNum, 0xFF, 0x00, 0x00) != ESP_OK) {
+                ESP_LOGE(TAG, "failed to change led %d color", dot.ledNum);
             }
         } else if (speed < 60) {
-             if (dotsSetColor(I2CQueue, dot, 0xFF, 0x55, 0x00) != ESP_OK) {
-                ESP_LOGE(TAG, "failed to change led %d color", dot);
+             if (dotsSetColor(I2CQueue, dot.ledNum, 0xFF, 0x55, 0x00) != ESP_OK) {
+                ESP_LOGE(TAG, "failed to change led %d color", dot.ledNum);
             }
         } else {
-             if (dotsSetColor(I2CQueue, dot, 0x00, 0xFF, 0x00) != ESP_OK) {
-                ESP_LOGE(TAG, "failed to change led %d color", dot);
+             if (dotsSetColor(I2CQueue, dot.ledNum, 0x00, 0xFF, 0x00) != ESP_OK) {
+                ESP_LOGE(TAG, "failed to change led %d color", dot.ledNum);
             }
         }
     }

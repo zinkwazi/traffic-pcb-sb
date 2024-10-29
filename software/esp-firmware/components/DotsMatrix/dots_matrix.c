@@ -136,7 +136,6 @@ esp_err_t dAssertConnected(void) {
         (id != MAT1_ADDR), ESP_FAIL,
         TAG, "matrix1 returned id: 0x%x", id
     );
-    ESP_LOGI(TAG, "matrix1 returned id: 0x%x", id);
     /* probe matrix 2 */
     ESP_RETURN_ON_ERROR(
         i2c_master_probe(master_bus, MAT2_ADDR, PROBE_WAIT_MS),
@@ -150,7 +149,6 @@ esp_err_t dAssertConnected(void) {
         (id != MAT2_ADDR), ESP_FAIL,
         TAG, "matrix2 returned id: 0x%x", id
     );
-    ESP_LOGI(TAG, "matrix2 returned id: 0x%x", id);
     /* probe matrix 3 */
     ESP_RETURN_ON_ERROR(
         i2c_master_probe(master_bus, MAT3_ADDR, PROBE_WAIT_MS),
@@ -164,8 +162,6 @@ esp_err_t dAssertConnected(void) {
         (id != MAT3_ADDR), ESP_FAIL,
         TAG, "matrix3 returned id: 0x%x", id
     );
-    ESP_LOGI(TAG, "matrix3 returned id: 0x%x", id);
-    ESP_LOGI(TAG, "i2c probes detected all matrices");
     return ESP_OK;
 }
 

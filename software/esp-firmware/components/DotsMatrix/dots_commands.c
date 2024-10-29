@@ -40,46 +40,46 @@ struct SetScalingParams {
  */
 void executeI2CCommand(I2CCommand *command) {
     esp_err_t err = ESP_OK;
-    ESP_LOGI(TAG, "executing I2C command...");
+    ESP_LOGD(TAG, "executing I2C command...");
     switch (command->func) {
         case SET_OPERATING_MODE:
-            ESP_LOGI(TAG, "setting operating mode");
+            ESP_LOGD(TAG, "setting operating mode");
             err = dSetOperatingMode(*((enum Operation*) command->params));
             break;
         case SET_OPEN_SHORT_DETECTION:
-            ESP_LOGI(TAG, "changing open/short detection");
+            ESP_LOGD(TAG, "changing open/short detection");
             err = dSetOpenShortDetection(*((enum ShortDetectionEnable*) command->params));
             break;
         case SET_LOGIC_LEVEL:
-            ESP_LOGI(TAG, "changing logic level");
+            ESP_LOGD(TAG, "changing logic level");
             err = dSetLogicLevel(*((enum LogicLevel*) command->params));
             break;
         case SET_SWX_SETTING:
-            ESP_LOGI(TAG, "changing SWx setting");
+            ESP_LOGD(TAG, "changing SWx setting");
             err = dSetSWxSetting(*((enum SWXSetting*) command->params));
             break;
         case SET_GLOBAL_CURRENT_CONTROL:
-            ESP_LOGI(TAG, "changing global current control setting");
+            ESP_LOGD(TAG, "changing global current control setting");
             err = dSetGlobalCurrentControl(*((uint8_t*) command->params));
             break;
         case SET_RESISTOR_PULLUP:
-            ESP_LOGI(TAG, "changing resistor pullup setting");
+            ESP_LOGD(TAG, "changing resistor pullup setting");
             err = dSetResistorPullupSetting(*((enum ResistorSetting*) command->params));
             break;
         case SET_RESISTOR_PULLDOWN:
-            ESP_LOGI(TAG, "changing resistor pulldown setting");
+            ESP_LOGD(TAG, "changing resistor pulldown setting");
             err = dSetResistorPulldownSetting(*((enum ResistorSetting*) command->params));
             break;
         case SET_PWM_FREQUENCY:
-            ESP_LOGI(TAG, "changing PWM frequency");
+            ESP_LOGD(TAG, "changing PWM frequency");
             err = dSetPWMFrequency(*((enum PWMFrequency*) command->params));
             break;
         case RESET:
-            ESP_LOGI(TAG, "resetting matrices");
+            ESP_LOGD(TAG, "resetting matrices");
             err = dReset();
             break;
         case SET_COLOR:
-            ESP_LOGI(TAG, "changing dot color");
+            ESP_LOGD(TAG, "changing dot color");
             struct SetColorParams *setColorParams = (struct SetColorParams*) command->params;
             err = dSetColor(setColorParams->ledNum, 
                             setColorParams->red, 
@@ -87,7 +87,7 @@ void executeI2CCommand(I2CCommand *command) {
                             setColorParams->blue);
             break;
         case SET_SCALING:
-            ESP_LOGI(TAG, "changing dot scaling");
+            ESP_LOGD(TAG, "changing dot scaling");
             struct SetScalingParams *setScalingParams = (struct SetScalingParams*) command->params;
             err = dSetScaling(setScalingParams->ledNum,
                               setScalingParams->red, 
