@@ -29,14 +29,23 @@ enum Direction {
 
 typedef enum Direction Direction;
 
+/**
+ * Helper struct for tomtomHandler, which is used
+ * to return the results of the function totomtomRequestPerform,
+ * which recieves results through a void pointer.
+ */
+struct requestResult {
+    uint result;
+    esp_err_t error;
+};
 
 esp_err_t establishWifiConnection(void);
-esp_http_client_handle_t tomtomCreateHttpHandle(void);
+esp_http_client_handle_t tomtomCreateHttpHandle(struct requestResult *storage);
 esp_err_t tomtomDestroyHttpHandle(esp_http_client_handle_t tomtomHandle);
-esp_err_t tomtomRequestSpeed(uint *result, esp_http_client_handle_t tomtomHandle, uint16_t ledNum, Direction dir);
+esp_err_t tomtomRequestSpeed(uint *result, esp_http_client_handle_t tomtomHandle, struct requestResult *storage, uint16_t ledNum, Direction dir);
 
 /* Private component functions */
-esp_err_t tomtomRequestPerform(uint *result, esp_http_client_handle_t tomtomHandle, const char *url);
+esp_err_t tomtomRequestPerform(uint *result, esp_http_client_handle_t tomtomHandle, struct requestResult *storage, const char *url);
 esp_err_t tomtomHandler(esp_http_client_event_t *evt);
 
 /* static variables */

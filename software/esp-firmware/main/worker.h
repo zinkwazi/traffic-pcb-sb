@@ -36,10 +36,14 @@ void vDotWorkerTask(void *pvParameters) {
     ESP_LOGI(TAG, "worker task created");
     QueueHandle_t dotQueue = ((struct dotWorkerTaskParams*) pvParameters)->dotQueue;
     QueueHandle_t I2CQueue = ((struct dotWorkerTaskParams*) pvParameters)->I2CQueue;
-    esp_http_client_handle_t tomtomHandle = tomtomCreateHttpHandle();
+    struct requestResult storage = {
+        .error = ESP_FAIL,
+        .result = 0,
+    };
+    esp_http_client_handle_t tomtomHandle = tomtomCreateHttpHandle(&storage);
     while (tomtomHandle == NULL) {
         vTaskDelay(RETRY_CREATE_HTTP_HANDLE_TICKS);
-        tomtomHandle = tomtomCreateHttpHandle();
+        tomtomHandle = tomtomCreateHttpHandle(&storage);
     }
     uint16_t dot = 0; // 0 represents invalid dot, ie. no work
     uint speed = 0;
@@ -52,7 +56,7 @@ void vDotWorkerTask(void *pvParameters) {
         if (dot == 0) {
             continue;
         }
-        if (tomtomRequestSpeed(&speed, tomtomHandle, dot, NORTH) != ESP_OK) {
+        if (tomtomRequestSpeed(&speed, tomtomHandle, &storage, dot, NORTH) != ESP_OK) {
             ESP_LOGE(TAG, "failed to request led %d speed from TomTom", dot);
             continue;
         }
