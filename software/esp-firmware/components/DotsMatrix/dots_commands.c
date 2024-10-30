@@ -114,7 +114,7 @@ void executeI2CCommand(I2CCommand *command) {
  * the d matrices.
  */
 void vI2CGatekeeperTask(void *pvParameters) {
-    struct I2CGatekeeperTaskParameters *params = (struct I2CGatekeeperTaskParameters *) pvParameters;
+    QueueHandle_t I2CQueue = (QueueHandle_t) pvParameters; // holds I2CCommand
     I2CCommand command;
     esp_err_t err;
     /* One time setup */
@@ -133,7 +133,7 @@ void vI2CGatekeeperTask(void *pvParameters) {
     }
     /* Wait for commands and execute them forever */
     for (;;) {  // This task should never end
-        if (pdPASS != xQueueReceive(params->I2CQueueHandle, &command, INT_MAX)) {
+        if (pdPASS != xQueueReceive(I2CQueue, &command, INT_MAX)) {
             ESP_LOGD(TAG, "I2C Gatekeeper timed out while waiting for command on queue");
             continue;
         }
@@ -147,6 +147,17 @@ void vI2CGatekeeperTask(void *pvParameters) {
     vTaskDelete(NULL); // exit safely (should never happen)
 }
 
+void addCommandToI2CQueue(QueueHandle_t queue, enum I2CCommandFunc func, void *params, void (*errCallback)(esp_err_t err)) {
+    I2CCommand command = { // queueing is by copy, not reference
+        .func = func,
+        .params = params,
+        .errCallback = errCallback,
+    };
+    while (xQueueSendToBack(queue, &command, INT_MAX) != pdTRUE) {
+        ESP_LOGE(TAG, "failed to add command to queue, retrying...");
+    }
+}
+
 /**
  * Performs I2C transactions to put each of the matrix ICs
  * into the provided operation mode.
@@ -156,18 +167,14 @@ void vI2CGatekeeperTask(void *pvParameters) {
  */
 esp_err_t dotsSetOperatingMode(QueueHandle_t queue, enum Operation setting) {
     /* copy params to heap */
-    enum Operation *heapSetting = malloc(sizeof(enum Operation));
+    enum Operation *heapSetting = malloc(sizeof(enum Operation)); // owner becomes I2CGatekeeper
+    ESP_RETURN_ON_FALSE(
+        (heapSetting != NULL), ESP_FAIL,
+        TAG, "failed to allocate memory"
+    );
     *heapSetting = setting;
-    /* add command to I2C queue */
-    I2CCommand command = { // queueing is by copy, not reference
-        .func = SET_OPERATING_MODE,
-        .params = heapSetting,
-        .errCallback = NULL
-    };
-    if (xQueueSendToBack(queue, &command, 0) != pdTRUE) {
-        ESP_LOGE(TAG, "failed to add command to queue");
-        return ESP_FAIL;
-    };
+    /* send command */
+    addCommandToI2CQueue(queue, SET_OPERATING_MODE, (void *) heapSetting, NULL);
     return ESP_OK;
 }
 
@@ -180,18 +187,14 @@ esp_err_t dotsSetOperatingMode(QueueHandle_t queue, enum Operation setting) {
  */
 esp_err_t dotsSetOpenShortDetection(QueueHandle_t queue, enum ShortDetectionEnable setting) {
     /* copy params to heap */
-    enum ShortDetectionEnable *heapSetting = malloc(sizeof(enum ShortDetectionEnable));
+    enum ShortDetectionEnable *heapSetting = malloc(sizeof(enum ShortDetectionEnable)); // owner becomes I2CGatekeeper
+    ESP_RETURN_ON_FALSE(
+        (heapSetting != NULL), ESP_FAIL,
+        TAG, "failed to allocate memory"
+    );
     *heapSetting = setting;
-    /* add command to I2C queue */
-    I2CCommand command = { // queueing is by copy, not reference
-        .func = SET_OPEN_SHORT_DETECTION,
-        .params = heapSetting,
-        .errCallback = NULL
-    };
-    if (xQueueSendToBack(queue, &command, 0) != pdTRUE) {
-        ESP_LOGE(TAG, "failed to add command to queue");
-        return ESP_FAIL;
-    };
+    /* send command */
+    addCommandToI2CQueue(queue, SET_OPEN_SHORT_DETECTION, (void *) heapSetting, NULL);
     return ESP_OK;
 }
 
@@ -204,18 +207,14 @@ esp_err_t dotsSetOpenShortDetection(QueueHandle_t queue, enum ShortDetectionEnab
  */
 esp_err_t dotsSetLogicLevel(QueueHandle_t queue, enum LogicLevel setting) {
     /* copy params to heap */
-    enum LogicLevel *heapSetting = malloc(sizeof(enum LogicLevel));
+    enum LogicLevel *heapSetting = malloc(sizeof(enum LogicLevel)); // owner becomes I2CGatekeeper
+    ESP_RETURN_ON_FALSE(
+        (heapSetting != NULL), ESP_FAIL,
+        TAG, "failed to allocate memory"
+    );
     *heapSetting = setting;
-    /* add command to I2C queue */
-    I2CCommand command = { // queueing is by copy, not reference
-        .func = SET_LOGIC_LEVEL,
-        .params = heapSetting,
-        .errCallback = NULL
-    };
-    if (xQueueSendToBack(queue, &command, 0) != pdTRUE) {
-        ESP_LOGE(TAG, "failed to add command to queue");
-        return ESP_FAIL;
-    };
+    /* send command */
+    addCommandToI2CQueue(queue, SET_LOGIC_LEVEL, (void *) heapSetting, NULL);
     return ESP_OK;
 }
 
@@ -228,18 +227,14 @@ esp_err_t dotsSetLogicLevel(QueueHandle_t queue, enum LogicLevel setting) {
  */
 esp_err_t dotsSetSWxSetting(QueueHandle_t queue, enum SWXSetting setting) {
     /* copy params to heap */
-    enum SWXSetting *heapSetting = malloc(sizeof(enum SWXSetting));
+    enum SWXSetting *heapSetting = malloc(sizeof(enum SWXSetting)); // owner becomes I2CGatekeeper
+    ESP_RETURN_ON_FALSE(
+        (heapSetting != NULL), ESP_FAIL,
+        TAG, "failed to allocate memory"
+    );
     *heapSetting = setting;
-    /* add command to I2C queue */
-    I2CCommand command = { // queueing is by copy, not reference
-        .func = SET_SWX_SETTING,
-        .params = heapSetting,
-        .errCallback = NULL
-    };
-    if (xQueueSendToBack(queue, &command, 0) != pdTRUE) {
-        ESP_LOGE(TAG, "failed to add command to queue");
-        return ESP_FAIL;
-    };
+    /* send command */
+    addCommandToI2CQueue(queue, SET_SWX_SETTING, (void *) heapSetting, NULL);
     return ESP_OK;
 }
 
@@ -252,18 +247,14 @@ esp_err_t dotsSetSWxSetting(QueueHandle_t queue, enum SWXSetting setting) {
  */
 esp_err_t dotsSetGlobalCurrentControl(QueueHandle_t queue, uint8_t value) {
     /* copy params to heap */
-    uint8_t *heapValue = malloc(sizeof(uint8_t));
+    uint8_t *heapValue = malloc(sizeof(uint8_t)); // owner becomes I2CGatekeeper
+    ESP_RETURN_ON_FALSE(
+        (heapValue != NULL), ESP_FAIL,
+        TAG, "failed to allocate memory"
+    );
     *heapValue = value;
-    /* add command to I2C queue */
-    I2CCommand command = { // queueing is by copy, not reference
-        .func = SET_GLOBAL_CURRENT_CONTROL,
-        .params = heapValue,
-        .errCallback = NULL
-    };
-    if (xQueueSendToBack(queue, &command, 0) != pdTRUE) {
-        ESP_LOGE(TAG, "failed to add command to queue");
-        return ESP_FAIL;
-    };
+    /* send command */
+    addCommandToI2CQueue(queue, SET_GLOBAL_CURRENT_CONTROL, (void *) heapValue, NULL);
     return ESP_OK;
 }
 
@@ -276,18 +267,14 @@ esp_err_t dotsSetGlobalCurrentControl(QueueHandle_t queue, uint8_t value) {
  */
 esp_err_t dotsSetResistorPullupSetting(QueueHandle_t queue, enum ResistorSetting setting) {
     /* copy params to heap */
-    enum ResistorSetting *heapSetting = malloc(sizeof(enum ResistorSetting));
+    enum ResistorSetting *heapSetting = malloc(sizeof(enum ResistorSetting)); // owner becomes I2CGatekeeper
+    ESP_RETURN_ON_FALSE(
+        (heapSetting != NULL), ESP_FAIL,
+        TAG, "failed to allocate memory"
+    );
     *heapSetting = setting;
-    /* add command to I2C queue */
-    I2CCommand command = { // queueing is by copy, not reference
-        .func = SET_RESISTOR_PULLUP,
-        .params = heapSetting,
-        .errCallback = NULL
-    };
-    if (xQueueSendToBack(queue, &command, 0) != pdTRUE) {
-        ESP_LOGE(TAG, "failed to add command to queue");
-        return ESP_FAIL;
-    };
+    /* send command */
+    addCommandToI2CQueue(queue, SET_RESISTOR_PULLUP, (void *) heapSetting, NULL);
     return ESP_OK;
 }
 
@@ -300,18 +287,14 @@ esp_err_t dotsSetResistorPullupSetting(QueueHandle_t queue, enum ResistorSetting
  */
 esp_err_t dotsSetResistorPulldownSetting(QueueHandle_t queue, enum ResistorSetting setting) {
     /* copy params to heap */
-    enum ResistorSetting *heapSetting = malloc(sizeof(enum ResistorSetting));
+    enum ResistorSetting *heapSetting = malloc(sizeof(enum ResistorSetting)); // owner becomes I2CGatekeeper
+    ESP_RETURN_ON_FALSE(
+        (heapSetting != NULL), ESP_FAIL,
+        TAG, "failed to allocate memory"
+    );
     *heapSetting = setting;
-    /* add command to I2C queue */
-    I2CCommand command = { // queueing is by copy, not reference
-        .func = SET_RESISTOR_PULLDOWN,
-        .params = heapSetting,
-        .errCallback = NULL
-    };
-    if (xQueueSendToBack(queue, &command, 0) != pdTRUE) {
-        ESP_LOGE(TAG, "failed to add command to queue");
-        return ESP_FAIL;
-    };
+    /* send command */
+    addCommandToI2CQueue(queue, SET_RESISTOR_PULLDOWN, (void *) heapSetting, NULL);
     return ESP_OK;
 }
 
@@ -320,18 +303,14 @@ esp_err_t dotsSetResistorPulldownSetting(QueueHandle_t queue, enum ResistorSetti
  */
 esp_err_t dotsSetPWMFrequency(QueueHandle_t queue, enum PWMFrequency freq) {
     /* copy params to heap */
-    enum PWMFrequency *heapFreq = malloc(sizeof(enum PWMFrequency));
+    enum PWMFrequency *heapFreq = malloc(sizeof(enum PWMFrequency)); // owner becomes I2CGatekeeper
+    ESP_RETURN_ON_FALSE(
+        (heapFreq != NULL), ESP_FAIL,
+        TAG, "failed to allocate memory"
+    );
     *heapFreq = freq;
-    /* add command to I2C queue */
-    I2CCommand command = { // queueing is by copy, not reference
-        .func = SET_PWM_FREQUENCY,
-        .params = heapFreq,
-        .errCallback = NULL
-    };
-    if (xQueueSendToBack(queue, &command, 0) != pdTRUE) {
-        ESP_LOGE(TAG, "failed to add command to queue");
-        return ESP_FAIL;
-    };
+    /* send command */
+    addCommandToI2CQueue(queue, SET_PWM_FREQUENCY, (void *) heapFreq, NULL);
     return ESP_OK;
 }
 
@@ -342,16 +321,8 @@ esp_err_t dotsSetPWMFrequency(QueueHandle_t queue, enum PWMFrequency freq) {
  *          the matrices may have been reset, but not all.
  */
 esp_err_t dotsReset(QueueHandle_t queue) {
-    /* add command to I2C queue */
-    I2CCommand command = { // queueing is by copy, not reference
-        .func = RESET,
-        .params = NULL,
-        .errCallback = NULL
-    };
-    if (xQueueSendToBack(queue, &command, 0) != pdTRUE) {
-        ESP_LOGE(TAG, "failed to add command to queue");
-        return ESP_FAIL;
-    };
+    /* send command */
+    addCommandToI2CQueue(queue, RESET, NULL, NULL);
     return ESP_OK;
 }
 
@@ -363,20 +334,17 @@ esp_err_t dotsReset(QueueHandle_t queue) {
  */
 esp_err_t dotsSetColor(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue) {
     /* copy parameters to heap */
-    struct SetColorParams *heapParams = malloc(sizeof(struct SetColorParams));
+    struct SetColorParams *heapParams = malloc(sizeof(struct SetColorParams)); // owner becomes I2CGatekeeper
+    ESP_RETURN_ON_FALSE(
+        (heapParams != NULL), ESP_FAIL,
+        TAG, "failed to allocate memory"
+    );
     heapParams->ledNum = ledNum;
     heapParams->red = red;
     heapParams->green = green;
     heapParams->blue = blue;
-    /* add command to I2C queue */
-    I2CCommand command = { // queueing is by copy, not reference
-        .func = SET_COLOR,
-        .params = heapParams,
-        .errCallback = NULL
-    };
-    while (xQueueSendToBack(queue, &command, INT_MAX) != pdTRUE) {
-        ESP_LOGE(TAG, "failed to add command to queue... retrying...");
-    }
+    /* send command */
+    addCommandToI2CQueue(queue, SET_COLOR, (void *) heapParams, NULL);
     return ESP_OK;
 }
 
@@ -390,19 +358,16 @@ esp_err_t dotsSetColor(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_
  */
 esp_err_t dotsSetScaling(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue) {
     /* copy parameters to heap */
-    struct SetScalingParams *heapParams = malloc(sizeof(struct SetColorParams));
+    struct SetScalingParams *heapParams = malloc(sizeof(struct SetColorParams)); // owner becomes I2CGatekeeper
+    ESP_RETURN_ON_FALSE(
+        (heapParams != NULL), ESP_FAIL,
+        TAG, "failed to allocate memory"
+    );
     heapParams->ledNum = ledNum;
     heapParams->red = red;
     heapParams->green = green;
     heapParams->blue = blue;
-    /* add command to I2C queue */
-    I2CCommand command = { // queueing is by copy, not reference
-        .func = SET_SCALING,
-        .params = heapParams,
-        .errCallback = NULL
-    };
-    while (xQueueSendToBack(queue, &command, INT_MAX) != pdTRUE) {
-        ESP_LOGE(TAG, "failed to add command to queue... retrying...");
-    }
+    /* send command */
+    addCommandToI2CQueue(queue, SET_SCALING, (void *) heapParams, NULL);
     return ESP_OK;
 }

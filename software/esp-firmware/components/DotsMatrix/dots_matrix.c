@@ -99,6 +99,8 @@ esp_err_t dInitializeBus(void) {
         .scl_speed_hz = BUS_SPEED_HZ,
         .scl_wait_us = SCL_WAIT_US, // use default value
     };
+    /* debug logging */
+    ESP_LOGD(TAG, "dInitializeBus()");
     /* Initialize I2C bus */
     ESP_RETURN_ON_ERROR(
         i2c_new_master_bus(&master_bus_config, &master_bus),
@@ -123,6 +125,8 @@ esp_err_t dInitializeBus(void) {
 
 esp_err_t dAssertConnected(void) {
     uint8_t id = 0;
+    /* debug logging */
+    ESP_LOGD(TAG, "dAssertConnected()");
     /* probe matrix 1 */
     ESP_RETURN_ON_ERROR(
         i2c_master_probe(master_bus, MAT1_ADDR, PROBE_WAIT_MS),
@@ -208,6 +212,8 @@ esp_err_t dSetPage(i2c_master_dev_handle_t device, uint8_t page) {
         (device != NULL), ESP_FAIL,
         TAG, "encountered NULL i2c device handle function parameter"
     );
+    /* debug logging */
+    ESP_LOGD(TAG, "dSetPage(%p, %u)", device, page);
     /* check current page setting */
     if (device == matrix1_handle && page == currState.mat1) {
         return ESP_OK;
@@ -260,6 +266,8 @@ esp_err_t dGetRegister(uint8_t *result, i2c_master_dev_handle_t device, uint8_t 
         (result != NULL), ESP_FAIL,
         TAG, "encountered unexpected NULL function parameter"
     );
+    /* debug logging */
+    ESP_LOGD(TAG, "dGetRegister(%p, %p, %u, 0x%x)", result, device, page, addr);
     /* Set page and read config registers */
     dSetPage(device, page);
     ESP_RETURN_ON_ERROR(
@@ -295,6 +303,8 @@ esp_err_t dGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3, ui
         (page <= 4), ESP_FAIL,
         TAG, "encountered invalid page number function parameter"
     );
+    /* debug logging */
+    ESP_LOGD(TAG, "dGetRegisters(%p, %p, %p, %u, 0x%x)", result1, result2, result3, page, addr);
     /* get registers */
     if (result1 != NULL) {
         ESP_RETURN_ON_ERROR(
@@ -351,6 +361,8 @@ esp_err_t dSetRegister(i2c_master_dev_handle_t device, uint8_t page, uint8_t add
         (device != NULL), ESP_FAIL,
         TAG, "encountered NULL i2c device handle function parameter"
     );
+    /* debug logging */
+    ESP_LOGD(TAG, "dSetRegister(%p, %u, 0x%x, 0x%x)", device, page, addr, data);
     /* ensure that matrix is on the correct page */
     if (device == matrix1_handle && page != currState.mat1) {
         ESP_RETURN_ON_ERROR(
@@ -395,6 +407,8 @@ esp_err_t dSetRegisters(uint8_t page, uint8_t addr, uint8_t data) {
         (page <= 4), ESP_FAIL,
         TAG, "encountered invalid page number function parameter"
     );
+    /* debug logging */
+    ESP_LOGD(TAG, "dSetRegisters(%u, 0x%x, 0x%x)", page, addr, data);
     /* set registers */
     ESP_RETURN_ON_ERROR(
         dSetRegister(matrix1_handle, page, addr, data),
@@ -426,6 +440,9 @@ esp_err_t dSetRegisters(uint8_t page, uint8_t addr, uint8_t data) {
  *          been changed, but not all.
  */
 esp_err_t dSetRegistersSeparate(uint8_t page, uint8_t addr, uint8_t mat1val, uint8_t mat2val, uint8_t mat3val) {
+    /* debug logging */
+    ESP_LOGD(TAG, "dSetRegistersSeparate(%u, 0x%x, %u, %u, %u)", page, addr, mat1val, mat2val, mat3val);
+    /* change register values */
     ESP_RETURN_ON_ERROR(
         dSetRegister(matrix1_handle, page, addr, mat1val),
         TAG, "failed to change matrix 1 config register"
@@ -450,6 +467,8 @@ esp_err_t dSetRegistersSeparate(uint8_t page, uint8_t addr, uint8_t mat1val, uin
  */
 esp_err_t dSetOperatingMode(enum Operation setting) {
     uint8_t mat1Cfg, mat2Cfg, mat3Cfg;
+    /* debug logging */
+    ESP_LOGD(TAG, "dSetOperatingMode(%d)", setting);
     /* Read current configuration states */
     ESP_RETURN_ON_ERROR(
         dGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR),
@@ -471,6 +490,8 @@ esp_err_t dSetOperatingMode(enum Operation setting) {
  */
 esp_err_t dSetOpenShortDetection(enum ShortDetectionEnable setting) {
     uint8_t mat1Cfg, mat2Cfg, mat3Cfg;
+    /* debug logging */
+    ESP_LOGD(TAG, "dSetOpenShortDetection(%d)", setting);
     /* Read current configuration states */
     ESP_RETURN_ON_ERROR(
         dGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR),
@@ -492,6 +513,8 @@ esp_err_t dSetOpenShortDetection(enum ShortDetectionEnable setting) {
  */
 esp_err_t dSetLogicLevel(enum LogicLevel setting) {
     uint8_t mat1Cfg, mat2Cfg, mat3Cfg;
+    /* debug logging */
+    ESP_LOGD(TAG, "dSetLogicLevel(%d)", setting);
     /* Read current configuration states */
     ESP_RETURN_ON_ERROR(
         dGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR),
@@ -513,6 +536,8 @@ esp_err_t dSetLogicLevel(enum LogicLevel setting) {
  */
 esp_err_t dSetSWxSetting(enum SWXSetting setting) {
     uint8_t mat1Cfg, mat2Cfg, mat3Cfg;
+    /* debug logging */
+    ESP_LOGD(TAG, "dSetSWxSetting(%d)", setting);
     /* Read current configuration states */
     ESP_RETURN_ON_ERROR(
         dGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR),
@@ -533,6 +558,7 @@ esp_err_t dSetSWxSetting(enum SWXSetting setting) {
  *          of each matrix may have been changed, but not all.
  */
 esp_err_t dSetGlobalCurrentControl(uint8_t value) {
+    ESP_LOGD(TAG, "dSetGlobalCurrentControl(%u)", value);
     ESP_RETURN_ON_ERROR(
         dSetRegisters(CONFIG_PAGE, CURRENT_CNTRL_REG_ADDR, (uint8_t) value),
         TAG, "failed to set matrix global current control registers"
@@ -549,6 +575,8 @@ esp_err_t dSetGlobalCurrentControl(uint8_t value) {
  */
 esp_err_t dSetResistorPullupSetting(enum ResistorSetting setting) {
     uint8_t mat1Reg, mat2Reg, mat3Reg;
+    /* debug logging */
+    ESP_LOGD(TAG, "dSetResistorPullupSetting(%d)", setting);
     /* Read current resistor states */
     ESP_RETURN_ON_ERROR(
         dGetRegisters(&mat1Reg, &mat2Reg, &mat3Reg, CONFIG_PAGE, PULL_SEL_REG_ADDR),
@@ -570,6 +598,8 @@ esp_err_t dSetResistorPullupSetting(enum ResistorSetting setting) {
  */
 esp_err_t dSetResistorPulldownSetting(enum ResistorSetting setting) {
     uint8_t mat1Reg, mat2Reg, mat3Reg;
+    /* debug logging */
+    ESP_LOGD(TAG, "dSetResistorPulldownSetting(%d)", setting);
     /* Read current resistor states */
     ESP_RETURN_ON_ERROR(
         dGetRegisters(&mat1Reg, &mat2Reg, &mat3Reg, CONFIG_PAGE, PULL_SEL_REG_ADDR),
@@ -586,6 +616,7 @@ esp_err_t dSetResistorPulldownSetting(enum ResistorSetting setting) {
  * Sets the PWM frequency of all matrix ICs. 
  */
 esp_err_t dSetPWMFrequency(enum PWMFrequency freq) {
+    ESP_LOGD(TAG, "dSetPWMFrequency(%d)", freq);
     ESP_RETURN_ON_ERROR(
         dSetRegisters(CONFIG_PAGE, PWM_FREQ_REG_ADDR, (uint8_t) freq),
         TAG, "failed to set PWM frequency registers"
@@ -600,6 +631,7 @@ esp_err_t dSetPWMFrequency(enum PWMFrequency freq) {
  *          the matrices may have been reset, but not all.
  */
 esp_err_t dReset(void) {
+    ESP_LOGD(TAG, "dReset()");
     ESP_RETURN_ON_ERROR(
         dSetRegisters(CONFIG_PAGE, RESET_REG_ADDR, RESET_KEY),
         TAG, "failed to set reset registers to reset key"
@@ -621,6 +653,8 @@ esp_err_t dSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue) {
         (ledNum > 0 && ledNum < 327), ESP_FAIL,
         TAG, "requested to set color for invalid led hardware number"
     );
+    /* debug logging */
+    ESP_LOGD(TAG, "dSetColor(%u, %u, %u, %u)", ledNum, red, green, blue);
     /* determine the correct PWM registers */
     LEDReg reg = LEDNumToReg[ledNum];
     i2c_master_dev_handle_t matrix_handle = NULL;
@@ -666,6 +700,8 @@ esp_err_t dSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue)
         (ledNum > 0 && ledNum < 327), ESP_FAIL,
         TAG, "requested to set color for invalid led hardware number"
     );
+    /* debug logging */
+    ESP_LOGD(TAG, "dSetScaling(%u, %u, %u, %u)", ledNum, red, green, blue);
     /* determine the correct PWM registers */
     LEDReg reg = LEDNumToReg[ledNum];
     i2c_master_dev_handle_t matrix_handle = NULL;

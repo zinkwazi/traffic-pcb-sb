@@ -73,6 +73,8 @@ esp_err_t tomtomFormRequestURL(char *urlStr, const LEDLoc *led) {
         (urlStr != NULL && led != NULL), ESP_FAIL,
         TAG, "tomtomFormRequestURL given a NULL input"
     );
+    /* debug logging */
+    ESP_LOGD(TAG, "tomtomFormRequestURL(%s, {%lf,%lf,%d})", urlStr, led->latitude, led->longitude, led->flowSpeed);
     /* begin forming request URL */
     strcpy(urlStr, API_URL_PREFIX);
     /* append latitude into string */
@@ -123,6 +125,8 @@ const LEDLoc* getLED(uint16_t ledNum, Direction dir) {
     /* map led num 329 and 330 to reasonable numbers */ 
     ledNum = (ledNum == 329) ? 325 : ledNum;
     ledNum = (ledNum == 330) ? 326 : ledNum;
+    /* debug logging */
+    ESP_LOGD(TAG, "getLED(%u, %d)", ledNum, dir);
     /* input guards */
     if (ledNum < 1 || ledNum > 326) {
         ESP_LOGE("tomtom", "requested led location for invalid LED hardware number");
@@ -440,6 +444,8 @@ esp_err_t tomtomHttpHandler(esp_http_client_event_t *evt)
  *          Otherwise, NULL if an error occurred.
  */
 esp_http_client_handle_t tomtomCreateHttpHandle(struct requestResult *storage) {
+    /* debug logging */
+    ESP_LOGD(TAG, "tomtomCreateHttpHandle(%p)", storage);
     esp_http_client_config_t defaultTomTomConfig = {
         .host = "api.tomtom.com",
         .path = "/",
@@ -449,7 +455,7 @@ esp_http_client_handle_t tomtomCreateHttpHandle(struct requestResult *storage) {
         .event_handler = tomtomHttpHandler,
         .user_data = storage,
     };
-    return esp_http_client_init(&defaultTomTomConfig);
+    return esp_http_client_init(&defaultTomTomConfig); // config is shared by copy
 }
 
 esp_err_t tomtomDestroyHttpHandle(esp_http_client_handle_t tomtomHandle) {
@@ -490,7 +496,10 @@ esp_err_t tomtomRequestPerform(uint *result, esp_http_client_handle_t tomtomHand
         (url != NULL), ESP_FAIL,
         TAG, "tomtomRequestPerform called with NULL url"
     );
+    /* debug logging */
+    ESP_LOGD(TAG, "tomtomRequestPerform(%p, %p, %p, %s)", result, tomtomHandle, storage, url);
     /* update client handle with URL */
+    ESP_LOGI(TAG, "url: %s", url);
     ESP_RETURN_ON_ERROR(
         esp_http_client_set_url(tomtomHandle, url),
         TAG, "failed to set url of http client handle"
@@ -502,7 +511,7 @@ esp_err_t tomtomRequestPerform(uint *result, esp_http_client_handle_t tomtomHand
 #ifdef USE_FAKE_DATA
     storage->error = ESP_OK;
     storage->result = esp_random() % 75;
-    vTaskDelay(500 / portTICK_PERIOD_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
 #else
     ESP_RETURN_ON_ERROR(
         esp_http_client_perform(tomtomHandle),

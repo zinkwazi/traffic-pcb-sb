@@ -52,12 +52,6 @@ struct I2CCommand {
 
 typedef struct I2CCommand I2CCommand;
 
-struct I2CGatekeeperTaskParameters {
-    QueueHandle_t I2CQueueHandle; // holds I2CCommand
-};
-
-typedef struct I2CGatekeeperTaskParameters I2CGatekeeperTaskParameters;
-
 void vI2CGatekeeperTask(void *pvParameters);
 
 esp_err_t dotsSetOperatingMode(QueueHandle_t queue, enum Operation setting);
