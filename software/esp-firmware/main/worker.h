@@ -52,28 +52,45 @@ void vDotWorkerTask(void *pvParameters) {
         tomtomHandle = tomtomCreateHttpHandle(&storage);
     }
     DotCommand dot;
-    uint speed = 0;
+    uint speed, red, green, blue;
+    speed = 0;
     /* Wait for commands and execute them forever */
     for (;;) {  // This task should never end
         if (xQueueReceive(dotQueue, &dot, INT_MAX) == pdFALSE) {
             continue;
         }
         if (tomtomRequestSpeed(&speed, tomtomHandle, &storage, dot.ledNum, dot.dir) != ESP_OK) {
-            ESP_LOGE(TAG, "failed to request led %d speed from TomTom", dot.ledNum);
+            switch (dot.dir) {
+                case NORTH:
+                    ESP_LOGE(TAG, "failed to request northbound led %d speed from TomTom", dot.ledNum);
+                    break;
+                case SOUTH:
+                    ESP_LOGE(TAG, "failed to request southbound led %d speed from TomTom", dot.ledNum);
+                    break;
+                default:
+                    ESP_LOGE(TAG, "failed to request (unknown direction) led %d speed from TomTom", dot.ledNum);
+                    break;
+            }
             continue;
         }
+        /* determine correct color */
         if (speed < 30) {
-            if (dotsSetColor(I2CQueue, dot.ledNum, 0xFF, 0x00, 0x00) != ESP_OK) {
-                ESP_LOGE(TAG, "failed to change led %d color", dot.ledNum);
-            }
+            red = 0xFF;
+            green = 0x00;
+            blue = 0x00;
         } else if (speed < 60) {
-             if (dotsSetColor(I2CQueue, dot.ledNum, 0xFF, 0x55, 0x00) != ESP_OK) {
-                ESP_LOGE(TAG, "failed to change led %d color", dot.ledNum);
-            }
+            red = 0xFF;
+            green = 0x55;
+            blue = 0x00;
         } else {
-             if (dotsSetColor(I2CQueue, dot.ledNum, 0x00, 0xFF, 0x00) != ESP_OK) {
-                ESP_LOGE(TAG, "failed to change led %d color", dot.ledNum);
-            }
+            red = 0x00;
+            green = 0xFF;
+            blue = 0x00;
+        }
+        /* update led color */
+        if (dotsSetColor(I2CQueue, dot.ledNum, red, green, blue) != ESP_OK) {
+            ESP_LOGE(TAG, "failed to change led %d color", dot.ledNum);
+            continue;
         }
     }
     ESP_LOGE(TAG, "dot worker task is exiting! This should be impossible!");

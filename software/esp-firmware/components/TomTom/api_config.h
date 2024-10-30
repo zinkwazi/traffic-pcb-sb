@@ -23,7 +23,7 @@
 /* Tomtom component includes */
 #include "secrets.h"
     
-#define USE_FAKE_DATA (false)
+#define USE_FAKE_DATA false
 
 /* Secrets from 'secrets.h' */
 #define WIFI_SSID SECRET_WIFI_SSID

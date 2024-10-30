@@ -174,7 +174,7 @@ const LEDLoc* getLED(uint16_t ledNum, Direction dir) {
 esp_err_t tomtomRequestSpeed(uint *result, esp_http_client_handle_t tomtomHandle, struct requestResult *storage, uint16_t ledNum, Direction dir) {
     char urlStr[URL_LENGTH];
     const LEDLoc *led;
-    /* debug logging */
+    // /* debug logging */
     ESP_LOGD(TAG, "tomtomRequestSpeed(%p,%u,%d)", result, ledNum, dir);
     /* input guards */
     ESP_RETURN_ON_FALSE(
@@ -182,6 +182,7 @@ esp_err_t tomtomRequestSpeed(uint *result, esp_http_client_handle_t tomtomHandle
         TAG, "tomtomRequestSpeed provided NULL result pointer"
     );
     led = getLED(ledNum, dir);
+    ESP_LOGD(TAG, "found location %lf/%lf for led num %d", led->longitude, led->latitude, ledNum);
     ESP_RETURN_ON_FALSE(
         (led != NULL), ESP_FAIL,
         TAG, "tomtomRequestSpeed provided invalid led location"
@@ -512,7 +513,7 @@ esp_err_t tomtomRequestPerform(uint *result, esp_http_client_handle_t tomtomHand
     storage->error = ESP_FAIL;
     storage->result = 0;
     /* perform API request */
-#ifdef USE_FAKE_DATA
+#if USE_FAKE_DATA == true
     storage->error = ESP_OK;
     storage->result = esp_random() % 75;
     vTaskDelay(100 / portTICK_PERIOD_MS);
