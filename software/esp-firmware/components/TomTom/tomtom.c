@@ -118,7 +118,8 @@ esp_err_t tomtomFormRequestURL(char *urlStr, const LEDLoc *led) {
  *  - dir: The direction of travel of the road segment.
  * 
  * Returns: A pointer to a struct containing the longitude
- *          and latitude denoting the road segment.
+ *          and latitude denoting the road segment. NULL if
+ *          an error occurred.
  */
 const LEDLoc* getLED(uint16_t ledNum, Direction dir) {
     const LEDLoc *ledLocs = NULL;
@@ -141,15 +142,19 @@ const LEDLoc* getLED(uint16_t ledNum, Direction dir) {
             ledLocs = southLEDLocs;
             break;
         default:
-            ESP_LOGE("tomtom", "requested led location for invalid direction");
+            ESP_LOGE(TAG, "requested led location for invalid direction");
             return NULL;
     }
     /* get correct LED location */
     if (ledLocs[ledNum - 1].flowSpeed == 0) {
-        ESP_LOGE("tomtom", "requested led location for invalid LED with valid hardware number");
+        ESP_LOGE(TAG, "requested led location for invalid LED with valid hardware number");
         return NULL;
     } else if (ledLocs[ledNum - 1].flowSpeed < 0) {
         /* flow speed is the negative of the correct LED hardware number */
+        if (-(ledLocs[ledNum - 1].flowSpeed) <= 0) {
+            ESP_LOGE(TAG, "led pointer points to another led pointer, which is not allowed due to potential cycles");
+            return NULL;
+        }
         return getLED(-(ledLocs[ledNum - 1].flowSpeed), dir);
     }
     return &(ledLocs[ledNum - 1]);
@@ -497,9 +502,8 @@ esp_err_t tomtomRequestPerform(uint *result, esp_http_client_handle_t tomtomHand
         TAG, "tomtomRequestPerform called with NULL url"
     );
     /* debug logging */
-    ESP_LOGD(TAG, "tomtomRequestPerform(%p, %p, %p, %s)", result, tomtomHandle, storage, url);
+    ESP_LOGD(TAG, "tomtomRequestPerform(%p, %p, %p, \"%s\")", result, tomtomHandle, storage, url);
     /* update client handle with URL */
-    ESP_LOGI(TAG, "url: %s", url);
     ESP_RETURN_ON_ERROR(
         esp_http_client_set_url(tomtomHandle, url),
         TAG, "failed to set url of http client handle"
