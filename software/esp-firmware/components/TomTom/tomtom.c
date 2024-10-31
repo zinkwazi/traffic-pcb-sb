@@ -66,7 +66,7 @@
  * Requires: String is of minimum size URL_LENGTH.
  */
 esp_err_t tomtomFormRequestURL(char *urlStr, const LEDLoc *led) {
-    uint i;
+    unsigned int i;
     int lenDouble;
     /* input guards */
     ESP_RETURN_ON_FALSE(
@@ -121,7 +121,7 @@ esp_err_t tomtomFormRequestURL(char *urlStr, const LEDLoc *led) {
  *          and latitude denoting the road segment. NULL if
  *          an error occurred.
  */
-const LEDLoc* getLED(uint16_t ledNum, Direction dir) {
+const LEDLoc* getLED(unsigned short ledNum, Direction dir) {
     const LEDLoc *ledLocs = NULL;
     /* map led num 329 and 330 to reasonable numbers */ 
     ledNum = (ledNum == 329) ? 325 : ledNum;
@@ -171,7 +171,7 @@ const LEDLoc* getLED(uint16_t ledNum, Direction dir) {
  * 
  * Returns: ESP_OK if successful.
  */
-esp_err_t tomtomRequestSpeed(uint *result, esp_http_client_handle_t tomtomHandle, struct requestResult *storage, uint16_t ledNum, Direction dir) {
+esp_err_t tomtomRequestSpeed(unsigned int *result, esp_http_client_handle_t tomtomHandle, struct requestResult *storage, unsigned short ledNum, Direction dir) {
     char urlStr[URL_LENGTH];
     const LEDLoc *led;
     // /* debug logging */
@@ -220,7 +220,7 @@ esp_err_t tomtomRequestSpeed(uint *result, esp_http_client_handle_t tomtomHandle
  *          TOMTOM_NO_SPEED if no errors occurred but the speed was not found,
  *          ESP_FAIL if an error occurred.
  */
-esp_err_t tomtomParseSpeed(uint *result, char *chunk, uint chunkLen) {
+esp_err_t tomtomParseSpeed(unsigned int *result, char *chunk, unsigned int chunkLen) {
     /* This string is used to denote where the beginning
     of the target data is in the http response */
     static const char targetPrefix[] = "\"currentSpeed\":";
@@ -487,7 +487,7 @@ esp_err_t tomtomDestroyHttpHandle(esp_http_client_handle_t tomtomHandle) {
  * - WIFI connection (establishWifiConnection called).
  * - TLS initialized (esp_tls_init called).
  */
-esp_err_t tomtomRequestPerform(uint *result, esp_http_client_handle_t tomtomHandle, struct requestResult *storage, const char *url)
+esp_err_t tomtomRequestPerform(unsigned int *result, esp_http_client_handle_t tomtomHandle, struct requestResult *storage, const char *url)
 {
     /* input guards */
     ESP_RETURN_ON_FALSE(

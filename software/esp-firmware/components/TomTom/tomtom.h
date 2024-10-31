@@ -16,7 +16,6 @@
 #include "esp_system.h"
 #include "esp_event.h"
 #include "esp_log.h"
-#include "cJSON.h"
 
 /* Tomtom component includes */
 #include "api_config.h"
@@ -42,10 +41,10 @@ struct requestResult {
 esp_err_t establishWifiConnection(void);
 esp_http_client_handle_t tomtomCreateHttpHandle(struct requestResult *storage);
 esp_err_t tomtomDestroyHttpHandle(esp_http_client_handle_t tomtomHandle);
-esp_err_t tomtomRequestSpeed(uint *result, esp_http_client_handle_t tomtomHandle, struct requestResult *storage, uint16_t ledNum, Direction dir);
+esp_err_t tomtomRequestSpeed(unsigned int *result, esp_http_client_handle_t tomtomHandle, struct requestResult *storage, unsigned short ledNum, Direction dir);
 
 /* Private component functions */
-esp_err_t tomtomRequestPerform(uint *result, esp_http_client_handle_t tomtomHandle, struct requestResult *storage, const char *url);
+esp_err_t tomtomRequestPerform(unsigned int *result, esp_http_client_handle_t tomtomHandle, struct requestResult *storage, const char *url);
 esp_err_t tomtomHandler(esp_http_client_event_t *evt);
 
 /* static variables */
