@@ -42,7 +42,7 @@
 #define I2C_GATEKEEPER_PRIO (ESP_TASK_MAIN_PRIO + 1) // always start an I2C command if possible
 #define I2C_QUEUE_SIZE 20
 
-#define NUM_DOT_WORKERS 5
+#define NUM_DOT_WORKERS 1
 #define DOTS_WORKER_STACK ESP_TASK_MAIN_STACK
 #define DOTS_WORKER_PRIO (ESP_TASK_MAIN_PRIO - 1)
 #define DOTS_QUEUE_SIZE 10
@@ -75,14 +75,25 @@ esp_err_t initDotMatrices(QueueHandle_t I2CQueue) {
 
 esp_err_t createI2CGatekeeperTask(QueueHandle_t I2CQueue) {
   BaseType_t success;
+  I2CGatekeeperTaskParams *params;
   /* input guards */
   ESP_RETURN_ON_FALSE(
     (I2CQueue != NULL), ESP_FAIL,
     TAG, "cannot create I2C gatekeeper task with NULL I2C command queue"
   );
+  /* create parameters */
+  params = malloc(sizeof(I2CGatekeeperTaskParams));
+  ESP_RETURN_ON_FALSE(
+    (params != NULL), ESP_FAIL,
+    TAG, "failed to allocate memory"
+  );
+  params->I2CQueue = I2CQueue;
+  params->port = I2C_PORT;
+  params->sdaPin = SDA_PIN;
+  params->sclPin = SCL_PIN;
   /* create task */
   success = xTaskCreate(vI2CGatekeeperTask, "I2CGatekeeper", I2C_GATEKEEPER_STACK,
-                        I2CQueue, I2C_GATEKEEPER_PRIO, NULL);
+                        params, I2C_GATEKEEPER_PRIO, NULL);
   ESP_RETURN_ON_FALSE(
     (success == pdPASS), ESP_FAIL,
     TAG, "failed to create I2C gatekeeper"

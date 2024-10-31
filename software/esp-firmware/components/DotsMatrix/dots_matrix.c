@@ -20,7 +20,6 @@
 #include "esp_check.h"
 
 /* Component includes */
-#include "pinout.h"
 #include "led_registers.h"
 
 #define TAG "dots_matrix"
@@ -83,11 +82,11 @@
 
 #define FILL_BUFFER(reg, data) buffer[0] = reg; buffer[1] = data;
 
-esp_err_t dInitializeBus(void) {
+esp_err_t dInitializeBus(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin) {
     i2c_master_bus_config_t master_bus_config = {
-        .i2c_port = I2C_PORT,
-        .sda_io_num = SDA_PIN,
-        .scl_io_num = SCL_PIN,
+        .i2c_port = port,
+        .sda_io_num = sdaPin,
+        .scl_io_num = sclPin,
         .clk_source = I2C_CLK_SRC_DEFAULT, // not sure about this
         .glitch_ignore_cnt = 7, // typical value
         .intr_priority = 0, // may be one of level 1, 2, or 3 when set to 0

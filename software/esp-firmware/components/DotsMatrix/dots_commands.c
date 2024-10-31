@@ -114,12 +114,12 @@ void executeI2CCommand(I2CCommand *command) {
  * the d matrices.
  */
 void vI2CGatekeeperTask(void *pvParameters) {
-    QueueHandle_t I2CQueue = (QueueHandle_t) pvParameters; // holds I2CCommand
+    I2CGatekeeperTaskParams *params = (I2CGatekeeperTaskParams *) pvParameters;
     I2CCommand command;
     esp_err_t err;
     /* One time setup */
     dotsResetStaticVars();
-    err = dInitializeBus();
+    err = dInitializeBus(params->port, params->sdaPin, params->sclPin);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Could not initialize I2C bus");
     }
@@ -133,7 +133,7 @@ void vI2CGatekeeperTask(void *pvParameters) {
     }
     /* Wait for commands and execute them forever */
     for (;;) {  // This task should never end
-        if (pdPASS != xQueueReceive(I2CQueue, &command, INT_MAX)) {
+        if (pdPASS != xQueueReceive(params->I2CQueue, &command, INT_MAX)) {
             ESP_LOGD(TAG, "I2C Gatekeeper timed out while waiting for command on queue");
             continue;
         }

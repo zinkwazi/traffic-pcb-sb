@@ -102,7 +102,7 @@ esp_err_t dSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
 esp_err_t dSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
 
 /* Internal functions */
-esp_err_t dInitializeBus(void);
+esp_err_t dInitializeBus(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
 esp_err_t dAssertConnected(void);
 void dSetBits(uint8_t *reg, uint8_t bitMask, uint8_t value);
 esp_err_t dSetPage(i2c_master_dev_handle_t device, uint8_t page);
