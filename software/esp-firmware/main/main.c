@@ -42,13 +42,20 @@
 #define I2C_GATEKEEPER_PRIO (ESP_TASK_MAIN_PRIO + 1) // always start an I2C command if possible
 #define I2C_QUEUE_SIZE 20
 
-#define NUM_DOT_WORKERS 1
+#define NUM_DOT_WORKERS 5
 #define DOTS_WORKER_STACK ESP_TASK_MAIN_STACK
 #define DOTS_WORKER_PRIO (ESP_TASK_MAIN_PRIO - 1)
 #define DOTS_QUEUE_SIZE 10
 
 #define NUM_LEDS 326
 #define DOTS_GLOBAL_CURRENT 0x08
+
+void dirButtonISR(void *params) {
+  TaskHandle_t mainTask = (TaskHandle_t) params;
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
 
 esp_err_t initDotMatrices(QueueHandle_t I2CQueue) {
     ESP_LOGI(TAG, "initializing dot matrices");
@@ -171,6 +178,43 @@ esp_err_t initDirectionLEDs(void) {
       TAG, "failed to turn off direction led"
     );
     return ESP_OK;
+}
+
+esp_err_t initDirectionButton(void) {
+  ESP_RETURN_ON_ERROR(
+    gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT), // pin has an external pullup
+    TAG, "failed to set gpio direction of direction button"
+  );
+  TaskHandle_t mainTask = xTaskGetCurrentTaskHandle(); // ISR will send event notifications to this task
+  ESP_RETURN_ON_ERROR(
+    gpio_set_intr_type(T_SW_PIN, GPIO_INTR_NEGEDGE),
+    TAG, "failed to set direction button interrupt type"
+  );
+  ESP_RETURN_ON_ERROR(
+    gpio_isr_handler_add(T_SW_PIN, dirButtonISR, (void *) mainTask),
+    TAG, "failed to setup direction button ISR"
+  );
+  ESP_RETURN_ON_ERROR(
+    gpio_intr_enable(T_SW_PIN),
+    TAG, "failed to enable interrupts for direction button"
+  );
+  return ESP_OK;
+}
+
+esp_err_t enableDirectionButtonIntr(void) {
+  ESP_RETURN_ON_ERROR(
+    gpio_intr_enable(T_SW_PIN),
+    TAG, "failed to enable interrupts for direction button"
+  );
+  return ESP_OK;
+}
+
+esp_err_t disableDirectionButtonIntr(void) {
+  ESP_RETURN_ON_ERROR(
+    gpio_intr_disable(T_SW_PIN),
+    TAG, "failed to disable interrupts for direction button"
+  );
+  return ESP_OK;
 }
 
 esp_err_t clearLEDs(QueueHandle_t I2CQueue) {
@@ -334,16 +378,52 @@ void app_main(void)
       (tls != NULL), ESP_FAIL, spin_forever,
       TAG, "failed to allocate esp_tls handle"
     );
-    /* request updates for all LEDs */
-    updateLEDs(dotQueue, NORTH);
-    vTaskDelay(3000 / portTICK_PERIOD_MS);
-    /* clear LEDs */
+    /* initialize direction button */
     ESP_GOTO_ON_ERROR(
-      clearLEDs(I2CQueue), spin_forever,
-      TAG, "failed to clear dots"
+      gpio_install_isr_service(0), spin_forever,
+      TAG, "failed to install gpio ISR service"
     );
-    /* request updates for all LEDS */
-    updateLEDs(dotQueue, SOUTH);
+    ESP_GOTO_ON_ERROR(
+      initDirectionButton(), spin_forever,
+      TAG, "failed to initialize direction button"
+    );
+    ESP_LOGI(TAG, "initialization complete, handling toggle button presses...");
+    /* handle requests to update all LEDs */
+    Direction currDirection = NORTH;
+    for (;;) {
+      ESP_GOTO_ON_ERROR(
+        enableDirectionButtonIntr(), spin_forever,
+        TAG, "failed to enable direction button interrupts"
+      );
+      uint32_t ulNotificationValue = ulTaskNotifyTake(0, INT_MAX);
+      while (ulNotificationValue != 1) {
+        continue;
+      }
+      ESP_GOTO_ON_ERROR(
+        disableDirectionButtonIntr(), spin_forever,
+        TAG, "failed to disable direction button interrupts"
+      );
+      switch (currDirection) {
+        case NORTH:
+          currDirection = SOUTH;
+          break;
+        case SOUTH:
+          currDirection = NORTH;
+          break;
+        default:
+          currDirection = NORTH;
+          ESP_LOGW(TAG, "current direction is not NORTH nor SOUTH, setting NORTH...");
+          break;
+      }
+      if (clearLEDs(I2CQueue) != ESP_OK) {
+        ESP_LOGE(TAG, "failed to clear LEDs");
+        continue;
+      }
+      if (updateLEDs(dotQueue, currDirection) != ESP_OK) {
+        ESP_LOGE(TAG, "failed to update LEDs");
+        continue;
+      }
+    }
     /* This task has nothing left to do, but should not exit */
 spin_forever:
     for (;;) {
