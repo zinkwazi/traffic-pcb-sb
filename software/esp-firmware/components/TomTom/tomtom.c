@@ -516,7 +516,7 @@ esp_err_t tomtomRequestPerform(unsigned int *result, esp_http_client_handle_t to
 #if USE_FAKE_DATA == true
     storage->error = ESP_OK;
     storage->result = esp_random() % 75;
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+    vTaskDelay(300 / portTICK_PERIOD_MS);
 #else
     ESP_RETURN_ON_ERROR(
         esp_http_client_perform(tomtomHandle),

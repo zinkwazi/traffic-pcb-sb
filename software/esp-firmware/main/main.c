@@ -13,11 +13,9 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "esp_wifi.h"
-#include "esp_http_server.h"
 #include "esp_http_client.h"
 #include "esp_crt_bundle.h"
 #include "esp_tls.h"
-#include "cJSON.h"
 #include "esp_system.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -25,6 +23,7 @@
 #include "nvs_flash.h"
 #include "lwip/err.h"
 #include "lwip/sys.h"
+#include "esp_timer.h"
 
 /* Main component includes */
 #include "pinout.h"
@@ -38,6 +37,8 @@
 
 #define TAG "app_main"
 
+#define REFRESH_PERIOD_MINUTES 1
+
 #define I2C_GATEKEEPER_STACK ESP_TASK_MAIN_STACK // TODO: determine minimum stack size for i2c gatekeeper
 #define I2C_GATEKEEPER_PRIO (ESP_TASK_MAIN_PRIO + 1) // always start an I2C command if possible
 #define I2C_QUEUE_SIZE 20
@@ -50,7 +51,22 @@
 #define NUM_LEDS 326
 #define DOTS_GLOBAL_CURRENT 0x08
 
+struct dirButtonISRParams {
+  TaskHandle_t mainTask; /* a handle to the main task used to send a notification */
+  bool *toggle; /* indicates to the main task that the direction button has been 
+                   pressed, rather than a notification from an autorefresh timer */ 
+};
+
 void dirButtonISR(void *params) {
+  TaskHandle_t mainTask = ((struct dirButtonISRParams *) params)->mainTask;
+  bool *toggle = ((struct dirButtonISRParams *) params)->toggle;
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  *toggle = true;
+  vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void timerCallback(void *params) {
   TaskHandle_t mainTask = (TaskHandle_t) params;
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
@@ -180,18 +196,20 @@ esp_err_t initDirectionLEDs(void) {
     return ESP_OK;
 }
 
-esp_err_t initDirectionButton(void) {
+esp_err_t initDirectionButton(bool *toggle) {
+  struct dirButtonISRParams *params = malloc(sizeof(params));
+  params->mainTask = xTaskGetCurrentTaskHandle();
+  params->toggle = toggle;
   ESP_RETURN_ON_ERROR(
     gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT), // pin has an external pullup
     TAG, "failed to set gpio direction of direction button"
   );
-  TaskHandle_t mainTask = xTaskGetCurrentTaskHandle(); // ISR will send event notifications to this task
   ESP_RETURN_ON_ERROR(
     gpio_set_intr_type(T_SW_PIN, GPIO_INTR_NEGEDGE),
     TAG, "failed to set direction button interrupt type"
   );
   ESP_RETURN_ON_ERROR(
-    gpio_isr_handler_add(T_SW_PIN, dirButtonISR, (void *) mainTask),
+    gpio_isr_handler_add(T_SW_PIN, dirButtonISR, params),
     TAG, "failed to setup direction button ISR"
   );
   ESP_RETURN_ON_ERROR(
@@ -217,13 +235,27 @@ esp_err_t disableDirectionButtonIntr(void) {
   return ESP_OK;
 }
 
-esp_err_t clearLEDs(QueueHandle_t I2CQueue) {
-  for(int i = 1; i <= NUM_LEDS; i++) {
-    ESP_RETURN_ON_ERROR(
-      dotsSetColor(I2CQueue, i, 0x00, 0x00, 0x00),
-      TAG, "failed to clear led"
-    );
+esp_err_t clearLEDs(QueueHandle_t I2CQueue, Direction dir) {
+  switch (dir) {
+    case NORTH:
+      for(int i = NUM_LEDS; i > 0; i--) {
+        ESP_RETURN_ON_ERROR(
+          dotsSetColor(I2CQueue, i, 0x00, 0x00, 0x00),
+          TAG, "failed to clear led"
+        );
+      }
+      break;
+    case SOUTH:
+      for(int i = 1; i <= NUM_LEDS; i++) {
+        ESP_RETURN_ON_ERROR(
+          dotsSetColor(I2CQueue, i, 0x00, 0x00, 0x00),
+          TAG, "failed to clear led"
+        );
+      }
+      break;
   }
+
+  
   return ESP_OK;
 }
 
@@ -352,7 +384,7 @@ void app_main(void)
       TAG, "failed to initialize dot matrices"
     );
     ESP_GOTO_ON_ERROR(
-      clearLEDs(I2CQueue), spin_forever,
+      clearLEDs(I2CQueue, SOUTH), spin_forever,
       TAG, "failed to clear dots"
     );
     /* initialize NVS */
@@ -378,13 +410,26 @@ void app_main(void)
       (tls != NULL), ESP_FAIL, spin_forever,
       TAG, "failed to allocate esp_tls handle"
     );
+    /* create timer */
+    esp_timer_create_args_t timerArgs = {
+      .callback = timerCallback,
+      .arg = xTaskGetCurrentTaskHandle(), // timer will send an event notification to this main task
+      .dispatch_method = ESP_TIMER_ISR,
+      .name = "ledTimer",
+    };
+    esp_timer_handle_t timer;
+    ESP_GOTO_ON_ERROR(
+      esp_timer_create(&timerArgs, &timer), spin_forever,
+      TAG, "failed to create LED timer"
+    );
     /* initialize direction button */
+    bool toggle = false;
     ESP_GOTO_ON_ERROR(
       gpio_install_isr_service(0), spin_forever,
       TAG, "failed to install gpio ISR service"
     );
     ESP_GOTO_ON_ERROR(
-      initDirectionButton(), spin_forever,
+      initDirectionButton(&toggle), spin_forever,
       TAG, "failed to initialize direction button"
     );
     ESP_LOGI(TAG, "initialization complete, handling toggle button presses...");
@@ -396,26 +441,37 @@ void app_main(void)
         TAG, "failed to enable direction button interrupts"
       );
       uint32_t ulNotificationValue = ulTaskNotifyTake(0, INT_MAX);
-      while (ulNotificationValue != 1) {
+      while (ulNotificationValue != 1) { // a timeout occurred while waiting for button press
         continue;
       }
       ESP_GOTO_ON_ERROR(
-        disableDirectionButtonIntr(), spin_forever,
+        disableDirectionButtonIntr(), spin_forever, // don't allow button presses while updating LEDs
         TAG, "failed to disable direction button interrupts"
       );
-      switch (currDirection) {
-        case NORTH:
-          currDirection = SOUTH;
-          break;
-        case SOUTH:
-          currDirection = NORTH;
-          break;
-        default:
-          currDirection = NORTH;
-          ESP_LOGW(TAG, "current direction is not NORTH nor SOUTH, setting NORTH...");
-          break;
+      esp_err_t err = esp_timer_restart(timer, REFRESH_PERIOD_MINUTES * 60 * 1000000); // restart timer if toggle is pressed
+      if (err == ESP_ERR_INVALID_STATE) { // meaning: timer has not yet started
+        err = esp_timer_start_periodic(timer, REFRESH_PERIOD_MINUTES * 60 * 1000000); // don't start refreshing until initial toggle press
       }
-      if (clearLEDs(I2CQueue) != ESP_OK) {
+      ESP_GOTO_ON_ERROR(
+        err, spin_forever,
+        TAG, "failed to start or restart LED timer"
+      );
+      if (toggle) {
+        toggle = false;
+        switch (currDirection) {
+          case NORTH:
+            currDirection = SOUTH;
+            break;
+          case SOUTH:
+            currDirection = NORTH;
+            break;
+          default:
+            currDirection = NORTH;
+            ESP_LOGW(TAG, "current direction is not NORTH nor SOUTH, setting NORTH...");
+            break;
+        }
+      }
+      if (clearLEDs(I2CQueue, currDirection) != ESP_OK) {
         ESP_LOGE(TAG, "failed to clear LEDs");
         continue;
       }
