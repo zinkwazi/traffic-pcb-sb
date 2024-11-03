@@ -513,7 +513,7 @@ esp_err_t tomtomRequestPerform(unsigned int *result, esp_http_client_handle_t to
     storage->error = ESP_FAIL;
     storage->result = 0;
     /* perform API request */
-#if USE_FAKE_DATA == true
+#if CONFIG_USE_FAKE_DATA == true
     storage->error = ESP_OK;
     storage->result = esp_random() % 75;
     vTaskDelay(300 / portTICK_PERIOD_MS);

@@ -1,0 +1,10 @@
+menu "TomTom"
+
+    config USE_FAKE_DATA
+        bool "Use Fake API Data"
+        default true
+        help
+            Whether the TomTom component should simulate API
+            data or actually make API calls using the provided API key.
+        
+endmenu
