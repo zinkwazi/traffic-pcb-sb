@@ -6511,7 +6511,7 @@
 		)
 		(uuid "3e54e5ca-8d82-42ca-8516-19f0515e0240")
 	)
-	(label "RX"
+	(label "TX"
 		(at 158.75 57.15 180)
 		(fields_autoplaced yes)
 		(effects
@@ -6610,7 +6610,7 @@
 		)
 		(uuid "5ef32d35-b9b6-493b-88b1-e8626df4755c")
 	)
-	(label "TX"
+	(label "RX"
 		(at 158.75 54.61 180)
 		(fields_autoplaced yes)
 		(effects
