@@ -8,6 +8,7 @@
 
 /* IDF component includes */
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -32,6 +33,7 @@
 /* Main component includes */
 #include "pinout.h"
 #include "worker.h"
+#include "utilities.h"
 
 /* Component includes */
 #include "api_config.h"
@@ -57,10 +59,10 @@
 #define NUM_LEDS sizeof(northLEDLocs) / sizeof(northLEDLocs[0])
 #define DOTS_GLOBAL_CURRENT 0x08
 
-#define SPIN_IF_ERR(x) if (x != ESP_OK) { spinForever(); }
-#define SPIN_IF_FALSE(x) if (!x) { spinForever(); } 
-#define UPDATE_SETTINGS_IF_ERR(x, handle) if (x != ESP_OK) { updateSettingsAndRestart(handle); }
-#define UPDATE_SETTINGS_IF_FALSE(x, handle) if (!x) { updateSettingsAndRestart(handle); }
+#define SPIN_IF_ERR(x, occurred, errMutex) if (x != ESP_OK) { spinForever(occurred, errMutex); }
+#define SPIN_IF_FALSE(x, occurred, errMutex) if (!x) { spinForever(occurred, errMutex); } 
+#define UPDATE_SETTINGS_IF_ERR(x, handle, occurred, errMutex) if (x != ESP_OK) { updateSettingsAndRestart(handle, occurred, errMutex); }
+#define UPDATE_SETTINGS_IF_FALSE(x, handle, occurred, errMutex) if (!x) { updateSettingsAndRestart(handle, occurred, errMutex); }
 
 struct userSettings {
   char *wifiSSID;
@@ -85,14 +87,14 @@ esp_err_t initDotMatrices(QueueHandle_t I2CQueue);
 esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir);
 esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct userSettings *settings);
 esp_err_t createI2CGatekeeperTask(QueueHandle_t I2CQueue);
-esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, char *apiKey, SemaphoreHandle_t errorOccurredMutex);
+esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, char *apiKey, bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex);
 esp_err_t initDirectionLEDs(void);
 esp_err_t initDirectionButton(bool *toggle);
 esp_err_t enableDirectionButtonIntr(void);
 esp_err_t disableDirectionButtonIntr(void);
 esp_err_t clearLEDs(QueueHandle_t I2CQueue, Direction dir);
-void spinForever(void);
-void updateSettingsAndRestart(nvs_handle_t nvsHandle);
+void spinForever(bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex);
+void updateSettingsAndRestart(nvs_handle_t nvsHandle, bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex);
 
 /**
  * The entrypoint task of the application, which initializes 
@@ -113,98 +115,120 @@ void app_main(void)
                           UART_HW_FIFO_LEN(UART_NUM_0) + 16, 
                           32, 
                           NULL, 
-                          0)
+                          0),
+      NULL, NULL
     );
     uart_vfs_dev_use_driver(UART_NUM_0); // enable interrupt driven IO
     /* initialize NVS */
     ESP_LOGI(TAG, "initializing nvs");
     SPIN_IF_ERR(
-      nvs_flash_init()
+      nvs_flash_init(),
+      NULL, NULL
     );
     /* Ensure NVS entries exist */
     SPIN_IF_ERR(
-      nvs_open("main", NVS_READWRITE, &nvsHandle)
+      nvs_open("main", NVS_READWRITE, &nvsHandle),
+      NULL, NULL
     );
     ESP_LOGI(TAG, "checking whether nvs entries exist");
     UPDATE_SETTINGS_IF_ERR(
-      nvsEntriesExist(nvsHandle), nvsHandle
+      nvsEntriesExist(nvsHandle),
+      nvsHandle, NULL, NULL
     );
     /* Check manual settings update button (dir button held on startup) */
     ESP_LOGI(TAG, "checking manual change settings button");
     SPIN_IF_ERR(
-      gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT) // pin has external pullup
+      gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT), // pin has external pullup
+      NULL, NULL
     );
     if (gpio_get_level(T_SW_PIN) == 0) {
-      updateSettingsAndRestart(nvsHandle); // updates settings, then restarts
+      updateSettingsAndRestart(nvsHandle, NULL, NULL); // updates settings, then restarts
     }
     /* retrieve nvs settings */
     ESP_LOGI(TAG, "retrieving NVS entries");
     UPDATE_SETTINGS_IF_ERR(
       retrieveNvsEntries(nvsHandle, &settings), 
-      nvsHandle
+      nvsHandle, NULL, NULL
     );
 
     /* initialize tcp/ip stack */
     ESP_LOGI(TAG, "initializing TCP/IP stack");
     SPIN_IF_ERR(
-      esp_netif_init()
+      esp_netif_init(),
+      NULL, NULL
     );
     SPIN_IF_ERR(
-      esp_event_loop_create_default()
+      esp_event_loop_create_default(),
+      NULL, NULL
     );
     esp_netif_create_default_wifi_sta();
     /* Establish wifi connection */
     ESP_LOGI(TAG, "establishing wifi connection");
     wifi_init_config_t default_wifi_cfg = WIFI_INIT_CONFIG_DEFAULT();
     SPIN_IF_ERR(
-      esp_wifi_init(&default_wifi_cfg)
+      esp_wifi_init(&default_wifi_cfg),
+      NULL, NULL
     );
     UPDATE_SETTINGS_IF_ERR(
-      establishWifiConnection(settings.wifiSSID, settings.wifiPass), nvsHandle
+      establishWifiConnection(settings.wifiSSID, settings.wifiPass), nvsHandle,
+      NULL, NULL
     );
     esp_tls_t *tls = esp_tls_init();
     SPIN_IF_FALSE(
-      (tls != NULL)
+      (tls != NULL),
+      NULL, NULL
     );
     /* turn on wifi indicator */
     SPIN_IF_ERR(
-      gpio_set_direction(WIFI_LED_PIN, GPIO_MODE_OUTPUT)
+      gpio_set_direction(WIFI_LED_PIN, GPIO_MODE_OUTPUT),
+      NULL, NULL
     );
     SPIN_IF_ERR(
-      gpio_set_level(WIFI_LED_PIN, 1)
+      gpio_set_level(WIFI_LED_PIN, 1),
+      NULL, NULL
+    );
+    /* Create error handling synchronization variables */
+    bool errorOccurred = false;
+    SemaphoreHandle_t errorOccurredMutex = xSemaphoreCreateMutex();
+    SPIN_IF_FALSE(
+      (errorOccurredMutex != NULL),
+      NULL, NULL
     );
     /* Create queues */
     I2CQueue = xQueueCreate(I2C_QUEUE_SIZE, sizeof(I2CCommand));
     SPIN_IF_FALSE(
-      (I2CQueue != NULL)
+      (I2CQueue != NULL),
+      NULL, NULL
     );
     dotQueue = xQueueCreate(DOTS_QUEUE_SIZE, sizeof(DotCommand));
     SPIN_IF_FALSE(
-      (dotQueue != NULL)
+      (dotQueue != NULL),
+      NULL, NULL
     );
     /* create tasks */
     SPIN_IF_ERR(
-      createI2CGatekeeperTask(I2CQueue)
-    );
-    SemaphoreHandle_t errorOccurredMutex = xSemaphoreCreateMutex();
-    SPIN_IF_FALSE(
-      (errorOccurredMutex != NULL)
+      createI2CGatekeeperTask(I2CQueue),
+      &errorOccurred, errorOccurredMutex
     );
     for (i = 0; i < NUM_DOT_WORKERS; i++) {
       SPIN_IF_ERR(
-        createDotWorkerTask("dotWorker", dotQueue, I2CQueue, settings.apiKey, errorOccurredMutex)
+        createDotWorkerTask("dotWorker", dotQueue, I2CQueue, settings.apiKey, &errorOccurred, errorOccurredMutex),
+        &errorOccurred, errorOccurredMutex
       );
     }
     /* initialize pins */
     SPIN_IF_ERR(
-      initDirectionLEDs()
+      initDirectionLEDs(),
+      &errorOccurred, errorOccurredMutex
     );
     /* initialize matrices */
     SPIN_IF_ERR(
-      initDotMatrices(I2CQueue)
+      initDotMatrices(I2CQueue),
+      &errorOccurred, errorOccurredMutex
     );
     SPIN_IF_ERR(
-      clearLEDs(I2CQueue, SOUTH)
+      clearLEDs(I2CQueue, SOUTH),
+      &errorOccurred, errorOccurredMutex
     );
     /* create timer */
     esp_timer_create_args_t timerArgs = {
@@ -215,15 +239,18 @@ void app_main(void)
     };
     esp_timer_handle_t timer;
     SPIN_IF_ERR(
-      esp_timer_create(&timerArgs, &timer)
+      esp_timer_create(&timerArgs, &timer),
+      &errorOccurred, errorOccurredMutex
     );
     /* initialize direction button */
     bool toggle = false;
     SPIN_IF_ERR(
-      gpio_install_isr_service(0)
+      gpio_install_isr_service(0),
+      &errorOccurred, errorOccurredMutex
     );
     SPIN_IF_ERR(
-      initDirectionButton(&toggle)
+      initDirectionButton(&toggle),
+      &errorOccurred, errorOccurredMutex
     );
     ESP_LOGI(TAG, "initialization complete, handling toggle button presses...");
     /* handle requests to update all LEDs */
@@ -231,21 +258,24 @@ void app_main(void)
     Direction currDirection = NORTH;
     for (;;) {
       SPIN_IF_ERR(
-        enableDirectionButtonIntr()
+        enableDirectionButtonIntr(),
+        &errorOccurred, errorOccurredMutex
       );
       uint32_t ulNotificationValue = ulTaskNotifyTake(0, INT_MAX);
       while (ulNotificationValue != 1) { // a timeout occurred while waiting for button press
         continue;
       }
       SPIN_IF_ERR(
-        disableDirectionButtonIntr()
+        disableDirectionButtonIntr(),
+        &errorOccurred, errorOccurredMutex
       );
       esp_err_t err = esp_timer_restart(timer, CONFIG_LED_REFRESH_PERIOD * 60 * 1000000); // restart timer if toggle is pressed
       if (err == ESP_ERR_INVALID_STATE) { // meaning: timer has not yet started
         err = esp_timer_start_periodic(timer, CONFIG_LED_REFRESH_PERIOD * 60 * 1000000); // don't start refreshing until initial toggle press
       }
       SPIN_IF_ERR(
-        err
+        err,
+        &errorOccurred, errorOccurredMutex
       );
       if (toggle) {
         toggle = false;
@@ -525,22 +555,14 @@ esp_err_t createI2CGatekeeperTask(QueueHandle_t I2CQueue) {
  * performs TomTom api requests and sends I2C commands to
  * update the color of LEDs based on the request results.
  */
-esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, char *apiKey, SemaphoreHandle_t errorOccurredMutex) {
+esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, char *apiKey, bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex) {
   BaseType_t success;
   struct dotWorkerTaskParams *params;
   /* input guards */
-  ESP_RETURN_ON_FALSE(
-    (dotQueue != NULL), ESP_FAIL,
-    TAG, "cannot create dot worker task with NULL dot command queue"
-  );
-  ESP_RETURN_ON_FALSE(
-    (I2CQueue != NULL), ESP_FAIL,
-    TAG, "cannot create dot worker task with NULL I2C command queue"
-  );
-  ESP_RETURN_ON_FALSE(
-    (apiKey != NULL), ESP_FAIL,
-    TAG, "cannot create dot worker task with NULL api key"
-  );
+  if (dotQueue == NULL || I2CQueue == NULL || apiKey == NULL || errorOccurred == NULL || errorOccurredMutex == NULL) {
+    return ESP_FAIL;
+  }
+
   if (name == NULL) {
     name = "worker";
   }
@@ -553,6 +575,7 @@ esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t 
   params->dotQueue = dotQueue;
   params->I2CQueue = I2CQueue;
   params->apiKey = apiKey;
+  params->errorOccurred = errorOccurred;
   params->errorOccurredMutex = errorOccurredMutex;
   if (params->errorOccurredMutex == NULL) {
     free(params);
@@ -786,11 +809,13 @@ error_with_dir_leds_off:
  * in a delay forever loop after setting the error
  * LED high.
  */
-void spinForever(void) {
+void spinForever(bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex) {
   /* turn on error led */
   ESP_LOGE(TAG, "Spinning forever due to an unhandleable error!");
-  gpio_set_direction(ERR_LED_PIN, GPIO_MODE_INPUT_OUTPUT);
-  gpio_set_level(ERR_LED_PIN, 1);
+  if (errorOccurred == NULL || errorOccurredMutex == NULL || !boolWithTestSet(errorOccurred, errorOccurredMutex)) {
+    gpio_set_direction(ERR_LED_PIN, GPIO_MODE_INPUT_OUTPUT);
+    gpio_set_level(ERR_LED_PIN, 1);
+  }
   for (;;) {
     vTaskDelay(INT_MAX);
   }
@@ -802,16 +827,18 @@ void spinForever(void) {
  * high and queries the user for new settings, then
  * turns the LED off and restarts the application.
  */
-void updateSettingsAndRestart(nvs_handle_t nvsHandle) {
+void updateSettingsAndRestart(nvs_handle_t nvsHandle, bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex) {
   /* Errors are assumed to be settings issues, thus let the
   user update settings, then restart the system */
   ESP_LOGE(TAG, "Requesting settings update due to a handleable error");
   /* turn on error led to indicate a settings update is requested */
-  gpio_set_direction(ERR_LED_PIN, GPIO_MODE_INPUT_OUTPUT);
-  gpio_set_level(ERR_LED_PIN, 1);
+  if (errorOccurred == NULL || errorOccurredMutex == NULL || !boolWithTestSet(errorOccurred, errorOccurredMutex)) {
+    gpio_set_direction(ERR_LED_PIN, GPIO_MODE_INPUT_OUTPUT);
+    gpio_set_level(ERR_LED_PIN, 1);
+  }
   /* request settings update from user */
   if (getNvsEntriesFromUser(nvsHandle) != ESP_OK) {
-    spinForever();
+    spinForever(NULL, NULL);
   }
   /* turn off error led and restart */
   gpio_set_level(ERR_LED_PIN, 0);

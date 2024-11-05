@@ -8,17 +8,21 @@
 #ifndef WORKER_H_
 #define WORKER_H_
 
+#include <stdbool.h>
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "utilities.h"
 #include "dots_commands.h"
 #include "tomtom.h"
 #include "pinout.h"
+#include "worker.h"
 
 #define TAG "dot_worker"
 
 #define RETRY_CREATE_HTTP_HANDLE_TICKS 500
+#define CHECK_ERROR_PERIOD_TICKS 500
 
 struct DotCommand {
     uint16_t ledNum;
@@ -46,6 +50,7 @@ struct dotWorkerTaskParams {
     /* Holds commands for the I2C gatekeeper */
     QueueHandle_t I2CQueue; // holds I2CCommand
     char *apiKey;
+    bool *errorOccurred; // an indicator that an error has already occurred somewhere
     SemaphoreHandle_t errorOccurredMutex; // guards the shared static errorOccurred variable
 };
 
@@ -56,11 +61,10 @@ struct dotWorkerTaskParams {
  * to update the color of the dot.
  */
 void vDotWorkerTask(void *pvParameters) {
-    static bool errorOccurred = false; /* a shared variable indicating that the error timer has been started */
-    errorOccurred = false;
     QueueHandle_t dotQueue = ((struct dotWorkerTaskParams*) pvParameters)->dotQueue;
     QueueHandle_t I2CQueue = ((struct dotWorkerTaskParams*) pvParameters)->I2CQueue;
     char *apiKey = ((struct dotWorkerTaskParams*) pvParameters)->apiKey;
+    bool *errorOccurred = ((struct dotWorkerTaskParams*) pvParameters)->errorOccurred;
     SemaphoreHandle_t errorOccurredMutex = ((struct dotWorkerTaskParams*) pvParameters)->errorOccurredMutex;
 
     struct requestResult storage = {
@@ -77,7 +81,14 @@ void vDotWorkerTask(void *pvParameters) {
     speed = 0;
     /* Wait for commands and execute them forever */
     for (;;) {  // This task should never end
-        if (xQueueReceive(dotQueue, &dot, INT_MAX) == pdFALSE) {
+        if (ulTaskNotifyTake(pdTRUE, 0) == 1) {
+            /* recieved an error from I2C gatekeeper */
+            if (!boolWithTestSet(errorOccurred, errorOccurredMutex)) {
+                gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);
+                gpio_set_level(ERR_LED_PIN, 1);
+            }
+        }
+        if (xQueueReceive(dotQueue, &dot, CHECK_ERROR_PERIOD_TICKS) == pdFALSE) {
             continue;
         }
         if (tomtomRequestSpeed(&speed, tomtomHandle, &storage, apiKey, dot.ledNum, dot.dir) != ESP_OK) {
@@ -93,38 +104,21 @@ void vDotWorkerTask(void *pvParameters) {
                     break;
             }
             /* start error timer */
-            ESP_LOGW(TAG, "checking error occurred");
-            if (errorOccurred) {
-                ESP_LOGW(TAG, "error occurred is true");
-                continue; // error timer has already been started
+            if (!boolWithTestSet(errorOccurred, errorOccurredMutex)) {
+                esp_timer_create_args_t timerArgs = {
+                    .callback = tomtomErrorTimerCallback,
+                    .arg = NULL,
+                    .dispatch_method = ESP_TIMER_ISR,
+                    .name = "errorTimer",
+                };
+                esp_timer_handle_t timer;
+                if (esp_timer_create(&timerArgs, &timer) != ESP_OK || 
+                    esp_timer_start_periodic(timer, CONFIG_ERROR_PERIOD * 1000) != ESP_OK) {
+                    ESP_LOGE(TAG, "failed to start TomTom error timer");
+                    gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);
+                    gpio_set_level(ERR_LED_PIN, 1);
+                }
             }
-            ESP_LOGW(TAG, "taking error occurred mutex");
-            while (xSemaphoreTake(errorOccurredMutex, INT_MAX) != pdTRUE) {}
-            if (!errorOccurred) {
-                errorOccurred = true;
-            } else {
-                ESP_LOGW(TAG, "giving up error occurred mutex");
-                xSemaphoreGive(errorOccurredMutex);
-                continue;
-            }
-            ESP_LOGW(TAG, "giving up error occurred mutex");
-            xSemaphoreGive(errorOccurredMutex);
-            /* start error occurred timer */
-            ESP_LOGW(TAG, "starting error timer");
-            esp_timer_create_args_t timerArgs = {
-                .callback = tomtomErrorTimerCallback,
-                .arg = NULL,
-                .dispatch_method = ESP_TIMER_ISR,
-                .name = "errorTimer",
-            };
-            esp_timer_handle_t timer;
-            if (esp_timer_create(&timerArgs, &timer) != ESP_OK || 
-                esp_timer_start_periodic(timer, CONFIG_ERROR_PERIOD * 1000) != ESP_OK) {
-                ESP_LOGE(TAG, "failed to start TomTom error timer");
-                gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);
-                gpio_set_level(ERR_LED_PIN, 1);
-            }
-
             continue;
         }
         /* determine correct color */

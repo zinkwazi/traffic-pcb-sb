@@ -99,11 +99,7 @@ void executeI2CCommand(I2CCommand *command) {
             return;
     }
     if (err != ESP_OK) {
-        if (command->errCallback != NULL) {
-            command->errCallback(err); // TODO: replace this with a more secure error handling method
-        } else {
-            ESP_LOGE(TAG, "I2C gatekeeper recieved a null error callback function!");
-        }
+        xTaskNotifyGive(command->notifyTask);
     }
 }
 
@@ -147,11 +143,11 @@ void vI2CGatekeeperTask(void *pvParameters) {
     vTaskDelete(NULL); // exit safely (should never happen)
 }
 
-void addCommandToI2CQueue(QueueHandle_t queue, enum I2CCommandFunc func, void *params, void (*errCallback)(esp_err_t err)) {
+void addCommandToI2CQueue(QueueHandle_t queue, enum I2CCommandFunc func, void *params, TaskHandle_t notifyTask) {
     I2CCommand command = { // queueing is by copy, not reference
         .func = func,
         .params = params,
-        .errCallback = errCallback,
+        .notifyTask = notifyTask,
     };
     while (xQueueSendToBack(queue, &command, INT_MAX) != pdTRUE) {
         ESP_LOGE(TAG, "failed to add command to queue, retrying...");
@@ -174,7 +170,7 @@ esp_err_t dotsSetOperatingMode(QueueHandle_t queue, enum Operation setting) {
     );
     *heapSetting = setting;
     /* send command */
-    addCommandToI2CQueue(queue, SET_OPERATING_MODE, (void *) heapSetting, NULL);
+    addCommandToI2CQueue(queue, SET_OPERATING_MODE, (void *) heapSetting, xTaskGetCurrentTaskHandle());
     return ESP_OK;
 }
 
@@ -194,7 +190,7 @@ esp_err_t dotsSetOpenShortDetection(QueueHandle_t queue, enum ShortDetectionEnab
     );
     *heapSetting = setting;
     /* send command */
-    addCommandToI2CQueue(queue, SET_OPEN_SHORT_DETECTION, (void *) heapSetting, NULL);
+    addCommandToI2CQueue(queue, SET_OPEN_SHORT_DETECTION, (void *) heapSetting, xTaskGetCurrentTaskHandle());
     return ESP_OK;
 }
 
@@ -214,7 +210,7 @@ esp_err_t dotsSetLogicLevel(QueueHandle_t queue, enum LogicLevel setting) {
     );
     *heapSetting = setting;
     /* send command */
-    addCommandToI2CQueue(queue, SET_LOGIC_LEVEL, (void *) heapSetting, NULL);
+    addCommandToI2CQueue(queue, SET_LOGIC_LEVEL, (void *) heapSetting, xTaskGetCurrentTaskHandle());
     return ESP_OK;
 }
 
@@ -234,7 +230,7 @@ esp_err_t dotsSetSWxSetting(QueueHandle_t queue, enum SWXSetting setting) {
     );
     *heapSetting = setting;
     /* send command */
-    addCommandToI2CQueue(queue, SET_SWX_SETTING, (void *) heapSetting, NULL);
+    addCommandToI2CQueue(queue, SET_SWX_SETTING, (void *) heapSetting, xTaskGetCurrentTaskHandle());
     return ESP_OK;
 }
 
@@ -254,7 +250,7 @@ esp_err_t dotsSetGlobalCurrentControl(QueueHandle_t queue, uint8_t value) {
     );
     *heapValue = value;
     /* send command */
-    addCommandToI2CQueue(queue, SET_GLOBAL_CURRENT_CONTROL, (void *) heapValue, NULL);
+    addCommandToI2CQueue(queue, SET_GLOBAL_CURRENT_CONTROL, (void *) heapValue, xTaskGetCurrentTaskHandle());
     return ESP_OK;
 }
 
@@ -274,7 +270,7 @@ esp_err_t dotsSetResistorPullupSetting(QueueHandle_t queue, enum ResistorSetting
     );
     *heapSetting = setting;
     /* send command */
-    addCommandToI2CQueue(queue, SET_RESISTOR_PULLUP, (void *) heapSetting, NULL);
+    addCommandToI2CQueue(queue, SET_RESISTOR_PULLUP, (void *) heapSetting, xTaskGetCurrentTaskHandle());
     return ESP_OK;
 }
 
@@ -294,7 +290,7 @@ esp_err_t dotsSetResistorPulldownSetting(QueueHandle_t queue, enum ResistorSetti
     );
     *heapSetting = setting;
     /* send command */
-    addCommandToI2CQueue(queue, SET_RESISTOR_PULLDOWN, (void *) heapSetting, NULL);
+    addCommandToI2CQueue(queue, SET_RESISTOR_PULLDOWN, (void *) heapSetting, xTaskGetCurrentTaskHandle());
     return ESP_OK;
 }
 
@@ -310,7 +306,7 @@ esp_err_t dotsSetPWMFrequency(QueueHandle_t queue, enum PWMFrequency freq) {
     );
     *heapFreq = freq;
     /* send command */
-    addCommandToI2CQueue(queue, SET_PWM_FREQUENCY, (void *) heapFreq, NULL);
+    addCommandToI2CQueue(queue, SET_PWM_FREQUENCY, (void *) heapFreq, xTaskGetCurrentTaskHandle());
     return ESP_OK;
 }
 
@@ -322,7 +318,7 @@ esp_err_t dotsSetPWMFrequency(QueueHandle_t queue, enum PWMFrequency freq) {
  */
 esp_err_t dotsReset(QueueHandle_t queue) {
     /* send command */
-    addCommandToI2CQueue(queue, RESET, NULL, NULL);
+    addCommandToI2CQueue(queue, RESET, NULL, xTaskGetCurrentTaskHandle());
     return ESP_OK;
 }
 
@@ -344,7 +340,7 @@ esp_err_t dotsSetColor(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_
     heapParams->green = green;
     heapParams->blue = blue;
     /* send command */
-    addCommandToI2CQueue(queue, SET_COLOR, (void *) heapParams, NULL);
+    addCommandToI2CQueue(queue, SET_COLOR, (void *) heapParams, xTaskGetCurrentTaskHandle());
     return ESP_OK;
 }
 
@@ -368,6 +364,6 @@ esp_err_t dotsSetScaling(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint
     heapParams->green = green;
     heapParams->blue = blue;
     /* send command */
-    addCommandToI2CQueue(queue, SET_SCALING, (void *) heapParams, NULL);
+    addCommandToI2CQueue(queue, SET_SCALING, (void *) heapParams, xTaskGetCurrentTaskHandle());
     return ESP_OK;
 }

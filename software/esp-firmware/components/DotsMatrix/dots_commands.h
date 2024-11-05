@@ -46,8 +46,7 @@ typedef enum I2CCommandFunc I2CCommandFunc;
 struct I2CCommand {
     I2CCommandFunc func; // command to be given to the gatekeeper (ie. function)
     void *params; // parameters to be given to the function, see respective enum below
-    void (*errCallback)(esp_err_t err); // callback which will be called upon an error
-    // TODO: figure out a more secure way to perform error handling
+    TaskHandle_t notifyTask; // The task which will be notified if an error occurs
 };
 
 typedef struct I2CCommand I2CCommand;
