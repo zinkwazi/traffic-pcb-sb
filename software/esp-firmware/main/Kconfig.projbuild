@@ -5,11 +5,11 @@ menu "Main Application"
         default 60
         help
             The amount of time in minutes between LED refreshes.
-    
-    config SETTINGS_TIMEOUT
-        int "settings change timeout"
-        default 30
+
+    config ERROR_PERIOD
+        int "Error Flash Period"
+        default 500
         help
-            The amount of time in seconds given to the user to choose to update settings.
+            The amount of time in milliseconds (1/1000th of a second) between error LED toggling for TomTom errors.
 
 endmenu

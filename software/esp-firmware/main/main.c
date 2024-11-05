@@ -85,7 +85,7 @@ esp_err_t initDotMatrices(QueueHandle_t I2CQueue);
 esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir);
 esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct userSettings *settings);
 esp_err_t createI2CGatekeeperTask(QueueHandle_t I2CQueue);
-esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, char *apiKey);
+esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, char *apiKey, SemaphoreHandle_t errorOccurredMutex);
 esp_err_t initDirectionLEDs(void);
 esp_err_t initDirectionButton(bool *toggle);
 esp_err_t enableDirectionButtonIntr(void);
@@ -106,6 +106,7 @@ void app_main(void)
     struct userSettings settings;
     int i;
     /* install UART driver */
+    ESP_LOGI(TAG, "Installing UART driver");
     SPIN_IF_ERR(
       uart_driver_install(UART_NUM_0,
                           UART_HW_FIFO_LEN(UART_NUM_0) + 16, 
@@ -120,15 +121,16 @@ void app_main(void)
     SPIN_IF_ERR(
       nvs_flash_init()
     );
-    
     /* Ensure NVS entries exist */
     SPIN_IF_ERR(
       nvs_open("main", NVS_READWRITE, &nvsHandle)
     );
+    ESP_LOGI(TAG, "checking whether nvs entries exist");
     UPDATE_SETTINGS_IF_ERR(
       nvsEntriesExist(nvsHandle), nvsHandle
     );
     /* Check manual settings update button (dir button held on startup) */
+    ESP_LOGI(TAG, "checking manual change settings button");
     SPIN_IF_ERR(
       gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT) // pin has external pullup
     );
@@ -136,6 +138,7 @@ void app_main(void)
       updateSettingsAndRestart(nvsHandle); // updates settings, then restarts
     }
     /* retrieve nvs settings */
+    ESP_LOGI(TAG, "retrieving NVS entries");
     UPDATE_SETTINGS_IF_ERR(
       retrieveNvsEntries(nvsHandle, &settings), 
       nvsHandle
@@ -183,9 +186,13 @@ void app_main(void)
     SPIN_IF_ERR(
       createI2CGatekeeperTask(I2CQueue)
     );
+    SemaphoreHandle_t errorOccurredMutex = xSemaphoreCreateMutex();
+    SPIN_IF_FALSE(
+      (errorOccurredMutex != NULL)
+    );
     for (i = 0; i < NUM_DOT_WORKERS; i++) {
       SPIN_IF_ERR(
-        createDotWorkerTask("dotWorker", dotQueue, I2CQueue, settings.apiKey)
+        createDotWorkerTask("dotWorker", dotQueue, I2CQueue, settings.apiKey, errorOccurredMutex)
       );
     }
     /* initialize pins */
@@ -336,7 +343,7 @@ esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
   const unsigned int bufLen = 256;
   char c;
   char buf[bufLen];
-  ESP_LOGI(TAG, "could not find NVS entries... Querying from user...");
+  ESP_LOGI(TAG, "Querying settings from user...");
   printf("\n\nWifi SSID: ");
   fflush(stdout);
   for (int i = 0; i < bufLen; i++) {
@@ -414,7 +421,7 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct userSettings *settin
     nvs_get_str(nvsHandle, WIFI_SSID_NVS_NAME, NULL, &(settings->wifiSSIDLen)),
     TAG, "failed to retrieve wifi ssid from nvs"
   );
-  if ((settings->wifiSSID = malloc(settings->wifiSSIDLen)) != NULL) {
+  if ((settings->wifiSSID = malloc(settings->wifiSSIDLen)) == NULL) {
     return ESP_FAIL;
   }
   ESP_RETURN_ON_ERROR(
@@ -426,7 +433,7 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct userSettings *settin
     nvs_get_str(nvsHandle, WIFI_PASS_NVS_NAME, NULL, &(settings->wifiPassLen)),
     TAG, "failed to retrieve wifi ssid from nvs"
   );
-  if ((settings->wifiPass = malloc(settings->wifiPassLen)) != NULL) {
+  if ((settings->wifiPass = malloc(settings->wifiPassLen)) == NULL) {
     free(settings->wifiSSID);
     return ESP_FAIL;
   }
@@ -439,7 +446,7 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct userSettings *settin
     nvs_get_str(nvsHandle, API_KEY_NVS_NAME, NULL, &(settings->apiKeyLen)),
     TAG, "failed to retrieve wifi ssid from nvs"
   );
-  if ((settings->apiKey = malloc(settings->apiKeyLen)) != NULL) {
+  if ((settings->apiKey = malloc(settings->apiKeyLen)) == NULL) {
     free(settings->wifiSSID);
     free(settings->wifiPass);
     return ESP_FAIL;
@@ -518,7 +525,7 @@ esp_err_t createI2CGatekeeperTask(QueueHandle_t I2CQueue) {
  * performs TomTom api requests and sends I2C commands to
  * update the color of LEDs based on the request results.
  */
-esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, char *apiKey) {
+esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, char *apiKey, SemaphoreHandle_t errorOccurredMutex) {
   BaseType_t success;
   struct dotWorkerTaskParams *params;
   /* input guards */
@@ -546,6 +553,11 @@ esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t 
   params->dotQueue = dotQueue;
   params->I2CQueue = I2CQueue;
   params->apiKey = apiKey;
+  params->errorOccurredMutex = errorOccurredMutex;
+  if (params->errorOccurredMutex == NULL) {
+    free(params);
+    return ESP_FAIL;
+  }
   /* create task */
   success = xTaskCreate(vDotWorkerTask, name, DOTS_WORKER_STACK, 
                         params, DOTS_WORKER_PRIO, NULL);
