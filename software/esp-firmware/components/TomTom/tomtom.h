@@ -38,10 +38,10 @@ struct requestResult {
     esp_err_t error;
 };
 
-esp_err_t establishWifiConnection(void);
+esp_err_t establishWifiConnection(char *wifiSSID, char* wifiPass);
 esp_http_client_handle_t tomtomCreateHttpHandle(struct requestResult *storage);
 esp_err_t tomtomDestroyHttpHandle(esp_http_client_handle_t tomtomHandle);
-esp_err_t tomtomRequestSpeed(unsigned int *result, esp_http_client_handle_t tomtomHandle, struct requestResult *storage, unsigned short ledNum, Direction dir);
+esp_err_t tomtomRequestSpeed(unsigned int *result, esp_http_client_handle_t tomtomHandle, struct requestResult *storage, char *apiKey, unsigned short ledNum, Direction dir);
 
 /* Private component functions */
 esp_err_t tomtomRequestPerform(unsigned int *result, esp_http_client_handle_t tomtomHandle, struct requestResult *storage, const char *url);

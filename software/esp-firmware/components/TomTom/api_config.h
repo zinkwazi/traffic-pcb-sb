@@ -20,14 +20,6 @@
 #include "lwip/sys.h"
 #include "esp_http_client.h"
 
-/* Tomtom component includes */
-#include "secrets.h"
-
-/* Secrets from 'secrets.h' */
-#define WIFI_SSID SECRET_WIFI_SSID
-#define WIFI_PASS SECRET_WIFI_PASS
-#define API_KEY SECRET_API_KEY
-
 /* Wifi configuration */
 #define WIFI_SCAN_METHOD WIFI_FAST_SCAN
 #define WIFI_AUTH_MODE WIFI_AUTH_WPA2_PSK

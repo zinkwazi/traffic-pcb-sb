@@ -15,6 +15,9 @@
 #define WIFI_LED_PIN    GPIO_NUM_19
 #define ERR_LED_PIN     GPIO_NUM_21
 
+/* Settings Button */
+#define IO_SW_PIN       GPIO_NUM_0 // Strapping pin, needs pullup
+
 /* Direction Indicator */
 #define T_SW_PIN        GPIO_NUM_4
 #define LED_NORTH_PIN   GPIO_NUM_18

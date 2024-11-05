@@ -31,6 +31,7 @@ struct dotWorkerTaskParams {
     QueueHandle_t dotQueue; // holds DotCommand
     /* Holds commands for the I2C gatekeeper */
     QueueHandle_t I2CQueue; // holds I2CCommand
+    char *apiKey;
 };
 
 /**
@@ -42,6 +43,8 @@ struct dotWorkerTaskParams {
 void vDotWorkerTask(void *pvParameters) {
     QueueHandle_t dotQueue = ((struct dotWorkerTaskParams*) pvParameters)->dotQueue;
     QueueHandle_t I2CQueue = ((struct dotWorkerTaskParams*) pvParameters)->I2CQueue;
+    char *apiKey = ((struct dotWorkerTaskParams*) pvParameters)->apiKey;
+
     struct requestResult storage = {
         .error = ESP_FAIL,
         .result = 0,
@@ -59,7 +62,7 @@ void vDotWorkerTask(void *pvParameters) {
         if (xQueueReceive(dotQueue, &dot, INT_MAX) == pdFALSE) {
             continue;
         }
-        if (tomtomRequestSpeed(&speed, tomtomHandle, &storage, dot.ledNum, dot.dir) != ESP_OK) {
+        if (tomtomRequestSpeed(&speed, tomtomHandle, &storage, apiKey, dot.ledNum, dot.dir) != ESP_OK) {
             switch (dot.dir) {
                 case NORTH:
                     ESP_LOGE(TAG, "failed to request northbound led %d speed from TomTom", dot.ledNum);

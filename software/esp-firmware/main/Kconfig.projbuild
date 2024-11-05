@@ -1,0 +1,15 @@
+menu "Main Application"
+
+    config LED_REFRESH_PERIOD
+        int "LED Refresh Period"
+        default 60
+        help
+            The amount of time in minutes between LED refreshes.
+    
+    config SETTINGS_TIMEOUT
+        int "settings change timeout"
+        default 30
+        help
+            The amount of time in seconds given to the user to choose to update settings.
+
+endmenu

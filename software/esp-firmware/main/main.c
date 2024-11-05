@@ -12,6 +12,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
+#include "esp_vfs_dev.h"
+#include "driver/uart_vfs.h"
+#include "driver/uart.h"
 #include "esp_wifi.h"
 #include "esp_http_client.h"
 #include "esp_crt_bundle.h"
@@ -24,6 +27,7 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 #include "esp_timer.h"
+#include "nvs.h"
 
 /* Main component includes */
 #include "pinout.h"
@@ -37,7 +41,9 @@
 
 #define TAG "app_main"
 
-#define REFRESH_PERIOD_MINUTES 1
+#define WIFI_SSID_NVS_NAME "wifi_ssid"
+#define WIFI_PASS_NVS_NAME "wifi_pass"
+#define API_KEY_NVS_NAME "api_key"
 
 #define I2C_GATEKEEPER_STACK ESP_TASK_MAIN_STACK // TODO: determine minimum stack size for i2c gatekeeper
 #define I2C_GATEKEEPER_PRIO (ESP_TASK_MAIN_PRIO + 1) // always start an I2C command if possible
@@ -48,8 +54,13 @@
 #define DOTS_WORKER_PRIO (ESP_TASK_MAIN_PRIO - 1)
 #define DOTS_QUEUE_SIZE 10
 
-#define NUM_LEDS 326
+#define NUM_LEDS sizeof(northLEDLocs) / sizeof(northLEDLocs[0])
 #define DOTS_GLOBAL_CURRENT 0x08
+
+#define SPIN_IF_ERR(x) if (x != ESP_OK) { spinForever(); }
+#define SPIN_IF_FALSE(x) if (!x) { spinForever(); } 
+#define UPDATE_SETTINGS_IF_ERR(x, handle) if (x != ESP_OK) { updateSettingsAndRestart(handle); }
+#define UPDATE_SETTINGS_IF_FALSE(x, handle) if (!x) { updateSettingsAndRestart(handle); }
 
 struct dirButtonISRParams {
   TaskHandle_t mainTask; /* a handle to the main task used to send a notification */
@@ -71,6 +82,141 @@ void timerCallback(void *params) {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle) {
+  esp_err_t ret;
+  nvs_type_t nvsType;
+  ret = nvs_find_key(nvsHandle, WIFI_SSID_NVS_NAME, &nvsType);
+  ESP_RETURN_ON_FALSE(
+    (ret == ESP_OK && nvsType == NVS_TYPE_STR), ret,
+    TAG, "failed to lookup wifi ssid in non-volatile storage"
+  );
+  ret = nvs_find_key(nvsHandle, WIFI_PASS_NVS_NAME, &nvsType);
+  ESP_RETURN_ON_FALSE(
+    (ret == ESP_OK && nvsType == NVS_TYPE_STR), ret,
+    TAG, "failed to lookup wifi password in non-volatile storage"
+  );
+  ret = nvs_find_key(nvsHandle, API_KEY_NVS_NAME, &nvsType);
+  ESP_RETURN_ON_FALSE(
+    (ret == ESP_OK && nvsType == NVS_TYPE_STR), ret,
+    TAG, "failed to lookup API key in non-volatile storage"
+  );
+  return ret;
+}
+
+esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
+  const unsigned int bufLen = 256;
+  char c;
+  char buf[bufLen];
+  ESP_LOGI(TAG, "could not find NVS entries... Querying from user...");
+  printf("\n\nWifi SSID: ");
+  fflush(stdout);
+  for (int i = 0; i < bufLen; i++) {
+    buf[i] = getc(stdin);
+    if (buf[i] == '\n') {
+      buf[i] = '\0';
+      break;
+    }
+    printf("%c", buf[i]);
+    fflush(stdout);
+  }
+  while ((c = getchar()) != '\n') {}
+  buf[bufLen] = '\0'; // in case the user writes too much
+  printf("\nYou entered: %s\n", buf);
+  fflush(stdout);
+  ESP_RETURN_ON_ERROR(
+    nvs_set_str(nvsHandle, WIFI_SSID_NVS_NAME, buf),
+    TAG, "failed to write wifi SSID to non-volatile storage"
+  );
+  printf("\n\nWifi Password: ");
+  fflush(stdout);
+  for (int i = 0; i < bufLen; i++) {
+    buf[i] = getc(stdin);
+    if (buf[i] == '\n') {
+      buf[i] = '\0';
+      break;
+    }
+    printf("%c", buf[i]);
+    fflush(stdout);
+  }
+  while ((c = getchar()) != '\n') {}
+  buf[bufLen] = '\0'; // in case the user writes too much
+  printf("\nYou entered: %s\n", buf);
+  fflush(stdout);
+  ESP_RETURN_ON_ERROR(
+    nvs_set_str(nvsHandle, WIFI_PASS_NVS_NAME, buf),
+    TAG, "failed to write wifi password to non-volatile storage"
+  );
+  printf("\n\nAPI Key: ");
+  fflush(stdout);
+  for (int i = 0; i < bufLen; i++) {
+    buf[i] = getc(stdin);
+    if (buf[i] == '\n') {
+      buf[i] = '\0';
+      break;
+    }
+    printf("%c", buf[i]);
+    fflush(stdout);
+  }
+  while ((c = getchar()) != '\n') {}
+  buf[bufLen] = '\0'; // in case the user writes too much
+  printf("\nYou entered: %s\n", buf);
+  fflush(stdout);
+  ESP_RETURN_ON_ERROR(
+    nvs_set_str(nvsHandle, API_KEY_NVS_NAME, buf),
+    TAG, "failed to write API key to non-volatile storage"
+  );
+  ESP_RETURN_ON_ERROR(
+    nvs_commit(nvsHandle),
+    TAG, "failed to commit NVS changes"
+  );
+  return ESP_OK;
+}
+
+esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, char **wifiSSID, char **wifiPass, char **apiKey,
+                             size_t *wifiSSIDLen, size_t *wifiPassLen, size_t *apiKeyLen)
+{
+  /* retrieve wifi ssid */
+  ESP_RETURN_ON_ERROR(
+    nvs_get_str(nvsHandle, WIFI_SSID_NVS_NAME, NULL, wifiSSIDLen),
+    TAG, "failed to retrieve wifi ssid from nvs"
+  );
+  ESP_RETURN_ON_FALSE(
+    ((*wifiSSID = malloc(*wifiSSIDLen)) != NULL), ESP_FAIL,
+    TAG, "failed to allocate memory for wifi ssid"
+  );
+  ESP_RETURN_ON_ERROR(
+    nvs_get_str(nvsHandle, WIFI_SSID_NVS_NAME, *wifiSSID, wifiSSIDLen),
+    TAG, "failed to retrieve wifi ssid from nvs after malloc"
+  );
+  /* retrieve wifi password */
+  ESP_RETURN_ON_ERROR(
+    nvs_get_str(nvsHandle, WIFI_PASS_NVS_NAME, NULL, wifiPassLen),
+    TAG, "failed to retrieve wifi ssid from nvs"
+  );
+  ESP_RETURN_ON_FALSE(
+    ((*wifiPass = malloc(*wifiPassLen)) != NULL), ESP_FAIL,
+    TAG, "failed to allocate memory for wifi ssid"
+  );
+  ESP_RETURN_ON_ERROR(
+    nvs_get_str(nvsHandle, WIFI_PASS_NVS_NAME, *wifiPass, wifiPassLen),
+    TAG, "failed to retrieve wifi ssid from nvs after malloc"
+  );
+  /* retrieve api key */
+  ESP_RETURN_ON_ERROR(
+    nvs_get_str(nvsHandle, API_KEY_NVS_NAME, NULL, apiKeyLen),
+    TAG, "failed to retrieve wifi ssid from nvs"
+  );
+  ESP_RETURN_ON_FALSE(
+    ((*apiKey = malloc(*apiKeyLen)) != NULL), ESP_FAIL,
+    TAG, "failed to allocate memory for wifi ssid"
+  );
+  ESP_RETURN_ON_ERROR(
+    nvs_get_str(nvsHandle, API_KEY_NVS_NAME, *apiKey, apiKeyLen),
+    TAG, "failed to retrieve wifi ssid from nvs after malloc"
+  );
+  return ESP_OK;
 }
 
 esp_err_t initDotMatrices(QueueHandle_t I2CQueue) {
@@ -124,7 +270,7 @@ esp_err_t createI2CGatekeeperTask(QueueHandle_t I2CQueue) {
   return ESP_OK;
 }
 
-esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t I2CQueue) {
+esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, char *apiKey) {
   BaseType_t success;
   struct dotWorkerTaskParams *params;
   /* input guards */
@@ -135,6 +281,10 @@ esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t 
   ESP_RETURN_ON_FALSE(
     (I2CQueue != NULL), ESP_FAIL,
     TAG, "cannot create dot worker task with NULL I2C command queue"
+  );
+  ESP_RETURN_ON_FALSE(
+    (apiKey != NULL), ESP_FAIL,
+    TAG, "cannot create dot worker task with NULL api key"
   );
   if (name == NULL) {
     name = "worker";
@@ -147,6 +297,7 @@ esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t 
   );
   params->dotQueue = dotQueue;
   params->I2CQueue = I2CQueue;
+  params->apiKey = apiKey;
   /* create task */
   success = xTaskCreate(vDotWorkerTask, name, DOTS_WORKER_STACK, 
                         params, DOTS_WORKER_PRIO, NULL);
@@ -341,74 +492,142 @@ error_with_dir_leds_off:
   return ret;
 }
 
+void spinForever(void) {
+  /* turn on error led */
+  ESP_LOGE(TAG, "Spinning forever due to an unhandleable error!");
+  gpio_set_direction(ERR_LED_PIN, GPIO_MODE_INPUT_OUTPUT);
+  gpio_set_level(ERR_LED_PIN, 1);
+  for (;;) {
+    vTaskDelay(INT_MAX);
+  }
+}
+
+void updateSettingsAndRestart(nvs_handle_t nvsHandle) {
+  /* Errors are assumed to be settings issues, thus let the
+  user update settings, then restart the system */
+  ESP_LOGE(TAG, "Requesting settings update due to a handleable error");
+  /* turn on error led to indicate a settings update is requested */
+  gpio_set_direction(ERR_LED_PIN, GPIO_MODE_INPUT_OUTPUT);
+  gpio_set_level(ERR_LED_PIN, 1);
+  /* request settings update from user */
+  if (getNvsEntriesFromUser(nvsHandle) != ESP_OK) {
+    spinForever();
+  }
+  /* turn off error led and restart */
+  gpio_set_level(ERR_LED_PIN, 0);
+  esp_restart();
+}
+
 /**
  * The entrypoint task of the application, which initializes 
  * other tasks, then handles TomTom API calls.
  */
 void app_main(void)
 {
-    esp_err_t ret;
     QueueHandle_t I2CQueue, dotQueue;
+    nvs_handle_t nvsHandle;
+    char *wifiSSID, *wifiPass, *apiKey;
+    size_t wifiSSIDLen, wifiPassLen, apiKeyLen;
     int i;
-
-    /* Create queues */
-    I2CQueue = xQueueCreate(I2C_QUEUE_SIZE, sizeof(I2CCommand));
-    ESP_GOTO_ON_FALSE(
-      (I2CQueue != NULL), ESP_FAIL, spin_forever,
-      TAG, "failed to allocate I2C queue"
+    /* install UART driver */
+    SPIN_IF_ERR(
+      uart_driver_install(UART_NUM_0,
+                          UART_HW_FIFO_LEN(UART_NUM_0) + 16, 
+                          UART_HW_FIFO_LEN(UART_NUM_0) + 16, 
+                          32, 
+                          NULL, 
+                          0)
     );
-    dotQueue = xQueueCreate(DOTS_QUEUE_SIZE, sizeof(DotCommand));
-    ESP_GOTO_ON_FALSE(
-      (dotQueue != NULL), ESP_FAIL, spin_forever,
-      TAG, "failed to allocate dots queue"
-    );
-    /* create tasks */
-    ESP_GOTO_ON_ERROR(
-      createI2CGatekeeperTask(I2CQueue), spin_forever,
-      TAG, "failed to create I2C gatekeeper task"
-    );
-    for (i = 0; i < NUM_DOT_WORKERS; i++) {
-      ESP_GOTO_ON_ERROR(
-        createDotWorkerTask("dotWorker", dotQueue, I2CQueue), spin_forever,
-        TAG, "failed to create dot worker task"
-      );
-    }
-    /* initialize pins */
-    ESP_GOTO_ON_ERROR(
-      initDirectionLEDs(), spin_forever,
-      TAG, "failed to initialize direction leds"
-    );
-    /* initialize matrices */
-    ESP_GOTO_ON_ERROR(
-      initDotMatrices(I2CQueue), spin_forever,
-      TAG, "failed to initialize dot matrices"
-    );
-    ESP_GOTO_ON_ERROR(
-      clearLEDs(I2CQueue, SOUTH), spin_forever,
-      TAG, "failed to clear dots"
-    );
+    uart_vfs_dev_use_driver(UART_NUM_0); // enable interrupt driven IO
     /* initialize NVS */
     ESP_LOGI(TAG, "initializing nvs");
-    ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-      ESP_ERROR_CHECK(nvs_flash_erase());
-      ret = nvs_flash_init();
+    SPIN_IF_ERR(
+      nvs_flash_init()
+    );
+    
+    /* Ensure NVS entries exist */
+    SPIN_IF_ERR(
+      nvs_open("main", NVS_READWRITE, &nvsHandle)
+    );
+    UPDATE_SETTINGS_IF_ERR(
+      nvsEntriesExist(nvsHandle), nvsHandle
+    );
+    /* Check manual settings update button (dir button held on startup) */
+    SPIN_IF_ERR(
+      gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT) // pin has external pullup
+    );
+    if (gpio_get_level(T_SW_PIN) == 0) {
+      updateSettingsAndRestart(nvsHandle); // updates settings, then restarts
     }
-    ESP_ERROR_CHECK(ret);
+    /* retrieve nvs settings */
+    UPDATE_SETTINGS_IF_ERR(
+      retrieveNvsEntries(nvsHandle, 
+                         &wifiSSID, 
+                         &wifiPass, 
+                         &apiKey, 
+                         &wifiSSIDLen, 
+                         &wifiPassLen, 
+                         &apiKeyLen), 
+      nvsHandle
+    );
+
     /* initialize tcp/ip stack */
     ESP_LOGI(TAG, "initializing TCP/IP stack");
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    SPIN_IF_ERR(
+      esp_netif_init()
+    );
+    SPIN_IF_ERR(
+      esp_event_loop_create_default()
+    );
     esp_netif_create_default_wifi_sta();
     /* Establish wifi connection */
     ESP_LOGI(TAG, "establishing wifi connection");
     wifi_init_config_t default_wifi_cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&default_wifi_cfg));
-    ESP_ERROR_CHECK(establishWifiConnection());
+    SPIN_IF_ERR(
+      esp_wifi_init(&default_wifi_cfg)
+    );
+    UPDATE_SETTINGS_IF_ERR(
+      establishWifiConnection(wifiSSID, wifiPass), nvsHandle
+    );
     esp_tls_t *tls = esp_tls_init();
-    ESP_GOTO_ON_FALSE(
-      (tls != NULL), ESP_FAIL, spin_forever,
-      TAG, "failed to allocate esp_tls handle"
+    SPIN_IF_FALSE(
+      (tls != NULL)
+    );
+    /* turn on wifi indicator */
+    SPIN_IF_ERR(
+      gpio_set_direction(WIFI_LED_PIN, GPIO_MODE_OUTPUT)
+    );
+    SPIN_IF_ERR(
+      gpio_set_level(WIFI_LED_PIN, 1)
+    );
+    /* Create queues */
+    I2CQueue = xQueueCreate(I2C_QUEUE_SIZE, sizeof(I2CCommand));
+    SPIN_IF_FALSE(
+      (I2CQueue != NULL)
+    );
+    dotQueue = xQueueCreate(DOTS_QUEUE_SIZE, sizeof(DotCommand));
+    SPIN_IF_FALSE(
+      (dotQueue != NULL)
+    );
+    /* create tasks */
+    SPIN_IF_ERR(
+      createI2CGatekeeperTask(I2CQueue)
+    );
+    for (i = 0; i < NUM_DOT_WORKERS; i++) {
+      SPIN_IF_ERR(
+        createDotWorkerTask("dotWorker", dotQueue, I2CQueue, apiKey)
+      );
+    }
+    /* initialize pins */
+    SPIN_IF_ERR(
+      initDirectionLEDs()
+    );
+    /* initialize matrices */
+    SPIN_IF_ERR(
+      initDotMatrices(I2CQueue)
+    );
+    SPIN_IF_ERR(
+      clearLEDs(I2CQueue, SOUTH)
     );
     /* create timer */
     esp_timer_create_args_t timerArgs = {
@@ -418,43 +637,38 @@ void app_main(void)
       .name = "ledTimer",
     };
     esp_timer_handle_t timer;
-    ESP_GOTO_ON_ERROR(
-      esp_timer_create(&timerArgs, &timer), spin_forever,
-      TAG, "failed to create LED timer"
+    SPIN_IF_ERR(
+      esp_timer_create(&timerArgs, &timer)
     );
     /* initialize direction button */
     bool toggle = false;
-    ESP_GOTO_ON_ERROR(
-      gpio_install_isr_service(0), spin_forever,
-      TAG, "failed to install gpio ISR service"
+    SPIN_IF_ERR(
+      gpio_install_isr_service(0)
     );
-    ESP_GOTO_ON_ERROR(
-      initDirectionButton(&toggle), spin_forever,
-      TAG, "failed to initialize direction button"
+    SPIN_IF_ERR(
+      initDirectionButton(&toggle)
     );
     ESP_LOGI(TAG, "initialization complete, handling toggle button presses...");
     /* handle requests to update all LEDs */
+    
     Direction currDirection = NORTH;
     for (;;) {
-      ESP_GOTO_ON_ERROR(
-        enableDirectionButtonIntr(), spin_forever,
-        TAG, "failed to enable direction button interrupts"
+      SPIN_IF_ERR(
+        enableDirectionButtonIntr()
       );
       uint32_t ulNotificationValue = ulTaskNotifyTake(0, INT_MAX);
       while (ulNotificationValue != 1) { // a timeout occurred while waiting for button press
         continue;
       }
-      ESP_GOTO_ON_ERROR(
-        disableDirectionButtonIntr(), spin_forever, // don't allow button presses while updating LEDs
-        TAG, "failed to disable direction button interrupts"
+      SPIN_IF_ERR(
+        disableDirectionButtonIntr()
       );
-      esp_err_t err = esp_timer_restart(timer, REFRESH_PERIOD_MINUTES * 60 * 1000000); // restart timer if toggle is pressed
+      esp_err_t err = esp_timer_restart(timer, CONFIG_LED_REFRESH_PERIOD * 60 * 1000000); // restart timer if toggle is pressed
       if (err == ESP_ERR_INVALID_STATE) { // meaning: timer has not yet started
-        err = esp_timer_start_periodic(timer, REFRESH_PERIOD_MINUTES * 60 * 1000000); // don't start refreshing until initial toggle press
+        err = esp_timer_start_periodic(timer, CONFIG_LED_REFRESH_PERIOD * 60 * 1000000); // don't start refreshing until initial toggle press
       }
-      ESP_GOTO_ON_ERROR(
-        err, spin_forever,
-        TAG, "failed to start or restart LED timer"
+      SPIN_IF_ERR(
+        err
       );
       if (toggle) {
         toggle = false;
@@ -481,7 +695,8 @@ void app_main(void)
       }
     }
     /* This task has nothing left to do, but should not exit */
-spin_forever:
+    gpio_set_direction(ERR_LED_PIN, GPIO_MODE_INPUT_OUTPUT);
+    gpio_set_level(ERR_LED_PIN, 1);
     for (;;) {
       vTaskDelay(INT_MAX);
     }
