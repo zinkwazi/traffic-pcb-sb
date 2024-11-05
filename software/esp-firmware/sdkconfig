@@ -394,7 +394,7 @@ CONFIG_ERROR_PERIOD=500
 #
 # TomTom
 #
-# CONFIG_USE_FAKE_DATA is not set
+CONFIG_USE_FAKE_DATA=y
 # end of TomTom
 
 #

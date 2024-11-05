@@ -272,24 +272,30 @@ esp_err_t tomtomParseSpeed(unsigned int *result, char *chunk, unsigned int chunk
     return TOMTOM_NO_SPEED;
 }
 
+struct connectHandlerEventData {
+    int *retryNum;
+    EventGroupHandle_t wifiEventGroup;
+};
+
 /**
  * A handler that recieves wifi connection events. See establishWifiConnection.
  */
-static void connect_handler(void *arg, esp_event_base_t event_base,
-                            int32_t event_id, void* event_data)
+static void connectHandler(void *arg, esp_event_base_t eventBase,
+                            int32_t eventId, void* eventData)
 {
-    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+    struct connectHandlerEventData *data = (struct connectHandlerEventData *) arg;
+    if (eventBase == WIFI_EVENT && eventId == WIFI_EVENT_STA_START) {
         esp_wifi_connect();
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        if (s_retryNum < MAX_RETRY_WIFI_CONNECT) {
+    } else if (eventBase == WIFI_EVENT && eventId == WIFI_EVENT_STA_DISCONNECTED) {
+        if (*(data->retryNum) < MAX_RETRY_WIFI_CONNECT) {
             esp_wifi_connect();
-            s_retryNum++;
+            (*(data->retryNum))++;
         } else {
-            xEventGroupSetBits(s_wifiEventGroup, WIFI_FAIL_BIT);
+            xEventGroupSetBits(data->wifiEventGroup, WIFI_FAIL_BIT);
         }
-    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-        s_retryNum = 0;
-        xEventGroupSetBits(s_wifiEventGroup, WIFI_CONNECTED_BIT);
+    } else if (eventBase == IP_EVENT && eventId == IP_EVENT_STA_GOT_IP) {
+        *(data->retryNum) = 0;
+        xEventGroupSetBits(data->wifiEventGroup, WIFI_CONNECTED_BIT);
     }
 }
 
@@ -324,19 +330,26 @@ esp_err_t establishWifiConnection(char *wifiSSID, char* wifiPass)
         wifi_cfg.sta.password[i] = ((uint8_t *) wifiPass)[i];
     }
     /* register wifi event handlers */
-    s_wifiEventGroup = xEventGroupCreate();
+    int retryNum = 0;
+    struct connectHandlerEventData eventData = {
+        .retryNum = &retryNum,
+        .wifiEventGroup = xEventGroupCreate(),
+    };
+    if (eventData.wifiEventGroup == NULL) {
+        return ESP_FAIL;
+    }
     ret = esp_event_handler_instance_register(WIFI_EVENT,
                                             ESP_EVENT_ANY_ID,
-                                            connect_handler,
-                                            NULL,
+                                            connectHandler,
+                                            &eventData,
                                             &instanceAnyID);
     if (ret != ESP_OK) {
         return ret;
     }
     ret = esp_event_handler_instance_register(IP_EVENT,
                                             IP_EVENT_STA_GOT_IP,
-                                            connect_handler,
-                                            NULL,
+                                            connectHandler,
+                                            &eventData,
                                             &instanceAnyIP);
     if (ret != ESP_OK) {
         return ret;
@@ -354,11 +367,12 @@ esp_err_t establishWifiConnection(char *wifiSSID, char* wifiPass)
     if (ret != ESP_OK) {
         return ret;
     }
-    bits = xEventGroupWaitBits(s_wifiEventGroup,
+    bits = xEventGroupWaitBits(eventData.wifiEventGroup,
                                WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
                                pdFALSE,
                                pdFALSE,
                                portMAX_DELAY);
+    free(eventData.wifiEventGroup);
     return (bits & ~WIFI_FAIL_BIT) ? ESP_OK : ESP_FAIL;
 }
 
