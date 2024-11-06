@@ -67,10 +67,12 @@ void vDotWorkerTask(void *pvParameters) {
     bool *errorOccurred = ((struct dotWorkerTaskParams*) pvParameters)->errorOccurred;
     SemaphoreHandle_t errorOccurredMutex = ((struct dotWorkerTaskParams*) pvParameters)->errorOccurredMutex;
 
-    struct requestResult storage = {
-        .error = ESP_FAIL,
+    struct tomtomHttpHandlerParams storage = {
+        .err = ESP_FAIL,
         .result = 0,
+        .prevBuffer = NULL,
     };
+
     esp_http_client_handle_t tomtomHandle = tomtomCreateHttpHandle(&storage);
     while (tomtomHandle == NULL) {
         vTaskDelay(RETRY_CREATE_HTTP_HANDLE_TICKS);

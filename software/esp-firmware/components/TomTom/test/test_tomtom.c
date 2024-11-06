@@ -13,6 +13,7 @@ TEST_CASE("parseSpeed", "[tomtom]")
 {
     esp_err_t retval;
     unsigned int expectedSpeed, actualSpeed, prevSpeed;
+    char prevBuffer[RCV_BUFFER_SIZE];
     char* typicalChunks[10] = {
         TYPICAL_CHUNK_1, // contains speed 56
         TYPICAL_CHUNK_2,
@@ -29,7 +30,7 @@ TEST_CASE("parseSpeed", "[tomtom]")
     ESP_LOGI(TAG, "Testing typical target chunk...");
     expectedSpeed = 56;
     actualSpeed = 0;
-    retval = tomtomParseSpeed(&actualSpeed, typicalChunks[0], strlen(typicalChunks[0]));
+    retval = tomtomParseSpeed(&actualSpeed, typicalChunks[0], strlen(typicalChunks[0]), prevBuffer);
     TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, retval,
         "Expected ESP_OK return value when speed is entirely in chunk");
     TEST_ASSERT_EQUAL_MESSAGE(expectedSpeed, actualSpeed,
@@ -40,7 +41,7 @@ TEST_CASE("parseSpeed", "[tomtom]")
     prevSpeed = 15;
     actualSpeed = 15;
     for (int i = 1; i < 10; i++) {
-        retval = tomtomParseSpeed(&actualSpeed, typicalChunks[i], strlen(typicalChunks[i]));
+        retval = tomtomParseSpeed(&actualSpeed, typicalChunks[i], strlen(typicalChunks[i]), prevBuffer);
         TEST_ASSERT_EQUAL_MESSAGE(TOMTOM_NO_SPEED, retval,
             "Expected TOMTOM_NO_SPEED return value when speed is not in chunk");
         TEST_ASSERT_EQUAL_MESSAGE(prevSpeed, actualSpeed,
@@ -49,21 +50,21 @@ TEST_CASE("parseSpeed", "[tomtom]")
 
     /* Test NULL result pointer */
     ESP_LOGI(TAG, "Testing NULL result pointer...");
-    retval = tomtomParseSpeed(NULL, typicalChunks[1], strlen(typicalChunks[1]));
+    retval = tomtomParseSpeed(NULL, typicalChunks[1], strlen(typicalChunks[1]), prevBuffer);
     TEST_ASSERT_EQUAL_MESSAGE(ESP_FAIL, retval,
         "Expected ESP_FAIL return value when given NULL result pointer");
 
     /* Test indicate new message (NULL chunk) */
     ESP_LOGI(TAG, "Testing indicate new message functionality (NULL chunk)...");
-    retval = tomtomParseSpeed(NULL, NULL, 0);
-    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, retval,
-        "Expected ESP_OK return value when given NULL chunk, indicating start of a new http response");
+    retval = tomtomParseSpeed(NULL, NULL, 0, prevBuffer);
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_FAIL, retval,
+        "Expected ESP_FAIL return value when given NULL chunk");
 
     /* Test empty string chunk */
     ESP_LOGI(TAG, "Testing empty string chunk...");
     prevSpeed = 15;
     actualSpeed = 15;
-    retval = tomtomParseSpeed(&actualSpeed, "", 0);
+    retval = tomtomParseSpeed(&actualSpeed, "", 0, prevBuffer);
     TEST_ASSERT_EQUAL_MESSAGE(TOMTOM_NO_SPEED, retval,
         "Expected TOMTOM_NO_SPEED return value when given empty chunk");
     TEST_ASSERT_EQUAL_MESSAGE(prevSpeed, actualSpeed,
@@ -73,7 +74,7 @@ TEST_CASE("parseSpeed", "[tomtom]")
     ESP_LOGI(TAG, "Testing single character chunk...");
     prevSpeed = 15;
     actualSpeed = 15;
-    retval = tomtomParseSpeed(&actualSpeed, "a", 1);
+    retval = tomtomParseSpeed(&actualSpeed, "a", 1, prevBuffer);
     TEST_ASSERT_EQUAL_MESSAGE(TOMTOM_NO_SPEED, retval,
         "Expected TOMTOM_NO_SPEED return value when given single character chunk");
     TEST_ASSERT_EQUAL_MESSAGE(prevSpeed, actualSpeed,
@@ -83,12 +84,12 @@ TEST_CASE("parseSpeed", "[tomtom]")
     ESP_LOGI(TAG, "Testing target across chunk boundary...");
     prevSpeed = 15;
     actualSpeed = 15;
-    retval = tomtomParseSpeed(&actualSpeed, TARGET_ACROSS_CHUNKS_1, strlen(TARGET_ACROSS_CHUNKS_1));
+    retval = tomtomParseSpeed(&actualSpeed, TARGET_ACROSS_CHUNKS_1, strlen(TARGET_ACROSS_CHUNKS_1), prevBuffer);
     TEST_ASSERT_EQUAL_MESSAGE(TOMTOM_NO_SPEED, retval,
         "Expected TOMTOM_NO_SPEED return value when given partial target chunk");
     TEST_ASSERT_EQUAL_MESSAGE(prevSpeed, actualSpeed,
         "Expected result to be unmodified when given partial target chunk");
-    retval = tomtomParseSpeed(&actualSpeed, TARGET_ACROSS_CHUNKS_2, strlen(TARGET_ACROSS_CHUNKS_2));
+    retval = tomtomParseSpeed(&actualSpeed, TARGET_ACROSS_CHUNKS_2, strlen(TARGET_ACROSS_CHUNKS_2), prevBuffer);
     TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, retval,
         "Expected ESP_OK return value when given target across a chunk boundary");
     TEST_ASSERT_EQUAL_MESSAGE(expectedSpeed, actualSpeed,

@@ -151,7 +151,7 @@ const LEDLoc* getLED(unsigned short ledNum, Direction dir) {
  * 
  * Returns: ESP_OK if successful.
  */
-esp_err_t tomtomRequestSpeed(unsigned int *result, esp_http_client_handle_t tomtomHandle, struct requestResult *storage, char *apiKey, unsigned short ledNum, Direction dir) {
+esp_err_t tomtomRequestSpeed(unsigned int *result, esp_http_client_handle_t tomtomHandle, struct tomtomHttpHandlerParams *storage, char *apiKey, unsigned short ledNum, Direction dir) {
     char *urlStr = malloc(URL_LENGTH(apiKey));
     const LEDLoc *led;
     /* input guards */
@@ -189,6 +189,8 @@ esp_err_t tomtomRequestSpeed(unsigned int *result, esp_http_client_handle_t tomt
  *  - result: a pointer to where the parsed speed will be placed, if found.
  *  - currBuffer: the current chunk of the response.
  *  - currLen: the length of currBuffer.
+ *  - prevBuffer: a buffer of size RCV_BUFFER_SIZE to hold the last bytes of the
+ *                previous data event.
  * 
  * Returns: ESP_OK if currBuffer != NULL and the speed is found and placed in 
  *          result successfully,
@@ -196,26 +198,17 @@ esp_err_t tomtomRequestSpeed(unsigned int *result, esp_http_client_handle_t tomt
  *          TOMTOM_NO_SPEED if no errors occurred but the speed was not found,
  *          ESP_FAIL if an error occurred.
  */
-esp_err_t tomtomParseSpeed(unsigned int *result, char *chunk, unsigned int chunkLen) {
+esp_err_t tomtomParseSpeed(unsigned int *result, char *chunk, unsigned int chunkLen, char *prevBuffer) {
     /* This string is used to denote where the beginning
     of the target data is in the http response */
     static const char targetPrefix[] = "\"currentSpeed\":";
     /* This character denotes the end of the target data */
     static const char targetPostfix = ',';
-    /* Stores the last bytes of the previous data event, which 
-    will be used to determine if the beginning of the current 
-    data event contains the speed data being targeted */
-    static char prevBuffer[RCV_BUFFER_SIZE];
     /* Stores the retreived target speed characters from the response. */
     char speedBuffer[MAX_SPEED_SIZE];
     int dataNdx, speedNdx, prefixNdx;
-    /* reset static variables if requested */
-    if (chunk == NULL) {
-        memset(prevBuffer, 0, RCV_BUFFER_SIZE);
-        return ESP_OK;
-    }
     /* input guards */
-    if (result == NULL) {
+    if (result == NULL || chunk == NULL || prevBuffer == NULL) {
         return ESP_FAIL;
     }
     /* iterate through previous data buffer to determine proper 
@@ -383,27 +376,27 @@ esp_err_t establishWifiConnection(char *wifiSSID, char* wifiPass)
  */
 esp_err_t tomtomHttpHandler(esp_http_client_event_t *evt)
 {
-    esp_err_t ret = TOMTOM_NO_SPEED;
-    struct requestResult *reqResult = (struct requestResult *) evt->user_data;
     /* input guards */
     ESP_RETURN_ON_FALSE(
-        (reqResult != NULL), ESP_FAIL,
-        TAG, "http event handler called with NULL result pointer"
+        (evt->user_data != NULL), ESP_FAIL,
+        TAG, "http event handler called with NULL parameters"
     );
+    /* get variables from parameters */
+    esp_err_t ret = TOMTOM_NO_SPEED;
+    uint result = ((struct tomtomHttpHandlerParams *) evt->user_data)->result;
+    esp_err_t err = ((struct tomtomHttpHandlerParams *) evt->user_data)->err;
+    char *prevBuffer = ((struct tomtomHttpHandlerParams *) evt->user_data)->prevBuffer;
     /* handle events */
     switch (evt->event_id) {
         case HTTP_EVENT_ON_CONNECTED:
-            reqResult->error = ESP_FAIL;
-            ESP_RETURN_ON_ERROR(
-                tomtomParseSpeed(NULL, NULL, 0), // indicate starting new response
-                TAG, "could not reset tomtomParseSpeed internal state for new response"
-            );
+            err = ESP_FAIL;
+            result = 0;
             break;
         case HTTP_EVENT_ON_DATA:
-            ret = tomtomParseSpeed(&(reqResult->result), (char *) evt->data, evt->data_len);
+            ret = tomtomParseSpeed(result, (char *) evt->data, evt->data_len, prevBuffer);
             switch (ret) {
                 case ESP_OK:
-                    reqResult->error = ESP_OK;
+                    err = ESP_OK;
                     break;
                 case TOMTOM_NO_SPEED:
                     break;
@@ -436,7 +429,7 @@ esp_err_t tomtomHttpHandler(esp_http_client_event_t *evt)
  *          provided to other TomTom functions.
  *          Otherwise, NULL if an error occurred.
  */
-esp_http_client_handle_t tomtomCreateHttpHandle(struct requestResult *storage) {
+esp_http_client_handle_t tomtomCreateHttpHandle(struct tomtomHttpHandlerParams *storage) {
     /* debug logging */
     ESP_LOGD(TAG, "tomtomCreateHttpHandle(%p)", storage);
     esp_http_client_config_t defaultTomTomConfig = {
@@ -474,8 +467,9 @@ esp_err_t tomtomDestroyHttpHandle(esp_http_client_handle_t tomtomHandle) {
  * - WIFI connection (establishWifiConnection called).
  * - TLS initialized (esp_tls_init called).
  */
-esp_err_t tomtomRequestPerform(unsigned int *result, esp_http_client_handle_t tomtomHandle, struct requestResult *storage, const char *url)
+esp_err_t tomtomRequestPerform(unsigned int *result, esp_http_client_handle_t tomtomHandle, struct tomtomHttpHandlerParams *storage, const char *url)
 {
+    char prevBuffer[RCV_BUFFER_SIZE];
     /* input guards */
     if (result == NULL || tomtomHandle == NULL || url == NULL) {
         return ESP_FAIL;
@@ -486,11 +480,12 @@ esp_err_t tomtomRequestPerform(unsigned int *result, esp_http_client_handle_t to
         TAG, "failed to set url of http client handle"
     );
     /* reset storage for request */
-    storage->error = ESP_FAIL;
+    storage->err = ESP_FAIL;
     storage->result = 0;
+    storage->prevBuffer = &prevBuffer;
     /* perform API request */
 #if CONFIG_USE_FAKE_DATA == true
-    storage->error = ESP_OK;
+    storage->err = ESP_OK;
     storage->result = esp_random() % 75;
     vTaskDelay(300 / portTICK_PERIOD_MS);
 #else
@@ -504,7 +499,7 @@ esp_err_t tomtomRequestPerform(unsigned int *result, esp_http_client_handle_t to
     );
 #endif /* USE_FAKE_DATA */
     ESP_RETURN_ON_FALSE(
-        (storage->error == ESP_OK), ESP_FAIL,
+        (storage->err == ESP_OK), ESP_FAIL,
         TAG, "received an error code from tomtom http handler"
     );
     *result = storage->result;
