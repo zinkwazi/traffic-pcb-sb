@@ -92,7 +92,7 @@ void vDotWorkerTask(void *pvParameters) {
         if (xQueueReceive(dotQueue, &dot, CHECK_ERROR_PERIOD_TICKS) == pdFALSE) {
             continue;
         }
-        if (tomtomRequestSpeed(&speed, &client, dot.ledNum, dot.dir) != ESP_OK) {
+        if (tomtomRequestSpeed(&speed, &client, dot.ledNum, dot.dir, CONFIG_NUM_RETRY_HTTP_REQUEST) != ESP_OK) {
             switch (dot.dir) {
                 case NORTH:
                     ESP_LOGE(TAG, "failed to request northbound led %d speed from TomTom", dot.ledNum);

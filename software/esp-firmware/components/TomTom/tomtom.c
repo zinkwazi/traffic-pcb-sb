@@ -151,7 +151,7 @@ const LEDLoc* getLED(unsigned short ledNum, Direction dir) {
  * 
  * Returns: ESP_OK if successful.
  */
-esp_err_t tomtomRequestSpeed(unsigned int *result, tomtomClient *client, unsigned short ledNum, Direction dir) {
+esp_err_t tomtomRequestSpeed(unsigned int *result, tomtomClient *client, unsigned short ledNum, Direction dir, int retryNum) {
     char *urlStr = malloc(URL_LENGTH(client->apiKey));
     const LEDLoc *led;
     /* input guards */
@@ -168,7 +168,7 @@ esp_err_t tomtomRequestSpeed(unsigned int *result, tomtomClient *client, unsigne
         TAG, "failed to form request url"
     );
     ESP_RETURN_ON_ERROR(
-        tomtomRequestPerform(result, client, urlStr),
+        tomtomRequestPerform(result, client, urlStr, retryNum),
         TAG, "failed to perform API request"
     );
     free(urlStr);
@@ -473,7 +473,7 @@ esp_err_t tomtomCleanupClient(tomtomClient *client) {
  * - WIFI connection (establishWifiConnection called).
  * - TLS initialized (esp_tls_init called).
  */
-esp_err_t tomtomRequestPerform(unsigned int *result, tomtomClient *client, const char *url)
+esp_err_t tomtomRequestPerform(unsigned int *result, tomtomClient *client, const char *url, int retryNum)
 {
     /* input guards */
     if (result == NULL || client == NULL || url == NULL) {
@@ -494,10 +494,15 @@ esp_err_t tomtomRequestPerform(unsigned int *result, tomtomClient *client, const
     client->handlerParams.result = esp_random() % 75;
     vTaskDelay(300 / portTICK_PERIOD_MS);
 #else
-    ESP_RETURN_ON_ERROR(
-        esp_http_client_perform(client->httpHandle),
-        TAG, "failed to make HTTPS request to TomTom"
-    );
+    while (retryNum > 0) {
+        if (esp_http_client_perform(client->httpHandle) == ESP_OK) {
+            break;
+        }
+        if (retryNum == 1) {
+            ESP_LOGE(TAG, "failed to perform http request");
+        }
+        retryNum--;
+    }
     ESP_RETURN_ON_FALSE(
         (esp_http_client_get_status_code(client->httpHandle) == 200), ESP_FAIL,
         TAG, "received bad status code from TomTom"

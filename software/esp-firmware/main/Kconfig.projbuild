@@ -12,4 +12,10 @@ menu "Main Application"
         help
             The amount of time in milliseconds (1/1000th of a second) between error LED toggling for TomTom errors.
 
+    config NUM_RETRY_HTTP_REQUEST
+        int "Num Retry HTTP Request"
+        default 5
+        help
+            The number of times to retry a TomTom HTTP request, which has a small chance to fail to resolve the hostname.
+
 endmenu
