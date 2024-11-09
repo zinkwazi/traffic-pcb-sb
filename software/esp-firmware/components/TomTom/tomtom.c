@@ -32,7 +32,7 @@
 
 #define TAG "TomTom"
 
-#define RCV_BUFFER_SIZE (20) // max: "\"currentSpeed\": 65\0"
+
 #define DOUBLE_STR_SIZE (12) // max: -123.123456
 #define MAX_SPEED_SIZE (4) // allows for speeds of 999
 
@@ -151,8 +151,8 @@ const LEDLoc* getLED(unsigned short ledNum, Direction dir) {
  * 
  * Returns: ESP_OK if successful.
  */
-esp_err_t tomtomRequestSpeed(unsigned int *result, esp_http_client_handle_t tomtomHandle, struct tomtomHttpHandlerParams *storage, char *apiKey, unsigned short ledNum, Direction dir) {
-    char *urlStr = malloc(URL_LENGTH(apiKey));
+esp_err_t tomtomRequestSpeed(unsigned int *result, tomtomClient *client, unsigned short ledNum, Direction dir) {
+    char *urlStr = malloc(URL_LENGTH(client->apiKey));
     const LEDLoc *led;
     /* input guards */
     if (result == NULL) {
@@ -164,11 +164,11 @@ esp_err_t tomtomRequestSpeed(unsigned int *result, esp_http_client_handle_t tomt
     }
     /* create http URL and perform request */
     ESP_RETURN_ON_ERROR(
-        tomtomFormRequestURL(urlStr, apiKey, led),
+        tomtomFormRequestURL(urlStr, client->apiKey, led),
         TAG, "failed to form request url"
     );
     ESP_RETURN_ON_ERROR(
-        tomtomRequestPerform(result, tomtomHandle, storage, urlStr),
+        tomtomRequestPerform(result, client, urlStr),
         TAG, "failed to perform API request"
     );
     free(urlStr);
@@ -383,20 +383,19 @@ esp_err_t tomtomHttpHandler(esp_http_client_event_t *evt)
     );
     /* get variables from parameters */
     esp_err_t ret = TOMTOM_NO_SPEED;
-    uint result = ((struct tomtomHttpHandlerParams *) evt->user_data)->result;
-    esp_err_t err = ((struct tomtomHttpHandlerParams *) evt->user_data)->err;
+    uint *result = &((struct tomtomHttpHandlerParams *) evt->user_data)->result;
+    esp_err_t *err = &((struct tomtomHttpHandlerParams *) evt->user_data)->err;
     char *prevBuffer = ((struct tomtomHttpHandlerParams *) evt->user_data)->prevBuffer;
+    if (*err == ESP_OK) { // speed has already been found
+        return ESP_OK;
+    }
     /* handle events */
     switch (evt->event_id) {
-        case HTTP_EVENT_ON_CONNECTED:
-            err = ESP_FAIL;
-            result = 0;
-            break;
         case HTTP_EVENT_ON_DATA:
             ret = tomtomParseSpeed(result, (char *) evt->data, evt->data_len, prevBuffer);
             switch (ret) {
                 case ESP_OK:
-                    err = ESP_OK;
+                    *err = ESP_OK;
                     break;
                 case TOMTOM_NO_SPEED:
                     break;
@@ -414,24 +413,21 @@ esp_err_t tomtomHttpHandler(esp_http_client_event_t *evt)
 }
 
 /**
- * Establishes an initial HTTPS connection with 
- * the TomTom API server. The returned handle should
- * be reused via tomtomReconnect after a call to
- * tomtomDisconnect has been made. This is more
- * performant than two calls to tomtomConnect.
+ * Sets initial values necessary for proper execution
+ * of TomTom functions and establishes an initial
+ * HTTPS connection with the TomTom API server. The
+ * returned handle should be reused, which is more
+ * performant than multiple requests with different handles.
  * 
- * The returned handle must be cleaned up with 
- * esp_http_client_cleanup once it is known that the 
- * handle is closed and will not be reused.
+ * The returned handle must be cleaned up with tomtomCleanupClient
+ * once it is known that the handle is closed and will not be reused.
  * 
- * Returns: A handle to the connection if 
- *          successful, which should be 
- *          provided to other TomTom functions.
- *          Otherwise, NULL if an error occurred.
+ * Returns: ESP_OK if successful, otherwise ESP_FAIL.
  */
-esp_http_client_handle_t tomtomCreateHttpHandle(struct tomtomHttpHandlerParams *storage) {
-    /* debug logging */
-    ESP_LOGD(TAG, "tomtomCreateHttpHandle(%p)", storage);
+esp_err_t tomtomInitClient(tomtomClient *client, char *apiKey) {
+    if (client == NULL || apiKey == NULL) {
+        return ESP_FAIL;
+    }
     esp_http_client_config_t defaultTomTomConfig = {
         .host = "api.tomtom.com",
         .path = "/",
@@ -439,13 +435,23 @@ esp_http_client_handle_t tomtomCreateHttpHandle(struct tomtomHttpHandlerParams *
         .method = API_METHOD,
         .crt_bundle_attach = esp_crt_bundle_attach,
         .event_handler = tomtomHttpHandler,
-        .user_data = storage,
+        .user_data = &(client->handlerParams),
     };
-    return esp_http_client_init(&defaultTomTomConfig); // config is shared by copy
+    client->httpHandle = esp_http_client_init(&defaultTomTomConfig); // config is shared by copy
+    if (client->httpHandle == NULL) {
+        return ESP_FAIL;
+    }
+    client->apiKey = apiKey;
+    return ESP_OK;
 }
 
-esp_err_t tomtomDestroyHttpHandle(esp_http_client_handle_t tomtomHandle) {
-    return esp_http_client_cleanup(tomtomHandle);
+/**
+ * Closes resources allocated for the tomtomClientHandle.
+ * 
+ * Returns: ESP_OK if successful, otherwise ESP_FAIL.
+ */
+esp_err_t tomtomCleanupClient(tomtomClient *client) {
+    return esp_http_client_cleanup(client->httpHandle);
 }
 
 /**
@@ -467,41 +473,40 @@ esp_err_t tomtomDestroyHttpHandle(esp_http_client_handle_t tomtomHandle) {
  * - WIFI connection (establishWifiConnection called).
  * - TLS initialized (esp_tls_init called).
  */
-esp_err_t tomtomRequestPerform(unsigned int *result, esp_http_client_handle_t tomtomHandle, struct tomtomHttpHandlerParams *storage, const char *url)
+esp_err_t tomtomRequestPerform(unsigned int *result, tomtomClient *client, const char *url)
 {
-    char prevBuffer[RCV_BUFFER_SIZE];
     /* input guards */
-    if (result == NULL || tomtomHandle == NULL || url == NULL) {
+    if (result == NULL || client == NULL || url == NULL) {
         return ESP_FAIL;
     }
     /* update client handle with URL */
     ESP_RETURN_ON_ERROR(
-        esp_http_client_set_url(tomtomHandle, url),
+        esp_http_client_set_url(client->httpHandle, url),
         TAG, "failed to set url of http client handle"
     );
     /* reset storage for request */
-    storage->err = ESP_FAIL;
-    storage->result = 0;
-    storage->prevBuffer = &prevBuffer;
+    client->handlerParams.err = ESP_FAIL;
+    client->handlerParams.result = 0;
+    memset(client->handlerParams.prevBuffer, '\0', RCV_BUFFER_SIZE);
     /* perform API request */
 #if CONFIG_USE_FAKE_DATA == true
-    storage->err = ESP_OK;
-    storage->result = esp_random() % 75;
+    client->handlerParams.err = ESP_OK;
+    client->handlerParams.result = esp_random() % 75;
     vTaskDelay(300 / portTICK_PERIOD_MS);
 #else
     ESP_RETURN_ON_ERROR(
-        esp_http_client_perform(tomtomHandle),
+        esp_http_client_perform(client->httpHandle),
         TAG, "failed to make HTTPS request to TomTom"
     );
     ESP_RETURN_ON_FALSE(
-        (esp_http_client_get_status_code(tomtomHandle) == 200), ESP_FAIL,
+        (esp_http_client_get_status_code(client->httpHandle) == 200), ESP_FAIL,
         TAG, "received bad status code from TomTom"
     );
 #endif /* USE_FAKE_DATA */
     ESP_RETURN_ON_FALSE(
-        (storage->err == ESP_OK), ESP_FAIL,
+        (client->handlerParams.err == ESP_OK), ESP_FAIL,
         TAG, "received an error code from tomtom http handler"
     );
-    *result = storage->result;
+    *result = client->handlerParams.result;
     return ESP_OK;
 }

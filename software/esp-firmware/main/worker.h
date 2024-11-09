@@ -66,17 +66,16 @@ void vDotWorkerTask(void *pvParameters) {
     char *apiKey = ((struct dotWorkerTaskParams*) pvParameters)->apiKey;
     bool *errorOccurred = ((struct dotWorkerTaskParams*) pvParameters)->errorOccurred;
     SemaphoreHandle_t errorOccurredMutex = ((struct dotWorkerTaskParams*) pvParameters)->errorOccurredMutex;
-
-    struct tomtomHttpHandlerParams storage = {
-        .err = ESP_FAIL,
-        .result = 0,
-        .prevBuffer = NULL,
-    };
-
-    esp_http_client_handle_t tomtomHandle = tomtomCreateHttpHandle(&storage);
-    while (tomtomHandle == NULL) {
+    tomtomClient client;
+    if (tomtomInitClient(&client, apiKey) != ESP_OK) {
+        if (!boolWithTestSet(errorOccurred, errorOccurredMutex)) {
+            gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);
+            gpio_set_level(ERR_LED_PIN, 1);
+        }
+        for (;;) {}
+    }
+    while (tomtomInitClient(&client, apiKey) != ESP_OK) {
         vTaskDelay(RETRY_CREATE_HTTP_HANDLE_TICKS);
-        tomtomHandle = tomtomCreateHttpHandle(&storage);
     }
     DotCommand dot;
     uint speed, red, green, blue;
@@ -93,7 +92,7 @@ void vDotWorkerTask(void *pvParameters) {
         if (xQueueReceive(dotQueue, &dot, CHECK_ERROR_PERIOD_TICKS) == pdFALSE) {
             continue;
         }
-        if (tomtomRequestSpeed(&speed, tomtomHandle, &storage, apiKey, dot.ledNum, dot.dir) != ESP_OK) {
+        if (tomtomRequestSpeed(&speed, &client, dot.ledNum, dot.dir) != ESP_OK) {
             switch (dot.dir) {
                 case NORTH:
                     ESP_LOGE(TAG, "failed to request northbound led %d speed from TomTom", dot.ledNum);
