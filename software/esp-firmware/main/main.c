@@ -81,6 +81,7 @@ struct dirButtonISRParams {
 
 void dirButtonISR(void *params);
 void timerCallback(void *params);
+void timerFlashDirCallback(void *params);
 esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle);
 esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle);
 esp_err_t initDotMatrices(QueueHandle_t I2CQueue);
@@ -119,6 +120,27 @@ void app_main(void)
       NULL, NULL
     );
     uart_vfs_dev_use_driver(UART_NUM_0); // enable interrupt driven IO
+    /* set direction of direction led pins */
+    gpio_set_level(LED_NORTH_PIN, 0);
+    gpio_set_level(LED_EAST_PIN, 0);
+    gpio_set_level(LED_SOUTH_PIN, 0);
+    gpio_set_level(LED_WEST_PIN, 0);
+    SPIN_IF_ERR(
+      gpio_set_direction(LED_NORTH_PIN, GPIO_MODE_OUTPUT),
+      NULL, NULL
+    );
+    SPIN_IF_ERR(
+      gpio_set_direction(LED_EAST_PIN, GPIO_MODE_OUTPUT),
+      NULL, NULL
+    );
+    SPIN_IF_ERR(
+      gpio_set_direction(LED_SOUTH_PIN, GPIO_MODE_OUTPUT),
+      NULL, NULL
+    );
+    SPIN_IF_ERR(
+      gpio_set_direction(LED_WEST_PIN, GPIO_MODE_OUTPUT),
+      NULL, NULL
+    );
     /* initialize NVS */
     ESP_LOGI(TAG, "initializing nvs");
     SPIN_IF_ERR(
@@ -341,6 +363,19 @@ void timerCallback(void *params) {
 }
 
 /**
+ * Enabled when a settings update is requested, this callback
+ * toggles all the direction LEDs.
+ */
+void timerFlashDirCallback(void *params) {
+  int *currentOutput = (int *) params;
+  *currentOutput = (*currentOutput == 1) ? 0 : 1;
+  gpio_set_level(LED_NORTH_PIN, *currentOutput);
+  gpio_set_level(LED_EAST_PIN, *currentOutput);
+  gpio_set_level(LED_WEST_PIN, *currentOutput);
+  gpio_set_level(LED_SOUTH_PIN, *currentOutput);
+}
+
+/**
  * Determines whether user settings currently exist in non-volatile
  * storage, which should not be true on the first powerup of the system.
  */
@@ -370,14 +405,14 @@ esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle) {
  * the responses into non-volatile storage.
  */
 esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
-  const unsigned int bufLen = 256;
+  const unsigned short bufLen = 256;
   char c;
   char buf[bufLen];
   ESP_LOGI(TAG, "Querying settings from user...");
   printf("\n\nWifi SSID: ");
   fflush(stdout);
   for (int i = 0; i < bufLen; i++) {
-    buf[i] = getc(stdin);
+    buf[i] = getchar();
     if (buf[i] == '\n') {
       buf[i] = '\0';
       break;
@@ -396,7 +431,7 @@ esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
   printf("\n\nWifi Password: ");
   fflush(stdout);
   for (int i = 0; i < bufLen; i++) {
-    buf[i] = getc(stdin);
+    buf[i] = getchar();
     if (buf[i] == '\n') {
       buf[i] = '\0';
       break;
@@ -415,7 +450,7 @@ esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
   printf("\n\nAPI Key: ");
   fflush(stdout);
   for (int i = 0; i < bufLen; i++) {
-    buf[i] = getc(stdin);
+    buf[i] = getchar();
     if (buf[i] == '\n') {
       buf[i] = '\0';
       break;
@@ -831,16 +866,34 @@ void updateSettingsAndRestart(nvs_handle_t nvsHandle, bool *errorOccurred, Semap
   /* Errors are assumed to be settings issues, thus let the
   user update settings, then restart the system */
   ESP_LOGE(TAG, "Requesting settings update due to a handleable error");
-  /* turn on error led to indicate a settings update is requested */
+  /* turn on error led and flash direction leds to indicate a settings update is requested */
   if (errorOccurred == NULL || errorOccurredMutex == NULL || !boolWithTestSet(errorOccurred, errorOccurredMutex)) {
     gpio_set_direction(ERR_LED_PIN, GPIO_MODE_INPUT_OUTPUT);
     gpio_set_level(ERR_LED_PIN, 1);
+  }
+  int currentFlashOutput = 0;
+  esp_timer_create_args_t flashTimerArgs = {
+    .callback = timerFlashDirCallback,
+    .dispatch_method = ESP_TIMER_ISR,
+    .name = "flashDirTimer",
+    .arg = &currentFlashOutput,
+  };
+  esp_timer_handle_t flashDirTimer;
+  if (esp_timer_create(&flashTimerArgs, &flashDirTimer) != ESP_OK) {
+    spinForever(NULL, NULL);
+  }
+  if (esp_timer_start_periodic(flashDirTimer, CONFIG_ERROR_PERIOD * 1000) != ESP_OK) {
+    spinForever(NULL, NULL);
   }
   /* request settings update from user */
   if (getNvsEntriesFromUser(nvsHandle) != ESP_OK) {
     spinForever(NULL, NULL);
   }
-  /* turn off error led and restart */
+  /* turn off error led and direction leds and restart */
   gpio_set_level(ERR_LED_PIN, 0);
+  gpio_set_level(LED_NORTH_PIN, 0);
+  gpio_set_level(LED_EAST_PIN, 0);
+  gpio_set_level(LED_SOUTH_PIN, 0);
+  gpio_set_level(LED_WEST_PIN, 0);
   esp_restart();
 }
