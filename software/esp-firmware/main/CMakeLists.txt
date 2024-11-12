@@ -1,4 +1,4 @@
-idf_component_register(SRCS "main.c"
+idf_component_register(SRCS "led_locations.c" "main.c"
                     INCLUDE_DIRS "."
                     REQUIRES DotsMatrix
                              TomTom

@@ -28,7 +28,6 @@
 
 /* Tomtom component includes */
 #include "api_config.h"
-#include "led_locations.h"
 
 #define TAG "TomTom"
 
@@ -66,11 +65,11 @@
  * 
  * Requires: String is of minimum size URL_LENGTH.
  */
-esp_err_t tomtomFormRequestURL(char *urlStr, char *apiKey, const LEDLoc *led) {
+esp_err_t tomtomFormRequestURL(char *urlStr, char *apiKey, float longitude, float latitude) {
     int lenDouble;
     /* input guards */
     ESP_RETURN_ON_FALSE(
-        (urlStr != NULL && led != NULL), ESP_FAIL,
+        (urlStr != NULL), ESP_FAIL,
         TAG, "tomtomFormRequestURL given a NULL input"
     );
     /* begin forming request URL */
@@ -78,66 +77,20 @@ esp_err_t tomtomFormRequestURL(char *urlStr, char *apiKey, const LEDLoc *led) {
     strcat(urlStr, apiKey);
     strcat(urlStr, API_URL_POINT);
     /* append latitude into string */
-    lenDouble = snprintf(&urlStr[strlen(urlStr)], DOUBLE_STR_SIZE, "%lf", led->latitude);
+    lenDouble = snprintf(&urlStr[strlen(urlStr)], DOUBLE_STR_SIZE, "%f", longitude);
     ESP_RETURN_ON_FALSE(
         (lenDouble > 0), ESP_FAIL,
         TAG, "failed to convert double to string"
     );
     strcat(urlStr, API_URL_BETWEEN);
     /* append longitude into string */
-    lenDouble = snprintf(&urlStr[strlen(urlStr)], DOUBLE_STR_SIZE, "%lf", led->longitude);
+    lenDouble = snprintf(&urlStr[strlen(urlStr)], DOUBLE_STR_SIZE, "%f", latitude);
     ESP_RETURN_ON_FALSE(
         (lenDouble > 0), ESP_FAIL,
         TAG, "failed to convert double to string"
     );
     strcat(urlStr, API_URL_POSTFIX);
     return ESP_OK;
-}
-
-/**
- * Gets the physical coordinates of the road segment
- * corresponding to the LED designated by ledNum, which
- * is the hardware number in Kicad of the LED.
- * 
- * Parameters:
- *  - ledNum: The Kicad hardware number of the LED.
- *  - dir: The direction of travel of the road segment.
- * 
- * Returns: A pointer to a struct containing the longitude
- *          and latitude denoting the road segment. NULL if
- *          an error occurred.
- */
-const LEDLoc* getLED(unsigned short ledNum, Direction dir) {
-    const LEDLoc *ledLocs = NULL;
-    /* map led num 329 and 330 to reasonable numbers */ 
-    ledNum = (ledNum == 329) ? 325 : ledNum;
-    ledNum = (ledNum == 330) ? 326 : ledNum;
-    /* input guards */
-    if (ledNum < 1 || ledNum > 326) {
-        return NULL;
-    }
-    /* retrieve correct LED location array */
-    switch (dir) {
-        case NORTH:
-            ledLocs = northLEDLocs;
-            break;
-        case SOUTH:
-            ledLocs = southLEDLocs;
-            break;
-        default:
-            return NULL;
-    }
-    /* get correct LED location */
-    if (ledLocs[ledNum - 1].flowSpeed == 0) {
-        return NULL;
-    } else if (ledLocs[ledNum - 1].flowSpeed < 0) {
-        /* flow speed is the negative of the correct LED hardware number */
-        if (-(ledLocs[ledNum - 1].flowSpeed) <= 0) {
-            return NULL;
-        }
-        return getLED(-(ledLocs[ledNum - 1].flowSpeed), dir);
-    }
-    return &(ledLocs[ledNum - 1]);
 }
 
 /**
@@ -151,20 +104,15 @@ const LEDLoc* getLED(unsigned short ledNum, Direction dir) {
  * 
  * Returns: ESP_OK if successful.
  */
-esp_err_t tomtomRequestSpeed(unsigned int *result, tomtomClient *client, unsigned short ledNum, Direction dir, int retryNum) {
+esp_err_t tomtomRequestSpeed(unsigned int *result, tomtomClient *client, float longitude, float latitude, int retryNum) {
     char *urlStr = malloc(URL_LENGTH(client->apiKey));
-    const LEDLoc *led;
     /* input guards */
-    if (result == NULL) {
-        return ESP_FAIL;
-    }
-    led = getLED(ledNum, dir);
-    if (led == NULL) {
+    if (result == NULL || client == NULL) {
         return ESP_FAIL;
     }
     /* create http URL and perform request */
     ESP_RETURN_ON_ERROR(
-        tomtomFormRequestURL(urlStr, client->apiKey, led),
+        tomtomFormRequestURL(urlStr, client->apiKey, longitude, latitude),
         TAG, "failed to form request url"
     );
     ESP_RETURN_ON_ERROR(

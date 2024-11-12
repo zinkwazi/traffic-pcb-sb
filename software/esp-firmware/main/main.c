@@ -34,6 +34,7 @@
 #include "pinout.h"
 #include "worker.h"
 #include "utilities.h"
+#include "led_registers.h"
 
 /* Component includes */
 #include "api_config.h"
@@ -56,7 +57,7 @@
 #define DOTS_WORKER_PRIO (ESP_TASK_MAIN_PRIO - 1)
 #define DOTS_QUEUE_SIZE 10
 
-#define NUM_LEDS sizeof(northLEDLocs) / sizeof(northLEDLocs[0])
+#define NUM_LEDS sizeof(LEDNumToReg) / sizeof(LEDNumToReg[0])
 #define DOTS_GLOBAL_CURRENT 0x08
 
 #define SPIN_IF_ERR(x, occurred, errMutex) if (x != ESP_OK) { spinForever(occurred, errMutex); }
@@ -246,10 +247,6 @@ void app_main(void)
     /* initialize matrices */
     SPIN_IF_ERR(
       initDotMatrices(I2CQueue),
-      &errorOccurred, errorOccurredMutex
-    );
-    SPIN_IF_ERR(
-      clearLEDs(I2CQueue, SOUTH),
       &errorOccurred, errorOccurredMutex
     );
     /* create timer */
@@ -537,7 +534,7 @@ esp_err_t initDotMatrices(QueueHandle_t I2CQueue) {
       dotsSetGlobalCurrentControl(I2CQueue, DOTS_GLOBAL_CURRENT),
       TAG, "failed to change dot matrices global current control"
     );
-    for (int i = 1; i <= NUM_LEDS; i++) {
+    for (int i = 1; i < NUM_LEDS; i++) {
       ESP_RETURN_ON_ERROR(
         dotsSetScaling(I2CQueue, i, 0xFF, 0xFF, 0xFF),
         TAG, "failed to set dot scaling"
@@ -728,9 +725,10 @@ esp_err_t disableDirectionButtonIntr(void) {
  * and I2C command queue to be empty before calling this function.
  */
 esp_err_t clearLEDs(QueueHandle_t I2CQueue, Direction dir) {
+  ESP_LOGI(TAG, "NUM_LEDS: %d", NUM_LEDS);
   switch (dir) {
     case NORTH:
-      for(int i = NUM_LEDS; i > 0; i--) {
+      for(int i = NUM_LEDS - 1; i > 0; i--) {
         ESP_RETURN_ON_ERROR(
           dotsSetColor(I2CQueue, i, 0x00, 0x00, 0x00),
           TAG, "failed to clear led"
@@ -738,7 +736,7 @@ esp_err_t clearLEDs(QueueHandle_t I2CQueue, Direction dir) {
       }
       break;
     case SOUTH:
-      for(int i = 1; i <= NUM_LEDS; i++) {
+      for(int i = 1; i < NUM_LEDS; i++) {
         ESP_RETURN_ON_ERROR(
           dotsSetColor(I2CQueue, i, 0x00, 0x00, 0x00),
           TAG, "failed to clear led"
@@ -747,6 +745,7 @@ esp_err_t clearLEDs(QueueHandle_t I2CQueue, Direction dir) {
       break;
   }
 
+  
   
   return ESP_OK;
 }
@@ -768,16 +767,16 @@ esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir) {
   /* update direction LEDs */
   switch (dir) {
     case NORTH:
-      startNdx = NUM_LEDS;
-      endNdx = 1;
+      startNdx = northLEDLen - 1;
+      endNdx = 0;
       northLvl = 1;
       eastLvl = 0;
       southLvl = 0;
       westLvl = 1;
       break;
     case SOUTH:
-      startNdx = 1;
-      endNdx = NUM_LEDS;
+      startNdx = 0;
+      endNdx = southLEDLen - 1;
       northLvl = 0;
       eastLvl = 1;
       southLvl = 1;
@@ -808,14 +807,16 @@ esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir) {
   dot.dir = dir;
   if (startNdx <= endNdx) {
     for (int i = startNdx; i <= endNdx; i++) {
-      dot.ledNum = i;
+      dot.ledArrNum = i;
+      ESP_LOGI(TAG, "sending %d", i);
       while (pdPASS != xQueueSendToBack(dotQueue, &dot, INT_MAX)) {
         ESP_LOGI(TAG, "failed to add dot to queue, retrying...");
       }
     }
   } else {
     for (int i = startNdx; i >= endNdx; i--) {
-      dot.ledNum = i;
+      dot.ledArrNum = i;
+      ESP_LOGI(TAG, "sending %d", i);
       while (pdPASS != xQueueSendToBack(dotQueue, &dot, INT_MAX)) {
         ESP_LOGI(TAG, "failed to add dot to queue, retrying...");
       }

@@ -16,6 +16,7 @@
 #include "utilities.h"
 #include "dots_commands.h"
 #include "tomtom.h"
+#include "led_locations.h"
 #include "pinout.h"
 #include "worker.h"
 
@@ -25,7 +26,7 @@
 #define CHECK_ERROR_PERIOD_TICKS 500
 
 struct DotCommand {
-    uint16_t ledNum;
+    uint16_t ledArrNum; // the array index of the location to query
     Direction dir;
 };
 
@@ -92,16 +93,17 @@ void vDotWorkerTask(void *pvParameters) {
         if (xQueueReceive(dotQueue, &dot, CHECK_ERROR_PERIOD_TICKS) == pdFALSE) {
             continue;
         }
-        if (tomtomRequestSpeed(&speed, &client, dot.ledNum, dot.dir, CONFIG_NUM_RETRY_HTTP_REQUEST) != ESP_OK) {
+        const LEDLoc *ledLoc = getLoc(dot.ledArrNum, dot.dir);
+        if (tomtomRequestSpeed(&speed, &client, ledLoc->latitude, ledLoc->longitude, CONFIG_NUM_RETRY_HTTP_REQUEST) != ESP_OK) {
             switch (dot.dir) {
                 case NORTH:
-                    ESP_LOGE(TAG, "failed to request northbound led %d speed from TomTom", dot.ledNum);
+                    ESP_LOGE(TAG, "failed to request northbound led location index %d speed from TomTom", dot.ledArrNum);
                     break;
                 case SOUTH:
-                    ESP_LOGE(TAG, "failed to request southbound led %d speed from TomTom", dot.ledNum);
+                    ESP_LOGE(TAG, "failed to request southbound led location index %d speed from TomTom", dot.ledArrNum);
                     break;
                 default:
-                    ESP_LOGE(TAG, "failed to request (unknown direction) led %d speed from TomTom", dot.ledNum);
+                    ESP_LOGE(TAG, "failed to request (unknown direction) led location index %d speed from TomTom", dot.ledArrNum);
                     break;
             }
             /* start error timer */
@@ -136,10 +138,33 @@ void vDotWorkerTask(void *pvParameters) {
             green = 0xFF;
             blue = 0x00;
         }
-        /* update led color */
-        if (dotsSetColor(I2CQueue, dot.ledNum, red, green, blue) != ESP_OK) {
-            ESP_LOGE(TAG, "failed to change led %d color", dot.ledNum);
-            continue;
+        /* update led colors */
+        /* determine length of hardware LED array */
+        int hardwareArrLen = 0;
+        while (ledLoc->hardwareNums[hardwareArrLen] != 0) {
+            hardwareArrLen++;
+        }
+        /* update led colors in the proper order */
+        switch (dot.dir) {
+            case NORTH:
+                for (int ndx = hardwareArrLen - 1; ndx >= 0; ndx--) {
+                    ESP_LOGI(TAG, "setting color of hardware num %d", ledLoc->hardwareNums[ndx]);
+                    if (dotsSetColor(I2CQueue, ledLoc->hardwareNums[ndx], red, green, blue) != ESP_OK) {
+                        ESP_LOGE(TAG, "failed to change led %d color", ledLoc->hardwareNums[ndx]);
+                    }
+                }
+                break;
+            case SOUTH:
+                for (int ndx = 0; ndx < hardwareArrLen; ndx++) {
+                    ESP_LOGI(TAG, "setting color of hardware num %d", ledLoc->hardwareNums[ndx]);
+                    if (dotsSetColor(I2CQueue, ledLoc->hardwareNums[ndx], red, green, blue) != ESP_OK) {
+                        ESP_LOGE(TAG, "failed to change led %d color", ledLoc->hardwareNums[ndx]);
+                    }
+                }
+                break;
+            default:
+                ESP_LOGE(TAG, "worker encountered invalid direction");
+                break;
         }
     }
     ESP_LOGE(TAG, "dot worker task is exiting! This should be impossible!");
