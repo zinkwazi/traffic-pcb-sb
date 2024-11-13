@@ -98,8 +98,10 @@ void executeI2CCommand(I2CCommand *command) {
             ESP_LOGW(TAG, "I2C gatekeeper recieved an invalid command");
             return;
     }
-    if (err != ESP_OK) {
-        xTaskNotifyGive(command->notifyTask);
+    if (err != ESP_OK && command->notifyTask != NULL) {
+        xTaskNotify(command->notifyTask, DOTS_ERR_VAL, eSetValueWithOverwrite);
+    } else if (err == ESP_OK && command->notifyTask != NULL) {
+        xTaskNotify(command->notifyTask, DOTS_OK_VAL, eSetValueWithOverwrite);
     }
 }
 
@@ -143,7 +145,7 @@ void vI2CGatekeeperTask(void *pvParameters) {
     vTaskDelete(NULL); // exit safely (should never happen)
 }
 
-void addCommandToI2CQueue(QueueHandle_t queue, enum I2CCommandFunc func, void *params, TaskHandle_t notifyTask) {
+esp_err_t addCommandToI2CQueue(QueueHandle_t queue, enum I2CCommandFunc func, void *params, TaskHandle_t notifyTask, bool blocking) {
     I2CCommand command = { // queueing is by copy, not reference
         .func = func,
         .params = params,
@@ -152,6 +154,19 @@ void addCommandToI2CQueue(QueueHandle_t queue, enum I2CCommandFunc func, void *p
     while (xQueueSendToBack(queue, &command, INT_MAX) != pdTRUE) {
         ESP_LOGE(TAG, "failed to add command to queue, retrying...");
     }
+    if (blocking) {
+        uint32_t returnValue = ulTaskNotifyTake(pdTRUE, INT_MAX);
+        switch (returnValue) {
+            case DOTS_OK_VAL:
+                return ESP_OK;
+            case DOTS_ERR_VAL:
+                return ESP_FAIL;
+            default:
+                ESP_LOGE(TAG, "received unknown return value from I2C gatekeeper");
+                return ESP_FAIL;
+        }
+    }
+    return ESP_OK;
 }
 
 /**
@@ -161,7 +176,7 @@ void addCommandToI2CQueue(QueueHandle_t queue, enum I2CCommandFunc func, void *p
  * Returns: ESP_OK if successful. Otherwise, the configuration
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dotsSetOperatingMode(QueueHandle_t queue, enum Operation setting) {
+esp_err_t dotsSetOperatingMode(QueueHandle_t queue, enum Operation setting, bool notify, bool blocking) {
     /* copy params to heap */
     enum Operation *heapSetting = malloc(sizeof(enum Operation)); // owner becomes I2CGatekeeper
     ESP_RETURN_ON_FALSE(
@@ -170,8 +185,8 @@ esp_err_t dotsSetOperatingMode(QueueHandle_t queue, enum Operation setting) {
     );
     *heapSetting = setting;
     /* send command */
-    addCommandToI2CQueue(queue, SET_OPERATING_MODE, (void *) heapSetting, xTaskGetCurrentTaskHandle());
-    return ESP_OK;
+    TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
+    return addCommandToI2CQueue(queue, SET_OPERATING_MODE, (void *) heapSetting, notifyTask, blocking);
 }
 
 /**
@@ -181,7 +196,7 @@ esp_err_t dotsSetOperatingMode(QueueHandle_t queue, enum Operation setting) {
  * Returns: ESP_OK if successful. Otherwise, the configuration
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dotsSetOpenShortDetection(QueueHandle_t queue, enum ShortDetectionEnable setting) {
+esp_err_t dotsSetOpenShortDetection(QueueHandle_t queue, enum ShortDetectionEnable setting, bool notify, bool blocking) {
     /* copy params to heap */
     enum ShortDetectionEnable *heapSetting = malloc(sizeof(enum ShortDetectionEnable)); // owner becomes I2CGatekeeper
     ESP_RETURN_ON_FALSE(
@@ -190,8 +205,8 @@ esp_err_t dotsSetOpenShortDetection(QueueHandle_t queue, enum ShortDetectionEnab
     );
     *heapSetting = setting;
     /* send command */
-    addCommandToI2CQueue(queue, SET_OPEN_SHORT_DETECTION, (void *) heapSetting, xTaskGetCurrentTaskHandle());
-    return ESP_OK;
+    TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
+    return addCommandToI2CQueue(queue, SET_OPEN_SHORT_DETECTION, (void *) heapSetting, notifyTask, blocking);
 }
 
 /**
@@ -201,7 +216,7 @@ esp_err_t dotsSetOpenShortDetection(QueueHandle_t queue, enum ShortDetectionEnab
  * Returns: ESP_OK if successful. Otherwise, the configuration
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dotsSetLogicLevel(QueueHandle_t queue, enum LogicLevel setting) {
+esp_err_t dotsSetLogicLevel(QueueHandle_t queue, enum LogicLevel setting, bool notify, bool blocking) {
     /* copy params to heap */
     enum LogicLevel *heapSetting = malloc(sizeof(enum LogicLevel)); // owner becomes I2CGatekeeper
     ESP_RETURN_ON_FALSE(
@@ -210,8 +225,8 @@ esp_err_t dotsSetLogicLevel(QueueHandle_t queue, enum LogicLevel setting) {
     );
     *heapSetting = setting;
     /* send command */
-    addCommandToI2CQueue(queue, SET_LOGIC_LEVEL, (void *) heapSetting, xTaskGetCurrentTaskHandle());
-    return ESP_OK;
+    TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
+    return addCommandToI2CQueue(queue, SET_LOGIC_LEVEL, (void *) heapSetting, notifyTask, blocking);
 }
 
 /**
@@ -221,7 +236,7 @@ esp_err_t dotsSetLogicLevel(QueueHandle_t queue, enum LogicLevel setting) {
  * Returns: ESP_OK if successful. Otherwise, the configuration
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dotsSetSWxSetting(QueueHandle_t queue, enum SWXSetting setting) {
+esp_err_t dotsSetSWxSetting(QueueHandle_t queue, enum SWXSetting setting, bool notify, bool blocking) {
     /* copy params to heap */
     enum SWXSetting *heapSetting = malloc(sizeof(enum SWXSetting)); // owner becomes I2CGatekeeper
     ESP_RETURN_ON_FALSE(
@@ -230,8 +245,8 @@ esp_err_t dotsSetSWxSetting(QueueHandle_t queue, enum SWXSetting setting) {
     );
     *heapSetting = setting;
     /* send command */
-    addCommandToI2CQueue(queue, SET_SWX_SETTING, (void *) heapSetting, xTaskGetCurrentTaskHandle());
-    return ESP_OK;
+    TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
+    return addCommandToI2CQueue(queue, SET_SWX_SETTING, (void *) heapSetting, notifyTask, blocking);
 }
 
 /**
@@ -241,7 +256,7 @@ esp_err_t dotsSetSWxSetting(QueueHandle_t queue, enum SWXSetting setting) {
  * Returns: ESP_OK if successful. Otherwise, the register value
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dotsSetGlobalCurrentControl(QueueHandle_t queue, uint8_t value) {
+esp_err_t dotsSetGlobalCurrentControl(QueueHandle_t queue, uint8_t value, bool notify, bool blocking) {
     /* copy params to heap */
     uint8_t *heapValue = malloc(sizeof(uint8_t)); // owner becomes I2CGatekeeper
     ESP_RETURN_ON_FALSE(
@@ -250,8 +265,8 @@ esp_err_t dotsSetGlobalCurrentControl(QueueHandle_t queue, uint8_t value) {
     );
     *heapValue = value;
     /* send command */
-    addCommandToI2CQueue(queue, SET_GLOBAL_CURRENT_CONTROL, (void *) heapValue, xTaskGetCurrentTaskHandle());
-    return ESP_OK;
+    TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
+    return addCommandToI2CQueue(queue, SET_GLOBAL_CURRENT_CONTROL, (void *) heapValue, notifyTask, blocking);
 }
 
 /**
@@ -261,7 +276,7 @@ esp_err_t dotsSetGlobalCurrentControl(QueueHandle_t queue, uint8_t value) {
  * Returns: ESP_OK if successful. Otherwise, the register value
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dotsSetResistorPullupSetting(QueueHandle_t queue, enum ResistorSetting setting) {
+esp_err_t dotsSetResistorPullupSetting(QueueHandle_t queue, enum ResistorSetting setting, bool notify, bool blocking) {
     /* copy params to heap */
     enum ResistorSetting *heapSetting = malloc(sizeof(enum ResistorSetting)); // owner becomes I2CGatekeeper
     ESP_RETURN_ON_FALSE(
@@ -270,8 +285,8 @@ esp_err_t dotsSetResistorPullupSetting(QueueHandle_t queue, enum ResistorSetting
     );
     *heapSetting = setting;
     /* send command */
-    addCommandToI2CQueue(queue, SET_RESISTOR_PULLUP, (void *) heapSetting, xTaskGetCurrentTaskHandle());
-    return ESP_OK;
+    TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
+    return addCommandToI2CQueue(queue, SET_RESISTOR_PULLUP, (void *) heapSetting, notifyTask, blocking);
 }
 
 /**
@@ -281,7 +296,7 @@ esp_err_t dotsSetResistorPullupSetting(QueueHandle_t queue, enum ResistorSetting
  * Returns: ESP_OK if successful. Otherwise, the register value
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dotsSetResistorPulldownSetting(QueueHandle_t queue, enum ResistorSetting setting) {
+esp_err_t dotsSetResistorPulldownSetting(QueueHandle_t queue, enum ResistorSetting setting, bool notify, bool blocking) {
     /* copy params to heap */
     enum ResistorSetting *heapSetting = malloc(sizeof(enum ResistorSetting)); // owner becomes I2CGatekeeper
     ESP_RETURN_ON_FALSE(
@@ -290,14 +305,14 @@ esp_err_t dotsSetResistorPulldownSetting(QueueHandle_t queue, enum ResistorSetti
     );
     *heapSetting = setting;
     /* send command */
-    addCommandToI2CQueue(queue, SET_RESISTOR_PULLDOWN, (void *) heapSetting, xTaskGetCurrentTaskHandle());
-    return ESP_OK;
+    TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
+    return addCommandToI2CQueue(queue, SET_RESISTOR_PULLDOWN, (void *) heapSetting, notifyTask, blocking);
 }
 
 /** 
  * Sets the PWM frequency of all matrix ICs. 
  */
-esp_err_t dotsSetPWMFrequency(QueueHandle_t queue, enum PWMFrequency freq) {
+esp_err_t dotsSetPWMFrequency(QueueHandle_t queue, enum PWMFrequency freq, bool notify, bool blocking) {
     /* copy params to heap */
     enum PWMFrequency *heapFreq = malloc(sizeof(enum PWMFrequency)); // owner becomes I2CGatekeeper
     ESP_RETURN_ON_FALSE(
@@ -306,8 +321,8 @@ esp_err_t dotsSetPWMFrequency(QueueHandle_t queue, enum PWMFrequency freq) {
     );
     *heapFreq = freq;
     /* send command */
-    addCommandToI2CQueue(queue, SET_PWM_FREQUENCY, (void *) heapFreq, xTaskGetCurrentTaskHandle());
-    return ESP_OK;
+    TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
+    return addCommandToI2CQueue(queue, SET_PWM_FREQUENCY, (void *) heapFreq, notifyTask, blocking);
 }
 
 /**
@@ -316,10 +331,10 @@ esp_err_t dotsSetPWMFrequency(QueueHandle_t queue, enum PWMFrequency freq) {
  * Returns: ESP_OK if successful. Otherwise, some of
  *          the matrices may have been reset, but not all.
  */
-esp_err_t dotsReset(QueueHandle_t queue) {
+esp_err_t dotsReset(QueueHandle_t queue, bool notify, bool blocking) {
     /* send command */
-    addCommandToI2CQueue(queue, RESET, NULL, xTaskGetCurrentTaskHandle());
-    return ESP_OK;
+    TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
+    return addCommandToI2CQueue(queue, RESET, NULL, notifyTask, blocking);
 }
 
 
@@ -328,7 +343,7 @@ esp_err_t dotsReset(QueueHandle_t queue) {
  * number ledNum. Internally, this changes the PWM duty in
  * 256 steps.
  */
-esp_err_t dotsSetColor(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue) {
+esp_err_t dotsSetColor(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue, bool notify, bool blocking) {
     /* copy parameters to heap */
     struct SetColorParams *heapParams = malloc(sizeof(struct SetColorParams)); // owner becomes I2CGatekeeper
     ESP_RETURN_ON_FALSE(
@@ -340,8 +355,8 @@ esp_err_t dotsSetColor(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_
     heapParams->green = green;
     heapParams->blue = blue;
     /* send command */
-    addCommandToI2CQueue(queue, SET_COLOR, (void *) heapParams, xTaskGetCurrentTaskHandle());
-    return ESP_OK;
+    TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
+    return addCommandToI2CQueue(queue, SET_COLOR, (void *) heapParams, notifyTask, blocking);
 }
 
 
@@ -352,7 +367,7 @@ esp_err_t dotsSetColor(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_
  * for exact calculations. This can be considered a dimming
  * function.
  */
-esp_err_t dotsSetScaling(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue) {
+esp_err_t dotsSetScaling(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue, bool notify, bool blocking) {
     /* copy parameters to heap */
     struct SetScalingParams *heapParams = malloc(sizeof(struct SetColorParams)); // owner becomes I2CGatekeeper
     ESP_RETURN_ON_FALSE(
@@ -364,6 +379,6 @@ esp_err_t dotsSetScaling(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint
     heapParams->green = green;
     heapParams->blue = blue;
     /* send command */
-    addCommandToI2CQueue(queue, SET_SCALING, (void *) heapParams, xTaskGetCurrentTaskHandle());
-    return ESP_OK;
+    TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
+    return addCommandToI2CQueue(queue, SET_SCALING, (void *) heapParams, notifyTask, blocking);
 }

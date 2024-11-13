@@ -18,6 +18,15 @@
 
 #define TAG "dots_commands"
 
+#define DOTS_OK_VAL (0x81)
+#define DOTS_ERR_VAL (0x6A)
+
+#define DOTS_NOTIFY (true)
+#define DOTS_SILENT (false)
+
+#define DOTS_BLOCKING (true)
+#define DOTS_ASYNC (false)
+
 /**
  * This enum defines all possible commands
  * that can be given to the I2C gatekeeper. 
@@ -62,16 +71,16 @@ typedef struct I2CGatekeeperTaskParams I2CGatekeeperTaskParams;
 
 void vI2CGatekeeperTask(void *pvParameters);
 
-esp_err_t dotsSetOperatingMode(QueueHandle_t queue, enum Operation setting);
-esp_err_t dotsSetOpenShortDetection(QueueHandle_t queue, enum ShortDetectionEnable setting);
-esp_err_t dotsSetLogicLevel(QueueHandle_t queue, enum LogicLevel setting);
-esp_err_t dotsSetSWxSetting(QueueHandle_t queue, enum SWXSetting setting);
-esp_err_t dotsSetGlobalCurrentControl(QueueHandle_t queue, uint8_t value);
-esp_err_t dotsSetResistorPullupSetting(QueueHandle_t queue, enum ResistorSetting setting);
-esp_err_t dotsSetResistorPulldownSetting(QueueHandle_t queue, enum ResistorSetting setting);
-esp_err_t dotsSetPWMFrequency(QueueHandle_t queue, enum PWMFrequency freq);
-esp_err_t dotsReset(QueueHandle_t queue);
-esp_err_t dotsSetColor(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
-esp_err_t dotsSetScaling(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
+esp_err_t dotsSetOperatingMode(QueueHandle_t queue, enum Operation setting, bool notify, bool blocking);
+esp_err_t dotsSetOpenShortDetection(QueueHandle_t queue, enum ShortDetectionEnable setting, bool notify, bool blocking);
+esp_err_t dotsSetLogicLevel(QueueHandle_t queue, enum LogicLevel setting, bool notify, bool blocking);
+esp_err_t dotsSetSWxSetting(QueueHandle_t queue, enum SWXSetting setting, bool notify, bool blocking);
+esp_err_t dotsSetGlobalCurrentControl(QueueHandle_t queue, uint8_t value, bool notify, bool blocking);
+esp_err_t dotsSetResistorPullupSetting(QueueHandle_t queue, enum ResistorSetting setting, bool notify, bool blocking);
+esp_err_t dotsSetResistorPulldownSetting(QueueHandle_t queue, enum ResistorSetting setting, bool notify, bool blocking);
+esp_err_t dotsSetPWMFrequency(QueueHandle_t queue, enum PWMFrequency freq, bool notify, bool blocking);
+esp_err_t dotsReset(QueueHandle_t queue, bool notify, bool blocking);
+esp_err_t dotsSetColor(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue, bool notify, bool blocking);
+esp_err_t dotsSetScaling(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue, bool notify, bool blocking);
 
 #endif /* DOTS_COMMANDS_H_ */

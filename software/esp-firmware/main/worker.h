@@ -149,7 +149,7 @@ void vDotWorkerTask(void *pvParameters) {
             case NORTH:
                 for (int ndx = hardwareArrLen - 1; ndx >= 0; ndx--) {
                     ESP_LOGI(TAG, "setting color of hardware num %d", ledLoc->hardwareNums[ndx]);
-                    if (dotsSetColor(I2CQueue, ledLoc->hardwareNums[ndx], red, green, blue) != ESP_OK) {
+                    if (dotsSetColor(I2CQueue, ledLoc->hardwareNums[ndx], red, green, blue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK) {
                         ESP_LOGE(TAG, "failed to change led %d color", ledLoc->hardwareNums[ndx]);
                     }
                 }
@@ -157,7 +157,7 @@ void vDotWorkerTask(void *pvParameters) {
             case SOUTH:
                 for (int ndx = 0; ndx < hardwareArrLen; ndx++) {
                     ESP_LOGI(TAG, "setting color of hardware num %d", ledLoc->hardwareNums[ndx]);
-                    if (dotsSetColor(I2CQueue, ledLoc->hardwareNums[ndx], red, green, blue) != ESP_OK) {
+                    if (dotsSetColor(I2CQueue, ledLoc->hardwareNums[ndx], red, green, blue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK) {
                         ESP_LOGE(TAG, "failed to change led %d color", ledLoc->hardwareNums[ndx]);
                     }
                 }

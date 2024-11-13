@@ -527,21 +527,21 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct userSettings *settin
 esp_err_t initDotMatrices(QueueHandle_t I2CQueue) {
     ESP_LOGI(TAG, "initializing dot matrices");
     ESP_RETURN_ON_ERROR(
-      dotsReset(I2CQueue),
+      dotsReset(I2CQueue, DOTS_NOTIFY, DOTS_BLOCKING),
       TAG, "failed to reset dot matrices"
     );
     ESP_RETURN_ON_ERROR(
-      dotsSetGlobalCurrentControl(I2CQueue, DOTS_GLOBAL_CURRENT),
+      dotsSetGlobalCurrentControl(I2CQueue, DOTS_GLOBAL_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING),
       TAG, "failed to change dot matrices global current control"
     );
     for (int i = 1; i < NUM_LEDS; i++) {
       ESP_RETURN_ON_ERROR(
-        dotsSetScaling(I2CQueue, i, 0xFF, 0xFF, 0xFF),
+        dotsSetScaling(I2CQueue, i, 0xFF, 0xFF, 0xFF, DOTS_NOTIFY, DOTS_BLOCKING),
         TAG, "failed to set dot scaling"
       );
     }
     ESP_RETURN_ON_ERROR(
-      dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION),
+      dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING),
       TAG, "failed to set dot matrices into normal operation mode"
     );
     return ESP_OK;
@@ -730,7 +730,7 @@ esp_err_t clearLEDs(QueueHandle_t I2CQueue, Direction dir) {
     case NORTH:
       for(int i = NUM_LEDS - 1; i > 0; i--) {
         ESP_RETURN_ON_ERROR(
-          dotsSetColor(I2CQueue, i, 0x00, 0x00, 0x00),
+          dotsSetColor(I2CQueue, i, 0x00, 0x00, 0x00, DOTS_NOTIFY, DOTS_BLOCKING),
           TAG, "failed to clear led"
         );
       }
@@ -738,7 +738,7 @@ esp_err_t clearLEDs(QueueHandle_t I2CQueue, Direction dir) {
     case SOUTH:
       for(int i = 1; i < NUM_LEDS; i++) {
         ESP_RETURN_ON_ERROR(
-          dotsSetColor(I2CQueue, i, 0x00, 0x00, 0x00),
+          dotsSetColor(I2CQueue, i, 0x00, 0x00, 0x00, DOTS_NOTIFY, DOTS_BLOCKING),
           TAG, "failed to clear led"
         );
       }
