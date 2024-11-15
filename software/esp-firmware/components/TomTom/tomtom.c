@@ -20,7 +20,6 @@
 #include "esp_wifi.h"
 #include "lwip/sys.h"
 #include "esp_http_client.h"
-#include "esp_crt_bundle.h"
 #include "esp_random.h"
 #include "esp_system.h"
 #include "esp_event.h"
@@ -58,6 +57,9 @@
 /* Custom error codes */
 #define TOMTOM_ERR_OFFSET 0xe000
 #define TOMTOM_NO_SPEED -(TOMTOM_ERR_OFFSET + 1) // Defines that the function was unable to parse a speed
+
+extern const char tomtom_ca_cert_pem_start[] asm("_binary_tomtom_ca_cert_pem_start");
+extern const char tomtom_ca_cert_pem_end[] asm("_binary_tomtom_ca_cert_pem_end");
 
 /**
  * Forms the proper TomTom request URL given an LED location and
@@ -381,7 +383,8 @@ esp_err_t tomtomInitClient(tomtomClient *client, char *apiKey) {
         .path = "/",
         .auth_type = API_AUTH_TYPE,
         .method = API_METHOD,
-        .crt_bundle_attach = esp_crt_bundle_attach,
+        .transport_type = HTTP_TRANSPORT_OVER_SSL,
+        .cert_pem = tomtom_ca_cert_pem_start,
         .event_handler = tomtomHttpHandler,
         .user_data = &(client->handlerParams),
     };
