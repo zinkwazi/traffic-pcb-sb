@@ -47,12 +47,12 @@
 #define WIFI_PASS_NVS_NAME "wifi_pass"
 #define API_KEY_NVS_NAME "api_key"
 
-#define I2C_GATEKEEPER_STACK ESP_TASK_MAIN_STACK // TODO: determine minimum stack size for i2c gatekeeper
+#define I2C_GATEKEEPER_STACK (ESP_TASK_MAIN_STACK - 1400)
 #define I2C_GATEKEEPER_PRIO (ESP_TASK_MAIN_PRIO + 1) // always start an I2C command if possible
 #define I2C_QUEUE_SIZE 20
 
-#define NUM_DOT_WORKERS 5
-#define DOTS_WORKER_STACK ESP_TASK_MAIN_STACK
+#define NUM_DOT_WORKERS 4
+#define DOTS_WORKER_STACK (ESP_TASK_MAIN_STACK - 1000)
 #define DOTS_WORKER_PRIO (ESP_TASK_MAIN_PRIO - 1)
 #define DOTS_QUEUE_SIZE 10
 
