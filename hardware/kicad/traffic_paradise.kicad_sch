@@ -5497,6 +5497,16 @@
 	)
 	(wire
 		(pts
+			(xy 275.59 90.17) (xy 287.02 90.17)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9400cc27-8015-4040-be31-42fa31bb0bc6")
+	)
+	(wire
+		(pts
 			(xy 354.33 66.04) (xy 354.33 67.31)
 		)
 		(stroke
@@ -6067,16 +6077,6 @@
 	)
 	(wire
 		(pts
-			(xy 275.59 64.77) (xy 287.02 64.77)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f33495ba-3ea1-4ce6-bc93-5b7b7f2d454f")
-	)
-	(wire
-		(pts
 			(xy 60.96 38.1) (xy 60.96 39.37)
 		)
 		(stroke
@@ -6643,17 +6643,6 @@
 		)
 		(uuid "6c4990cf-2a18-4740-b449-dec66eb714d1")
 	)
-	(label "LED_EAST"
-		(at 287.02 64.77 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "6d87a0bb-37db-4b61-a968-8d460efea755")
-	)
 	(label "SCL"
 		(at 283.21 97.79 180)
 		(fields_autoplaced yes)
@@ -6686,6 +6675,17 @@
 			(justify right bottom)
 		)
 		(uuid "71fb7112-8589-4e2b-adfa-ce4f91476145")
+	)
+	(label "LED_EAST"
+		(at 287.02 90.17 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "7520fbf2-6222-4112-9f9d-28108f3d240e")
 	)
 	(label "DTR"
 		(at 158.75 67.31 180)
