@@ -308,6 +308,19 @@ esp_err_t establishWifiConnection(char *wifiSSID, char* wifiPass)
                                pdFALSE,
                                portMAX_DELAY);
     free(eventData.wifiEventGroup);
+    /* unregister connect handler */
+    ret = esp_event_handler_instance_unregister(WIFI_EVENT,
+                                                ESP_EVENT_ANY_ID,
+                                                instanceAnyID);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+    ret = esp_event_handler_instance_unregister(IP_EVENT,
+                                                IP_EVENT_STA_GOT_IP,
+                                                instanceAnyIP);
+    if (ret != ESP_OK) {
+        return ret;
+    }
     return (bits & ~WIFI_FAIL_BIT) ? ESP_OK : ESP_FAIL;
 }
 

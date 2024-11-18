@@ -202,5 +202,4 @@ void vOTATask(void* pvParameters) {
     }
 }
 
-
 #endif /* WORKER_H_ */
