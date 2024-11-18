@@ -179,10 +179,9 @@ esp_err_t addCommandToI2CQueue(QueueHandle_t queue, enum I2CCommandFunc func, vo
 esp_err_t dotsSetOperatingMode(QueueHandle_t queue, enum Operation setting, bool notify, bool blocking) {
     /* copy params to heap */
     enum Operation *heapSetting = malloc(sizeof(enum Operation)); // owner becomes I2CGatekeeper
-    ESP_RETURN_ON_FALSE(
-        (heapSetting != NULL), ESP_FAIL,
-        TAG, "failed to allocate memory"
-    );
+    if (heapSetting == NULL) {
+        return ESP_FAIL;
+    }
     *heapSetting = setting;
     /* send command */
     TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
@@ -199,10 +198,9 @@ esp_err_t dotsSetOperatingMode(QueueHandle_t queue, enum Operation setting, bool
 esp_err_t dotsSetOpenShortDetection(QueueHandle_t queue, enum ShortDetectionEnable setting, bool notify, bool blocking) {
     /* copy params to heap */
     enum ShortDetectionEnable *heapSetting = malloc(sizeof(enum ShortDetectionEnable)); // owner becomes I2CGatekeeper
-    ESP_RETURN_ON_FALSE(
-        (heapSetting != NULL), ESP_FAIL,
-        TAG, "failed to allocate memory"
-    );
+    if (heapSetting == NULL) {
+        return ESP_FAIL;
+    }
     *heapSetting = setting;
     /* send command */
     TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
@@ -219,10 +217,9 @@ esp_err_t dotsSetOpenShortDetection(QueueHandle_t queue, enum ShortDetectionEnab
 esp_err_t dotsSetLogicLevel(QueueHandle_t queue, enum LogicLevel setting, bool notify, bool blocking) {
     /* copy params to heap */
     enum LogicLevel *heapSetting = malloc(sizeof(enum LogicLevel)); // owner becomes I2CGatekeeper
-    ESP_RETURN_ON_FALSE(
-        (heapSetting != NULL), ESP_FAIL,
-        TAG, "failed to allocate memory"
-    );
+    if (heapSetting == NULL) {
+        return ESP_FAIL;
+    }
     *heapSetting = setting;
     /* send command */
     TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
@@ -239,10 +236,9 @@ esp_err_t dotsSetLogicLevel(QueueHandle_t queue, enum LogicLevel setting, bool n
 esp_err_t dotsSetSWxSetting(QueueHandle_t queue, enum SWXSetting setting, bool notify, bool blocking) {
     /* copy params to heap */
     enum SWXSetting *heapSetting = malloc(sizeof(enum SWXSetting)); // owner becomes I2CGatekeeper
-    ESP_RETURN_ON_FALSE(
-        (heapSetting != NULL), ESP_FAIL,
-        TAG, "failed to allocate memory"
-    );
+    if (heapSetting == NULL) {
+        return ESP_FAIL;
+    }
     *heapSetting = setting;
     /* send command */
     TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
@@ -259,10 +255,9 @@ esp_err_t dotsSetSWxSetting(QueueHandle_t queue, enum SWXSetting setting, bool n
 esp_err_t dotsSetGlobalCurrentControl(QueueHandle_t queue, uint8_t value, bool notify, bool blocking) {
     /* copy params to heap */
     uint8_t *heapValue = malloc(sizeof(uint8_t)); // owner becomes I2CGatekeeper
-    ESP_RETURN_ON_FALSE(
-        (heapValue != NULL), ESP_FAIL,
-        TAG, "failed to allocate memory"
-    );
+    if (heapValue == NULL) {
+        return ESP_FAIL;
+    }
     *heapValue = value;
     /* send command */
     TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
@@ -279,10 +274,9 @@ esp_err_t dotsSetGlobalCurrentControl(QueueHandle_t queue, uint8_t value, bool n
 esp_err_t dotsSetResistorPullupSetting(QueueHandle_t queue, enum ResistorSetting setting, bool notify, bool blocking) {
     /* copy params to heap */
     enum ResistorSetting *heapSetting = malloc(sizeof(enum ResistorSetting)); // owner becomes I2CGatekeeper
-    ESP_RETURN_ON_FALSE(
-        (heapSetting != NULL), ESP_FAIL,
-        TAG, "failed to allocate memory"
-    );
+    if (heapSetting == NULL) {
+        return ESP_FAIL;
+    }
     *heapSetting = setting;
     /* send command */
     TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
@@ -299,10 +293,9 @@ esp_err_t dotsSetResistorPullupSetting(QueueHandle_t queue, enum ResistorSetting
 esp_err_t dotsSetResistorPulldownSetting(QueueHandle_t queue, enum ResistorSetting setting, bool notify, bool blocking) {
     /* copy params to heap */
     enum ResistorSetting *heapSetting = malloc(sizeof(enum ResistorSetting)); // owner becomes I2CGatekeeper
-    ESP_RETURN_ON_FALSE(
-        (heapSetting != NULL), ESP_FAIL,
-        TAG, "failed to allocate memory"
-    );
+    if (heapSetting == NULL) {
+        return ESP_FAIL;
+    }
     *heapSetting = setting;
     /* send command */
     TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
@@ -315,10 +308,9 @@ esp_err_t dotsSetResistorPulldownSetting(QueueHandle_t queue, enum ResistorSetti
 esp_err_t dotsSetPWMFrequency(QueueHandle_t queue, enum PWMFrequency freq, bool notify, bool blocking) {
     /* copy params to heap */
     enum PWMFrequency *heapFreq = malloc(sizeof(enum PWMFrequency)); // owner becomes I2CGatekeeper
-    ESP_RETURN_ON_FALSE(
-        (heapFreq != NULL), ESP_FAIL,
-        TAG, "failed to allocate memory"
-    );
+    if (heapFreq == NULL) {
+        return ESP_FAIL;
+    }
     *heapFreq = freq;
     /* send command */
     TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
@@ -346,10 +338,9 @@ esp_err_t dotsReset(QueueHandle_t queue, bool notify, bool blocking) {
 esp_err_t dotsSetColor(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue, bool notify, bool blocking) {
     /* copy parameters to heap */
     struct SetColorParams *heapParams = malloc(sizeof(struct SetColorParams)); // owner becomes I2CGatekeeper
-    ESP_RETURN_ON_FALSE(
-        (heapParams != NULL), ESP_FAIL,
-        TAG, "failed to allocate memory"
-    );
+    if (heapParams == NULL) {
+        return ESP_FAIL;
+    }
     heapParams->ledNum = ledNum;
     heapParams->red = red;
     heapParams->green = green;
@@ -370,10 +361,9 @@ esp_err_t dotsSetColor(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_
 esp_err_t dotsSetScaling(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue, bool notify, bool blocking) {
     /* copy parameters to heap */
     struct SetScalingParams *heapParams = malloc(sizeof(struct SetColorParams)); // owner becomes I2CGatekeeper
-    ESP_RETURN_ON_FALSE(
-        (heapParams != NULL), ESP_FAIL,
-        TAG, "failed to allocate memory"
-    );
+    if (heapParams == NULL) {
+        return ESP_FAIL;
+    }
     heapParams->ledNum = ledNum;
     heapParams->red = red;
     heapParams->green = green;

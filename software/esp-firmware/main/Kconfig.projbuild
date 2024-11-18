@@ -18,4 +18,9 @@ menu "Main Application"
         help
             The number of times to retry a TomTom HTTP request, which has a small chance to fail to resolve the hostname.
 
+    config FIRMWARE_UPGRADE_URL
+        string "Firmware Upgrade URL"
+        help
+            The URL of the latest firmware binary file for this device.
+
 endmenu

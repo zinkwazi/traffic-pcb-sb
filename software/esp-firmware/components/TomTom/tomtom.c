@@ -68,27 +68,24 @@
 esp_err_t tomtomFormRequestURL(char *urlStr, char *apiKey, float longitude, float latitude) {
     int lenDouble;
     /* input guards */
-    ESP_RETURN_ON_FALSE(
-        (urlStr != NULL), ESP_FAIL,
-        TAG, "tomtomFormRequestURL given a NULL input"
-    );
+    if (urlStr == NULL) {
+        return ESP_FAIL;
+    }
     /* begin forming request URL */
     strcpy(urlStr, API_URL_PREFIX);
     strcat(urlStr, apiKey);
     strcat(urlStr, API_URL_POINT);
     /* append latitude into string */
     lenDouble = snprintf(&urlStr[strlen(urlStr)], DOUBLE_STR_SIZE, "%f", longitude);
-    ESP_RETURN_ON_FALSE(
-        (lenDouble > 0), ESP_FAIL,
-        TAG, "failed to convert double to string"
-    );
+    if (lenDouble <= 0) {
+        return ESP_FAIL;
+    }
     strcat(urlStr, API_URL_BETWEEN);
     /* append longitude into string */
     lenDouble = snprintf(&urlStr[strlen(urlStr)], DOUBLE_STR_SIZE, "%f", latitude);
-    ESP_RETURN_ON_FALSE(
-        (lenDouble > 0), ESP_FAIL,
-        TAG, "failed to convert double to string"
-    );
+    if (lenDouble <= 0) {
+        return ESP_FAIL;
+    }
     strcat(urlStr, API_URL_POSTFIX);
     return ESP_OK;
 }
@@ -111,14 +108,12 @@ esp_err_t tomtomRequestSpeed(unsigned int *result, tomtomClient *client, float l
         return ESP_FAIL;
     }
     /* create http URL and perform request */
-    ESP_RETURN_ON_ERROR(
-        tomtomFormRequestURL(urlStr, client->apiKey, longitude, latitude),
-        TAG, "failed to form request url"
-    );
-    ESP_RETURN_ON_ERROR(
-        tomtomRequestPerform(result, client, urlStr, retryNum),
-        TAG, "failed to perform API request"
-    );
+    if (tomtomFormRequestURL(urlStr, client->apiKey, longitude, latitude) != ESP_OK) {
+        return ESP_FAIL;
+    }
+    if (tomtomRequestPerform(result, client, urlStr, retryNum) != ESP_OK) {
+        return ESP_FAIL;
+    }
     free(urlStr);
     return ESP_OK;
 }
@@ -174,7 +169,6 @@ esp_err_t tomtomParseSpeed(unsigned int *result, char *chunk, unsigned int chunk
         bytes are a portion of the target speed characters */
         for (speedNdx = 0; dataNdx < strlen(prevBuffer) && prevBuffer[dataNdx] != targetPostfix; dataNdx++, speedNdx++) {
             if (speedNdx >= strlen(speedBuffer)) {
-                ESP_LOGE(TAG, "length of speed from http response was unexpectedly long");
                 return ESP_FAIL;
             }
             speedBuffer[speedNdx] = prevBuffer[dataNdx];
@@ -325,10 +319,9 @@ esp_err_t establishWifiConnection(char *wifiSSID, char* wifiPass)
 esp_err_t tomtomHttpHandler(esp_http_client_event_t *evt)
 {
     /* input guards */
-    ESP_RETURN_ON_FALSE(
-        (evt->user_data != NULL), ESP_FAIL,
-        TAG, "http event handler called with NULL parameters"
-    );
+    if (evt->user_data == NULL) {
+        return ESP_FAIL;
+    }
     /* get variables from parameters */
     esp_err_t ret = TOMTOM_NO_SPEED;
     uint *result = &((struct tomtomHttpHandlerParams *) evt->user_data)->result;
@@ -428,10 +421,9 @@ esp_err_t tomtomRequestPerform(unsigned int *result, tomtomClient *client, const
         return ESP_FAIL;
     }
     /* update client handle with URL */
-    ESP_RETURN_ON_ERROR(
-        esp_http_client_set_url(client->httpHandle, url),
-        TAG, "failed to set url of http client handle"
-    );
+    if (esp_http_client_set_url(client->httpHandle, url) != ESP_OK) {
+        return ESP_FAIL;
+    }
     /* reset storage for request */
     client->handlerParams.err = ESP_FAIL;
     client->handlerParams.result = 0;

@@ -171,5 +171,36 @@ void vDotWorkerTask(void *pvParameters) {
     vTaskDelete(NULL); // exit safely (should never happen)
 }
 
+void vOTATask(void* pvParameters) {
+    while (true) {
+        if (ulTaskNotifyTake(pdTRUE, INT_MAX) == 0) {
+            continue; // block on notification timed out
+        }
+        // received a task notification indicating update firmware
+        ESP_LOGI(TAG, "OTA update in progress...");
+        gpio_set_direction(LED_NORTH_PIN, GPIO_MODE_OUTPUT);
+        gpio_set_direction(LED_EAST_PIN, GPIO_MODE_OUTPUT);
+        gpio_set_direction(LED_SOUTH_PIN, GPIO_MODE_OUTPUT);
+        gpio_set_direction(LED_WEST_PIN, GPIO_MODE_OUTPUT);
+        gpio_set_level(LED_NORTH_PIN, 1);
+        gpio_set_level(LED_EAST_PIN, 1);
+        gpio_set_level(LED_SOUTH_PIN, 1);
+        gpio_set_level(LED_WEST_PIN, 1);
+        esp_http_client_config_t https_config = {
+            .url = CONFIG_FIRMWARE_UPGRADE_URL,
+            .crt_bundle_attach = esp_crt_bundle_attach,
+        };
+        esp_https_ota_config_t ota_config = {
+            .http_config = &https_config,
+        };
+        esp_err_t ret = esp_https_ota(&ota_config);
+        if (ret == ESP_OK) {
+            ESP_LOGI(TAG, "completed OTA update successfully!");
+            esp_restart();
+        }
+        ESP_LOGI(TAG, "did not complete OTA update successfully!");
+    }
+}
+
 
 #endif /* WORKER_H_ */

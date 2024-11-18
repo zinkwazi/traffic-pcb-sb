@@ -29,6 +29,7 @@
 #include "lwip/sys.h"
 #include "esp_timer.h"
 #include "nvs.h"
+#include "esp_https_ota.h"
 
 /* Main component includes */
 #include "pinout.h"
@@ -49,13 +50,16 @@
 #define API_KEY_NVS_NAME "api_key"
 
 #define I2C_GATEKEEPER_STACK (ESP_TASK_MAIN_STACK - 1400)
-#define I2C_GATEKEEPER_PRIO (ESP_TASK_MAIN_PRIO + 1) // always start an I2C command if possible
+#define I2C_GATEKEEPER_PRIO (ESP_TASK_MAIN_PRIO + 1) // always start an I2C command if possible, unless OTA update is requested
 #define I2C_QUEUE_SIZE 20
 
-#define NUM_DOT_WORKERS 4
+#define NUM_DOT_WORKERS 2
 #define DOTS_WORKER_STACK (ESP_TASK_MAIN_STACK - 1000)
 #define DOTS_WORKER_PRIO (ESP_TASK_MAIN_PRIO - 1)
 #define DOTS_QUEUE_SIZE 10
+
+#define OTA_TASK_STACK (ESP_TASK_MAIN_STACK)
+#define OTA_TASK_PRIO (ESP_TASK_MAIN_PRIO + 2) // always perform an OTA update if requested
 
 #define NUM_LEDS sizeof(LEDNumToReg) / sizeof(LEDNumToReg[0])
 #define DOTS_GLOBAL_CURRENT 0x08
@@ -81,6 +85,7 @@ struct dirButtonISRParams {
 };
 
 void dirButtonISR(void *params);
+void otaButtonISR(void *params);
 void timerCallback(void *params);
 void timerFlashDirCallback(void *params);
 esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle);
@@ -92,6 +97,7 @@ esp_err_t createI2CGatekeeperTask(QueueHandle_t I2CQueue);
 esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, char *apiKey, bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex);
 esp_err_t initDirectionLEDs(void);
 esp_err_t initDirectionButton(bool *toggle);
+esp_err_t initIOButton(TaskHandle_t otaTask);
 esp_err_t enableDirectionButtonIntr(void);
 esp_err_t disableDirectionButtonIntr(void);
 esp_err_t clearLEDs(QueueHandle_t I2CQueue, Direction dir);
@@ -239,6 +245,10 @@ void app_main(void)
         &errorOccurred, errorOccurredMutex
       );
     }
+    TaskHandle_t otaTask = NULL;
+    if (xTaskCreate(vOTATask, "OTATask", OTA_TASK_STACK, NULL, OTA_TASK_PRIO, &otaTask) != pdPASS) {
+      spinForever(&errorOccurred, errorOccurredMutex);
+    }
     /* initialize pins */
     SPIN_IF_ERR(
       initDirectionLEDs(),
@@ -261,10 +271,14 @@ void app_main(void)
       esp_timer_create(&timerArgs, &timer),
       &errorOccurred, errorOccurredMutex
     );
-    /* initialize direction button */
+    /* initialize buttons */
     bool toggle = false;
     SPIN_IF_ERR(
       gpio_install_isr_service(0),
+      &errorOccurred, errorOccurredMutex
+    );
+    SPIN_IF_ERR(
+      initIOButton(otaTask),
       &errorOccurred, errorOccurredMutex
     );
     SPIN_IF_ERR(
@@ -307,7 +321,6 @@ void app_main(void)
             break;
           default:
             currDirection = NORTH;
-            ESP_LOGW(TAG, "current direction is not NORTH nor SOUTH, setting NORTH...");
             break;
         }
       }
@@ -342,6 +355,11 @@ void dirButtonISR(void *params) {
   *toggle = true;
   vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void otaButtonISR(void *params) {
+  TaskHandle_t otaTask = (TaskHandle_t) params;
+  xTaskNotifyGive(otaTask);
 }
 
 /**
@@ -479,44 +497,38 @@ esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
 esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct userSettings *settings)
 {
   /* retrieve wifi ssid */
-  ESP_RETURN_ON_ERROR(
-    nvs_get_str(nvsHandle, WIFI_SSID_NVS_NAME, NULL, &(settings->wifiSSIDLen)),
-    TAG, "failed to retrieve wifi ssid from nvs"
-  );
+  if (nvs_get_str(nvsHandle, WIFI_SSID_NVS_NAME, NULL, &(settings->wifiSSIDLen)) != ESP_OK) {
+    return ESP_FAIL;
+  }
   if ((settings->wifiSSID = malloc(settings->wifiSSIDLen)) == NULL) {
     return ESP_FAIL;
   }
-  ESP_RETURN_ON_ERROR(
-    nvs_get_str(nvsHandle, WIFI_SSID_NVS_NAME, settings->wifiSSID, &(settings->wifiSSIDLen)),
-    TAG, "failed to retrieve wifi ssid from nvs after malloc"
-  );
+  if (nvs_get_str(nvsHandle, WIFI_SSID_NVS_NAME, settings->wifiSSID, &(settings->wifiSSIDLen)) != ESP_OK) {
+    return ESP_FAIL;
+  }
   /* retrieve wifi password */
-  ESP_RETURN_ON_ERROR(
-    nvs_get_str(nvsHandle, WIFI_PASS_NVS_NAME, NULL, &(settings->wifiPassLen)),
-    TAG, "failed to retrieve wifi ssid from nvs"
-  );
+  if (nvs_get_str(nvsHandle, WIFI_PASS_NVS_NAME, NULL, &(settings->wifiPassLen)) != ESP_OK) {
+    return ESP_FAIL;
+  }
   if ((settings->wifiPass = malloc(settings->wifiPassLen)) == NULL) {
     free(settings->wifiSSID);
     return ESP_FAIL;
   }
-  ESP_RETURN_ON_ERROR(
-    nvs_get_str(nvsHandle, WIFI_PASS_NVS_NAME, settings->wifiPass, &(settings->wifiPassLen)),
-    TAG, "failed to retrieve wifi ssid from nvs after malloc"
-  );
+  if (nvs_get_str(nvsHandle, WIFI_PASS_NVS_NAME, settings->wifiPass, &(settings->wifiPassLen)) != ESP_OK) {
+    return ESP_FAIL;
+  }
   /* retrieve api key */
-  ESP_RETURN_ON_ERROR(
-    nvs_get_str(nvsHandle, API_KEY_NVS_NAME, NULL, &(settings->apiKeyLen)),
-    TAG, "failed to retrieve wifi ssid from nvs"
-  );
+  if (nvs_get_str(nvsHandle, API_KEY_NVS_NAME, NULL, &(settings->apiKeyLen)) != ESP_OK) {
+    return ESP_FAIL;
+  }
   if ((settings->apiKey = malloc(settings->apiKeyLen)) == NULL) {
     free(settings->wifiSSID);
     free(settings->wifiPass);
     return ESP_FAIL;
   }
-  ESP_RETURN_ON_ERROR(
-    nvs_get_str(nvsHandle, API_KEY_NVS_NAME, settings->apiKey, &(settings->apiKeyLen)),
-    TAG, "failed to retrieve wifi ssid from nvs after malloc"
-  );
+  if (nvs_get_str(nvsHandle, API_KEY_NVS_NAME, settings->apiKey, &(settings->apiKeyLen)) != ESP_OK) {
+    return ESP_FAIL;
+  }
   return ESP_OK;
 }
 
@@ -525,25 +537,20 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct userSettings *settin
  * the I2C gatekeeper.
  */
 esp_err_t initDotMatrices(QueueHandle_t I2CQueue) {
-    ESP_LOGI(TAG, "initializing dot matrices");
-    ESP_RETURN_ON_ERROR(
-      dotsReset(I2CQueue, DOTS_NOTIFY, DOTS_BLOCKING),
-      TAG, "failed to reset dot matrices"
-    );
-    ESP_RETURN_ON_ERROR(
-      dotsSetGlobalCurrentControl(I2CQueue, DOTS_GLOBAL_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING),
-      TAG, "failed to change dot matrices global current control"
-    );
-    for (int i = 1; i < NUM_LEDS; i++) {
-      ESP_RETURN_ON_ERROR(
-        dotsSetScaling(I2CQueue, i, 0xFF, 0xFF, 0xFF, DOTS_NOTIFY, DOTS_BLOCKING),
-        TAG, "failed to set dot scaling"
-      );
+    if (dotsReset(I2CQueue, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) {
+      return ESP_FAIL;
     }
-    ESP_RETURN_ON_ERROR(
-      dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING),
-      TAG, "failed to set dot matrices into normal operation mode"
-    );
+    if (dotsSetGlobalCurrentControl(I2CQueue, DOTS_GLOBAL_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) {
+      return ESP_FAIL;
+    }
+    for (int i = 1; i < NUM_LEDS; i++) {
+      if (dotsSetScaling(I2CQueue, i, 0xFF, 0xFF, 0xFF, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) {
+        return ESP_FAIL;
+      }
+    }
+    if (dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) {
+      return ESP_FAIL;
+    }
     return ESP_OK;
 }
 
@@ -557,16 +564,14 @@ esp_err_t createI2CGatekeeperTask(QueueHandle_t I2CQueue) {
   BaseType_t success;
   I2CGatekeeperTaskParams *params;
   /* input guards */
-  ESP_RETURN_ON_FALSE(
-    (I2CQueue != NULL), ESP_FAIL,
-    TAG, "cannot create I2C gatekeeper task with NULL I2C command queue"
-  );
+  if (I2CQueue == NULL) {
+    return ESP_FAIL;
+  }
   /* create parameters */
   params = malloc(sizeof(I2CGatekeeperTaskParams));
-  ESP_RETURN_ON_FALSE(
-    (params != NULL), ESP_FAIL,
-    TAG, "failed to allocate memory"
-  );
+  if (params == NULL) {
+    return ESP_FAIL;
+  }
   params->I2CQueue = I2CQueue;
   params->port = I2C_PORT;
   params->sdaPin = SDA_PIN;
@@ -574,11 +579,7 @@ esp_err_t createI2CGatekeeperTask(QueueHandle_t I2CQueue) {
   /* create task */
   success = xTaskCreate(vI2CGatekeeperTask, "I2CGatekeeper", I2C_GATEKEEPER_STACK,
                         params, I2C_GATEKEEPER_PRIO, NULL);
-  ESP_RETURN_ON_FALSE(
-    (success == pdPASS), ESP_FAIL,
-    TAG, "failed to create I2C gatekeeper"
-  );
-  return ESP_OK;
+  return (success == pdPASS) ? ESP_OK : ESP_FAIL;
 }
 
 /**
@@ -604,6 +605,9 @@ esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t 
     (params != NULL), ESP_FAIL,
     TAG, "failed to allocate memory for dot worker task parameters"
   );
+  if (params == NULL) {
+    return ESP_FAIL;
+  }
   params->dotQueue = dotQueue;
   params->I2CQueue = I2CQueue;
   params->apiKey = apiKey;
@@ -630,39 +634,31 @@ esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t 
  */
 esp_err_t initDirectionLEDs(void) {
     /* Set GPIO directions */
-    ESP_RETURN_ON_ERROR(
-      gpio_set_direction(LED_NORTH_PIN, GPIO_MODE_OUTPUT),
-      TAG, "failed to set north led pin to output"
-    );
-    ESP_RETURN_ON_ERROR(
-      gpio_set_direction(LED_EAST_PIN, GPIO_MODE_OUTPUT),
-      TAG, "failed to set east led pin to output"
-    );
-    ESP_RETURN_ON_ERROR(
-      gpio_set_direction(LED_SOUTH_PIN, GPIO_MODE_OUTPUT),
-      TAG, "failed to set south led pin to output"
-    );
-    ESP_RETURN_ON_ERROR(
-      gpio_set_direction(LED_WEST_PIN, GPIO_MODE_OUTPUT),
-      TAG, "failed to set west led pin to output"
-    );
+    if (gpio_set_direction(LED_NORTH_PIN, GPIO_MODE_OUTPUT) != ESP_OK) {
+      return ESP_FAIL;
+    }
+    if (gpio_set_direction(LED_EAST_PIN, GPIO_MODE_OUTPUT) != ESP_OK) {
+      return ESP_FAIL;
+    }
+    if (gpio_set_direction(LED_SOUTH_PIN, GPIO_MODE_OUTPUT) != ESP_OK) {
+      return ESP_FAIL;
+    }
+    if (gpio_set_direction(LED_WEST_PIN, GPIO_MODE_OUTPUT) != ESP_OK) {
+      return ESP_FAIL;
+    }
     /* Set GPIO levels */
-    ESP_RETURN_ON_ERROR(
-      gpio_set_level(LED_NORTH_PIN, 0),
-      TAG, "failed to turn off direction led"
-    );
-    ESP_RETURN_ON_ERROR(
-      gpio_set_level(LED_EAST_PIN, 0),
-      TAG, "failed to turn off direction led"
-    );
-    ESP_RETURN_ON_ERROR(
-      gpio_set_level(LED_SOUTH_PIN, 0),
-      TAG, "failed to turn off direction led"
-    );
-    ESP_RETURN_ON_ERROR(
-      gpio_set_level(LED_WEST_PIN, 0),
-      TAG, "failed to turn off direction led"
-    );
+    if (gpio_set_level(LED_NORTH_PIN, 0) != ESP_OK) {
+      return ESP_FAIL;
+    }
+    if (gpio_set_level(LED_EAST_PIN, 0) != ESP_OK) {
+      return ESP_FAIL;
+    }
+    if (gpio_set_level(LED_SOUTH_PIN, 0) != ESP_OK) {
+      return ESP_FAIL;
+    }
+    if (gpio_set_level(LED_WEST_PIN, 0) != ESP_OK) {
+      return ESP_FAIL;
+    }
     return ESP_OK;
 }
 
@@ -674,22 +670,40 @@ esp_err_t initDirectionButton(bool *toggle) {
   struct dirButtonISRParams *params = malloc(sizeof(params));
   params->mainTask = xTaskGetCurrentTaskHandle();
   params->toggle = toggle;
-  ESP_RETURN_ON_ERROR(
-    gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT), // pin has an external pullup
-    TAG, "failed to set gpio direction of direction button"
-  );
-  ESP_RETURN_ON_ERROR(
-    gpio_set_intr_type(T_SW_PIN, GPIO_INTR_NEGEDGE),
-    TAG, "failed to set direction button interrupt type"
-  );
-  ESP_RETURN_ON_ERROR(
-    gpio_isr_handler_add(T_SW_PIN, dirButtonISR, params),
-    TAG, "failed to setup direction button ISR"
-  );
-  ESP_RETURN_ON_ERROR(
-    gpio_intr_enable(T_SW_PIN),
-    TAG, "failed to enable interrupts for direction button"
-  );
+  if (gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT) != ESP_OK) { // pin has an external pullup
+    return ESP_FAIL;
+  }
+  if (gpio_set_intr_type(T_SW_PIN, GPIO_INTR_NEGEDGE) != ESP_OK) {
+    return ESP_FAIL;
+  }
+  if (gpio_isr_handler_add(T_SW_PIN, dirButtonISR, params) != ESP_OK) {
+    return ESP_FAIL;
+  }
+  if (gpio_intr_enable(T_SW_PIN) != ESP_OK) {
+    return ESP_FAIL;
+  }
+  return ESP_OK;
+}
+
+esp_err_t initIOButton(TaskHandle_t otaTask) {
+  if (gpio_set_pull_mode(IO_SW_PIN, GPIO_PULLUP_ONLY) != ESP_OK) {
+    return ESP_FAIL;
+  }
+  if (gpio_pullup_en(IO_SW_PIN) != ESP_OK) {
+    return ESP_FAIL;
+  }
+  if (gpio_set_direction(IO_SW_PIN, GPIO_MODE_INPUT) != ESP_OK) {
+    return ESP_FAIL;
+  }
+  if (gpio_set_intr_type(IO_SW_PIN, GPIO_INTR_NEGEDGE) != ESP_OK) {
+    return ESP_FAIL;
+  }
+  if (gpio_isr_handler_add(IO_SW_PIN, otaButtonISR, otaTask) != ESP_OK) {
+    return ESP_FAIL;
+  }
+  if (gpio_intr_enable(IO_SW_PIN) != ESP_OK) {
+    return ESP_FAIL;
+  }
   return ESP_OK;
 }
 
@@ -698,11 +712,7 @@ esp_err_t initDirectionButton(bool *toggle) {
  * which is handled by dirButtonISR().
  */
 esp_err_t enableDirectionButtonIntr(void) {
-  ESP_RETURN_ON_ERROR(
-    gpio_intr_enable(T_SW_PIN),
-    TAG, "failed to enable interrupts for direction button"
-  );
-  return ESP_OK;
+  return gpio_intr_enable(T_SW_PIN);
 }
 
 /**
@@ -710,11 +720,7 @@ esp_err_t enableDirectionButtonIntr(void) {
  * which is handled by dirButtonISR().
  */
 esp_err_t disableDirectionButtonIntr(void) {
-  ESP_RETURN_ON_ERROR(
-    gpio_intr_disable(T_SW_PIN),
-    TAG, "failed to disable interrupts for direction button"
-  );
-  return ESP_OK;
+  return gpio_intr_disable(T_SW_PIN);
 }
 
 /**
@@ -760,10 +766,9 @@ esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir) {
   DotCommand dot;
   int startNdx, endNdx, northLvl, southLvl, eastLvl, westLvl;
   /* input guards */
-  ESP_RETURN_ON_FALSE(
-    (dotQueue != NULL), ESP_FAIL,
-    TAG, "updateLEDs received NULL dot queue handle"
-  );
+  if (dotQueue == NULL) {
+    return ESP_FAIL;
+  }
   /* update direction LEDs */
   switch (dir) {
     case NORTH:
@@ -783,26 +788,21 @@ esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir) {
       westLvl = 0;
       break;
     default:
-      ESP_LOGE(TAG, "updateLEDs received unknown direction");
       goto error_with_dir_leds_off;
       break;
   }
-  ESP_GOTO_ON_ERROR(
-    gpio_set_level(LED_NORTH_PIN, northLvl), error_with_dir_leds_off,
-    TAG, "failed to turn change north led"
-  );
-  ESP_GOTO_ON_ERROR(
-    gpio_set_level(LED_EAST_PIN, eastLvl), error_with_dir_leds_off,
-    TAG, "failed to turn change east led"
-  );
-  ESP_GOTO_ON_ERROR(
-    gpio_set_level(LED_SOUTH_PIN, southLvl), error_with_dir_leds_off,
-    TAG, "failed to turn change south led"
-  );
-  ESP_GOTO_ON_ERROR(
-    gpio_set_level(LED_WEST_PIN, westLvl), error_with_dir_leds_off,
-    TAG, "failed to turn change west led"
-  );
+  if (gpio_set_level(LED_NORTH_PIN, northLvl) != ESP_OK) {
+    goto error_with_dir_leds_off;
+  }
+  if (gpio_set_level(LED_EAST_PIN, eastLvl) != ESP_OK) {
+    goto error_with_dir_leds_off;
+  }
+  if (gpio_set_level(LED_SOUTH_PIN, southLvl) != ESP_OK) {
+    goto error_with_dir_leds_off;
+  }
+  if (gpio_set_level(LED_WEST_PIN, westLvl) != ESP_OK) {
+    goto error_with_dir_leds_off;
+  }
   /* send commands to update all dot LEDs */
   dot.dir = dir;
   if (startNdx <= endNdx) {

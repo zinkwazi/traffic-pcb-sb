@@ -6,6 +6,7 @@ idf_component_register(SRCS "led_locations.c" "main.c"
                              esp_wifi
                              esp_http_client
                              nvs_flash
-                             esp-tls)
+                             esp-tls
+                             esp_https_ota)
 
 
