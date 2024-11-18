@@ -125,7 +125,7 @@ esp_err_t dAssertConnected(void) {
     if (dGetRegister(&id, matrix1_handle, 1, ID_REG_ADDR) != ESP_OK) {
         return ESP_FAIL;
     }
-    if (id == MAT1_ADDR) {
+    if (id != MAT1_ADDR << 1) { // left shift for r/w bit
         return ESP_FAIL;
     }
     /* probe matrix 2 */
@@ -135,7 +135,7 @@ esp_err_t dAssertConnected(void) {
     if (dGetRegister(&id, matrix2_handle, 1, ID_REG_ADDR) != ESP_OK) {
         return ESP_FAIL;
     }
-    if (id == MAT2_ADDR) {
+    if (id != MAT2_ADDR << 1) { // left shift for r/w bit
         return ESP_FAIL;
     }
     /* probe matrix 3 */
@@ -145,7 +145,7 @@ esp_err_t dAssertConnected(void) {
     if (dGetRegister(&id, matrix3_handle, 1, ID_REG_ADDR) != ESP_OK) {
         return ESP_FAIL;
     }
-    if (id == MAT3_ADDR) {
+    if (id != MAT3_ADDR << 1) { // left shift for r/w bit
         return ESP_FAIL;
     }
     return ESP_OK;
