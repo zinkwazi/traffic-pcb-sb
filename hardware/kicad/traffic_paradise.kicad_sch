@@ -7250,7 +7250,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2206010130_UNI-ROYAL-Uniroyal-Elec-0603WAF2700T5E_C22966.pdf"
 			(at 96.52 165.1 0)
 			(effects
 				(font
@@ -7451,7 +7451,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2206010130_UNI-ROYAL-Uniroyal-Elec-0603WAF2700T5E_C22966.pdf"
 			(at 121.92 165.1 0)
 			(effects
 				(font
@@ -8353,7 +8353,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2206010130_UNI-ROYAL-Uniroyal-Elec-0603WAF2700T5E_C22966.pdf"
 			(at 83.82 165.1 0)
 			(effects
 				(font
@@ -9097,7 +9097,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2206010130_UNI-ROYAL-Uniroyal-Elec-0603WAF1101T5E_C22764.pdf"
 			(at 45.72 165.1 0)
 			(effects
 				(font
@@ -9518,7 +9518,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2204191800_ROHM-Semicon-SMLMN2WB1CW1_C2992528.pdf"
 			(at 121.92 171.45 0)
 			(effects
 				(font
@@ -10036,7 +10036,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2204191800_ROHM-Semicon-SMLMN2WB1CW1_C2992528.pdf"
 			(at 96.52 171.45 0)
 			(effects
 				(font
@@ -10237,7 +10237,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2206010130_UNI-ROYAL-Uniroyal-Elec-0603WAF2700T5E_C22966.pdf"
 			(at 58.42 165.1 0)
 			(effects
 				(font
@@ -11311,7 +11311,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2204191800_ROHM-Semicon-SMLMN2WB1CW1_C2992528.pdf"
 			(at 58.42 171.45 0)
 			(effects
 				(font
@@ -11719,7 +11719,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2204191800_ROHM-Semicon-SMLMN2WB1CW1_C2992528.pdf"
 			(at 45.72 171.45 0)
 			(effects
 				(font
@@ -11789,7 +11789,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2204191800_ROHM-Semicon-SMLMN2WB1CW1_C2992528.pdf"
 			(at 109.22 171.45 0)
 			(effects
 				(font
@@ -12137,7 +12137,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2204191800_ROHM-Semicon-SMLMN2WB1CW1_C2992528.pdf"
 			(at 83.82 171.45 0)
 			(effects
 				(font
@@ -12986,7 +12986,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2206010130_UNI-ROYAL-Uniroyal-Elec-0603WAF2700T5E_C22966.pdf"
 			(at 33.02 165.1 0)
 			(effects
 				(font
@@ -13255,7 +13255,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2204191800_ROHM-Semicon-SMLMN2WB1CW1_C2992528.pdf"
 			(at 33.02 171.45 0)
 			(effects
 				(font
@@ -13591,7 +13591,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2206010130_UNI-ROYAL-Uniroyal-Elec-0603WAF2700T5E_C22966.pdf"
 			(at 109.22 165.1 0)
 			(effects
 				(font
