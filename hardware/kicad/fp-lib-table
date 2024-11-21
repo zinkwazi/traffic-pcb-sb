@@ -1,4 +1,5 @@
 (fp_lib_table
   (version 7)
   (lib (name "map_lbr")(type "KiCad")(uri "${KIPRJMOD}/map_lbr.pretty")(options "")(descr ""))
+  (lib (name "jumpers")(type "KiCad")(uri "${KIPRJMOD}/jumpers.pretty")(options "")(descr ""))
 )
