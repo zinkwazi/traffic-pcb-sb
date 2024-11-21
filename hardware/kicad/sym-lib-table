@@ -4,4 +4,6 @@
   (lib (name "BSS84AK215")(type "KiCad")(uri "${KIPRJMOD}/symbols/BSS84AK215.kicad_sym")(options "")(descr ""))
   (lib (name "LM358DR")(type "KiCad")(uri "${KIPRJMOD}/symbols/LM358DR.kicad_sym")(options "")(descr ""))
   (lib (name "IRF7341PBF")(type "KiCad")(uri "${KIPRJMOD}/symbols/IRF7341PBF.kicad_sym")(options "")(descr ""))
+  (lib (name "FQD2N100TM")(type "KiCad")(uri "${KIPRJMOD}/symbols/FQD2N100TM.kicad_sym")(options "")(descr ""))
+  (lib (name "ZXMS6005SGTA")(type "KiCad")(uri "${KIPRJMOD}/symbols/ZXMS6005SGTA.kicad_sym")(options "")(descr ""))
 )
