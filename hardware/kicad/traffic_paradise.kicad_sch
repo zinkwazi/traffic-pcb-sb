@@ -5863,12 +5863,12 @@
 		(uuid "b2976a66-0b61-4fd7-b325-7a3cab3e498e")
 	)
 	(no_connect
-		(at 245.11 87.63)
-		(uuid "bb7fd53b-7f1e-43bc-a72f-10b4228353b9")
+		(at 275.59 64.77)
+		(uuid "b809c78b-a578-47a5-ad9d-7a88e63deed5")
 	)
 	(no_connect
-		(at 275.59 74.93)
-		(uuid "ce0c274d-7ec4-4aaf-8886-e8cc356d88bd")
+		(at 245.11 87.63)
+		(uuid "bb7fd53b-7f1e-43bc-a72f-10b4228353b9")
 	)
 	(no_connect
 		(at 152.4 80.01)
@@ -5905,10 +5905,6 @@
 	(no_connect
 		(at 245.11 90.17)
 		(uuid "ef72bc47-5ec5-4699-85f3-5006ddbcb4f9")
-	)
-	(no_connect
-		(at 275.59 67.31)
-		(uuid "f25e4337-5cc0-4639-8ad5-0d290c1f77b6")
 	)
 	(wire
 		(pts
@@ -6512,6 +6508,16 @@
 	)
 	(wire
 		(pts
+			(xy 275.59 74.93) (xy 279.4 74.93)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "39754a38-41e0-47c7-b0e5-a1b5bc4a7f6d")
+	)
+	(wire
+		(pts
 			(xy 60.96 54.61) (xy 73.66 54.61)
 		)
 		(stroke
@@ -6582,7 +6588,7 @@
 	)
 	(wire
 		(pts
-			(xy 345.44 123.19) (xy 336.55 123.19)
+			(xy 345.44 125.73) (xy 336.55 125.73)
 		)
 		(stroke
 			(width 0)
@@ -6592,7 +6598,7 @@
 	)
 	(wire
 		(pts
-			(xy 345.44 97.79) (xy 336.55 97.79)
+			(xy 336.55 100.33) (xy 345.44 100.33)
 		)
 		(stroke
 			(width 0)
@@ -7082,6 +7088,16 @@
 	)
 	(wire
 		(pts
+			(xy 275.59 69.85) (xy 279.4 69.85)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "91685658-3be7-4fdb-a9a0-dac5e541eeed")
+	)
+	(wire
+		(pts
 			(xy 275.59 90.17) (xy 287.02 90.17)
 		)
 		(stroke
@@ -7099,6 +7115,16 @@
 			(type default)
 		)
 		(uuid "94eda18a-add7-4cae-828c-560b271f76e9")
+	)
+	(wire
+		(pts
+			(xy 275.59 67.31) (xy 279.4 67.31)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9508c702-4a08-48ea-9751-837b4e0c2263")
 	)
 	(wire
 		(pts
@@ -7872,7 +7898,17 @@
 	)
 	(wire
 		(pts
-			(xy 337.82 72.39) (xy 328.93 72.39)
+			(xy 275.59 72.39) (xy 279.4 72.39)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fae2f1c7-bc6a-4946-b9d3-f6bcfa3ef1f1")
+	)
+	(wire
+		(pts
+			(xy 328.93 74.93) (xy 337.82 74.93)
 		)
 		(stroke
 			(width 0)
@@ -8298,7 +8334,7 @@
 		(uuid "0eaa0de4-a570-408c-aca8-356ec1218f0b")
 	)
 	(label "SCL"
-		(at 345.44 123.19 180)
+		(at 345.44 125.73 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -8364,7 +8400,7 @@
 		(uuid "2300e68d-720a-42fc-9796-9465a94a2615")
 	)
 	(label "SCL"
-		(at 345.44 97.79 180)
+		(at 345.44 100.33 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -8550,7 +8586,7 @@
 		)
 		(uuid "4ae07c16-b023-4139-bb69-1537d8e86560")
 	)
-	(label "MTCK_BRIDGE"
+	(label "MTMS_BRIDGE"
 		(at 62.23 218.44 180)
 		(fields_autoplaced yes)
 		(effects
@@ -8715,7 +8751,7 @@
 		)
 		(uuid "7640b3b2-91e0-4d6f-bdc4-f7d8e14e7b72")
 	)
-	(label "MTMS_BRIDGE"
+	(label "MTCK_BRIDGE"
 		(at 62.23 213.36 180)
 		(fields_autoplaced yes)
 		(effects
@@ -8770,6 +8806,17 @@
 		)
 		(uuid "80af128f-41a1-4ec6-8b21-7cec8128c3a8")
 	)
+	(label "MTCK"
+		(at 279.4 69.85 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "85d92ac1-2fae-4020-8f32-b1bb9adba260")
+	)
 	(label "SDB3"
 		(at 351.79 125.73 0)
 		(fields_autoplaced yes)
@@ -8780,6 +8827,17 @@
 			(justify left bottom)
 		)
 		(uuid "86480fb1-8293-4c24-9568-cf4b58be4664")
+	)
+	(label "MTDO"
+		(at 279.4 74.93 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "879165fb-2805-403e-9244-0428ca33c8fa")
 	)
 	(label "MTDI_BRIDGE"
 		(at 198.12 220.98 180)
@@ -8902,6 +8960,17 @@
 		)
 		(uuid "a3e6c68a-8e05-4639-a524-82004c090719")
 	)
+	(label "MTMS"
+		(at 279.4 72.39 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "aa4790da-80e9-4c31-812c-f43589893139")
+	)
 	(label "STRAP_RC"
 		(at 137.16 190.5 180)
 		(fields_autoplaced yes)
@@ -8957,7 +9026,7 @@
 		)
 		(uuid "bf5e6bda-12e7-43ac-a01e-a20631b799ea")
 	)
-	(label "MTMS BRIDGE"
+	(label "MTMS_BRIDGE"
 		(at 198.12 247.65 180)
 		(fields_autoplaced yes)
 		(effects
@@ -9068,7 +9137,7 @@
 		(uuid "de12b373-95e6-465c-9c27-3747cb4abdcd")
 	)
 	(label "SCL"
-		(at 337.82 72.39 180)
+		(at 337.82 74.93 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -9077,6 +9146,17 @@
 			(justify right bottom)
 		)
 		(uuid "df6392fb-1d09-416d-a87f-7454e9aba837")
+	)
+	(label "MTDI"
+		(at 279.4 67.31 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "e21055a2-dd30-42bf-bc78-70ba9bbb211c")
 	)
 	(label "SDA"
 		(at 342.9 67.31 0)
@@ -9554,7 +9634,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "0f327500-0283-4662-8d8e-2b8ded8dd565")
-		(property "Reference" "TP16"
+		(property "Reference" "MTMS1"
 			(at 36.068 215.9 90)
 			(effects
 				(font
@@ -9603,7 +9683,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "TP16")
+					(reference "MTMS1")
 					(unit 1)
 				)
 			)
@@ -10417,7 +10497,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "342c6734-fc25-4062-b390-4fb0c1f58c64")
-		(property "Reference" "TP10"
+		(property "Reference" "MTDI_BR1"
 			(at 203.2 215.9 0)
 			(effects
 				(font
@@ -10469,7 +10549,7 @@
 		(instances
 			(project ""
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "TP10")
+					(reference "MTDI_BR1")
 					(unit 1)
 				)
 			)
@@ -10622,7 +10702,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "3ce15d64-ba55-4a19-aaea-cf21d27b2071")
-		(property "Reference" "TP14"
+		(property "Reference" "MTMS_BR1"
 			(at 203.2 242.57 0)
 			(effects
 				(font
@@ -10674,7 +10754,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "TP14")
+					(reference "MTMS_BR1")
 					(unit 1)
 				)
 			)
@@ -11257,7 +11337,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "496103d9-a281-4ad7-84f8-e55be7ec93d6")
-		(property "Reference" "TP15"
+		(property "Reference" "MTCK1"
 			(at 36.068 200.66 90)
 			(effects
 				(font
@@ -11306,7 +11386,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "TP15")
+					(reference "MTCK1")
 					(unit 1)
 				)
 			)
@@ -11456,22 +11536,20 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "523d3f8e-c972-4a62-ae63-18e6d3ad397f")
-		(property "Reference" "TP7"
-			(at 331.47 119.3801 90)
+		(property "Reference" "SDA4"
+			(at 333.248 113.03 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Value" "TestPoint"
-			(at 331.47 116.8401 90)
+			(at 333.248 115.57 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Footprint" "TestPoint:TestPoint_THTPad_D2.5mm_Drill1.2mm"
@@ -11507,7 +11585,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "TP7")
+					(reference "SDA4")
 					(unit 1)
 				)
 			)
@@ -11786,7 +11864,7 @@
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
-		(at 336.55 123.19 90)
+		(at 336.55 125.73 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -11794,26 +11872,24 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "5b049442-c568-447e-8faa-d258dc2cf71f")
-		(property "Reference" "TP8"
-			(at 331.47 124.4601 90)
+		(property "Reference" "SCL4"
+			(at 333.248 120.65 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Value" "TestPoint"
-			(at 331.47 121.9201 90)
+			(at 333.248 123.19 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Footprint" "TestPoint:TestPoint_THTPad_D2.5mm_Drill1.2mm"
-			(at 336.55 118.11 0)
+			(at 336.55 120.65 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11822,7 +11898,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 336.55 118.11 0)
+			(at 336.55 120.65 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11831,7 +11907,7 @@
 			)
 		)
 		(property "Description" "test point"
-			(at 336.55 123.19 0)
+			(at 336.55 125.73 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11845,7 +11921,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "TP8")
+					(reference "SCL4")
 					(unit 1)
 				)
 			)
@@ -12802,22 +12878,20 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "7c7db62e-6148-401f-bf32-a0b43c0e8615")
-		(property "Reference" "TP4"
-			(at 323.85 68.5801 90)
+		(property "Reference" "SDA2"
+			(at 325.628 62.23 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Value" "TestPoint"
-			(at 323.85 66.0401 90)
+			(at 325.628 64.77 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Footprint" "TestPoint:TestPoint_THTPad_D2.5mm_Drill1.2mm"
@@ -12853,7 +12927,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "TP4")
+					(reference "SDA2")
 					(unit 1)
 				)
 			)
@@ -13708,7 +13782,7 @@
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
-		(at 328.93 72.39 90)
+		(at 328.93 74.93 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -13716,26 +13790,24 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "992b52c7-43f0-4cb4-8351-c87681697299")
-		(property "Reference" "TP3"
-			(at 323.85 73.6601 90)
+		(property "Reference" "SCL2"
+			(at 325.628 69.85 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Value" "TestPoint"
-			(at 323.85 71.1201 90)
+			(at 325.628 72.39 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Footprint" "TestPoint:TestPoint_THTPad_D2.5mm_Drill1.2mm"
-			(at 328.93 67.31 0)
+			(at 328.93 69.85 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13744,7 +13816,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 328.93 67.31 0)
+			(at 328.93 69.85 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13753,7 +13825,7 @@
 			)
 		)
 		(property "Description" "test point"
-			(at 328.93 72.39 0)
+			(at 328.93 74.93 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13767,7 +13839,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "TP3")
+					(reference "SCL2")
 					(unit 1)
 				)
 			)
@@ -13913,7 +13985,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "9c728429-2971-432d-a592-a96112a73ff5")
-		(property "Reference" "TP13"
+		(property "Reference" "MTCK_BR1"
 			(at 203.2 233.68 0)
 			(effects
 				(font
@@ -13965,7 +14037,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "TP13")
+					(reference "MTCK_BR1")
 					(unit 1)
 				)
 			)
@@ -14183,7 +14255,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "a153eb38-3cbb-4fd2-a9d5-56e3f36248e8")
-		(property "Reference" "TP1"
+		(property "Reference" "SCL1"
 			(at 302.26 93.9799 90)
 			(effects
 				(font
@@ -14234,7 +14306,7 @@
 		(instances
 			(project ""
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "TP1")
+					(reference "SCL1")
 					(unit 1)
 				)
 			)
@@ -15059,22 +15131,20 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "b505007c-54d6-4d26-9477-caea5a0993b5")
-		(property "Reference" "TP5"
-			(at 331.47 93.9801 90)
+		(property "Reference" "SDA3"
+			(at 333.248 87.63 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Value" "TestPoint"
-			(at 331.47 91.4401 90)
+			(at 333.248 90.17 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Footprint" "TestPoint:TestPoint_THTPad_D2.5mm_Drill1.2mm"
@@ -15110,7 +15180,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "TP5")
+					(reference "SDA3")
 					(unit 1)
 				)
 			)
@@ -15126,7 +15196,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "b5d6fd02-aaf5-4f48-8965-f97b596c2bff")
-		(property "Reference" "TP2"
+		(property "Reference" "SDA1"
 			(at 302.26 99.0599 90)
 			(effects
 				(font
@@ -15177,7 +15247,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "TP2")
+					(reference "SDA1")
 					(unit 1)
 				)
 			)
@@ -15466,7 +15536,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "b953ae0d-3183-4de1-9ccc-408081c939c9")
-		(property "Reference" "TP11"
+		(property "Reference" "MTDO1"
 			(at 34.798 175.26 90)
 			(effects
 				(font
@@ -15515,7 +15585,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "TP11")
+					(reference "MTDO1")
 					(unit 1)
 				)
 			)
@@ -16925,7 +16995,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "d476e358-dbae-46c0-ba43-8d0f2920a7ae")
-		(property "Reference" "TP12"
+		(property "Reference" "MTDO_BR1"
 			(at 203.2 224.79 0)
 			(effects
 				(font
@@ -16977,7 +17047,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "TP12")
+					(reference "MTDO_BR1")
 					(unit 1)
 				)
 			)
@@ -17401,7 +17471,7 @@
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
-		(at 336.55 97.79 90)
+		(at 336.55 100.33 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -17409,26 +17479,24 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "ddf1cd3a-c851-46b2-8991-d1e83e13a47f")
-		(property "Reference" "TP6"
-			(at 331.47 99.0601 90)
+		(property "Reference" "SCL3"
+			(at 333.248 95.25 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Value" "TestPoint"
-			(at 331.47 96.5201 90)
+			(at 333.248 97.79 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Footprint" "TestPoint:TestPoint_THTPad_D2.5mm_Drill1.2mm"
-			(at 336.55 92.71 0)
+			(at 336.55 95.25 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -17437,7 +17505,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 336.55 92.71 0)
+			(at 336.55 95.25 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -17446,7 +17514,7 @@
 			)
 		)
 		(property "Description" "test point"
-			(at 336.55 97.79 0)
+			(at 336.55 100.33 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -17460,7 +17528,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "TP6")
+					(reference "SCL3")
 					(unit 1)
 				)
 			)
@@ -17808,7 +17876,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "f0edc636-9dd0-4e2f-9c9f-ff9adbf79704")
-		(property "Reference" "TP9"
+		(property "Reference" "MTDI1"
 			(at 34.798 162.56 90)
 			(effects
 				(font
@@ -17857,7 +17925,7 @@
 		(instances
 			(project ""
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "TP9")
+					(reference "MTDI1")
 					(unit 1)
 				)
 			)
