@@ -49,17 +49,20 @@
 #define WIFI_PASS_NVS_NAME "wifi_pass"
 #define API_KEY_NVS_NAME "api_key"
 
+#define MAIN_TASK_PRIO (3)
+
 #define I2C_GATEKEEPER_STACK (ESP_TASK_MAIN_STACK - 1400)
-#define I2C_GATEKEEPER_PRIO (ESP_TASK_MAIN_PRIO + 1) // always start an I2C command if possible, unless OTA update is requested
+#define I2C_GATEKEEPER_PRIO (2) // always start an I2C command if possible, unless OTA update is requested
 #define I2C_QUEUE_SIZE 20
 
-#define NUM_DOT_WORKERS 2
+#define NUM_DOT_WORKERS 2 // maximum 8 due to the necessity of a synchronizing event group with a bit for each task
+#define DOT_WORKER_BITS (0x03) // event group bits for worker tasks, one for each task
 #define DOTS_WORKER_STACK (ESP_TASK_MAIN_STACK - 1000)
-#define DOTS_WORKER_PRIO (ESP_TASK_MAIN_PRIO - 1)
-#define DOTS_QUEUE_SIZE 10
+#define DOTS_WORKER_PRIO (1)
+#define DOTS_QUEUE_SIZE ((southLEDLen > northLEDLen) ? southLEDLen : northLEDLen)
 
 #define OTA_TASK_STACK (ESP_TASK_MAIN_STACK)
-#define OTA_TASK_PRIO (ESP_TASK_MAIN_PRIO + 2) // always perform an OTA update if requested
+#define OTA_TASK_PRIO (4) // always perform an OTA update if requested
 
 #define NUM_LEDS sizeof(LEDNumToReg) / sizeof(LEDNumToReg[0])
 #define DOTS_GLOBAL_CURRENT 0x08
@@ -94,13 +97,13 @@ esp_err_t initDotMatrices(QueueHandle_t I2CQueue);
 esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir);
 esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct userSettings *settings);
 esp_err_t createI2CGatekeeperTask(QueueHandle_t I2CQueue);
-esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, char *apiKey, bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex);
+esp_err_t createDotWorkerTask(char *name, int workerNum, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, EventGroupHandle_t workerEvents, char *apiKey, bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex);
 esp_err_t initDirectionLEDs(void);
 esp_err_t initDirectionButton(bool *toggle);
 esp_err_t initIOButton(TaskHandle_t otaTask);
 esp_err_t enableDirectionButtonIntr(void);
 esp_err_t disableDirectionButtonIntr(void);
-esp_err_t clearLEDs(QueueHandle_t I2CQueue, Direction dir);
+esp_err_t clearLEDs(QueueHandle_t I2CQueue, QueueHandle_t dotQueue, EventGroupHandle_t workerEvents, Direction dir);
 void spinForever(bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex);
 void updateSettingsAndRestart(nvs_handle_t nvsHandle, bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex);
 
@@ -115,6 +118,8 @@ void app_main(void)
     nvs_handle_t nvsHandle;
     struct userSettings settings;
     int i;
+    /* set task priority */
+    vTaskPrioritySet(NULL, MAIN_TASK_PRIO);
     /* install UART driver */
     ESP_LOGI(TAG, "Installing UART driver");
     SPIN_IF_ERR(
@@ -223,7 +228,7 @@ void app_main(void)
       (errorOccurredMutex != NULL),
       NULL, NULL
     );
-    /* Create queues */
+    /* Create queues and event groups */
     I2CQueue = xQueueCreate(I2C_QUEUE_SIZE, sizeof(I2CCommand));
     SPIN_IF_FALSE(
       (I2CQueue != NULL),
@@ -234,6 +239,11 @@ void app_main(void)
       (dotQueue != NULL),
       NULL, NULL
     );
+    EventGroupHandle_t workerEvents = xEventGroupCreate();
+    SPIN_IF_FALSE(
+      (workerEvents != NULL),
+      &errorOccurred, errorOccurredMutex
+    );
     /* create tasks */
     SPIN_IF_ERR(
       createI2CGatekeeperTask(I2CQueue),
@@ -241,7 +251,7 @@ void app_main(void)
     );
     for (i = 0; i < NUM_DOT_WORKERS; i++) {
       SPIN_IF_ERR(
-        createDotWorkerTask("dotWorker", dotQueue, I2CQueue, settings.apiKey, &errorOccurred, errorOccurredMutex),
+        createDotWorkerTask("dotWorker", i, dotQueue, I2CQueue, workerEvents, settings.apiKey, &errorOccurred, errorOccurredMutex),
         &errorOccurred, errorOccurredMutex
       );
     }
@@ -262,7 +272,7 @@ void app_main(void)
     /* create timer */
     esp_timer_create_args_t timerArgs = {
       .callback = timerCallback,
-      .arg = xTaskGetCurrentTaskHandle(), // timer will send an event notification to this main task
+      .arg = xTaskGetCurrentTaskHandle(), // timer will send an task notification to this main task
       .dispatch_method = ESP_TIMER_ISR,
       .name = "ledTimer",
     };
@@ -287,7 +297,6 @@ void app_main(void)
     );
     ESP_LOGI(TAG, "initialization complete, handling toggle button presses...");
     /* handle requests to update all LEDs */
-    
     Direction currDirection = NORTH;
     for (;;) {
       SPIN_IF_ERR(
@@ -324,7 +333,7 @@ void app_main(void)
             break;
         }
       }
-      if (clearLEDs(I2CQueue, currDirection) != ESP_OK) {
+      if (clearLEDs(I2CQueue, dotQueue, workerEvents, currDirection) != ESP_OK) {
         ESP_LOGE(TAG, "failed to clear LEDs");
         continue;
       }
@@ -587,17 +596,25 @@ esp_err_t createI2CGatekeeperTask(QueueHandle_t I2CQueue) {
  * to the pool of dot workers via the dotQueue. The task
  * performs TomTom api requests and sends I2C commands to
  * update the color of LEDs based on the request results.
+ * 
+ * workerNum is an important parameter that corresponds to
+ * the worker event group bit which the task will use to
+ * indicate that it is idle. These indicators are used by
+ * the main task to synchronize clearing LEDs. workerNum
+ * should be between 0 and 7.
  */
-esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, char *apiKey, bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex) {
+esp_err_t createDotWorkerTask(char *name, int workerNum, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, EventGroupHandle_t workerEvents, char *apiKey, bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex) {
   BaseType_t success;
   struct dotWorkerTaskParams *params;
   /* input guards */
   if (dotQueue == NULL || I2CQueue == NULL || apiKey == NULL || errorOccurred == NULL || errorOccurredMutex == NULL) {
     return ESP_FAIL;
   }
-
   if (name == NULL) {
     name = "worker";
+  }
+  if (workerNum < 0 || workerNum > 7) {
+    return ESP_FAIL;
   }
   /* allocate parameters */
   params = malloc(sizeof(struct dotWorkerTaskParams)); // task parameters are given via reference, not copy
@@ -610,6 +627,8 @@ esp_err_t createDotWorkerTask(char *name, QueueHandle_t dotQueue, QueueHandle_t 
   }
   params->dotQueue = dotQueue;
   params->I2CQueue = I2CQueue;
+  params->workerEvents = workerEvents;
+  params->workerIdleBit = (1 << workerNum);
   params->apiKey = apiKey;
   params->errorOccurred = errorOccurred;
   params->errorOccurredMutex = errorOccurredMutex;
@@ -730,29 +749,32 @@ esp_err_t disableDirectionButtonIntr(void) {
  * so it is recommended to wait for both the dot command queue
  * and I2C command queue to be empty before calling this function.
  */
-esp_err_t clearLEDs(QueueHandle_t I2CQueue, Direction dir) {
-  ESP_LOGI(TAG, "NUM_LEDS: %d", NUM_LEDS);
+esp_err_t clearLEDs(QueueHandle_t I2CQueue, QueueHandle_t dotQueue, EventGroupHandle_t workerEvents, Direction dir) {
+  DotCommand command;
+  /* empty the queue */
+  ESP_LOGI(TAG, "main task is clearing leds");
+  while (xQueueReceive(dotQueue, &command, 0) == pdTRUE) {}
+  /* wait for workers to finish */
+  while (xEventGroupWaitBits(workerEvents, DOT_WORKER_BITS, pdFALSE, pdTRUE, INT_MAX) != DOT_WORKER_BITS) {}
+  /* clear dots */
   switch (dir) {
-    case NORTH:
+      case NORTH:
       for(int i = NUM_LEDS - 1; i > 0; i--) {
-        ESP_RETURN_ON_ERROR(
+          ESP_RETURN_ON_ERROR(
           dotsSetColor(I2CQueue, i, 0x00, 0x00, 0x00, DOTS_NOTIFY, DOTS_BLOCKING),
           TAG, "failed to clear led"
-        );
+          );
       }
       break;
-    case SOUTH:
+      case SOUTH:
       for(int i = 1; i < NUM_LEDS; i++) {
-        ESP_RETURN_ON_ERROR(
+          ESP_RETURN_ON_ERROR(
           dotsSetColor(I2CQueue, i, 0x00, 0x00, 0x00, DOTS_NOTIFY, DOTS_BLOCKING),
           TAG, "failed to clear led"
-        );
+          );
       }
       break;
   }
-
-  
-  
   return ESP_OK;
 }
 
@@ -808,7 +830,6 @@ esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir) {
   if (startNdx <= endNdx) {
     for (int i = startNdx; i <= endNdx; i++) {
       dot.ledArrNum = i;
-      ESP_LOGI(TAG, "sending %d", i);
       while (pdPASS != xQueueSendToBack(dotQueue, &dot, INT_MAX)) {
         ESP_LOGI(TAG, "failed to add dot to queue, retrying...");
       }
@@ -816,22 +837,13 @@ esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir) {
   } else {
     for (int i = startNdx; i >= endNdx; i--) {
       dot.ledArrNum = i;
-      ESP_LOGI(TAG, "sending %d", i);
       while (pdPASS != xQueueSendToBack(dotQueue, &dot, INT_MAX)) {
         ESP_LOGI(TAG, "failed to add dot to queue, retrying...");
       }
     }
   }
-  /* wait for all LEDs to be updated */
-  while (uxQueueMessagesWaiting(dotQueue) > 0) {
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-  }
   return ret;
 error_with_dir_leds_off:
-  /* wait for all LEDs to be updated */
-  while (uxQueueMessagesWaiting(dotQueue) > 0) {
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-  }
   ESP_ERROR_CHECK(gpio_set_level(LED_NORTH_PIN, 0));
   ESP_ERROR_CHECK(gpio_set_level(LED_EAST_PIN, 0));
   ESP_ERROR_CHECK(gpio_set_level(LED_SOUTH_PIN, 0));

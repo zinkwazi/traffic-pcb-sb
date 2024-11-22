@@ -19,11 +19,14 @@
 #include "led_locations.h"
 #include "pinout.h"
 #include "worker.h"
+#include "led_registers.h"
 
 #define TAG "dot_worker"
 
 #define RETRY_CREATE_HTTP_HANDLE_TICKS 500
 #define CHECK_ERROR_PERIOD_TICKS 500
+
+#define NUM_LEDS sizeof(LEDNumToReg) / sizeof(LEDNumToReg[0])
 
 struct DotCommand {
     uint16_t ledArrNum; // the array index of the location to query
@@ -50,6 +53,8 @@ struct dotWorkerTaskParams {
     QueueHandle_t dotQueue; // holds DotCommand
     /* Holds commands for the I2C gatekeeper */
     QueueHandle_t I2CQueue; // holds I2CCommand
+    EventGroupHandle_t workerEvents; // holds indicators that workers are idle
+    EventBits_t workerIdleBit; // this worker's workerEvents bit, indicating it is idle
     char *apiKey;
     bool *errorOccurred; // an indicator that an error has already occurred somewhere
     SemaphoreHandle_t errorOccurredMutex; // guards the shared static errorOccurred variable
@@ -64,6 +69,8 @@ struct dotWorkerTaskParams {
 void vDotWorkerTask(void *pvParameters) {
     QueueHandle_t dotQueue = ((struct dotWorkerTaskParams*) pvParameters)->dotQueue;
     QueueHandle_t I2CQueue = ((struct dotWorkerTaskParams*) pvParameters)->I2CQueue;
+    EventGroupHandle_t workerEvents = ((struct dotWorkerTaskParams*) pvParameters)->workerEvents;
+    EventBits_t workerIdleBit = ((struct dotWorkerTaskParams*) pvParameters)->workerIdleBit;
     char *apiKey = ((struct dotWorkerTaskParams*) pvParameters)->apiKey;
     bool *errorOccurred = ((struct dotWorkerTaskParams*) pvParameters)->errorOccurred;
     SemaphoreHandle_t errorOccurredMutex = ((struct dotWorkerTaskParams*) pvParameters)->errorOccurredMutex;
@@ -90,8 +97,12 @@ void vDotWorkerTask(void *pvParameters) {
                 gpio_set_level(ERR_LED_PIN, 1);
             }
         }
-        if (xQueueReceive(dotQueue, &dot, CHECK_ERROR_PERIOD_TICKS) == pdFALSE) {
-            continue;
+        if (xQueueReceive(dotQueue, &dot, 0) == pdFALSE) {
+            /* queue is empty, indicate that this task is idle */
+            xEventGroupSetBits(workerEvents, workerIdleBit);
+            /* wait for a command on the queue */
+            while (xQueueReceive(dotQueue, &dot, 0) == pdFALSE) {}
+            xEventGroupClearBits(workerEvents, workerIdleBit);
         }
         const LEDLoc *ledLoc = getLoc(dot.ledArrNum, dot.dir);
         if (tomtomRequestSpeed(&speed, &client, ledLoc->latitude, ledLoc->longitude, CONFIG_NUM_RETRY_HTTP_REQUEST) != ESP_OK) {
@@ -148,7 +159,6 @@ void vDotWorkerTask(void *pvParameters) {
         switch (dot.dir) {
             case NORTH:
                 for (int ndx = hardwareArrLen - 1; ndx >= 0; ndx--) {
-                    ESP_LOGI(TAG, "setting color of hardware num %d", ledLoc->hardwareNums[ndx]);
                     if (dotsSetColor(I2CQueue, ledLoc->hardwareNums[ndx], red, green, blue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK) {
                         ESP_LOGE(TAG, "failed to change led %d color", ledLoc->hardwareNums[ndx]);
                     }
@@ -156,7 +166,6 @@ void vDotWorkerTask(void *pvParameters) {
                 break;
             case SOUTH:
                 for (int ndx = 0; ndx < hardwareArrLen; ndx++) {
-                    ESP_LOGI(TAG, "setting color of hardware num %d", ledLoc->hardwareNums[ndx]);
                     if (dotsSetColor(I2CQueue, ledLoc->hardwareNums[ndx], red, green, blue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK) {
                         ESP_LOGE(TAG, "failed to change led %d color", ledLoc->hardwareNums[ndx]);
                     }
