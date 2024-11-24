@@ -44,7 +44,6 @@ struct tomtomClient {
 
 typedef struct tomtomClient tomtomClient;
 
-esp_err_t establishWifiConnection(char *wifiSSID, char* wifiPass);
 esp_err_t tomtomInitClient(tomtomClient *client, char *apiKey);
 esp_err_t tomtomDestroyClientHandle(tomtomClient *client);
 esp_err_t tomtomRequestSpeed(unsigned int *result, tomtomClient *client, float longitude, float latitude, int retryNum);

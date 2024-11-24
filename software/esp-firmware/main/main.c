@@ -35,13 +35,14 @@
 #include "pinout.h"
 #include "worker.h"
 #include "utilities.h"
-#include "led_registers.h"
+#include "wifi.h"
 
 /* Component includes */
 #include "api_config.h"
 #include "tomtom.h"
 #include "led_locations.h"
 #include "dots_commands.h"
+#include "led_registers.h"
 
 #define TAG "app_main"
 
@@ -52,11 +53,12 @@
 #define MAIN_TASK_PRIO (3)
 
 #define I2C_GATEKEEPER_STACK (ESP_TASK_MAIN_STACK - 1400)
-#define I2C_GATEKEEPER_PRIO (2) // always start an I2C command if possible, unless OTA update is requested
+#define I2C_GATEKEEPER_PRIO (2)
 #define I2C_QUEUE_SIZE 20
 
-#define NUM_DOT_WORKERS 2 // maximum 8 due to the necessity of a synchronizing event group with a bit for each task
-#define DOT_WORKER_BITS (0x03) // event group bits for worker tasks, one for each task
+/* UPDATE DOT_WORKER_BITS IF CHANGING NUM_DOT_WORKERS!!!! */
+#define NUM_DOT_WORKERS 1 // maximum 8 due to the necessity of a synchronizing event group with a bit for each task
+#define DOT_WORKER_BITS (0x01) // event group bits for worker tasks, one for each task
 #define DOTS_WORKER_STACK (ESP_TASK_MAIN_STACK - 1000)
 #define DOTS_WORKER_PRIO (1)
 #define DOTS_QUEUE_SIZE ((southLEDLen > northLEDLen) ? southLEDLen : northLEDLen)
@@ -181,10 +183,9 @@ void app_main(void)
     /* retrieve nvs settings */
     ESP_LOGI(TAG, "retrieving NVS entries");
     UPDATE_SETTINGS_IF_ERR(
-      retrieveNvsEntries(nvsHandle, &settings), 
+      retrieveNvsEntries(nvsHandle, &settings),
       nvsHandle, NULL, NULL
     );
-
     /* initialize tcp/ip stack */
     ESP_LOGI(TAG, "initializing TCP/IP stack");
     SPIN_IF_ERR(
@@ -196,29 +197,28 @@ void app_main(void)
       NULL, NULL
     );
     esp_netif_create_default_wifi_sta();
-    /* Establish wifi connection */
+    /* Establish wifi connection & tls */
     ESP_LOGI(TAG, "establishing wifi connection");
     wifi_init_config_t default_wifi_cfg = WIFI_INIT_CONFIG_DEFAULT();
     SPIN_IF_ERR(
       esp_wifi_init(&default_wifi_cfg),
       NULL, NULL
     );
-    UPDATE_SETTINGS_IF_ERR(
-      establishWifiConnection(settings.wifiSSID, settings.wifiPass), nvsHandle,
-      NULL, NULL
-    );
-    esp_tls_t *tls = esp_tls_init();
-    SPIN_IF_FALSE(
-      (tls != NULL),
-      NULL, NULL
-    );
-    /* turn on wifi indicator */
     SPIN_IF_ERR(
       gpio_set_direction(WIFI_LED_PIN, GPIO_MODE_OUTPUT),
       NULL, NULL
     );
     SPIN_IF_ERR(
-      gpio_set_level(WIFI_LED_PIN, 1),
+      initWifi(settings.wifiSSID, settings.wifiPass, WIFI_LED_PIN), // allows use of establishWifiConnection and isWifiConnected
+      NULL, NULL
+    );
+    UPDATE_SETTINGS_IF_ERR(
+      establishWifiConnection(), nvsHandle,
+      NULL, NULL
+    );
+    esp_tls_t *tls = esp_tls_init();
+    SPIN_IF_FALSE(
+      (tls != NULL),
       NULL, NULL
     );
     /* Create error handling synchronization variables */
@@ -250,6 +250,7 @@ void app_main(void)
       &errorOccurred, errorOccurredMutex
     );
     for (i = 0; i < NUM_DOT_WORKERS; i++) {
+      ESP_LOGI(TAG, "creating dot worker");
       SPIN_IF_ERR(
         createDotWorkerTask("dotWorker", i, dotQueue, I2CQueue, workerEvents, settings.apiKey, &errorOccurred, errorOccurredMutex),
         &errorOccurred, errorOccurredMutex
@@ -752,7 +753,6 @@ esp_err_t disableDirectionButtonIntr(void) {
 esp_err_t clearLEDs(QueueHandle_t I2CQueue, QueueHandle_t dotQueue, EventGroupHandle_t workerEvents, Direction dir) {
   DotCommand command;
   /* empty the queue */
-  ESP_LOGI(TAG, "main task is clearing leds");
   while (xQueueReceive(dotQueue, &command, 0) == pdTRUE) {}
   /* wait for workers to finish */
   while (xEventGroupWaitBits(workerEvents, DOT_WORKER_BITS, pdFALSE, pdTRUE, INT_MAX) != DOT_WORKER_BITS) {}
@@ -765,7 +765,7 @@ esp_err_t clearLEDs(QueueHandle_t I2CQueue, QueueHandle_t dotQueue, EventGroupHa
           TAG, "failed to clear led"
           );
       }
-      break;
+      break; // tip: if stuck waiting in this function, update DOT_WORKER_BITS :)
       case SOUTH:
       for(int i = 1; i < NUM_LEDS; i++) {
           ESP_RETURN_ON_ERROR(

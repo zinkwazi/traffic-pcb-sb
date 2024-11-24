@@ -20,10 +20,6 @@
 #include "lwip/sys.h"
 #include "esp_http_client.h"
 
-/* Wifi configuration */
-#define WIFI_SCAN_METHOD WIFI_FAST_SCAN
-#define WIFI_AUTH_MODE WIFI_AUTH_WPA2_PSK
-
 /* API configuration */
 #define API_ENDPOINT_URL "/traffic/services/4/flowSegmentData/"
 #define API_METHOD HTTP_METHOD_GET
@@ -32,10 +28,5 @@
 #define API_SEND_OPENLR "true" /* accepts "true" and "false" */
 #define API_STYLE "relative0" /* shouldn't affect flowSegmentData */
 #define DEFAULT_POINT "34.420842,-119.702440" /* Outside Open */
-
-/* Connection method configuration */
-#define MAX_RETRY_WIFI_CONNECT (10)
-#define WIFI_CONNECTED_BIT (BIT0) /* wifi event group bit */
-#define WIFI_FAIL_BIT (BIT1) /* wifi event group bit */
 
 #endif /* APICONFIG_H_ */
