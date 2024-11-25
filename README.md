@@ -9,7 +9,7 @@ This project is a decorative and interactive display piece that shows the curren
 
 # User Manual
 ### Quickstart Guide
-In order to start using your board, you must first configure it to connect to a wifi network and provide it with a TomTom API key to use. This is achieved through a 115200 baud UART menu that is accessed by the USB-C connector. The device will request various configuration settings and, unfortunately, you will not be able to see what you type until you press ENTER. Once configuration is complete the device will reset, then once the wifi indicator is on you may press the toggle button, which will cause an led refresh! To reaccess the configuration menu to change the API key or wifi network, hold the direction toggle button through a device reset initiated by the enable button.
+In order to start using your board, you must first configure it to connect to a wifi network and provide it with a TomTom API key to use. This is achieved through a 115200 baud UART menu that is accessed by the USB-C connector. The device will request various configuration settings and, unfortunately, you will not be able to see what you type until you press ENTER. Once configuration is complete the device will reset, then once the wifi indicator is on you may press the toggle button, which will cause an led refresh! To reaccess the configuration menu to change the API key or wifi network, hold the direction toggle button through a device reset initiated by the enable button. Note that the device does not start refreshing LEDs after a reboot until the toggle button is pressed, which is a design decision to stop excessive API queries when configuring and troubleshooting the device. Have fun!
 
 ### Board Anatomy
 ![fullboardv1rev1](https://github.com/user-attachments/assets/be1016b3-02a1-47e9-b4da-ed9a18e2df38)
@@ -21,7 +21,9 @@ Each road LED on the board corresponds to two OpenLR road segments: one northbou
 
 ### LED Indicator States
 The board can be in one of the following states, discussed further below:
+- Initialization complete: The wifi LED is on and the traffic direction LEDs are off.
 - Configuration change is requested: The error LED is on and the traffic direction LEDs are flashing.
+- An OTA update is in progress: The wifi LED is on and the traffic direction LEDs are on.
 - A TomTom error has occurred: The error LED is flashing.
 - An unrecoverable error has occurred: The error LED is on and the traffic direction LEDs are not flashing.
 
@@ -29,7 +31,7 @@ The board can be in one of the following states, discussed further below:
 Upon a reset via the 'EN' button, the ESP32 typically connects to the wifi network and indicates it has connected by turning on the wifi status LED. When it is unable to connect to the wifi network, it requests a configuration change from the user via UART at 115200 baud through the USB-C connector. This request is indicated by the error LED turning on and the traffic direction LEDs flashing. A configuration request can be forced by clicking the 'EN' button while holding the 'Toggle' button. The 'Toggle' button should be held until the board indicates that it is requesting a configuration change.
 
 ### OTA Updates
-At any point after the wifi indicator is on, an OTA update may be initiated by clicking the 'OTA' button. The ESP32 requests its updates from the latest firmware release, which is stored at https://jdbaptista.github.io/Personal-Website/trafficpcb/firmware.bin. This default can be changed to another URL by configuring it in ESP-IDF's 'menuconfig', then rebuilding and manually flashing the custom firmware. Note that subsequent firmware updates will need to be built manually in the same way to reflect the new URL.
+At any point after the wifi indicator is on, an OTA update may be initiated by clicking the 'OTA' button. An OTA update is underway if the wifi LED is on and the traffic direction LEDs are all solidly on; be sure to let the device finish and reenter the 'initialization complete' state. The ESP32 requests its updates from the latest firmware release, which is stored at https://jdbaptista.github.io/Personal-Website/trafficpcb/firmware.bin. This default can be changed to another URL by configuring it in ESP-IDF's 'menuconfig', then rebuilding and manually flashing the custom firmware. Note that subsequent firmware updates will need to be built manually in the same way to reflect the new URL.
 
 ### TomTom Errors
 If you use an invalid TomTom API key, or your key is out of uses, then the error led will flash. When this happens, either fix your key or change the key via a configuration change, discussed above. The device requires a manual reboot via the 'EN' pin in the case of TomTom errors (or any errors). Note that key issues are the most likely cause of this kind of error, however other things may cause them such as TomTom being down or even a wifi error. If you are certain your key is correct, then the logs may hold some guidance as to what the issue is.
