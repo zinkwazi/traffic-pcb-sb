@@ -312,9 +312,9 @@ void app_main(void)
         disableDirectionButtonIntr(),
         &errorOccurred, errorOccurredMutex
       );
-      esp_err_t err = esp_timer_restart(timer, CONFIG_LED_REFRESH_PERIOD * 60 * 1000000); // restart timer if toggle is pressed
+      esp_err_t err = esp_timer_restart(timer, ((uint64_t) CONFIG_LED_REFRESH_PERIOD) * 60 * 1000000); // restart timer if toggle is pressed
       if (err == ESP_ERR_INVALID_STATE) { // meaning: timer has not yet started
-        err = esp_timer_start_periodic(timer, CONFIG_LED_REFRESH_PERIOD * 60 * 1000000); // don't start refreshing until initial toggle press
+        err = esp_timer_start_periodic(timer, ((uint64_t) CONFIG_LED_REFRESH_PERIOD) * 60 * 1000000); // don't start refreshing until initial toggle press
       }
       SPIN_IF_ERR(
         err,
