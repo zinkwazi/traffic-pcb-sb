@@ -120,9 +120,9 @@ void vDotWorkerTask(void *pvParameters) {
             green = 0x00;
             blue = 0x00;
         } else if (speed < 60) {
-            red = 0xFF;
-            green = 0x55;
-            blue = 0x00;
+            red = 0x00;
+            green = 0x00;
+            blue = 0xFF;
         } else {
             red = 0x00;
             green = 0xFF;
