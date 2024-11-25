@@ -16,6 +16,9 @@ In order to start using your board, you must first configure it to connect to a 
 
 In the lower left corner of the board is the control panel and above that is the direction panel. The three chips located throughout the board are LED matrix drivers which receive commands via I2C from the ESP32. The control panel contains the USB-C connector, which communicates with the ESP32 via UART at 115200 baud; the 'OTA' button, which initiates an over the air update; the 'EN' button, which reboots the ESP32; status LED indicators; and an optional JTAG pinout on the right. The direction panel contains the 'Toggle' button and LED indicators that show the current traffic direction being displayed — either northbound or southbound.
 
+### Understanding Road LEDs
+Each road LED on the board corresponds to two OpenLR road segments: one northbound, and one southbound. Some road segments cross the coordinates of multiple LEDs, which are all refreshed with a single API call. A green LED indicates the current segment speed is greater than or equal to 60mph, a yellow LED indicates the segment is between 30 and 60mph, and a red LED indicates the segment is below 30mph. Note that these speed indications are based on absolute speed and not speed relative to the road segment speed limit or typical flow speed, although this may be changed in future updates. Finally, LEDs at intersections of freeways always prioritize showing the segment speed of the freeway flowing most north or south.
+
 ### LED Indicator States
 The board can be in one of the following states, discussed further below:
 - Configuration change is requested: The error LED is on and the traffic direction LEDs are flashing.
