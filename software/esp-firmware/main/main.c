@@ -122,6 +122,8 @@ void app_main(void)
     int i;
     /* set task priority */
     vTaskPrioritySet(NULL, MAIN_TASK_PRIO);
+    /* print firmware version number */
+    ESP_LOGI(TAG, "firmware version 1.0, api data, blue");
     /* install UART driver */
     ESP_LOGI(TAG, "Installing UART driver");
     SPIN_IF_ERR(
