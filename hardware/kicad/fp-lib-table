@@ -2,4 +2,5 @@
   (version 7)
   (lib (name "map_lbr")(type "KiCad")(uri "${KIPRJMOD}/map_lbr.pretty")(options "")(descr ""))
   (lib (name "jumpers")(type "KiCad")(uri "${KIPRJMOD}/jumpers.pretty")(options "")(descr ""))
+  (lib (name "silkscreen_symbols")(type "KiCad")(uri "${KIPRJMOD}/silkscreen_symbols.pretty")(options "")(descr ""))
 )
