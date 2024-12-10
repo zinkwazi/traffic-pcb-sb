@@ -46,6 +46,8 @@
 
 #define TAG "app_main"
 
+#define FIRMWARE_STRING "Traffic Firmware v1.00ARBG"
+
 #define WIFI_SSID_NVS_NAME "wifi_ssid"
 #define WIFI_PASS_NVS_NAME "wifi_pass"
 #define API_KEY_NVS_NAME "api_key"
@@ -123,7 +125,7 @@ void app_main(void)
     /* set task priority */
     vTaskPrioritySet(NULL, MAIN_TASK_PRIO);
     /* print firmware version number */
-    ESP_LOGI(TAG, "firmware version 1.0, api data, blue");
+    ESP_LOGI(TAG, FIRMWARE_STRING);
     /* install UART driver */
     ESP_LOGI(TAG, "Installing UART driver");
     SPIN_IF_ERR(
