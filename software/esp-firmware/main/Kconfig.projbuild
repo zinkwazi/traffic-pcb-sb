@@ -1,5 +1,11 @@
 menu "Main Application"
 
+    config FIRMWARE_VERSION
+        string "Traffic Firmware Version"
+        default "vUNDEFINED"
+        help
+            The version of firmware this build corresponds to.
+
     config LED_REFRESH_PERIOD
         int "LED Refresh Period"
         default 60

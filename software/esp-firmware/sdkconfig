@@ -387,10 +387,11 @@ CONFIG_PARTITION_TABLE_MD5=y
 #
 # Main Application
 #
+CONFIG_FIRMWARE_VERSION="v1{0}.0ARBG"
 CONFIG_LED_REFRESH_PERIOD=60
 CONFIG_ERROR_PERIOD=500
 CONFIG_NUM_RETRY_HTTP_REQUEST=5
-CONFIG_FIRMWARE_UPGRADE_URL="https://jdbaptista.github.io/Personal-Website/trafficpcb/firmware.bin"
+CONFIG_FIRMWARE_UPGRADE_URL="https://bearanvil.com/firmware/firmwareV1_0.bin"
 # end of Main Application
 
 #
