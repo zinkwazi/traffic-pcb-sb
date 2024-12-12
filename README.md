@@ -42,5 +42,8 @@ In the case that the firmware encounters an unrecoverable error, such as a memor
 ### JTAG Access
 To enable debugging of the ESP32, the JTAG interface can be accessed through the pinout to the right of the control panel. The board contains JTAG circuitry that handles ESP32 strapping pins and electrically isolates the pinout to the rest of the board with op-amps acting as unity gain buffers. By default, JTAG circuitry is completely disconnected from the rest of the board (even ground and power) and can be connected by soldering breadboarding wires between the connection points near the JTAG pinout.
 
+### Versioning
+In the 'releases' tab of the repository you can find various firmware binaries that can manually be flashed onto the device in case something goes wrong. The versioning system is built such that OTA updates should always select the most up to date version for the particular version and board revision. Releases are handled manually, so there may be an issue where the ESP32 starts selecting firmware updates for a different version of the device. In this case, manually flash the image that corresponds to v[board version]{[revision]}.[latest iteration]. This will get OTA updates back on the correct track.
+
 # Contribution Guide
 **Under Construction**
