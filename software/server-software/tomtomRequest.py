@@ -38,23 +38,25 @@ def main(direction, key, csvDict, outFile):
             badLocations = True
     if badLocations:
         print("Aborting due to bad location entries in input file")
-        return False
+        return False # reverts current file changes
     # iterate through LED entries and retrieve data
     invalidReference = False
-    outCSVWriter = csv.writer(outFile)
-    currentSpeeds = {}
+    currentSpeeds = [-1] * (maxLEDNum + 1)
     for ledNum, entry in ledDict.items():
         ledNum = int(entry['LED Number'])
         currentSpeed = -1
+        isReference = False
+        reference = -1
         if int(entry['Free Flow Speed']) < 0:
             # this LED references another
+            isReference = True
             reference = -int(entry['Free Flow Speed'])
             if reference > maxLEDNum:
                 print(f"Invalid reference encountered at LED Number: {ledNum}")
                 invalidReference = True
                 continue
             entry = ledDict[reference]
-            if reference in currentSpeeds:
+            if currentSpeeds[reference] != -1:
                 currentSpeed = currentSpeeds[reference]
         # check for a double reference, which is not allowed
         if int(entry['Free Flow Speed']) < 0:
@@ -70,13 +72,17 @@ def main(direction, key, csvDict, outFile):
                 continue
             jsonResponse = json.loads(response.text)
             currentSpeed = int(jsonResponse["flowSegmentData"]["currentSpeed"])
-            currentSpeeds[int(entry['LED Number'])] = currentSpeed
+            currentSpeeds[ledNum] = currentSpeed
+            if isReference and currentSpeeds[reference] == -1:
+                # update reference speed if necessary
+                currentSpeeds[reference] = currentSpeed
             print(f"retrieved speed {currentSpeed} for LED {int(entry['LED Number'])}")
-        # write ledNum and speed to output file in csv format
-        print("writing row")
-        outCSVWriter.writerow([ledNum, int(entry['Free Flow Speed'])])
+        else:
+            currentSpeeds[ledNum] = currentSpeed
     if invalidReference:
-        return False
+        return False # reverts current file changes
+    # convert to JSON and send to output file
+    json.dump(currentSpeeds, outFile)
     return True
     
             
