@@ -122,8 +122,9 @@ void app_main(void)
     int i;
     /* set task priority */
     vTaskPrioritySet(NULL, MAIN_TASK_PRIO);
-    /* print firmware version number */
-    ESP_LOGE(TAG, "Traffic Firmware " CONFIG_FIRMWARE_VERSION);
+    /* print firmware information */
+    ESP_LOGE(TAG, "Traffic Firmware " CONFIG_HARDWARE_VERSION CONFIG_FIRMWARE_VERSION CONFIG_FIRMWARE_CONF);
+    ESP_LOGE(TAG, "OTA binary: " CONFIG_FIRMWARE_UPGRADE_SERVER "/firmware/firmware" CONFIG_HARDWARE_VERSION ".bin");
     /* install UART driver */
     ESP_LOGI(TAG, "Installing UART driver");
     SPIN_IF_ERR(

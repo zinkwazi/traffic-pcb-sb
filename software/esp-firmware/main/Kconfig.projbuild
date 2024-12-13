@@ -1,10 +1,24 @@
 menu "Main Application"
 
+    config HARDWARE_VERSION
+        string "PCB Hardware Version"
+        default "V1_0"
+        help
+            The version of the PCB that this build is running on, which
+            lets the firmware know the capabilities of the board.
+
     config FIRMWARE_VERSION
         string "Traffic Firmware Version"
-        default "vUNDEFINED"
+        default ".0"
         help
             The version of firmware this build corresponds to.
+
+    config FIRMWARE_CONF
+        string "Traffic Firmware Configuration"
+        default "UUUU"
+        help
+            An indication of this build's build specific config values.
+            Syntax: [A/F/U: api data/fake data/undef][slow color][med color][fast color].
 
     config LED_REFRESH_PERIOD
         int "LED Refresh Period"
@@ -24,9 +38,9 @@ menu "Main Application"
         help
             The number of times to retry a TomTom HTTP request, which has a small chance to fail to resolve the hostname.
 
-    config FIRMWARE_UPGRADE_URL
-        string "Firmware Upgrade URL"
+    config FIRMWARE_UPGRADE_SERVER
+        string "Firmware Upgrade Server"
         help
-            The URL of the latest firmware binary file for this device.
+            The server to query for the latest firmware binary file for this device.
 
 endmenu

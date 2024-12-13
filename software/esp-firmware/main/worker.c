@@ -176,7 +176,7 @@ void vOTATask(void* pvParameters) {
         gpio_set_level(LED_SOUTH_PIN, 1);
         gpio_set_level(LED_WEST_PIN, 1);
         esp_http_client_config_t https_config = {
-            .url = CONFIG_FIRMWARE_UPGRADE_URL,
+            .url = CONFIG_FIRMWARE_UPGRADE_SERVER "/firmware/firmware" CONFIG_HARDWARE_VERSION ".bin",
             .crt_bundle_attach = esp_crt_bundle_attach,
         };
         esp_https_ota_config_t ota_config = {
