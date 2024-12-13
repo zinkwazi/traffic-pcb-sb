@@ -22,13 +22,12 @@
 #include "esp_system.h"
 #include "esp_event.h"
 #include "esp_log.h"
+#include "esp_event_base.h"
 
 #define TAG "wifi"
 
 #define WAIT_CONNECTED_MS (100) /* wait time to establish a wifi connection */
 
-/* Semaphore that gaurds wifi reconnection */
-static SemaphoreHandle_t wifiMutex;
 /* Indicator that the app is connected to the AP */
 static bool wifiConnected;
 static EventGroupHandle_t wifiEvents;
@@ -39,9 +38,9 @@ static char *sWifiPass;
 static gpio_num_t sWifiLED;
 
 /**
- * A handler that recieves wifi connection events. See establishWifiConnection.
+ * A handler that recieves wifi events before connection with the AP is made. See establishWifiConnection.
  */
-static void connectHandler(void *arg, esp_event_base_t eventBase,
+void connectHandler(void *arg, esp_event_base_t eventBase,
                             int32_t eventId, void* eventData)
 {
     if (eventBase == WIFI_EVENT && eventId == WIFI_EVENT_STA_DISCONNECTED) {
@@ -58,12 +57,29 @@ static void connectHandler(void *arg, esp_event_base_t eventBase,
 }
 
 /**
+ * A handler that recieves wifi events after connection with the AP is made. See establishWifiConnection.
+ */
+void wifiEventHandler(void *arg, esp_event_base_t eventBase,
+                            int32_t eventId, void *eventData)
+{
+    if (eventBase == WIFI_EVENT && eventId == WIFI_EVENT_STA_DISCONNECTED) {
+        wifiConnected = false;
+        ESP_LOGI(TAG, "disconnect event! AP connected");
+        gpio_set_level(sWifiLED, 0);
+        esp_wifi_connect();
+    } else if (eventBase == IP_EVENT && eventId == IP_EVENT_STA_GOT_IP) {
+        ESP_LOGI(TAG, "wifi connected event! AP connected");
+        wifiConnected = true;
+        gpio_set_level(sWifiLED, 1);
+    }
+}
+
+/**
  * Initializes wifi synchronization primitives and
  * stores a pointer to wifiSSID and wifiPass strings,
  * which must point to memory that is always available.
  */
 esp_err_t initWifi(char *wifiSSID, char *wifiPass, gpio_num_t wifiLED) {
-    wifiMutex = xSemaphoreCreateMutex();
     wifiConnected = false;
     instanceAnyID = NULL;
     instanceAnyIP = NULL;
@@ -71,21 +87,54 @@ esp_err_t initWifi(char *wifiSSID, char *wifiPass, gpio_num_t wifiLED) {
     sWifiPass = wifiPass;
     sWifiLED = wifiLED;
     wifiEvents = xEventGroupCreate();
-    esp_event_handler_instance_register(WIFI_EVENT,
-                                        ESP_EVENT_ANY_ID,
-                                        connectHandler,
-                                        NULL,
-                                        &instanceAnyIP);
-    esp_event_handler_instance_register(IP_EVENT,
-                                        IP_EVENT_STA_GOT_IP,
-                                        connectHandler,
-                                        NULL,
-                                        &instanceAnyID);
     return ESP_OK;
 }
 
 bool isWifiConnected(void) {
     return wifiConnected;
+}
+
+esp_err_t registerWifiHandler(esp_event_handler_t handler, void *handler_arg) {
+    esp_err_t ret;
+    ret = esp_event_handler_instance_register(WIFI_EVENT,
+                                            ESP_EVENT_ANY_ID,
+                                            handler,
+                                            handler_arg,
+                                            &instanceAnyIP);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+    ret = esp_event_handler_instance_register(IP_EVENT,
+                                            IP_EVENT_STA_GOT_IP,
+                                            handler,
+                                            handler_arg,
+                                            &instanceAnyID);
+    if (ret != ESP_OK) {
+        if (ESP_OK != esp_event_handler_instance_unregister(WIFI_EVENT,
+                                                        ESP_EVENT_ANY_ID,
+                                                        instanceAnyIP))
+        {
+            return ESP_FAIL;
+        }
+        return ret;
+    }
+    return ret;
+}
+
+esp_err_t unregisterWifiHandler(void) {
+    esp_err_t ret;
+    ret = esp_event_handler_instance_unregister(WIFI_EVENT,
+                                            ESP_EVENT_ANY_ID,
+                                            instanceAnyIP);
+    if (ret != ESP_OK) {
+        ESP_LOGI(TAG, "FAIL");
+        return ret;
+    }
+    ret = esp_event_handler_instance_unregister(IP_EVENT,
+                                            IP_EVENT_STA_GOT_IP,
+                                            instanceAnyID);
+    ESP_LOGI(TAG, "unregistered wifi handler");
+    return ret;
 }
 
 /**
@@ -99,7 +148,7 @@ bool isWifiConnected(void) {
  * - default WIFI STA created (esp_netif_create_default_wifi_sta called).
  * - WIFI task started (esp_wifi_init called).
  */
-esp_err_t establishWifiConnection()
+esp_err_t establishWifiConnection(void) 
 {
     esp_err_t ret;
     EventBits_t bits;
@@ -109,13 +158,6 @@ esp_err_t establishWifiConnection()
             .threshold.authmode = WIFI_AUTH_MODE,
         },
     };
-    /* acquire wifi mutex */
-    while (xSemaphoreTake(wifiMutex, INT_MAX) == pdFALSE) {}
-    /* check that wifi was not connected while waiting */
-    if (wifiConnected) {
-        xSemaphoreGive(wifiMutex);
-        return ESP_OK;
-    }
     /* copy STA information */
     const unsigned int staSSIDLen = sizeof(wifi_cfg.sta.ssid) / sizeof(wifi_cfg.sta.ssid[0]);
     const unsigned int staPassLen = sizeof(wifi_cfg.sta.password) / sizeof(wifi_cfg.sta.password[0]);
@@ -125,28 +167,33 @@ esp_err_t establishWifiConnection()
     for (unsigned int i = 0; i < staPassLen; i++) {
         wifi_cfg.sta.password[i] = ((uint8_t *) sWifiPass)[i];
     }
+    /* register wifi handler */
+    ret = registerWifiHandler(connectHandler, NULL);
+    if (ret != ESP_OK) {
+        return ret;
+    }
     /* attempt to connect to AP */
     ESP_LOGI(TAG, "connecting to AP");
     ret = esp_wifi_set_mode(WIFI_MODE_STA);
     if (ret != ESP_OK) {
-        xSemaphoreGive(wifiMutex);
+        unregisterWifiHandler();
         return ret;
     }
     ret = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
     if (ret != ESP_OK) {
-        xSemaphoreGive(wifiMutex);
+        unregisterWifiHandler();
         return ret;
     }
     ESP_LOGI(TAG, "starting wifi");
     ret = esp_wifi_start();
     if (ret != ESP_OK) {
-        xSemaphoreGive(wifiMutex);
+        unregisterWifiHandler();
         return ret;
     }
     ESP_LOGI(TAG, "connecting to wifi");
     ret = esp_wifi_connect();
     if (ret != ESP_OK) {
-        xSemaphoreGive(wifiMutex);
+        unregisterWifiHandler();
         return ret;
     }
     ESP_LOGI(TAG, "waiting for connection");
@@ -157,12 +204,13 @@ esp_err_t establishWifiConnection()
                                portMAX_DELAY);
     if (bits & ~WIFI_CONNECTED_BIT) {
         ESP_LOGI(TAG, "did not connect to wifi AP");
+        unregisterWifiHandler();
         xEventGroupClearBits(wifiEvents, WIFI_CONNECTED_BIT | WIFI_DISCONNECTED_BIT);
-        xSemaphoreGive(wifiMutex);
         return ESP_FAIL;
     }
     ESP_LOGI(TAG, "connected to wifi AP");
+    unregisterWifiHandler();
     xEventGroupClearBits(wifiEvents, WIFI_CONNECTED_BIT | WIFI_DISCONNECTED_BIT);
-    xSemaphoreGive(wifiMutex);
+    ret = registerWifiHandler(wifiEventHandler, NULL);
     return ret;
 }

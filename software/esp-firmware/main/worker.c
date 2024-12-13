@@ -79,10 +79,6 @@ void vDotWorkerTask(void *pvParameters) {
             xEventGroupClearBits(workerEvents, workerIdleBit);
         }
         const LEDLoc *ledLoc = getLoc(dot.ledArrNum, dot.dir);
-        /* ensure wifi is connected */
-        while (!isWifiConnected()) {
-            establishWifiConnection();
-        }
         /* connect to API and query speed */
         if (tomtomRequestSpeed(&speed, &client, ledLoc->latitude, ledLoc->longitude, CONFIG_NUM_RETRY_HTTP_REQUEST) != ESP_OK) {
             switch (dot.dir) {
@@ -185,6 +181,7 @@ void vOTATask(void* pvParameters) {
         esp_err_t ret = esp_https_ota(&ota_config);
         if (ret == ESP_OK) {
             ESP_LOGI(TAG, "completed OTA update successfully!");
+            unregisterWifiHandler();
             esp_restart();
         }
         ESP_LOGI(TAG, "did not complete OTA update successfully!");

@@ -27,6 +27,8 @@ esp_err_t initWifi(char *wifiSSID, char* wifiPass, gpio_num_t wifiLED);
 
 bool isWifiConnected(void);
 
+esp_err_t unregisterWifiHandler(void);
+
 /**
  * Establishes a wifi connection with the AP
  * specified by WIFI_SSID and WIFI_PASS in 'api_config.h'.
@@ -38,6 +40,8 @@ bool isWifiConnected(void);
  * - default WIFI STA created (esp_netif_create_default_wifi_sta called).
  * - WIFI task started (esp_wifi_init called).
  */
-esp_err_t establishWifiConnection();
+esp_err_t establishWifiConnection(void);
+
+esp_err_t initWifiEvents(void);
 
 #endif /* WIFI_H_ */
