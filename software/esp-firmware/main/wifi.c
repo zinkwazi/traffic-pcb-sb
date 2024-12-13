@@ -23,6 +23,8 @@
 #include "esp_event.h"
 #include "esp_log.h"
 
+#define TAG "wifi"
+
 #define WAIT_CONNECTED_MS (100) /* wait time to establish a wifi connection */
 
 /* Semaphore that gaurds wifi reconnection */
@@ -42,15 +44,16 @@ static gpio_num_t sWifiLED;
 static void connectHandler(void *arg, esp_event_base_t eventBase,
                             int32_t eventId, void* eventData)
 {
-    if (eventBase == WIFI_EVENT && eventId == WIFI_EVENT_STA_START) {
-        esp_wifi_connect();
-    } else if (eventBase == WIFI_EVENT && eventId == WIFI_EVENT_STA_DISCONNECTED) {
+    if (eventBase == WIFI_EVENT && eventId == WIFI_EVENT_STA_DISCONNECTED) {
         wifiConnected = false;
+        ESP_LOGI(TAG, "disconnect event!");
         gpio_set_level(sWifiLED, 0);
+        xEventGroupSetBits(wifiEvents, WIFI_DISCONNECTED_BIT);
     } else if (eventBase == IP_EVENT && eventId == IP_EVENT_STA_GOT_IP) {
-        xEventGroupSetBits(wifiEvents, WIFI_CONNECTED_BIT);
+        ESP_LOGI(TAG, "wifi connected event!");
         wifiConnected = true;
         gpio_set_level(sWifiLED, 1);
+        xEventGroupSetBits(wifiEvents, WIFI_CONNECTED_BIT);
     }
 }
 
@@ -123,6 +126,7 @@ esp_err_t establishWifiConnection()
         wifi_cfg.sta.password[i] = ((uint8_t *) sWifiPass)[i];
     }
     /* attempt to connect to AP */
+    ESP_LOGI(TAG, "connecting to AP");
     ret = esp_wifi_set_mode(WIFI_MODE_STA);
     if (ret != ESP_OK) {
         xSemaphoreGive(wifiMutex);
@@ -133,20 +137,32 @@ esp_err_t establishWifiConnection()
         xSemaphoreGive(wifiMutex);
         return ret;
     }
+    ESP_LOGI(TAG, "starting wifi");
     ret = esp_wifi_start();
     if (ret != ESP_OK) {
         xSemaphoreGive(wifiMutex);
         return ret;
     }
+    ESP_LOGI(TAG, "connecting to wifi");
+    ret = esp_wifi_connect();
+    if (ret != ESP_OK) {
+        xSemaphoreGive(wifiMutex);
+        return ret;
+    }
+    ESP_LOGI(TAG, "waiting for connection");
     bits = xEventGroupWaitBits(wifiEvents,
-                               WIFI_CONNECTED_BIT,
+                               WIFI_CONNECTED_BIT | WIFI_DISCONNECTED_BIT,
                                pdFALSE,
                                pdFALSE,
                                portMAX_DELAY);
     if (bits & ~WIFI_CONNECTED_BIT) {
+        ESP_LOGI(TAG, "did not connect to wifi AP");
+        xEventGroupClearBits(wifiEvents, WIFI_CONNECTED_BIT | WIFI_DISCONNECTED_BIT);
+        xSemaphoreGive(wifiMutex);
         return ESP_FAIL;
     }
-    xEventGroupClearBits(wifiEvents, WIFI_CONNECTED_BIT);
+    ESP_LOGI(TAG, "connected to wifi AP");
+    xEventGroupClearBits(wifiEvents, WIFI_CONNECTED_BIT | WIFI_DISCONNECTED_BIT);
     xSemaphoreGive(wifiMutex);
-    return ESP_OK;
+    return ret;
 }

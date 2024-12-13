@@ -16,7 +16,7 @@
 
 /* Connection method configuration */
 #define WIFI_CONNECTED_BIT (BIT0) /* wifi event group bit */
-#define WIFI_FAIL_BIT (BIT1) /* wifi event group bit */
+#define WIFI_DISCONNECTED_BIT (BIT1) /* wifi event group bit */
 
 /**
  * Initializes wifi synchronization primitives and
