@@ -39,8 +39,29 @@ def main(direction, key, csvDict, outFile):
     if badLocations:
         print("Aborting due to bad location entries in input file")
         return False # reverts current file changes
-    # iterate through LED entries and retrieve data
+    # Search for invalid references
     invalidReference = False
+    for ledNum, entry in ledDict.items():
+        ledNum = int(entry['LED Number'])
+        isReference = False
+        reference = -1
+        if int(entry['Free Flow Speed']) < 0:
+            isReference = True
+            reference = -int(entry['Free Flow Speed'])
+            if reference > maxLEDNum:
+                print(f"Invalid reference encountered at LED Number: {ledNum}")
+                invalidReference = True
+                continue
+            entry = ledDict[reference]
+        # check for double reference
+        if int(entry['Free Flow Speed']) < 0:
+            print(f"Double reference encountered at LED Number: {ledNum}")
+            invalidReference = True
+            continue
+    if invalidReference:
+        print("Aborting due to an invalid reference in input file")
+        return False # reverts current file changes
+    # iterate through LED entries and retrieve data
     currentSpeeds = [-1] * (maxLEDNum + 1)
     for ledNum, entry in ledDict.items():
         ledNum = int(entry['LED Number'])
