@@ -90,7 +90,7 @@ def main(direction, key, csvDict, outFile):
             if response.status_code != 200:
                 print(response)
                 print(f"Failed to retrieve data for LED Number {ledNum}")
-                continue
+                return False
             jsonResponse = json.loads(response.text)
             currentSpeed = int(jsonResponse["flowSegmentData"]["currentSpeed"])
             currentSpeeds[ledNum] = currentSpeed
@@ -103,7 +103,9 @@ def main(direction, key, csvDict, outFile):
     if invalidReference:
         return False # reverts current file changes
     # convert to JSON and send to output file
-    json.dump(currentSpeeds, outFile)
+    currentSpeeds[0] = 0
+    byte_array = bytearray(currentSpeeds)
+    outFile.write(byte_array.decode('utf-8'))
     return True
     
             
