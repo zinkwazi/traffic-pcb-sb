@@ -112,16 +112,16 @@ void vDotWorkerTask(void *pvParameters) {
         }
         /* determine correct color */
         if (speed < 30) {
-            red = 0xFF;
+            red = 0x33;
             green = 0x00;
             blue = 0x00;
         } else if (speed < 60) {
-            red = 0x00;
-            green = 0x00;
-            blue = 0xFF;
+            red = 0x33;
+            green = 0x0B;
+            blue = 0x00;
         } else {
             red = 0x00;
-            green = 0xFF;
+            green = 0x33;
             blue = 0x00;
         }
         /* update led colors */

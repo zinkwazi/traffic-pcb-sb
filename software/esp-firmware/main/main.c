@@ -301,8 +301,18 @@ void app_main(void)
     );
     ESP_LOGI(TAG, "initialization complete, handling toggle button presses...");
     /* handle requests to update all LEDs */
-    Direction currDirection = NORTH;
-    for (;;) {
+    Direction currDirection = SOUTH;
+    do {
+      /* update leds */
+      if (clearLEDs(I2CQueue, dotQueue, workerEvents, currDirection) != ESP_OK) {
+        ESP_LOGE(TAG, "failed to clear LEDs");
+        continue;
+      }
+      if (updateLEDs(dotQueue, currDirection) != ESP_OK) {
+        ESP_LOGE(TAG, "failed to update LEDs");
+        continue;
+      }
+      /* wait for button press or timer reset */
       SPIN_IF_ERR(
         enableDirectionButtonIntr(),
         &errorOccurred, errorOccurredMutex
@@ -337,15 +347,7 @@ void app_main(void)
             break;
         }
       }
-      if (clearLEDs(I2CQueue, dotQueue, workerEvents, currDirection) != ESP_OK) {
-        ESP_LOGE(TAG, "failed to clear LEDs");
-        continue;
-      }
-      if (updateLEDs(dotQueue, currDirection) != ESP_OK) {
-        ESP_LOGE(TAG, "failed to update LEDs");
-        continue;
-      }
-    }
+    } while (true);
     /* This task has nothing left to do, but should not exit */
     gpio_set_direction(ERR_LED_PIN, GPIO_MODE_INPUT_OUTPUT);
     gpio_set_level(ERR_LED_PIN, 1);
