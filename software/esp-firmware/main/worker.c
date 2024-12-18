@@ -21,7 +21,7 @@
 #include "led_registers.h"
 #include "wifi.h"
 
-#define DOTS_GLOBAL_CURRENT 0x15 // TODO: move this back to main
+#define DOTS_GLOBAL_CURRENT 0x25 // TODO: move this back to main
 
 void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t speed) {
     if (speed < 30) {
@@ -29,13 +29,13 @@ void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t speed) {
         *green = 0x00;
         *blue = 0x00;
     } else if (speed < 60) {
-        *red = 0x00;
-        *green = 0x00;
-        *blue = 0xFF;
+        *red = 0x33;
+        *green = 0x08;
+        *blue = 0x00;
     } else {
         *red = 0x00;
-        *green = 0xFF;
-        *blue = 0x00;
+        *green = 0x00;
+        *blue = 0x08;
     }
 }
 

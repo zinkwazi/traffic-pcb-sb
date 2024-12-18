@@ -52,5 +52,8 @@ The current version of firmware running on the board can be viewed at boot throu
 
 Ordering of configuration in the version string is as follows: [A/F: data source][R/B/G/Y: slow led speed][R/B/G/Y: medium led speed][R/B/G/Y: fast led speed]. Example: V1_2_5ARBG denotes the 5th firmware version for board version 1 revision 2.
 
+### Pricing
+TomTom's current API price is $0.75 per 1000 requests. An LED refresh in the North direction requires 266 requests and the South direction requires 275 requests (some LEDs correspond to the same openLR road segment). Therefore, these require just about $0.20 to $0.21 cents per refresh. An LED refresh period of 5 minutes will cost roughly $57 to $60 per day, 15 minutes at $20 per day, 20 minutes at $15, 30 minutes at $10, 60 minutes at $5. The user should be aware that V1_0_1 and earlier refresh data every time the direction button is pressed, resulting in many API calls that are only bounded by the user's lack of enthusiasm for button pressing.
+
 # Contribution Guide
 **Under Construction**

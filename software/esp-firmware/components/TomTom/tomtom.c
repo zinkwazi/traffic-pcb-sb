@@ -159,7 +159,6 @@ esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], int speedsSize, Direction dir,
     }
     strcat(urlStr, version);
     strcat(urlStr, ".json");
-    ESP_LOGI(TAG, "%s", urlStr);
     /* request data */
     if (esp_http_client_set_url(client, urlStr) != ESP_OK) {
         return ESP_FAIL;
@@ -183,8 +182,6 @@ esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], int speedsSize, Direction dir,
         return ESP_FAIL;
     }
     int len = esp_http_client_read(client, responseStr, contentLength);
-    ESP_LOGI(TAG, "len: %d", len);
-    ESP_LOGI(TAG, "%s", responseStr);
     if (esp_http_client_close(client) != ESP_OK) {
         return ESP_FAIL;
     }
