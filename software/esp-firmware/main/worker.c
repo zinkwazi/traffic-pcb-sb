@@ -21,6 +21,94 @@
 #include "led_registers.h"
 #include "wifi.h"
 
+#define DOTS_GLOBAL_CURRENT 0x15 // TODO: move this back to main
+
+void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t speed) {
+    if (speed < 30) {
+        *red = 0xFF;
+        *green = 0x00;
+        *blue = 0x00;
+    } else if (speed < 60) {
+        *red = 0x00;
+        *green = 0x00;
+        *blue = 0xFF;
+    } else {
+        *red = 0x00;
+        *green = 0xFF;
+        *blue = 0x00;
+    }
+}
+
+void handleRefreshNorth(bool *aborted, QueueHandle_t I2CQueue, QueueHandle_t dotQueue, tomtomClient client) {
+    DotCommand command;
+    uint8_t red, green, blue;
+    uint8_t speeds[NUM_LEDS];
+    int speedsSize = NUM_LEDS + 1;
+    ESP_LOGI(TAG, "Refreshing North...");
+    *aborted = false;
+    /* connect to API and query speeds */
+    if (tomtomGetServerSpeeds(speeds, speedsSize, NORTH, client.httpHandle, CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 5) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to retrieve segment speeds from server");
+        return;
+    }
+    for (int ndx = speedsSize - 1; ndx > 0; ndx--) {
+        setColor(&red, &green, &blue, speeds[ndx]);
+        if (dotsSetColor(I2CQueue, ndx, red, green, blue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
+            dotsSetScaling(I2CQueue, ndx, 0xFF, 0xFF, 0xFF, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK)
+        {
+            ESP_LOGE(TAG, "failed to change led %d color", ndx);
+        }
+        if (xQueuePeek(dotQueue, &command, 0) == pdTRUE) {
+            /* A new command has been issued, quick clear and abort command */
+            ESP_LOGI(TAG, "Quick Clearing...");
+            if (dotsReset(I2CQueue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
+                dotsSetGlobalCurrentControl(I2CQueue, DOTS_GLOBAL_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK ||
+                dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) 
+            {
+                ESP_LOGE(TAG, "failed to reset dot matrices");
+            }
+            *aborted = true;
+            return;
+        }
+        vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_UPDATE_PERIOD));
+    }
+}
+
+void handleRefreshSouth(bool *aborted, QueueHandle_t I2CQueue, QueueHandle_t dotQueue, tomtomClient client) {
+    DotCommand command;
+    uint8_t red, green, blue;
+    uint8_t speeds[NUM_LEDS];
+    int speedsSize = NUM_LEDS + 1;
+    ESP_LOGI(TAG, "Refreshing South...");
+    *aborted = false;
+    /* connect to API and query speeds */
+    if (tomtomGetServerSpeeds(speeds, speedsSize, NORTH, client.httpHandle, CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 5) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to retrieve segment speeds from server");
+        return;
+    }
+    for (int ndx = 1; ndx < speedsSize - 1; ndx++) {
+        setColor(&red, &green, &blue, speeds[ndx]);
+        if (dotsSetColor(I2CQueue, ndx, red, green, blue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
+            dotsSetScaling(I2CQueue, ndx, 0xFF, 0xFF, 0xFF, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK)
+        {
+            ESP_LOGE(TAG, "failed to change led %d color", ndx);
+        }
+        if (xQueuePeek(dotQueue, &command, 0) == pdTRUE) {
+            /* A new command has been issued, quick clear and abort command */
+            ESP_LOGI(TAG, "Quick Clearing...");
+            if (dotsReset(I2CQueue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
+                dotsSetGlobalCurrentControl(I2CQueue, DOTS_GLOBAL_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK ||
+                dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) 
+            {
+                ESP_LOGE(TAG, "failed to reset dot matrices");
+            }
+            *aborted = true;
+            return;
+        }
+        vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_UPDATE_PERIOD));
+    }
+}
+
 /**
  * Toggles the error LED to indicate that
  * an issue requesting traffic data from TomTom
@@ -43,8 +131,6 @@ void tomtomErrorTimerCallback(void *params) {
 void vDotWorkerTask(void *pvParameters) {
     QueueHandle_t dotQueue = ((struct dotWorkerTaskParams*) pvParameters)->dotQueue;
     QueueHandle_t I2CQueue = ((struct dotWorkerTaskParams*) pvParameters)->I2CQueue;
-    EventGroupHandle_t workerEvents = ((struct dotWorkerTaskParams*) pvParameters)->workerEvents;
-    EventBits_t workerIdleBit = ((struct dotWorkerTaskParams*) pvParameters)->workerIdleBit;
     char *apiKey = ((struct dotWorkerTaskParams*) pvParameters)->apiKey;
     bool *errorOccurred = ((struct dotWorkerTaskParams*) pvParameters)->errorOccurred;
     SemaphoreHandle_t errorOccurredMutex = ((struct dotWorkerTaskParams*) pvParameters)->errorOccurredMutex;
@@ -60,9 +146,8 @@ void vDotWorkerTask(void *pvParameters) {
         vTaskDelay(RETRY_CREATE_HTTP_HANDLE_TICKS);
     }
     DotCommand dot;
-    uint speed, red, green, blue;
-    speed = 0;
     /* Wait for commands and execute them forever */
+    bool prevCommandAborted = false;
     for (;;) {  // This task should never end
         if (ulTaskNotifyTake(pdTRUE, 0) == 1) {
             /* recieved an error from I2C gatekeeper */
@@ -71,86 +156,56 @@ void vDotWorkerTask(void *pvParameters) {
                 gpio_set_level(ERR_LED_PIN, 1);
             }
         }
-        if (xQueueReceive(dotQueue, &dot, 0) == pdFALSE) {
-            /* queue is empty, indicate that this task is idle */
-            xEventGroupSetBits(workerEvents, workerIdleBit);
-            /* wait for a command on the queue */
-            while (xQueueReceive(dotQueue, &dot, INT_MAX) == pdFALSE) {}
-            xEventGroupClearBits(workerEvents, workerIdleBit);
-        }
-        const LEDLoc *ledLoc = getLoc(dot.ledArrNum, dot.dir);
-        /* connect to API and query speed */
-        if (tomtomRequestSpeed(&speed, &client, ledLoc->latitude, ledLoc->longitude, CONFIG_NUM_RETRY_HTTP_REQUEST) != ESP_OK) {
-            switch (dot.dir) {
-                case NORTH:
-                    ESP_LOGE(TAG, "failed to request northbound led location index %d speed from TomTom", dot.ledArrNum);
-                    break;
-                case SOUTH:
-                    ESP_LOGE(TAG, "failed to request southbound led location index %d speed from TomTom", dot.ledArrNum);
-                    break;
-                default:
-                    ESP_LOGE(TAG, "failed to request (unknown direction) led location index %d speed from TomTom", dot.ledArrNum);
-                    break;
-            }
-            /* start error timer */
-            if (!boolWithTestSet(errorOccurred, errorOccurredMutex)) {
-                esp_timer_create_args_t timerArgs = {
-                    .callback = tomtomErrorTimerCallback,
-                    .arg = NULL,
-                    .dispatch_method = ESP_TIMER_ISR,
-                    .name = "errorTimer",
-                };
-                esp_timer_handle_t timer;
-                if (esp_timer_create(&timerArgs, &timer) != ESP_OK || 
-                    esp_timer_start_periodic(timer, CONFIG_ERROR_PERIOD * 1000) != ESP_OK) {
-                    ESP_LOGE(TAG, "failed to start TomTom error timer");
-                    gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);
-                    gpio_set_level(ERR_LED_PIN, 1);
-                }
-            }
-            continue;
-        }
-        /* determine correct color */
-        if (speed < 30) {
-            red = 0xFF;
-            green = 0x00;
-            blue = 0x00;
-        } else if (speed < 60) {
-            red = 0x00;
-            green = 0x00;
-            blue = 0xFF;
-        } else {
-            red = 0x00;
-            green = 0xFF;
-            blue = 0x00;
-        }
+        /* wait for a command on the queue */
+        while (xQueueReceive(dotQueue, &dot, INT_MAX) == pdFALSE) {}
         /* update led colors */
-        /* determine length of hardware LED array */
-        int hardwareArrLen = 1;
-        int startNdx = 0;
-        if (ledLoc->hardwareNums[0] < 0) {
-            hardwareArrLen = -ledLoc->hardwareNums[0];
-            startNdx = 1;
-        }
-        /* update led colors in the proper order */
-        switch (dot.dir) {
-            case NORTH:
-                for (int ndx = startNdx + hardwareArrLen - 1; ndx >= startNdx; ndx--) {
-                    if (dotsSetColor(I2CQueue, ledLoc->hardwareNums[ndx], red, green, blue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK) {
-                        ESP_LOGE(TAG, "failed to change led %d color", ledLoc->hardwareNums[ndx]);
-                    }
-                }
+        switch (dot.type) {
+            case REFRESH_NORTH:
+                handleRefreshNorth(&prevCommandAborted, I2CQueue, dotQueue, client);
                 break;
-            case SOUTH:
-                for (int ndx = startNdx; ndx < startNdx + hardwareArrLen; ndx++) {
-                    if (dotsSetColor(I2CQueue, ledLoc->hardwareNums[ndx], red, green, blue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK) {
-                        ESP_LOGE(TAG, "failed to change led %d color", ledLoc->hardwareNums[ndx]);
-                    }
+            case REFRESH_SOUTH:
+                handleRefreshSouth(&prevCommandAborted, I2CQueue, dotQueue, client);
+                break;
+            case CLEAR_NORTH:
+                if (prevCommandAborted) {
+                    break;
                 }
+                ESP_LOGI(TAG, "Clearing North...");
+                for (int ndx = NUM_LEDS; ndx > 0; ndx--) {
+                    if (dotsSetColor(I2CQueue, ndx, 0x00, 0x00, 0x00, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK) {
+                        ESP_LOGE(TAG, "failed to change led %d color", ndx);
+                    }
+                    vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
+                }
+                prevCommandAborted = false;
+                break;
+            case CLEAR_SOUTH:
+                if (prevCommandAborted) {
+                    break;
+                }
+                ESP_LOGI(TAG, "Clearing South...");
+                for (int ndx = 1; ndx < NUM_LEDS + 1; ndx++) {
+                    if (dotsSetColor(I2CQueue, ndx, 0x00, 0x00, 0x00, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK) {
+                        ESP_LOGE(TAG, "failed to change led %d color", ndx);
+                    }
+                    vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
+                }
+                prevCommandAborted = false;
+                break;
+            case QUICK_CLEAR:
+                ESP_LOGI(TAG, "Quick Clearing...");
+                if (dotsReset(I2CQueue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
+                    dotsSetGlobalCurrentControl(I2CQueue, DOTS_GLOBAL_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK ||
+                    dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) 
+                {
+                    ESP_LOGE(TAG, "failed to reset dot matrices");
+                }
+                prevCommandAborted = false;
                 break;
             default:
                 break;
         }
+        
     }
     ESP_LOGE(TAG, "dot worker task is exiting! This should be impossible!");
     vTaskDelete(NULL); // exit safely (should never happen)

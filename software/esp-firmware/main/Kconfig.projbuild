@@ -9,9 +9,16 @@ menu "Main Application"
 
     config FIRMWARE_VERSION
         string "Traffic Firmware Version"
-        default ".0"
+        default "_0"
         help
             The version of firmware this build corresponds to.
+    
+    config SERVER_FIRMWARE_VERSION
+        string "Server Firmware Version"
+        default "_0"
+        help
+            The version of firmware this build tells the server it is. That is,
+            it accesses the data file corresponding to this firmware version.
 
     config FIRMWARE_CONF
         string "Traffic Firmware Configuration"
@@ -31,6 +38,18 @@ menu "Main Application"
         default 500
         help
             The amount of time in milliseconds (1/1000th of a second) between error LED toggling for TomTom errors.
+
+    config LED_UPDATE_PERIOD
+        int "LED Update Period"
+        default 100
+        help
+            The amount of time in milliseconds (1/1000th of a second) between LED color updates.
+
+    config LED_CLEAR_PERIOD
+        int "LED Clear Period"
+        default 100
+        help
+            The amount of time in milliseconds (1/1000th of a second) between clearing of LEDs.
 
     config NUM_RETRY_HTTP_REQUEST
         int "Num Retry HTTP Request"

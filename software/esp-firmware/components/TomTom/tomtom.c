@@ -55,6 +55,15 @@
                     DOUBLE_STR_SIZE - 1 + \
                     sizeof(API_URL_POSTFIX))
 
+#define BUFFER_SIZE (2000)
+
+/* The URL of server data (to be appended with version) */
+#define URL_DATA_SERVER_NORTH (CONFIG_DATA_SERVER "/current_data/data_north_")
+#define URL_DATA_SERVER_SOUTH (CONFIG_DATA_SERVER "/current_data/data_south_")
+
+/* The file type of the server data */
+#define URL_DATA_SERVER_TYPE (".json")
+
 /* Custom error codes */
 #define TOMTOM_ERR_OFFSET 0xe000
 #define TOMTOM_NO_SPEED -(TOMTOM_ERR_OFFSET + 1) // Defines that the function was unable to parse a speed
@@ -115,6 +124,73 @@ esp_err_t tomtomRequestSpeed(unsigned int *result, tomtomClient *client, float l
         return ESP_FAIL;
     }
     free(urlStr);
+    return ESP_OK;
+}
+
+void parseJSONIntArray(unsigned int speeds[], int speedsSize, char *json) {
+    char *endNumPtr = json;
+    int currNdx = 0;
+    while (*json != '\0') {
+        long int num = strtol(json, &endNumPtr, 10);
+        if (endNumPtr - json == 0) {
+            json++; // no number was found
+        }
+        speeds[currNdx] = num;
+        currNdx++;
+        if (currNdx == speedsSize) {
+            return; // don't care about the rest of the array
+        }
+    }
+}
+
+esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], int speedsSize, Direction dir, esp_http_client_handle_t client, char *version, int retryNum) {
+    char urlStr[CONFIG_MAX_DATA_URL_LEN + 1];
+    char *responseStr;
+    /* construct url string */
+    switch (dir) {
+        case NORTH:
+            strcpy(urlStr, URL_DATA_SERVER_NORTH);
+            break;
+        case SOUTH:
+            strcpy(urlStr, URL_DATA_SERVER_SOUTH);
+            break;
+        default:
+            return ESP_FAIL;
+    }
+    strcat(urlStr, version);
+    strcat(urlStr, ".json");
+    ESP_LOGI(TAG, "%s", urlStr);
+    /* request data */
+    if (esp_http_client_set_url(client, urlStr) != ESP_OK) {
+        return ESP_FAIL;
+    }
+    if (esp_http_client_open(client, 0) != ESP_OK) {
+        ESP_LOGE(TAG, "failed to open connection");
+        return ESP_FAIL;
+    }
+    int64_t contentLength = esp_http_client_fetch_headers(client);
+    while (contentLength == -ESP_ERR_HTTP_EAGAIN) {
+        contentLength = esp_http_client_fetch_headers(client);
+    }
+    if (contentLength <= 0) {
+        return ESP_FAIL;
+    }
+    if (esp_http_client_get_status_code(client) != 200) {
+        return ESP_FAIL;
+    }
+    responseStr = malloc(sizeof(char) * (contentLength + 100));
+    if (responseStr == NULL) {
+        return ESP_FAIL;
+    }
+    int len = esp_http_client_read(client, responseStr, contentLength);
+    ESP_LOGI(TAG, "len: %d", len);
+    ESP_LOGI(TAG, "%s", responseStr);
+    if (esp_http_client_close(client) != ESP_OK) {
+        return ESP_FAIL;
+    }
+    for (int i = 0; i < contentLength && i < speedsSize; i++) {
+        speeds[i] = (uint8_t) responseStr[i];
+    }
     return ESP_OK;
 }
 

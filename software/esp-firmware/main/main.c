@@ -59,15 +59,15 @@
 /* UPDATE DOT_WORKER_BITS IF CHANGING NUM_DOT_WORKERS!!!! */
 #define NUM_DOT_WORKERS 1 // maximum 8 due to the necessity of a synchronizing event group with a bit for each task
 #define DOT_WORKER_BITS (0x01) // event group bits for worker tasks, one for each task
-#define DOTS_WORKER_STACK (ESP_TASK_MAIN_STACK - 1000)
+#define DOTS_WORKER_STACK (ESP_TASK_MAIN_STACK + 1000)
 #define DOTS_WORKER_PRIO (1)
-#define DOTS_QUEUE_SIZE ((southLEDLen > northLEDLen) ? southLEDLen : northLEDLen)
+#define DOTS_QUEUE_SIZE 1
 
 #define OTA_TASK_STACK (ESP_TASK_MAIN_STACK)
 #define OTA_TASK_PRIO (4) // always perform an OTA update if requested
 
 #define NUM_LEDS sizeof(LEDNumToReg) / sizeof(LEDNumToReg[0])
-#define DOTS_GLOBAL_CURRENT 0x08
+
 
 #define SPIN_IF_ERR(x, occurred, errMutex) if (x != ESP_OK) { spinForever(occurred, errMutex); }
 #define SPIN_IF_FALSE(x, occurred, errMutex) if (!x) { spinForever(occurred, errMutex); } 
@@ -105,7 +105,8 @@ esp_err_t initDirectionButton(bool *toggle);
 esp_err_t initIOButton(TaskHandle_t otaTask);
 esp_err_t enableDirectionButtonIntr(void);
 esp_err_t disableDirectionButtonIntr(void);
-esp_err_t clearLEDs(QueueHandle_t I2CQueue, QueueHandle_t dotQueue, EventGroupHandle_t workerEvents, Direction dir);
+esp_err_t quickClearLEDs(QueueHandle_t dotQueue);
+esp_err_t clearLEDs(QueueHandle_t dotQueue, Direction currDir);
 void spinForever(bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex);
 void updateSettingsAndRestart(nvs_handle_t nvsHandle, bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex);
 
@@ -268,11 +269,6 @@ void app_main(void)
       initDirectionLEDs(),
       &errorOccurred, errorOccurredMutex
     );
-    /* initialize matrices */
-    SPIN_IF_ERR(
-      initDotMatrices(I2CQueue),
-      &errorOccurred, errorOccurredMutex
-    );
     /* create timer */
     esp_timer_create_args_t timerArgs = {
       .callback = timerCallback,
@@ -299,9 +295,15 @@ void app_main(void)
       initDirectionButton(&toggle),
       &errorOccurred, errorOccurredMutex
     );
+    /* quick clear LEDs */
+    SPIN_IF_ERR(
+      quickClearLEDs(dotQueue),
+      &errorOccurred, errorOccurredMutex
+    );
     ESP_LOGI(TAG, "initialization complete, handling toggle button presses...");
     /* handle requests to update all LEDs */
     Direction currDirection = NORTH;
+    bool first = true;
     for (;;) {
       SPIN_IF_ERR(
         enableDirectionButtonIntr(),
@@ -337,9 +339,13 @@ void app_main(void)
             break;
         }
       }
-      if (clearLEDs(I2CQueue, dotQueue, workerEvents, currDirection) != ESP_OK) {
-        ESP_LOGE(TAG, "failed to clear LEDs");
-        continue;
+      if (!first) {
+        if (clearLEDs(dotQueue, currDirection) != ESP_OK) {
+          ESP_LOGE(TAG, "failed to clear LEDs");
+          continue;
+        }
+      } else {
+        first = false;
       }
       if (updateLEDs(dotQueue, currDirection) != ESP_OK) {
         ESP_LOGE(TAG, "failed to update LEDs");
@@ -546,28 +552,6 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct userSettings *settin
 }
 
 /**
- * Initializes the dot matrix ICs by issuing commands to
- * the I2C gatekeeper.
- */
-esp_err_t initDotMatrices(QueueHandle_t I2CQueue) {
-    if (dotsReset(I2CQueue, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) {
-      return ESP_FAIL;
-    }
-    if (dotsSetGlobalCurrentControl(I2CQueue, DOTS_GLOBAL_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) {
-      return ESP_FAIL;
-    }
-    for (int i = 1; i < NUM_LEDS; i++) {
-      if (dotsSetScaling(I2CQueue, i, 0xFF, 0xFF, 0xFF, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) {
-        return ESP_FAIL;
-      }
-    }
-    if (dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) {
-      return ESP_FAIL;
-    }
-    return ESP_OK;
-}
-
-/**
  * Creates the I2C gatekeeper task, which handles commands
  * issued to it via the I2CQueue. The gatekeeper is intended
  * to be the only task that interacts with the I2C peripheral
@@ -746,6 +730,18 @@ esp_err_t disableDirectionButtonIntr(void) {
   return gpio_intr_disable(T_SW_PIN);
 }
 
+esp_err_t quickClearLEDs(QueueHandle_t dotQueue) {
+  DotCommand command;
+  /* empty the queue */
+  while (xQueueReceive(dotQueue, &command, 0) == pdTRUE) {}
+  /* send quick clear command */
+  command.type = QUICK_CLEAR;
+  if (xQueueSend(dotQueue, &command, 0) != pdTRUE) {
+    return ESP_FAIL;
+  }
+  return ESP_OK;
+}
+
 /**
  * Turns off all LEDs by directly issuing commands to the
  * I2C gatekeeper. This may interfere with commands issued
@@ -753,30 +749,24 @@ esp_err_t disableDirectionButtonIntr(void) {
  * so it is recommended to wait for both the dot command queue
  * and I2C command queue to be empty before calling this function.
  */
-esp_err_t clearLEDs(QueueHandle_t I2CQueue, QueueHandle_t dotQueue, EventGroupHandle_t workerEvents, Direction dir) {
+esp_err_t clearLEDs(QueueHandle_t dotQueue, Direction currDir) {
   DotCommand command;
   /* empty the queue */
   while (xQueueReceive(dotQueue, &command, 0) == pdTRUE) {}
-  /* wait for workers to finish */
-  while (xEventGroupWaitBits(workerEvents, DOT_WORKER_BITS, pdFALSE, pdTRUE, INT_MAX) != DOT_WORKER_BITS) {}
-  /* clear dots */
-  switch (dir) {
-      case NORTH:
-      for(int i = NUM_LEDS - 1; i > 0; i--) {
-          ESP_RETURN_ON_ERROR(
-          dotsSetColor(I2CQueue, i, 0x00, 0x00, 0x00, DOTS_NOTIFY, DOTS_BLOCKING),
-          TAG, "failed to clear led"
-          );
-      }
-      break; // tip: if stuck waiting in this function, update DOT_WORKER_BITS :)
-      case SOUTH:
-      for(int i = 1; i < NUM_LEDS; i++) {
-          ESP_RETURN_ON_ERROR(
-          dotsSetColor(I2CQueue, i, 0x00, 0x00, 0x00, DOTS_NOTIFY, DOTS_BLOCKING),
-          TAG, "failed to clear led"
-          );
-      }
+  /* determine clearing direction */
+  switch (currDir) {
+    case NORTH:
+      command.type = CLEAR_NORTH;
       break;
+    case SOUTH:
+      command.type = CLEAR_SOUTH;
+      break;
+    default:
+      break;
+  }
+  /* send clear command */
+  if (xQueueSend(dotQueue, &command, 0) != pdTRUE) {
+    return ESP_FAIL;
   }
   return ESP_OK;
 }
@@ -788,8 +778,8 @@ esp_err_t clearLEDs(QueueHandle_t I2CQueue, QueueHandle_t dotQueue, EventGroupHa
  */
 esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir) {
   esp_err_t ret = ESP_OK;
-  DotCommand dot;
-  int startNdx, endNdx, northLvl, southLvl, eastLvl, westLvl;
+  DotCommand command;
+  int northLvl, southLvl, eastLvl, westLvl;
   /* input guards */
   if (dotQueue == NULL) {
     return ESP_FAIL;
@@ -797,16 +787,14 @@ esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir) {
   /* update direction LEDs */
   switch (dir) {
     case NORTH:
-      startNdx = northLEDLen - 1;
-      endNdx = 0;
+      command.type = REFRESH_NORTH;
       northLvl = 1;
       eastLvl = 0;
       southLvl = 0;
       westLvl = 1;
       break;
     case SOUTH:
-      startNdx = 0;
-      endNdx = southLEDLen - 1;
+      command.type = REFRESH_SOUTH;
       northLvl = 0;
       eastLvl = 1;
       southLvl = 1;
@@ -829,21 +817,8 @@ esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir) {
     goto error_with_dir_leds_off;
   }
   /* send commands to update all dot LEDs */
-  dot.dir = dir;
-  if (startNdx <= endNdx) {
-    for (int i = startNdx; i <= endNdx; i++) {
-      dot.ledArrNum = i;
-      while (pdPASS != xQueueSendToBack(dotQueue, &dot, INT_MAX)) {
-        ESP_LOGI(TAG, "failed to add dot to queue, retrying...");
-      }
-    }
-  } else {
-    for (int i = startNdx; i >= endNdx; i--) {
-      dot.ledArrNum = i;
-      while (pdPASS != xQueueSendToBack(dotQueue, &dot, INT_MAX)) {
-        ESP_LOGI(TAG, "failed to add dot to queue, retrying...");
-      }
-    }
+  while (pdPASS != xQueueSendToBack(dotQueue, &command, INT_MAX)) {
+    ESP_LOGW(TAG, "failed to add dot to queue, retrying...");
   }
   return ret;
 error_with_dir_leds_off:

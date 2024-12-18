@@ -28,9 +28,24 @@
 
 #define NUM_LEDS sizeof(LEDNumToReg) / sizeof(LEDNumToReg[0])
 
+enum DotCommandType {
+    /* refresh the dots moving from south to north */
+    REFRESH_NORTH,
+    /* refresh the dots moving from north to south */
+    REFRESH_SOUTH,
+    /* clear the dots moving from south to north */
+    CLEAR_NORTH,
+    /* clear the dots moving from north to south */
+    CLEAR_SOUTH,
+    /* clear the dots by resetting the dot matrices, doubles as matrix initialization */
+    QUICK_CLEAR,
+};
+
+typedef enum DotCommandType DotCommandType;
+
+/* A command for the dot worker task, eventually to hold animation info */
 struct DotCommand {
-    uint16_t ledArrNum; // the array index of the location to query
-    Direction dir;
+    DotCommandType type;
 };
 
 typedef struct DotCommand DotCommand;

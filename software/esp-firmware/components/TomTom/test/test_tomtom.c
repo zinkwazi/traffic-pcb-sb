@@ -95,3 +95,8 @@ TEST_CASE("parseSpeed", "[tomtom]")
     TEST_ASSERT_EQUAL_MESSAGE(expectedSpeed, actualSpeed,
         "Expected actual speed to equal speed provided across chunk boundary");
 }
+
+TEST_CASE("parseJSONArray", "[tomtom]") {
+    esp_err_t retval;
+    
+}

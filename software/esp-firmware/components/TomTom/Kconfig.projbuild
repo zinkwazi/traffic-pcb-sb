@@ -1,5 +1,19 @@
 menu "TomTom"
 
+    config DATA_SERVER
+        string "Data Server"
+        default "https://bearanvil.com"
+        help
+            The server to request updated segment speed data from.
+
+    config MAX_DATA_URL_LEN
+        int "Max Data URL Length"
+        default 60
+        help
+            The maximum length that the URL of the current data from
+            the data server can be, not including null terminator. 
+            ex: "https://bearanvil.com/current_data/data_north_V1_0_0.json" -> 57
+
     config USE_FAKE_DATA
         bool "Use Fake API Data"
         default true
