@@ -270,19 +270,22 @@ void app_main(void)
       &errorOccurred, errorOccurredMutex
     );
     /* create timer */
+    bool toggle = false;
+    struct dirButtonISRParams timerParams;
+    timerParams.mainTask = xTaskGetCurrentTaskHandle();
+    timerParams.toggle = &toggle;
     esp_timer_create_args_t timerArgs = {
-      .callback = timerCallback,
-      .arg = xTaskGetCurrentTaskHandle(), // timer will send an task notification to this main task
+      .callback = dirButtonISR, // use 'timerCallback' to not trigger direction change (with .arg = xTaskGetCurrentTaskHandle())
+      .arg = &timerParams, // timer will send an task notification to this main task
       .dispatch_method = ESP_TIMER_ISR,
       .name = "ledTimer",
     };
     esp_timer_handle_t timer;
-    SPIN_IF_ERR(
+    SPIN_IF_ERR( 
       esp_timer_create(&timerArgs, &timer),
       &errorOccurred, errorOccurredMutex
     );
     /* initialize buttons */
-    bool toggle = false;
     SPIN_IF_ERR(
       gpio_install_isr_service(0),
       &errorOccurred, errorOccurredMutex
@@ -318,6 +321,15 @@ void app_main(void)
         ESP_LOGE(TAG, "failed to update LEDs");
         continue;
       }
+      /* set or restart timer */
+      esp_err_t err = esp_timer_restart(timer, ((uint64_t) CONFIG_LED_REFRESH_PERIOD) * 60 * 1000000); // restart timer if toggle is pressed
+      if (err == ESP_ERR_INVALID_STATE) { // meaning: timer has not yet started
+        err = esp_timer_start_periodic(timer, ((uint64_t) CONFIG_LED_REFRESH_PERIOD) * 60 * 1000000);
+      }
+      SPIN_IF_ERR(
+        err,
+        &errorOccurred, errorOccurredMutex
+      );
       /* wait for button press or timer reset */
       SPIN_IF_ERR(
         enableDirectionButtonIntr(),
@@ -329,14 +341,6 @@ void app_main(void)
       }
       SPIN_IF_ERR(
         disableDirectionButtonIntr(),
-        &errorOccurred, errorOccurredMutex
-      );
-      esp_err_t err = esp_timer_restart(timer, ((uint64_t) CONFIG_LED_REFRESH_PERIOD) * 60 * 1000000); // restart timer if toggle is pressed
-      if (err == ESP_ERR_INVALID_STATE) { // meaning: timer has not yet started
-        err = esp_timer_start_periodic(timer, ((uint64_t) CONFIG_LED_REFRESH_PERIOD) * 60 * 1000000); // don't start refreshing until initial toggle press
-      }
-      SPIN_IF_ERR(
-        err,
         &errorOccurred, errorOccurredMutex
       );
       if (toggle) {
