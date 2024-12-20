@@ -15075,6 +15075,40 @@
 		)
 		(uuid "ffe3efb9-b00b-4eda-916b-7c1194daef54")
 	)
+	(rectangle
+		(start 144.78 233.68)
+		(end 182.88 255.27)
+		(stroke
+			(width 0)
+			(type dash)
+		)
+		(fill
+			(type none)
+		)
+		(uuid 31b60cbe-c5e9-4be9-a3f7-99b44b21caaf)
+	)
+	(rectangle
+		(start 184.15 233.68)
+		(end 195.58 255.27)
+		(stroke
+			(width 0)
+			(type dash)
+		)
+		(fill
+			(type none)
+		)
+		(uuid e241bdc5-3657-499f-ac64-c58004706c4c)
+	)
+	(text "OTA"
+		(exclude_from_sim no)
+		(at 193.675 257.175 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "4c704555-9c9e-4733-8a01-a175592fc09b")
+	)
 	(text "I2C ADDR = 10\n"
 		(exclude_from_sim no)
 		(at 52.705 94.615 0)
@@ -15084,6 +15118,16 @@
 			)
 		)
 		(uuid "c668405d-9ecc-4445-88eb-32c4fb7daa7d")
+	)
+	(text "Traffic Key"
+		(exclude_from_sim no)
+		(at 149.86 257.175 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "e0bacd1c-c940-4a12-82a4-8ed18b459a09")
 	)
 	(label "ROW6"
 		(at 105.41 58.42 180)
