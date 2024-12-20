@@ -19,7 +19,7 @@
       "footprints": true,
       "graphics": true,
       "keepouts": true,
-      "lockedItems": true,
+      "lockedItems": false,
       "otherItems": true,
       "pads": true,
       "text": true,
@@ -62,8 +62,8 @@
       36,
       40
     ],
-    "visible_layers": "ff8b0bf_ffffffff",
-    "zone_display_mode": 0
+    "visible_layers": "ff8f033_ffffffff",
+    "zone_display_mode": 1
   },
   "git": {
     "repo_password": "",

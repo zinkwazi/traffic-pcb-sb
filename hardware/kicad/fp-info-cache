@@ -1,4 +1,4 @@
-23676666970202581
+23678408127169041
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -96669,6 +96669,13 @@ SN74AHC125PWR
 0
 14
 14
+map_lbr
+Photoresistor
+
+
+0
+2
+2
 map_lbr
 QFN40P700X700X80-61N
 
