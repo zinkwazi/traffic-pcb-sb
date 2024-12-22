@@ -29,13 +29,13 @@ void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t speed) {
         *green = 0x00;
         *blue = 0x00;
     } else if (speed < 60) {
-        *red = 0x33;
-        *green = 0x08;
+        *red = 0x15;
+        *green = 0x09;
         *blue = 0x00;
     } else {
         *red = 0x00;
         *green = 0x00;
-        *blue = 0x08;
+        *blue = 0x09;
     }
 }
 
