@@ -50,7 +50,7 @@ def log(message):
         log_file.write(f"{datetime.now()}: {message}\n")
 
 # ================================
-# Main Function
+# Main
 # ================================
 
 def main(direction, key, csv_filename, output_filename):
