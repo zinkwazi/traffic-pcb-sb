@@ -13,11 +13,11 @@ from datetime import datetime
 # Configuration Options
 # ================================
 
-API_KEY = "SLnwSJGmT5XAKAQpmNT3Ajf5Up75aIQP"
-INPUT_CSV = "/home/bearanvil/public_html/current_data/led_locations.csv"
-OUTPUT_NORTH = "/home/bearanvil/public_html/current_data/data_north_V1_0_0.json"
-OUTPUT_SOUTH = "/home/bearanvil/public_html/current_data/data_south_V1_0_0.json"
-LOG_FILE = "/home/bearanvil/scripts/fetch_tomtom_data.log"
+API_KEY = ""
+INPUT_CSV = "led_locations.csv"
+OUTPUT_NORTH = "data_north_V1_0_0.json"
+OUTPUT_SOUTH = "data_south_V1_0_0.json"
+LOG_FILE = "fetch_tomtom_data.log"
 
 class Direction(Enum):
     NORTH = 1
@@ -50,7 +50,85 @@ def log(message):
         log_file.write(f"{datetime.now()}: {message}\n")
 
 # ================================
-# Main
+# API Functions
+# ================================
+
+
+def validEntry(entry):
+    '''Determines whether the given entry 
+    is a valid entry to use in requestData.'''
+
+    return entry["Latitude"] != None and entry["Longitude"] != None
+
+def requestData(entry):
+    '''Requests speed data from the TomTom API. Fails 
+    if entry is invalid, which is checked with validEntry.
+    Returns found speed if successful, -1 otherwise.'''
+
+    longitude, latitude = entry["Longitude"], entry["Latitude"]
+
+    log(f"Requesting data for coordinates ({longitude}, {latitude})")
+    try:
+        response = requests.get(
+            f"https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json?key={API_KEY}&point={longitude},{latitude}&unit=mph&openLr=true"
+        )
+    except:
+        log(f"request failed.")
+        return -1
+    if response.status_code != 200:
+        log(f"Failed to retrieve data: {response.status_code} - {response.text}")
+        return -1
+
+    json_response = response.json()
+    current_speed = int(json_response.get("flowSegmentData", {}).get("currentSpeed", -1))
+    if current_speed == -1:
+        log(f"No speed data found in response: {json_response}")
+        return -1
+    return current_speed
+
+# ================================
+# General Functions
+# ================================
+
+def decodeReferences(led_to_entry, max_led_num):
+    '''Iterates through led_to_entry dictionary and converts
+    its data to entry_to_leds. That is, it compiles all leds
+    that reference a particular entry under one key. max_led_num
+    is the maximum led number that exists, not one past it. Returns
+    entry_to_leds if successful, otherwise None.'''
+
+    entry_to_leds = {}
+    bad_references = False # do not return straight away if successful,
+                           # rather log all issues with the references
+    
+    for led_num, entry in led_to_entry.items():
+        try:
+            reference = int(entry.get("Reference", -1))
+        except:
+            reference = -1
+        if reference != -1:
+            # check reference validity and update entry
+            try:
+                double_ref = int(led_to_entry.get(reference, {}).get("Reference", -1))
+            except:
+                double_ref = -1
+            if reference <= 0 or reference > max_led_num or double_ref != -1:
+                log(f"Invalid reference at LED Number: {led_num}")
+                bad_references = True
+                continue
+            entry = led_to_entry[reference]
+            if entry == None or not validEntry(entry):
+                log(f"Entry is invalid or missing from led_to_entry for reference at LED Number: {led_num}")
+                bad_references = True
+                continue
+        if entry_to_leds.get(entry["internal_row_num"], None) == None:
+            entry_to_leds[entry["internal_row_num"]] = []
+        entry_to_leds[entry["internal_row_num"]].append(led_num)
+    
+    return entry_to_leds if not bad_references else None
+
+# ================================
+# Main Function
 # ================================
 
 def main(direction, key, csv_filename, output_filename):
@@ -65,7 +143,9 @@ def main(direction, key, csv_filename, output_filename):
             max_led_num = 0
             bad_locations = False
 
-            for entry in csv_reader:
+            # Retrieve appropriate entries from csv file
+            row_to_entry = {} # allows entry to be used as key in dictionary. See entry["internal_row_num"]
+            for row_num, entry in enumerate(csv_reader):
                 if entry['Direction'] == "North" and direction == Direction.SOUTH:
                     continue
                 if entry['Direction'] == "South" and direction == Direction.NORTH:
@@ -75,6 +155,8 @@ def main(direction, key, csv_filename, output_filename):
                     bad_locations = True
                 else:
                     led_to_entry[int(entry['LED Number'])] = entry
+                    row_to_entry[row_num] = entry
+                    entry["internal_row_num"] = row_num # allows entry to be used as key in dictionary
                 max_led_num = max(max_led_num, int(entry['LED Number']))
 
             # Search for missing LED numbers
@@ -86,56 +168,21 @@ def main(direction, key, csv_filename, output_filename):
             if bad_locations:
                 log("Aborting due to bad location entries in input file.")
                 return False
-            
-            # Decode entries that reference other LED numbers
-            locs_to_leds = {}
-            bad_references = False
-            for led_num, entry in led_to_entry.items():
-                try:
-                    reference = int(entry.get("Reference", -1))
-                except:
-                    reference = -1
-                if reference != -1:
-                    # check reference validity and update entry
-                    try:
-                        double_ref = int(led_to_entry.get(reference, {}).get("Reference", -1))
-                    except:
-                        double_ref = -1
-                    if reference <= 0 or reference > max_led_num or double_ref != -1:
-                        log(f"Invalid reference at LED Number: {led_num}")
-                        bad_references = True
-                        continue
-                    entry = led_to_entry[reference]
-                
-                if entry["Longitude"] == None or entry["Latitude"] == None:
-                    log(f"Missing longitude/latitude at LED Number: {led_num}")
-                    bad_references = True
-                    continue
-                location = (entry["Longitude"], entry["Latitude"])
-                if locs_to_leds.get(location, None) == None:
-                    locs_to_leds[location] = []
-                locs_to_leds[location].append(led_num)
 
-            if bad_references:
+            # Decode entries that reference other LED numbers
+            entry_to_leds = decodeReferences(led_to_entry, max_led_num)
+            if entry_to_leds == None:
                 log("Aborting due to bad references in input file.")
-                return False
+                return False                
 
             # Iterate through LED entries and retrieve data
             current_speeds = [-1] * (max_led_num + 1)
-            for location, leds in locs_to_leds.items():
-                longitude, latitude = location
-                
-                log(f"Requesting data for ({longitude}, {latitude})")
-                response = requests.get(
-                    f"https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json?key={key}&point={longitude},{latitude}&unit=mph&openLr=true"
-                )
-                if response.status_code != 200:
-                    log(f"Failed to retrieve data: {response.status_code} - {response.text}")
-                    continue
-                json_response = response.json()
-                current_speed = int(json_response.get("flowSegmentData", {}).get("currentSpeed", -1))
+            for entry_row_num, leds in entry_to_leds.items():
+                entry = row_to_entry[entry_row_num]
+                log(entry)
+                current_speed = requestData(entry)
                 if current_speed == -1:
-                    log(f"No speed data found for LEDs {leds}: {json_response}")
+                    log(f"No speed data found for LEDs {leds}")
                     continue
 
                 for led_num in leds:
