@@ -42,14 +42,12 @@
 
 /* Main component includes */
 #include "pinout.h"
-#include "worker.h"
+#include "tasks.h"
 #include "utilities.h"
 #include "wifi.h"
+#include "main_types.h"
 
 /* Component includes */
-#include "api_config.h"
-#include "tomtom.h"
-#include "led_locations.h"
 #include "dots_commands.h"
 #include "led_registers.h"
 
@@ -58,44 +56,6 @@
 
 /** @brief The name of the non-volatile storage entry for the wifi password. */
 #define WIFI_PASS_NVS_NAME "wifi_pass"
-
-/** @brief The name of the non-volatile storage entry for the api key. */
-#define API_KEY_NVS_NAME "api_key"
-
-/** @brief The task priority of the main task. */
-#define MAIN_TASK_PRIO (3)
-
-/** @brief The stack size allocated for the I2C gatekeeper task. */
-#define I2C_GATEKEEPER_STACK (ESP_TASK_MAIN_STACK - 1400)
-
-/** @brief The task priority of the I2C gatekeeper task. */
-#define I2C_GATEKEEPER_PRIO (2)
-
-/** @brief The queue size in elements of the I2C command queue. */
-#define I2C_QUEUE_SIZE 20
-
-/* UPDATE DOT_WORKER_BITS IF CHANGING NUM_DOT_WORKERS!!!! */
-#define NUM_DOT_WORKERS 1 // maximum 8 due to the necessity of a synchronizing 
-                          // event group with a bit for each task
-#define DOT_WORKER_BITS (0x01) // event group bits for worker tasks, one for each task
-
-/** @brief The stack size allocated for the dot worker task. */
-#define DOTS_WORKER_STACK (ESP_TASK_MAIN_STACK + 1000)
-
-/** @brief The task priority of the dot worker task. */
-#define DOTS_WORKER_PRIO (1)
-
-/** @brief The queue size of the dot command queue. */
-#define DOTS_QUEUE_SIZE 1
-
-/** @brief The stack size allocated for the OTA task. */
-#define OTA_TASK_STACK (ESP_TASK_MAIN_STACK)
-
-/** @brief The task priority of the OTA task. */
-#define OTA_TASK_PRIO (4)
-
-/** @brief The number of LEDs present on the device. */
-#define NUM_LEDS sizeof(LEDNumToReg) / sizeof(LEDNumToReg[0])
 
 /**
  * @brief Calls spinForever if x is not ESP_OK.
@@ -108,7 +68,8 @@
  * @param errMutex A handle to a mutex that guards access to the bool pointed to
  *                 by occurred.
  */
-#define SPIN_IF_ERR(x, occurred, errMutex) if (x != ESP_OK) { spinForever(occurred, errMutex); }
+#define SPIN_IF_ERR(x, occurred, errMutex) \
+      if (x != ESP_OK) { spinForever(occurred, errMutex); }
 
 /**
  * @brief Calls spinForever if x is not true.
@@ -121,7 +82,8 @@
  * @param errMutex A handle to a mutex that guards access to the bool pointed to
  *                 by occurred.
  */
-#define SPIN_IF_FALSE(x, occurred, errMutex) if (!x) { spinForever(occurred, errMutex); } 
+#define SPIN_IF_FALSE(x, occurred, errMutex) \
+      if (!x) { spinForever(occurred, errMutex); } 
 
 /**
  * @brief Calls updateSettingsAndRestart if x is not ESP_OK.
@@ -135,7 +97,8 @@
  * @param errMutex A handle to a mutex that guards access to the bool pointed to
  *                 by occurred.
  */
-#define UPDATE_SETTINGS_IF_ERR(x, handle, occurred, errMutex) if (x != ESP_OK) { updateSettingsAndRestart(handle, occurred, errMutex); }
+#define UPDATE_SETTINGS_IF_ERR(x, handle, occurred, errMutex) \
+      if (x != ESP_OK) { updateSettingsAndRestart(handle, occurred, errMutex); }
 
 /**
  * @brief Calls updateSettingsAndRestart if x is not true.
@@ -149,7 +112,14 @@
  * @param errMutex A handle to a mutex that guards access to the bool pointed to
  *                 by occurred.
  */
-#define UPDATE_SETTINGS_IF_FALSE(x, handle, occurred, errMutex) if (!x) { updateSettingsAndRestart(handle, occurred, errMutex); }
+#define UPDATE_SETTINGS_IF_FALSE(x, handle, occurred, errMutex) \
+      if (!x) { updateSettingsAndRestart(handle, occurred, errMutex); }
+
+#define INDICATE_ERR(occurred, errMutex) \
+      if (!boolWithTestSet(occurred, errMutex)) {               \
+          gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);    \
+          gpio_set_level(ERR_LED_PIN, 1);                       \
+      }
 
 /**
  * @brief User non-volatile storage settings.
@@ -157,74 +127,12 @@
  * @note This struct is populated when user non-volatile storage settings
  *       are retrieved with retrieveNvsEntries.
  */
-struct userSettings {
+struct UserSettings {
   char *wifiSSID; /*!< A string containing the wifi SSID. */
   size_t wifiSSIDLen; /*!< The length of the wifiSSID string. */
   char *wifiPass; /*!< A string containing the wifi password. */
   size_t wifiPassLen; /*!< The length of the wifiPass string. */
-  char *apiKey; /*!< NO LONGER IN USE */
-  size_t apiKeyLen; /*!< NO LONGER IN USE */
 };
-
-/**
- * @brief The input parameters to dirButtonISR, which gives the routine
- * pointers to the main task's objects.
- */
-struct dirButtonISRParams {
-  TaskHandle_t mainTask; /*!< A handle to the main task used to send a 
-                              notification. */
-  bool *toggle; /*!< Indicates to the main task that the LED direction should
-                     change from North to South or vice versa. The bool should
-                     remain in-scope for the duration of use of this struct. */ 
-};
-
-/**
- * @brief Interrupt service routine that handles direction button presses.
- * 
- * Handles direction button presses once the main task is 
- * ready to refresh LEDs. A button press is only acted upon
- * once the main task has refreshed all LEDs because the ISR
- * sends a task notification to the main task, which the task
- * only checks once it has finished handling a previous press.
- * 
- * @param params A pointer to a struct dirButtonISRParams that
- *               contains references to the main task's objects.
- */
-void dirButtonISR(void *params);
-
-/**
- * @brief Interrupt service routine that handles OTA button presses.
- * 
- * Handles OTA button presses to tell the main task to trigger an over-the-air
- * firmware upgrade.
- * 
- * @param params A TaskHandle_t that is the handle of the main task.
- */
-void otaButtonISR(void *params);
-
-/**
- * @brief Callback that periodically sends a task notification to the main task.
- * 
- * Callback that periodically tells the main task to refresh all LEDs if the 
- * direction button has not been pressed. The timer that calls this function 
- * restarts if the direction button is pressed.
- * 
- * @param params A TaskHandle_t that is the handle of the main task.
- */
-void timerCallback(void *params);
-
-/**
- * @brief Callback that toggles all the direction LEDs.
- * 
- * Callback that is called from a timer that is active when the main task
- * requests a settings update from the user. This periodically toggles all
- * the direction LEDs, causing them to flash.
- * 
- * @param params An int* used to store the current output value of the LEDs.
- *               This object should not be destroyed or modified while the
- *               timer using this callback is active.
- */
-void timerFlashDirCallback(void *params);
 
 /**
  * @brief Determines whether user settings currently exist in non-volatile
@@ -239,6 +147,21 @@ void timerFlashDirCallback(void *params);
  * @returns ESP_OK if successful, otherwise ESP_FAIL.
  */
 esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle);
+
+/**
+ * @brief Removes any entries in non-volatile storage that are unnecessary for
+ *        device operation.
+ * 
+ * @note Unnecessary NVS entries may exist if a firmware update has been
+ *       performed and previously necessary entries have been made obsolete.
+ *       All entries that are deemed necessary are those searched for in
+ *       the nvsEntriesExist function.
+ * 
+ * @param nvsHandle The non-volatile storage handle where user settings exist.
+ * 
+ * @returns ESP_OK if successful, otherwise ESP_FAIL.
+ */
+esp_err_t removeExtraNvsEntries(nvs_handle_t nvsHandle);
 
 /**
  * @brief Queries the user for settings and writes responses in non-volatile
@@ -265,12 +188,12 @@ esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir);
  *       settings if settings is to be destroyed.
  * 
  * @param nvsHandle The non-volatile storage handle where settings exist.
- * @param[out] settings A pointer to struct userSettings that will be
+ * @param[out] settings A pointer to struct UserSettings that will be
  *                      populated with the retrieved user settings.
  * 
  * @returns ESP_OK if successful, otherwise ESP_FAIL.
  */
-esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct userSettings *settings);
+esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct UserSettings *settings);
 
 /**
  * @brief Initializes the I2C gatekeeper task, which is implemented by 
@@ -286,38 +209,6 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct userSettings *settin
  * @returns ESP_OK if successful, otherwise ESP_FAIL.
  */
 esp_err_t createI2CGatekeeperTask(QueueHandle_t I2CQueue);
-
-/**
- * @brief Initializes the dot worker task, which is implemented by 
- *        vDotWorkerTask.
- * 
- * @note The dot worker task receives commands from the main task. It is the
- *       task that does the most 'business logic' of the application. It
- *       relieves the main task of these duties so that it can quickly respond
- *       to user input.
- * 
- * @param name A string that is copied and used as the name of this task for
- *             debugging purposes.
- * @param workerNum NO LONGER USED.
- * @param dotQueue A handle to a queue that holds struct DotCommand
- *                 objects. This task retrieves commands from this queue and
- *                 performs work to fulfill them.
- * @param I2CQueue A handle to a queue that holds struct I2CCommand objects.
- *                 This task issues commands to this queue to be handled by the
- *                 I2C gatekeeper, implemented by vI2CGatekeeperTask.
- * @param workerEvents NO LONGER USED.
- * @param apiKey NO LONGER USED.
- * @param errorOccurred A pointer to a bool that indicates whether an error
- *                      has occurred at any point in the program or not. This
- *                      bool is shared by all tasks and should only be accessed
- *                      after errorOccurredMutex has been obtained, ideally
- *                      through the use of the boolWithTestSet function.
- * @param errorOccurredMutex A handle to a mutex that guards access to the bool
- *                           pointed to by errorOccurred.
- * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- */
-esp_err_t createDotWorkerTask(char *name, int workerNum, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, EventGroupHandle_t workerEvents, char *apiKey, bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex);
 
 /**
  * @brief Configures and sets initial levels of the direction LEDs.

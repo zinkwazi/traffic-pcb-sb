@@ -18,6 +18,9 @@
 
 #define TAG "dots_commands"
 
+/** @brief The maximum number of LEDs that can be present on the device. */
+#define MAX_NUM_LEDS sizeof(LEDNumToReg) / sizeof(LEDNumToReg[0])
+
 #define DOTS_OK_VAL (0x81)
 #define DOTS_ERR_VAL (0x6A)
 

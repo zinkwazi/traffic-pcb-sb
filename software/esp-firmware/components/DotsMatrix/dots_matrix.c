@@ -20,6 +20,7 @@
 #include "esp_check.h"
 
 /* Component includes */
+#include "dots_types.h"
 #include "led_registers.h"
 
 #define TAG "dots_matrix"
@@ -81,6 +82,27 @@
 #define RESET_KEY       0xAE
 
 #define FILL_BUFFER(reg, data) buffer[0] = reg; buffer[1] = data;
+
+// TODO: replace static variables with thread local storage
+static struct PageState currState;
+static QueueHandle_t I2CQueue; // uninitialized until gatekeeper task is created
+// TODO: Check whether these are NULL on 
+//       reset or only on new flash.
+static i2c_master_bus_handle_t master_bus;
+static i2c_master_dev_handle_t matrix1_handle;
+static i2c_master_dev_handle_t matrix2_handle;
+static i2c_master_dev_handle_t matrix3_handle;
+
+void dotsResetStaticVars(void) {
+    currState.mat1 = 0;
+    currState.mat2 = 0;
+    currState.mat3 = 0;
+    I2CQueue = NULL;
+    master_bus = NULL;
+    matrix1_handle = NULL;
+    matrix2_handle = NULL;
+    matrix3_handle = NULL;
+}
 
 esp_err_t dInitializeBus(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin) {
     i2c_master_bus_config_t master_bus_config = {

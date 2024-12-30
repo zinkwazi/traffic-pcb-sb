@@ -37,29 +37,63 @@ menu "Main Application"
         int "Error Flash Period"
         default 500
         help
-            The amount of time in milliseconds (1/1000th of a second) between error LED toggling for TomTom errors.
+            The amount of time in milliseconds (1/1000th of a second) between 
+            error LED toggling for TomTom errors.
 
     config LED_UPDATE_PERIOD
         int "LED Update Period"
         default 100
         help
-            The amount of time in milliseconds (1/1000th of a second) between LED color updates.
+            The amount of time in milliseconds (1/1000th of a second) between 
+            LED color updates.
 
     config LED_CLEAR_PERIOD
         int "LED Clear Period"
         default 100
         help
-            The amount of time in milliseconds (1/1000th of a second) between clearing of LEDs.
+            The amount of time in milliseconds (1/1000th of a second) between 
+            clearing of LEDs.
 
     config NUM_RETRY_HTTP_REQUEST
         int "Num Retry HTTP Request"
         default 5
         help
-            The number of times to retry a TomTom HTTP request, which has a small chance to fail to resolve the hostname.
+            The number of times to retry a TomTom HTTP request, which has a 
+            small chance to fail to resolve the hostname.
 
     config FIRMWARE_UPGRADE_SERVER
         string "Firmware Upgrade Server"
         help
             The server to query for the latest firmware binary file for this device.
+
+    config DATA_SERVER
+        string "Data Server"
+        default "https://bearanvil.com"
+        help
+            The server to request updated segment speed data from.
+
+    config MAX_DATA_URL_LEN
+        int "Max Data URL Length"
+        default 60
+        help
+            The maximum length that the URL of the current data from
+            the data server can be, not including null terminator. 
+            ex: "https://bearanvil.com/current_data/data_north_V1_0_0.json" -> 57
+
+    config USE_FAKE_DATA
+        bool "Use Fake API Data"
+        default true
+        help
+            Whether the TomTom component should simulate API
+            data or actually make API calls using the provided API key.
+
+    config GLOBAL_LED_CURRENT
+        int "Global LED Current"
+        default 37
+        help
+            The maximum current that is delivered to an LED, which is also
+            the current delivered to an LED with a scaling factor of 0xFF.
+            This value should not exceed 0x80 (128) as that corresponds to the
+            maximum operating current that an LED can handle.
 
 endmenu

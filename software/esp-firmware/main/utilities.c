@@ -36,66 +36,15 @@
 
 /* Main component includes */
 #include "pinout.h"
-#include "worker.h"
+#include "tasks.h"
 #include "utilities.h"
 #include "wifi.h"
+#include "routines.h"
 
 /* Component includes */
-#include "api_config.h"
-#include "tomtom.h"
-#include "led_locations.h"
 #include "dots_commands.h"
 #include "led_registers.h"
 
-/**
- * 
- */
-void dirButtonISR(void *params) {
-  TaskHandle_t mainTask = ((struct dirButtonISRParams *) params)->mainTask;
-  bool *toggle = ((struct dirButtonISRParams *) params)->toggle;
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  *toggle = true;
-  vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
-
-void otaButtonISR(void *params) {
-  TaskHandle_t otaTask = (TaskHandle_t) params;
-  xTaskNotifyGive(otaTask);
-}
-
-/**
- * Periodically sends a task notification to the main task
- * to refresh all LEDs if the direction button has not been
- * pressed. This function does not indicate to the main
- * task that it should toggle the current direction, unlike
- * dirButtonISR(). The timer that calls this function restarts
- * if the direction button has been pressed.
- */
-void timerCallback(void *params) {
-  TaskHandle_t mainTask = (TaskHandle_t) params;
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
-
-/**
- * Enabled when a settings update is requested, this callback
- * toggles all the direction LEDs.
- */
-void timerFlashDirCallback(void *params) {
-  int *currentOutput = (int *) params;
-  *currentOutput = (*currentOutput == 1) ? 0 : 1;
-  gpio_set_level(LED_NORTH_PIN, *currentOutput);
-  gpio_set_level(LED_EAST_PIN, *currentOutput);
-  gpio_set_level(LED_WEST_PIN, *currentOutput);
-  gpio_set_level(LED_SOUTH_PIN, *currentOutput);
-}
-
-/**
- * Determines whether user settings currently exist in non-volatile
- * storage, which should not be true on the first powerup of the system.
- */
 esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle) {
   esp_err_t ret;
   nvs_type_t nvsType;
@@ -109,24 +58,50 @@ esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle) {
     (ret == ESP_OK && nvsType == NVS_TYPE_STR), ret,
     TAG, "failed to lookup wifi password in non-volatile storage"
   );
-  ret = nvs_find_key(nvsHandle, API_KEY_NVS_NAME, &nvsType);
-  ESP_RETURN_ON_FALSE(
-    (ret == ESP_OK && nvsType == NVS_TYPE_STR), ret,
-    TAG, "failed to lookup API key in non-volatile storage"
-  );
   return ret;
 }
 
-/**
- * Uses UART0 to query settings from the user, then writes
- * the responses into non-volatile storage.
- */
+esp_err_t removeExtraNvsEntries(nvs_handle_t nvsHandle) {
+  esp_err_t ret;
+  nvs_iterator_t nvs_iter;
+  if (nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter) != ESP_OK) {
+    return ESP_FAIL;
+  }
+  ret = nvs_entry_next(&nvs_iter);
+  while (ret != ESP_OK) {
+    nvs_entry_info_t info;
+    if (nvs_entry_info(nvs_iter, &info) != ESP_OK) {
+      return ESP_FAIL;
+    }
+    if (strcmp(info.namespace_name, "main") == 0 &&
+            (strcmp(info.key, WIFI_SSID_NVS_NAME) == 0 ||
+             strcmp(info.key, WIFI_PASS_NVS_NAME) == 0))
+    {
+      ret = nvs_entry_next(&nvs_iter);
+      continue;
+    }
+    ESP_LOGI(TAG, "removing nvs entry: %s", info.key);
+    if (nvs_erase_key(nvsHandle, info.key) != ESP_OK) {
+      return ESP_FAIL;
+    }
+    ret = nvs_entry_next(&nvs_iter);
+  }
+  if (nvs_commit(nvsHandle) != ESP_OK) {
+    return ESP_FAIL;
+  }
+  if (ret == ESP_ERR_INVALID_ARG) {
+    return ESP_FAIL;
+  }
+  return ESP_OK;
+}
+
+
 esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
   const unsigned short bufLen = 256;
   char c;
   char buf[bufLen];
   ESP_LOGI(TAG, "Querying settings from user...");
-  printf("\n\nWifi SSID: ");
+  printf("\nWifi SSID: ");
   fflush(stdout);
   for (int i = 0; i < bufLen; i++) {
     buf[i] = getchar();
@@ -139,13 +114,12 @@ esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
   }
   while ((c = getchar()) != '\n') {}
   buf[bufLen] = '\0'; // in case the user writes too much
-  printf("\nYou entered: %s\n", buf);
   fflush(stdout);
   ESP_RETURN_ON_ERROR(
     nvs_set_str(nvsHandle, WIFI_SSID_NVS_NAME, buf),
     TAG, "failed to write wifi SSID to non-volatile storage"
   );
-  printf("\n\nWifi Password: ");
+  printf("\nWifi Password: ");
   fflush(stdout);
   for (int i = 0; i < bufLen; i++) {
     buf[i] = getchar();
@@ -158,30 +132,10 @@ esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
   }
   while ((c = getchar()) != '\n') {}
   buf[bufLen] = '\0'; // in case the user writes too much
-  printf("\nYou entered: %s\n", buf);
   fflush(stdout);
   ESP_RETURN_ON_ERROR(
     nvs_set_str(nvsHandle, WIFI_PASS_NVS_NAME, buf),
     TAG, "failed to write wifi password to non-volatile storage"
-  );
-  printf("\n\nAPI Key: ");
-  fflush(stdout);
-  for (int i = 0; i < bufLen; i++) {
-    buf[i] = getchar();
-    if (buf[i] == '\n') {
-      buf[i] = '\0';
-      break;
-    }
-    printf("%c", buf[i]);
-    fflush(stdout);
-  }
-  while ((c = getchar()) != '\n') {}
-  buf[bufLen] = '\0'; // in case the user writes too much
-  printf("\nYou entered: %s\n", buf);
-  fflush(stdout);
-  ESP_RETURN_ON_ERROR(
-    nvs_set_str(nvsHandle, API_KEY_NVS_NAME, buf),
-    TAG, "failed to write API key to non-volatile storage"
   );
   ESP_RETURN_ON_ERROR(
     nvs_commit(nvsHandle),
@@ -190,13 +144,7 @@ esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
   return ESP_OK;
 }
 
-/**
- * Retrieves user settings from non-volatile storage, placing
- * results in the provided settings struct with space allocated
- * from the heap. It is necessary for the calling function to
- * free pointers in settings if settings is to be destroyed.
- */
-esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct userSettings *settings)
+esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct UserSettings *settings)
 {
   /* retrieve wifi ssid */
   if (nvs_get_str(nvsHandle, WIFI_SSID_NVS_NAME, NULL, &(settings->wifiSSIDLen)) != ESP_OK) {
@@ -219,27 +167,9 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct userSettings *settin
   if (nvs_get_str(nvsHandle, WIFI_PASS_NVS_NAME, settings->wifiPass, &(settings->wifiPassLen)) != ESP_OK) {
     return ESP_FAIL;
   }
-  /* retrieve api key */
-  if (nvs_get_str(nvsHandle, API_KEY_NVS_NAME, NULL, &(settings->apiKeyLen)) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  if ((settings->apiKey = malloc(settings->apiKeyLen)) == NULL) {
-    free(settings->wifiSSID);
-    free(settings->wifiPass);
-    return ESP_FAIL;
-  }
-  if (nvs_get_str(nvsHandle, API_KEY_NVS_NAME, settings->apiKey, &(settings->apiKeyLen)) != ESP_OK) {
-    return ESP_FAIL;
-  }
   return ESP_OK;
 }
 
-/**
- * Creates the I2C gatekeeper task, which handles commands
- * issued to it via the I2CQueue. The gatekeeper is intended
- * to be the only task that interacts with the I2C peripheral
- * in order to keep dot matrices in known states.
- */
 esp_err_t createI2CGatekeeperTask(QueueHandle_t I2CQueue) {
   BaseType_t success;
   I2CGatekeeperTaskParams *params;
@@ -262,66 +192,6 @@ esp_err_t createI2CGatekeeperTask(QueueHandle_t I2CQueue) {
   return (success == pdPASS) ? ESP_OK : ESP_FAIL;
 }
 
-/**
- * Creates a dot worker task, which handles commands issued
- * to the pool of dot workers via the dotQueue. The task
- * performs TomTom api requests and sends I2C commands to
- * update the color of LEDs based on the request results.
- * 
- * workerNum is an important parameter that corresponds to
- * the worker event group bit which the task will use to
- * indicate that it is idle. These indicators are used by
- * the main task to synchronize clearing LEDs. workerNum
- * should be between 0 and 7.
- */
-esp_err_t createDotWorkerTask(char *name, int workerNum, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, EventGroupHandle_t workerEvents, char *apiKey, bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex) {
-  BaseType_t success;
-  struct dotWorkerTaskParams *params;
-  /* input guards */
-  if (dotQueue == NULL || I2CQueue == NULL || apiKey == NULL || errorOccurred == NULL || errorOccurredMutex == NULL) {
-    return ESP_FAIL;
-  }
-  if (name == NULL) {
-    name = "worker";
-  }
-  if (workerNum < 0 || workerNum > 7) {
-    return ESP_FAIL;
-  }
-  /* allocate parameters */
-  params = malloc(sizeof(struct dotWorkerTaskParams)); // task parameters are given via reference, not copy
-  ESP_RETURN_ON_FALSE(
-    (params != NULL), ESP_FAIL,
-    TAG, "failed to allocate memory for dot worker task parameters"
-  );
-  if (params == NULL) {
-    return ESP_FAIL;
-  }
-  params->dotQueue = dotQueue;
-  params->I2CQueue = I2CQueue;
-  params->workerEvents = workerEvents;
-  params->workerIdleBit = (1 << workerNum);
-  params->apiKey = apiKey;
-  params->errorOccurred = errorOccurred;
-  params->errorOccurredMutex = errorOccurredMutex;
-  if (params->errorOccurredMutex == NULL) {
-    free(params);
-    return ESP_FAIL;
-  }
-  /* create task */
-  success = xTaskCreate(vDotWorkerTask, name, DOTS_WORKER_STACK, 
-                        params, DOTS_WORKER_PRIO, NULL);
-  if (success != pdPASS) {
-    ESP_LOGE(TAG, "failed to create dot worker task");
-    free(params);
-    return ESP_FAIL;
-  }
-  return ESP_OK;
-}
-
-/**
- * Initialized the direction LEDs by configuring
- * GPIO pins.
- */
 esp_err_t initDirectionLEDs(void) {
     /* Set GPIO directions */
     if (gpio_set_direction(LED_NORTH_PIN, GPIO_MODE_OUTPUT) != ESP_OK) {
@@ -352,10 +222,6 @@ esp_err_t initDirectionLEDs(void) {
     return ESP_OK;
 }
 
-/**
- * Initializes the direction button by configuring its
- * GPIO pin and attaching dirButtonISR() on a negative edge.
- */
 esp_err_t initDirectionButton(bool *toggle) {
   struct dirButtonISRParams *params = malloc(sizeof(params));
   params->mainTask = xTaskGetCurrentTaskHandle();
@@ -397,18 +263,10 @@ esp_err_t initIOButton(TaskHandle_t otaTask) {
   return ESP_OK;
 }
 
-/**
- * Enables the direction button interrupt,
- * which is handled by dirButtonISR().
- */
 esp_err_t enableDirectionButtonIntr(void) {
   return gpio_intr_enable(T_SW_PIN);
 }
 
-/**
- * Disables the direction button interrupt,
- * which is handled by dirButtonISR().
- */
 esp_err_t disableDirectionButtonIntr(void) {
   return gpio_intr_disable(T_SW_PIN);
 }
@@ -425,13 +283,6 @@ esp_err_t quickClearLEDs(QueueHandle_t dotQueue) {
   return ESP_OK;
 }
 
-/**
- * Turns off all LEDs by directly issuing commands to the
- * I2C gatekeeper. This may interfere with commands issued
- * by dot workers if they do not finish their work quickly,
- * so it is recommended to wait for both the dot command queue
- * and I2C command queue to be empty before calling this function.
- */
 esp_err_t clearLEDs(QueueHandle_t dotQueue, Direction currDir) {
   DotCommand command;
   /* empty the queue */
@@ -454,11 +305,6 @@ esp_err_t clearLEDs(QueueHandle_t dotQueue, Direction currDir) {
   return ESP_OK;
 }
 
-/**
- * Issues a command to the dot queue, which will be handled
- * by one of the dot workers, to update all LEDs based on the
- * latest TomTom data for the provided direction.
- */
 esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir) {
   esp_err_t ret = ESP_OK;
   DotCommand command;
@@ -512,12 +358,6 @@ error_with_dir_leds_off:
   return ret;
 }
 
-/**
- * An error handling function for errors which are
- * not due to a user settings issue. Traps the task
- * in a delay forever loop after setting the error
- * LED high.
- */
 void spinForever(bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex) {
   /* turn on error led */
   ESP_LOGE(TAG, "Spinning forever due to an unhandleable error!");
@@ -530,12 +370,6 @@ void spinForever(bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex) {
   }
 }
 
-/**
- * An error handling function for errors which are
- * due to a user settings issue. Sets the error LED
- * high and queries the user for new settings, then
- * turns the LED off and restarts the application.
- */
 void updateSettingsAndRestart(nvs_handle_t nvsHandle, bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex) {
   /* Errors are assumed to be settings issues, thus let the
   user update settings, then restart the system */
@@ -572,10 +406,6 @@ void updateSettingsAndRestart(nvs_handle_t nvsHandle, bool *errorOccurred, Semap
   esp_restart();
 }
 
-/**
- * Atomically tests and sets val to true. Returns whether
- * val was already true.
- */
 bool boolWithTestSet(bool *val, SemaphoreHandle_t mutex) {
     if (*val) {
         return true;

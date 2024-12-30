@@ -8,15 +8,7 @@
 #define LED_REGISTERS_H_
 
 #include <stdint.h>
-
-struct LEDReg {
-    uint8_t red;
-    uint8_t green;
-    uint8_t blue;
-    uint8_t page; // as it turns out, all LEDs have their registers on the same page
-};
-
-typedef struct LEDReg LEDReg;
+#include "dots_types.h"
 
 /* A mapping from LED number to corresponding 
 matrix registers for each color (red, green, blue). */

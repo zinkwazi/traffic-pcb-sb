@@ -159,15 +159,19 @@ esp_err_t establishWifiConnection(void)
         },
     };
     /* copy STA information */
+    ESP_LOGI(TAG, "copying wifi information");
     const unsigned int staSSIDLen = sizeof(wifi_cfg.sta.ssid) / sizeof(wifi_cfg.sta.ssid[0]);
     const unsigned int staPassLen = sizeof(wifi_cfg.sta.password) / sizeof(wifi_cfg.sta.password[0]);
-    for (unsigned int i = 0; i < staSSIDLen; i++) {
+    for (unsigned int i = 0; i < staSSIDLen && i < 32; i++) {
         wifi_cfg.sta.ssid[i] = ((uint8_t *) sWifiSSID)[i];
     }
-    for (unsigned int i = 0; i < staPassLen; i++) {
+    for (unsigned int i = 0; i < staPassLen && i < 64; i++) {
         wifi_cfg.sta.password[i] = ((uint8_t *) sWifiPass)[i];
     }
+    ESP_LOGI(TAG, "wifi ssid: %s", wifi_cfg.sta.ssid);
+    ESP_LOGI(TAG, "wifi pass: %s", wifi_cfg.sta.password);
     /* register wifi handler */
+    ESP_LOGI(TAG, "registering handler");
     ret = registerWifiHandler(connectHandler, NULL);
     if (ret != ESP_OK) {
         return ret;
@@ -179,6 +183,7 @@ esp_err_t establishWifiConnection(void)
         unregisterWifiHandler();
         return ret;
     }
+    ESP_LOGI(TAG, "setting config");
     ret = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
     if (ret != ESP_OK) {
         unregisterWifiHandler();

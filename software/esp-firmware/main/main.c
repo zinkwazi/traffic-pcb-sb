@@ -35,14 +35,13 @@
 
 /* Main component includes */
 #include "pinout.h"
-#include "worker.h"
+#include "tasks.h"
 #include "utilities.h"
 #include "wifi.h"
+#include "routines.h"
+#include "main_types.h"
 
 /* Component includes */
-#include "api_config.h"
-#include "tomtom.h"
-#include "led_locations.h"
 #include "dots_commands.h"
 #include "led_registers.h"
 
@@ -52,14 +51,14 @@
  * @brief The entrypoint task of the application.
  * 
  * Initializes other tasks, requests user settings, then handles button presses
- * for LED refreshes.
+ * for LED refreshes. As this task handles user input, it should not do a lot
+ * of processing. Rather, heavy processing is primarily left to vDotWorkerTask.
  */
 void app_main(void)
 {
     QueueHandle_t I2CQueue, dotQueue;
     nvs_handle_t nvsHandle;
-    struct userSettings settings;
-    int i;
+    struct UserSettings settings;
     /* set task priority */
     vTaskPrioritySet(NULL, MAIN_TASK_PRIO);
     /* print firmware information */
@@ -104,11 +103,17 @@ void app_main(void)
       nvs_flash_init(),
       NULL, NULL
     );
-    /* Ensure NVS entries exist */
     SPIN_IF_ERR(
       nvs_open("main", NVS_READWRITE, &nvsHandle),
       NULL, NULL
     );
+    /* Remove unnecessary NVS entries */
+    ESP_LOGI(TAG, "removing unnecessary nvs entries");
+    SPIN_IF_ERR(
+      removeExtraNvsEntries(nvsHandle),
+      NULL, NULL
+    );
+    /* Ensure NVS entries exist */
     ESP_LOGI(TAG, "checking whether nvs entries exist");
     UPDATE_SETTINGS_IF_ERR(
       nvsEntriesExist(nvsHandle),
@@ -188,22 +193,27 @@ void app_main(void)
       &errorOccurred, errorOccurredMutex
     );
     /* create tasks */
+    ESP_LOGI(TAG, "creating tasks");
     SPIN_IF_ERR(
       createI2CGatekeeperTask(I2CQueue),
       &errorOccurred, errorOccurredMutex
     );
-    for (i = 0; i < NUM_DOT_WORKERS; i++) {
-      ESP_LOGI(TAG, "creating dot worker");
-      SPIN_IF_ERR(
-        createDotWorkerTask("dotWorker", i, dotQueue, I2CQueue, workerEvents, settings.apiKey, &errorOccurred, errorOccurredMutex),
-        &errorOccurred, errorOccurredMutex
-      );
-    }
+    DotWorkerTaskResources workerResources = {
+      .dotQueue = dotQueue,
+      .I2CQueue = I2CQueue,
+      .errorOccurred = &errorOccurred,
+      .errorOccurredMutex = errorOccurredMutex,
+    };
+    SPIN_IF_ERR(
+      createDotWorkerTask(&workerResources),
+      &errorOccurred, errorOccurredMutex
+    );
     TaskHandle_t otaTask = NULL;
     if (xTaskCreate(vOTATask, "OTATask", OTA_TASK_STACK, NULL, OTA_TASK_PRIO, &otaTask) != pdPASS) {
       spinForever(&errorOccurred, errorOccurredMutex);
     }
     /* initialize pins */
+    ESP_LOGI(TAG, "initializing pins");
     SPIN_IF_ERR(
       initDirectionLEDs(),
       &errorOccurred, errorOccurredMutex

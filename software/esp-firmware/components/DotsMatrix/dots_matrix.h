@@ -67,27 +67,6 @@ struct PageState {
     uint8_t mat3;
 };
 
-// TODO: replace static variables with thread local storage
-static struct PageState currState;
-static QueueHandle_t I2CQueue; // uninitialized until gatekeeper task is created
-// TODO: Check whether these are NULL on 
-//       reset or only on new flash.
-static i2c_master_bus_handle_t master_bus;
-static i2c_master_dev_handle_t matrix1_handle;
-static i2c_master_dev_handle_t matrix2_handle;
-static i2c_master_dev_handle_t matrix3_handle;
-
-static inline void dotsResetStaticVars(void) {
-    currState.mat1 = 0;
-    currState.mat2 = 0;
-    currState.mat3 = 0;
-    I2CQueue = NULL;
-    master_bus = NULL;
-    matrix1_handle = NULL;
-    matrix2_handle = NULL;
-    matrix3_handle = NULL;
-}
-
 /* Functions available as gatekeeper commands */
 esp_err_t dSetOperatingMode(enum Operation setting);
 esp_err_t dSetOpenShortDetection(enum ShortDetectionEnable setting);
@@ -102,6 +81,7 @@ esp_err_t dSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
 esp_err_t dSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
 
 /* Internal functions */
+void dotsResetStaticVars(void);
 esp_err_t dInitializeBus(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
 esp_err_t dAssertConnected(void);
 void dSetBits(uint8_t *reg, uint8_t bitMask, uint8_t value);

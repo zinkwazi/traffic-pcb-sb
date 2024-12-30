@@ -1,7 +1,6 @@
-idf_component_register(SRCS "utilities.c" "wifi.c" "worker.c" "led_locations.c" "main.c"
+idf_component_register(SRCS "routines.c" "tasks.c" "utilities.c" "wifi.c" "main.c"
                     INCLUDE_DIRS "."
                     REQUIRES DotsMatrix
-                             TomTom
                              esp_timer
                              esp_wifi
                              esp_http_client
