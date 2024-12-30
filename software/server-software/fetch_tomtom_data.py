@@ -17,6 +17,8 @@ API_KEY = ""
 INPUT_CSV = "led_locations.csv"
 OUTPUT_NORTH = "data_north_V1_0_0.json"
 OUTPUT_SOUTH = "data_south_V1_0_0.json"
+OUTPUT_NORTH_2 = "data_north_V1_0_3.dat"
+OUTPUT_SOUTH_2 = "data_north_V1_0_3.dat"
 LOG_FILE = "fetch_tomtom_data.log"
 
 class Direction(Enum):
@@ -28,18 +30,27 @@ class Direction(Enum):
 # Ensure necessary files exist
 # ================================
 
-def ensure_file_exists(file_path, default_content=""):
-    """Create the file with default content if it doesn't exist."""
+def ensure_file_exists(file_path, log_path, default_content=""):
+    """Create the file with default content if it doesn't exist.
+    If log_file is not None, then an error creating the file will
+    be written to the log."""
     if not os.path.exists(file_path):
-        with open(file_path, 'wb') as f:
-            f.write(bytearray(default_content, 'utf-8'))
+        try:
+            with open(file_path, 'wb') as f:
+                f.write(bytearray(default_content, 'utf-8'))
+        except Exception as e:
+            if log_path != None:
+                log(e)
 
 # Ensure the log file exists
-ensure_file_exists(LOG_FILE, "")
+ensure_file_exists(LOG_FILE, "") # script will fail silently if
+                                 # log file cannot be opened
 
 # Ensure output files exist
-ensure_file_exists(OUTPUT_NORTH, "")
-ensure_file_exists(OUTPUT_SOUTH, "")
+ensure_file_exists(OUTPUT_NORTH, LOG_FILE, "")
+ensure_file_exists(OUTPUT_SOUTH, LOG_FILE, "")
+ensure_file_exists(OUTPUT_NORTH_2, LOG_FILE, "")
+ensure_file_exists(OUTPUT_SOUTH_2, LOG_FILE, "")
 
 # ================================
 # Logging Function
@@ -131,7 +142,7 @@ def decodeReferences(led_to_entry, max_led_num):
 # Main Function
 # ================================
 
-def main(direction, key, csv_filename, output_filename):
+def main(direction, key, csv_filename, output_filename, output_filename_2):
     if direction == Direction.UNKNOWN:
         log("Invalid direction provided. Try North or South.")
         return False
@@ -179,7 +190,6 @@ def main(direction, key, csv_filename, output_filename):
             current_speeds = [-1] * (max_led_num + 1)
             for entry_row_num, leds in entry_to_leds.items():
                 entry = row_to_entry[entry_row_num]
-                log(entry)
                 current_speed = requestData(entry)
                 if current_speed == -1:
                     log(f"No speed data found for LEDs {leds}")
@@ -200,6 +210,8 @@ def main(direction, key, csv_filename, output_filename):
             log(f"Writing byte array of length {len(byte_array)} to {output_filename}")
             with open(output_filename, 'wb') as out_file:
                 out_file.write(byte_array)
+            with open(output_filename_2, 'wb') as out_file:
+                out_file.write(byte_array)
 
             log(f"Successfully completed request for {direction.name}")
             return True
@@ -214,7 +226,7 @@ def main(direction, key, csv_filename, output_filename):
 
 if __name__ == "__main__":
     # North direction
-    main(Direction.NORTH, API_KEY, INPUT_CSV, OUTPUT_NORTH)
+    main(Direction.NORTH, API_KEY, INPUT_CSV, OUTPUT_NORTH, OUTPUT_NORTH_2)
 
     # South direction
-    main(Direction.SOUTH, API_KEY, INPUT_CSV, OUTPUT_SOUTH)
+    main(Direction.SOUTH, API_KEY, INPUT_CSV, OUTPUT_SOUTH, OUTPUT_SOUTH_2)
