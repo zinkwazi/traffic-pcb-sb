@@ -21,7 +21,7 @@
 #include "main_types.h"
 
 /* LED color configuration */
-#define DOTS_GLOBAL_CURRENT (0x25)
+#define DOTS_GLOBAL_CURRENT (0x70) // MAX Current: 0x80
 
 #define SLOW_RED (0xFF)
 #define SLOW_GREEN (0x00)
@@ -33,7 +33,7 @@
 
 #define FAST_RED (0x00)
 #define FAST_GREEN (0x00)
-#define FAST_BLUE (0x09)
+#define FAST_BLUE (0x10)
 
 #define SLOW_CUTOFF_PERCENT (50)
 #define MEDIUM_CUTOFF_PERCENT (80)
@@ -256,9 +256,7 @@ void vDotWorkerTask(void *pvParameters) {
     }
 
     /* retrieve typical speeds from the server */
-    static const int typicalSpeedsNorthSize = MAX_NUM_LEDS;
     static uint8_t typicalSpeedsNorth[MAX_NUM_LEDS];
-    static const int typicalSpeedsSouthSize = MAX_NUM_LEDS;
     static uint8_t typicalSpeedsSouth[MAX_NUM_LEDS];
     if (tomtomGetServerSpeeds(typicalSpeedsNorth, client, URL_DATA_TYPICAL_NORTH, 
                               CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 
