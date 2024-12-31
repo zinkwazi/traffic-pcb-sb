@@ -20,46 +20,56 @@
 #include "wifi.h"
 #include "main_types.h"
 
-#define DOTS_GLOBAL_CURRENT 0x25 // TODO: move this back to main
+/* LED color configuration */
+#define DOTS_GLOBAL_CURRENT (0x25)
+
+#define SLOW_RED (0xFF)
+#define SLOW_GREEN (0x00)
+#define SLOW_BLUE (0x00)
+
+#define MEDIUM_RED (0x15)
+#define MEDIUM_GREEN (0x09)
+#define MEDIUM_BLUE (0x00)
+
+#define FAST_RED (0x00)
+#define FAST_GREEN (0x00)
+#define FAST_BLUE (0x09)
+
+#define SLOW_CUTOFF_PERCENT (50)
+#define MEDIUM_CUTOFF_PERCENT (80)
 
 /* The URL of server data (to be appended with version) */
 #define URL_DATA_SERVER_NORTH (CONFIG_DATA_SERVER "/current_data/data_north_")
 #define URL_DATA_SERVER_SOUTH (CONFIG_DATA_SERVER "/current_data/data_south_")
+#define URL_DATA_TYPICAL_NORTH (CONFIG_DATA_SERVER "/current_data/typical_north_")
+#define URL_DATA_TYPICAL_SOUTH (CONFIG_DATA_SERVER "/current_data/typical_south_")
 #define URL_DATA_FILE_TYPE (".dat")
 
 #define API_METHOD HTTP_METHOD_GET
 #define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
+#define API_RETRY_CONN_NUM 5
 
-void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t speed) {
-    if (speed < 30) {
-        *red = 0xFF;
-        *green = 0x00;
-        *blue = 0x00;
-    } else if (speed < 60) {
-        *red = 0x15;
-        *green = 0x09;
-        *blue = 0x00;
+void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t percentFlow) {
+    if (percentFlow < SLOW_CUTOFF_PERCENT) {
+        *red = SLOW_RED;
+        *green = SLOW_GREEN;
+        *blue = SLOW_BLUE;
+    } else if (percentFlow < MEDIUM_CUTOFF_PERCENT) {
+        *red = MEDIUM_RED;
+        *green = MEDIUM_GREEN;
+        *blue = MEDIUM_BLUE;
     } else {
-        *red = 0x00;
-        *green = 0x00;
-        *blue = 0x09;
+        *red = FAST_RED;
+        *green = FAST_GREEN;
+        *blue = FAST_BLUE;
     }
 }
 
-esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], int speedsSize, Direction dir, esp_http_client_handle_t client, char *version, int retryNum) {
+esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], esp_http_client_handle_t client, char *baseURL, char *version, int retryNum) {
     char urlStr[CONFIG_MAX_DATA_URL_LEN + 1];
     char *responseStr;
     /* construct url string */
-    switch (dir) {
-        case NORTH:
-            strcpy(urlStr, URL_DATA_SERVER_NORTH);
-            break;
-        case SOUTH:
-            strcpy(urlStr, URL_DATA_SERVER_SOUTH);
-            break;
-        default:
-            return ESP_FAIL;
-    }
+    strcpy(urlStr, baseURL);
     strcat(urlStr, version);
     strcat(urlStr, ".dat");
     ESP_LOGI(TAG, "%s", urlStr);
@@ -109,15 +119,15 @@ esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], int speedsSize, Direction dir,
         ESP_LOGE(TAG, "esp_http_client_read returned -1");
         return ESP_FAIL;
     }
-    for (int i = 0; i < contentLength && i < speedsSize; i++) {
+    for (int i = 0; i < contentLength && i < MAX_NUM_LEDS; i++) {
         speeds[i] = (uint8_t) responseStr[i];
     }
     return ESP_OK;
 }
 
-void updateLED(QueueHandle_t I2CQueue, uint16_t ledNum, uint8_t speed) {
+void updateLED(QueueHandle_t I2CQueue, uint16_t ledNum, uint8_t percentFlow) {
     uint8_t red, green, blue;
-    setColor(&red, &green, &blue, speed);
+    setColor(&red, &green, &blue, percentFlow);
     if (dotsSetColor(I2CQueue, ledNum, red, green, blue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
         dotsSetScaling(I2CQueue, ledNum, 0xFF, 0xFF, 0xFF, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK)
     {
@@ -141,12 +151,15 @@ bool mustAbort(QueueHandle_t I2CQueue, QueueHandle_t dotQueue) {
     return false;
 }
 
-esp_err_t handleRefresh(bool *aborted, Direction dir, QueueHandle_t I2CQueue, QueueHandle_t dotQueue, esp_http_client_handle_t client, ErrorResources *errRes, bool prevConnError) {
-    static const int speedsSize = MAX_NUM_LEDS + 1;
-    static uint8_t speeds[MAX_NUM_LEDS + 1]; // +1 because 0 is not an led number
+esp_err_t handleRefresh(bool *aborted, Direction dir, uint8_t typicalSpeeds[], QueueHandle_t I2CQueue, QueueHandle_t dotQueue, esp_http_client_handle_t client, ErrorResources *errRes, bool prevConnError) {
+    static uint8_t speeds[MAX_NUM_LEDS];
     *aborted = false;
     /* connect to API and query speeds */
-    if (tomtomGetServerSpeeds(speeds, speedsSize, dir, client, CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 1) != ESP_OK) {
+    char *baseURL = (dir == NORTH) ? URL_DATA_SERVER_NORTH : URL_DATA_SERVER_SOUTH; 
+    if (tomtomGetServerSpeeds(speeds, client, baseURL, 
+                              CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 
+                              API_RETRY_CONN_NUM) != ESP_OK) 
+    {
         ESP_LOGE(TAG, "Failed to retrieve segment speeds from server");
         if (!prevConnError) {
             throwNoConnError(errRes, false);
@@ -157,8 +170,13 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, QueueHandle_t I2CQueue, Qu
     }
     switch (dir) {
         case NORTH:
-            for (int ndx = speedsSize - 1; ndx > 0; ndx--) {
-                updateLED(I2CQueue, ndx, speeds[ndx]);
+            for (int ndx = MAX_NUM_LEDS - 1; ndx > 0; ndx--) {
+                if (ndx > MAX_NUM_LEDS || typicalSpeeds[ndx] == 0) {
+                    ESP_LOGW(TAG, "skipping LED %d update due to lack of typical speed", ndx);
+                    continue;
+                }
+                uint8_t percentFlow = (100 * speeds[ndx]) / typicalSpeeds[ndx];
+                updateLED(I2CQueue, ndx, percentFlow);
                 if (mustAbort(I2CQueue, dotQueue)) {
                     *aborted = true;
                     return ESP_OK;
@@ -167,8 +185,13 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, QueueHandle_t I2CQueue, Qu
             }
             break;
         case SOUTH:
-            for (int ndx = 1; ndx < speedsSize - 1; ndx++) {
-                updateLED(I2CQueue, ndx, speeds[ndx]);
+            for (int ndx = 1; ndx < MAX_NUM_LEDS; ndx++) {
+                if (ndx > MAX_NUM_LEDS || typicalSpeeds[ndx] == 0) {
+                    ESP_LOGW(TAG, "skipping LED %d update due to lack of typical speed", ndx);
+                    continue;
+                }
+                uint8_t percentFlow = (100 * speeds[ndx]) / typicalSpeeds[ndx];
+                updateLED(I2CQueue, ndx, percentFlow);
                 if (mustAbort(I2CQueue, dotQueue)) {
                     *aborted = true;
                     return ESP_OK;
@@ -176,9 +199,6 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, QueueHandle_t I2CQueue, Qu
                 vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_UPDATE_PERIOD));
             }
             break;
-    }
-    for (int i = 0; i < speedsSize; i++) {
-        speeds[i] = 0;
     }
     return ESP_OK;
 }
@@ -234,7 +254,29 @@ void vDotWorkerTask(void *pvParameters) {
     if (client == NULL) {
         throwFatalError(res->errRes, false);
     }
-    
+
+    /* retrieve typical speeds from the server */
+    static const int typicalSpeedsNorthSize = MAX_NUM_LEDS;
+    static uint8_t typicalSpeedsNorth[MAX_NUM_LEDS];
+    static const int typicalSpeedsSouthSize = MAX_NUM_LEDS;
+    static uint8_t typicalSpeedsSouth[MAX_NUM_LEDS];
+    if (tomtomGetServerSpeeds(typicalSpeedsNorth, client, URL_DATA_TYPICAL_NORTH, 
+                              CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 
+                              API_RETRY_CONN_NUM) != ESP_OK) 
+    {
+        ESP_LOGE(TAG, "failed to retrieve typical northbound speeds from server");
+        esp_http_client_cleanup(client);
+        throwFatalError(res->errRes, false);
+    }
+    if (tomtomGetServerSpeeds(typicalSpeedsSouth, client, URL_DATA_TYPICAL_SOUTH, 
+                              CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 
+                              API_RETRY_CONN_NUM) != ESP_OK) 
+    {
+        ESP_LOGE(TAG, "failed to retrieve typical southbound speeds from server");
+        esp_http_client_cleanup(client);
+        throwFatalError(res->errRes, false);
+    }
+
     /* Wait for commands and execute them forever */
     bool prevCommandAborted = false;
     bool connError = false;
@@ -248,7 +290,8 @@ void vDotWorkerTask(void *pvParameters) {
         /* update led colors */
         switch (dot.type) {
             case REFRESH_NORTH:
-                if (handleRefresh(&prevCommandAborted, NORTH, res->I2CQueue, res->dotQueue, client, res->errRes, connError) != ESP_OK) {
+                ESP_LOGI(TAG, "Refreshing North...");
+                if (handleRefresh(&prevCommandAborted, NORTH, typicalSpeedsNorth, res->I2CQueue, res->dotQueue, client, res->errRes, connError) != ESP_OK) {
                     esp_http_client_cleanup(client);
                     connError = true;
                     client = esp_http_client_init(&httpConfig);
@@ -257,7 +300,8 @@ void vDotWorkerTask(void *pvParameters) {
                 }
                 break;
             case REFRESH_SOUTH:
-                if (handleRefresh(&prevCommandAborted, SOUTH, res->I2CQueue, res->dotQueue, client, res->errRes, connError) != ESP_OK) {
+                ESP_LOGI(TAG, "Refreshing South...");
+                if (handleRefresh(&prevCommandAborted, SOUTH, typicalSpeedsSouth, res->I2CQueue, res->dotQueue, client, res->errRes, connError) != ESP_OK) {
                     esp_http_client_cleanup(client);
                     connError = true;
                     client = esp_http_client_init(&httpConfig);

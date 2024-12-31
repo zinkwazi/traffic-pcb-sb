@@ -1,6 +1,4 @@
 .vscode/
-outfile.txt
-output.txt
-outfile.json
-output.json
-fetch_tomtom_data.log
+*.dat
+*.json
+*.log
