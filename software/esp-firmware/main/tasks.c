@@ -39,8 +39,8 @@
 #define MEDIUM_CUTOFF_PERCENT (80)
 
 /* The URL of server data (to be appended with version) */
-#define URL_DATA_SERVER_NORTH (CONFIG_DATA_SERVER "/current_data/data_north2_")
-#define URL_DATA_SERVER_SOUTH (CONFIG_DATA_SERVER "/current_data/data_south2_")
+#define URL_DATA_SERVER_NORTH (CONFIG_DATA_SERVER "/current_data/data_north_")
+#define URL_DATA_SERVER_SOUTH (CONFIG_DATA_SERVER "/current_data/data_south_")
 #define URL_DATA_TYPICAL_NORTH (CONFIG_DATA_SERVER "/current_data/typical_north_")
 #define URL_DATA_TYPICAL_SOUTH (CONFIG_DATA_SERVER "/current_data/typical_south_")
 #define URL_DATA_FILE_TYPE (".dat")
