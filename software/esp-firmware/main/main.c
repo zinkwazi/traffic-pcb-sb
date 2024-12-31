@@ -15,6 +15,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
+#include "freertos/semphr.h"
 #include "esp_vfs_dev.h"
 #include "driver/uart_vfs.h"
 #include "driver/uart.h"
@@ -73,7 +74,7 @@ void app_main(void)
                           32, 
                           NULL, 
                           0),
-      NULL, NULL
+      NULL
     );
     uart_vfs_dev_use_driver(UART_NUM_0); // enable interrupt driven IO
     /* set direction of direction led pins */
@@ -83,66 +84,79 @@ void app_main(void)
     gpio_set_level(LED_WEST_PIN, 0);
     SPIN_IF_ERR(
       gpio_set_direction(LED_NORTH_PIN, GPIO_MODE_OUTPUT),
-      NULL, NULL
+      NULL
     );
     SPIN_IF_ERR(
       gpio_set_direction(LED_EAST_PIN, GPIO_MODE_OUTPUT),
-      NULL, NULL
+      NULL
     );
     SPIN_IF_ERR(
       gpio_set_direction(LED_SOUTH_PIN, GPIO_MODE_OUTPUT),
-      NULL, NULL
+      NULL
     );
     SPIN_IF_ERR(
       gpio_set_direction(LED_WEST_PIN, GPIO_MODE_OUTPUT),
-      NULL, NULL
+      NULL
+    );
+    /* Create error handling synchronization variables */
+    static ErrorResources errRes = {
+      .err = NO_ERR,
+      .errTimer = NULL,
+      .errMutex = NULL,
+    };
+    errRes.err = NO_ERR;
+    errRes.errTimer = NULL;
+    errRes.errMutex = xSemaphoreCreateMutex();
+    SPIN_IF_FALSE(
+      (errRes.errMutex != NULL),
+      NULL
     );
     /* initialize NVS */
     ESP_LOGI(TAG, "initializing nvs");
     SPIN_IF_ERR(
       nvs_flash_init(),
-      NULL, NULL
+      NULL
     );
     SPIN_IF_ERR(
       nvs_open("main", NVS_READWRITE, &nvsHandle),
-      NULL, NULL
+      NULL
     );
     /* Remove unnecessary NVS entries */
     ESP_LOGI(TAG, "removing unnecessary nvs entries");
     SPIN_IF_ERR(
       removeExtraNvsEntries(nvsHandle),
-      NULL, NULL
+      NULL
     );
     /* Ensure NVS entries exist */
     ESP_LOGI(TAG, "checking whether nvs entries exist");
     UPDATE_SETTINGS_IF_ERR(
       nvsEntriesExist(nvsHandle),
-      nvsHandle, NULL, NULL
+      nvsHandle, NULL
     );
     /* Check manual settings update button (dir button held on startup) */
     ESP_LOGI(TAG, "checking manual change settings button");
     SPIN_IF_ERR(
       gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT), // pin has external pullup
-      NULL, NULL
+      NULL
     );
     if (gpio_get_level(T_SW_PIN) == 0) {
-      updateSettingsAndRestart(nvsHandle, NULL, NULL); // updates settings, then restarts
+      updateNvsSettings(nvsHandle, &errRes);
     }
     /* retrieve nvs settings */
     ESP_LOGI(TAG, "retrieving NVS entries");
     UPDATE_SETTINGS_IF_ERR(
       retrieveNvsEntries(nvsHandle, &settings),
-      nvsHandle, NULL, NULL
+      nvsHandle, NULL
     );
     /* initialize tcp/ip stack */
     ESP_LOGI(TAG, "initializing TCP/IP stack");
     SPIN_IF_ERR(
       esp_netif_init(),
-      NULL, NULL
+      NULL
     );
     SPIN_IF_ERR(
       esp_event_loop_create_default(),
-      NULL, NULL
+      NULL
     );
     esp_netif_create_default_wifi_sta();
     /* Establish wifi connection & tls */
@@ -150,73 +164,68 @@ void app_main(void)
     wifi_init_config_t default_wifi_cfg = WIFI_INIT_CONFIG_DEFAULT();
     SPIN_IF_ERR(
       esp_wifi_init(&default_wifi_cfg),
-      NULL, NULL
+      NULL
     );
     SPIN_IF_ERR(
       gpio_set_direction(WIFI_LED_PIN, GPIO_MODE_OUTPUT),
-      NULL, NULL
+      NULL
     );
     SPIN_IF_ERR(
       initWifi(settings.wifiSSID, settings.wifiPass, WIFI_LED_PIN), // allows use of establishWifiConnection and isWifiConnected
-      NULL, NULL
+      NULL
     );
     UPDATE_SETTINGS_IF_ERR(
       establishWifiConnection(), nvsHandle,
-      NULL, NULL
+      NULL
     );
     esp_tls_t *tls = esp_tls_init();
     SPIN_IF_FALSE(
       (tls != NULL),
-      NULL, NULL
-    );
-    /* Create error handling synchronization variables */
-    bool errorOccurred = false;
-    SemaphoreHandle_t errorOccurredMutex = xSemaphoreCreateMutex();
-    SPIN_IF_FALSE(
-      (errorOccurredMutex != NULL),
-      NULL, NULL
+      NULL
     );
     /* Create queues and event groups */
     I2CQueue = xQueueCreate(I2C_QUEUE_SIZE, sizeof(I2CCommand));
     SPIN_IF_FALSE(
       (I2CQueue != NULL),
-      NULL, NULL
+      NULL
     );
     dotQueue = xQueueCreate(DOTS_QUEUE_SIZE, sizeof(DotCommand));
     SPIN_IF_FALSE(
       (dotQueue != NULL),
-      NULL, NULL
+      &errRes
     );
     EventGroupHandle_t workerEvents = xEventGroupCreate();
     SPIN_IF_FALSE(
       (workerEvents != NULL),
-      &errorOccurred, errorOccurredMutex
+      &errRes
     );
     /* create tasks */
     ESP_LOGI(TAG, "creating tasks");
     SPIN_IF_ERR(
       createI2CGatekeeperTask(I2CQueue),
-      &errorOccurred, errorOccurredMutex
+      &errRes
     );
-    DotWorkerTaskResources workerResources = {
-      .dotQueue = dotQueue,
-      .I2CQueue = I2CQueue,
-      .errorOccurred = &errorOccurred,
-      .errorOccurredMutex = errorOccurredMutex,
+    static DotWorkerTaskResources workerResources = {
+      .dotQueue = NULL,
+      .I2CQueue = NULL,
+      .errRes = NULL,
     };
+    workerResources.dotQueue = dotQueue;
+    workerResources.I2CQueue = I2CQueue;
+    workerResources.errRes = &errRes;
     SPIN_IF_ERR(
       createDotWorkerTask(&workerResources),
-      &errorOccurred, errorOccurredMutex
+      &errRes
     );
     TaskHandle_t otaTask = NULL;
     if (xTaskCreate(vOTATask, "OTATask", OTA_TASK_STACK, NULL, OTA_TASK_PRIO, &otaTask) != pdPASS) {
-      spinForever(&errorOccurred, errorOccurredMutex);
+      throwFatalError(&errRes, false);
     }
     /* initialize pins */
     ESP_LOGI(TAG, "initializing pins");
     SPIN_IF_ERR(
       initDirectionLEDs(),
-      &errorOccurred, errorOccurredMutex
+      &errRes
     );
     /* create timer */
     bool toggle = false;
@@ -230,27 +239,27 @@ void app_main(void)
       .name = "ledTimer",
     };
     esp_timer_handle_t timer;
-    SPIN_IF_ERR( 
+    SPIN_IF_ERR(
       esp_timer_create(&timerArgs, &timer),
-      &errorOccurred, errorOccurredMutex
+      &errRes
     );
     /* initialize buttons */
     SPIN_IF_ERR(
       gpio_install_isr_service(0),
-      &errorOccurred, errorOccurredMutex
+      &errRes
     );
     SPIN_IF_ERR(
       initIOButton(otaTask),
-      &errorOccurred, errorOccurredMutex
+      &errRes
     );
     SPIN_IF_ERR(
       initDirectionButton(&toggle),
-      &errorOccurred, errorOccurredMutex
+      &errRes
     );
     /* quick clear LEDs */
     SPIN_IF_ERR(
       quickClearLEDs(dotQueue),
-      &errorOccurred, errorOccurredMutex
+      &errRes
     );
     ESP_LOGI(TAG, "initialization complete, handling toggle button presses...");
     /* handle requests to update all LEDs */
@@ -277,12 +286,12 @@ void app_main(void)
       }
       SPIN_IF_ERR(
         err,
-        &errorOccurred, errorOccurredMutex
+        &errRes
       );
       /* wait for button press or timer reset */
       SPIN_IF_ERR(
         enableDirectionButtonIntr(),
-        &errorOccurred, errorOccurredMutex
+        &errRes
       );
       uint32_t ulNotificationValue = ulTaskNotifyTake(0, INT_MAX);
       while (ulNotificationValue != 1) { // a timeout occurred while waiting for button press
@@ -290,7 +299,7 @@ void app_main(void)
       }
       SPIN_IF_ERR(
         disableDirectionButtonIntr(),
-        &errorOccurred, errorOccurredMutex
+        &errRes
       );
       if (toggle) {
         toggle = false;

@@ -70,3 +70,9 @@ void timerFlashDirCallback(void *params) {
   gpio_set_level(LED_WEST_PIN, *currentOutput);
   gpio_set_level(LED_SOUTH_PIN, *currentOutput);
 }
+
+void timerFlashErrCallback(void *params) {
+    static int currentOutput = 0;
+    currentOutput = (currentOutput == 1) ? 0 : 1;
+    gpio_set_level(ERR_LED_PIN, currentOutput);
+}

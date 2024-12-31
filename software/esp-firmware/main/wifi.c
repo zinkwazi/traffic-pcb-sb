@@ -67,6 +67,7 @@ void wifiEventHandler(void *arg, esp_event_base_t eventBase,
         ESP_LOGI(TAG, "disconnect event! AP connected");
         gpio_set_level(sWifiLED, 0);
         esp_wifi_connect();
+        vTaskDelay(500);
     } else if (eventBase == IP_EVENT && eventId == IP_EVENT_STA_GOT_IP) {
         ESP_LOGI(TAG, "wifi connected event! AP connected");
         wifiConnected = true;

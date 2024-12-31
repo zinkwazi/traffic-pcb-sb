@@ -76,4 +76,20 @@ void timerCallback(void *params);
  */
 void timerFlashDirCallback(void *params);
 
+/**
+ * @brief Callback that toggles the error LED.
+ * 
+ * Callback that is called from a timer that is active when the worker task
+ * encounters an error. This periodically toggles the error LED, causing it
+ * to flash. While this will take precedence over another error that causes
+ * a solid high on the error LED, errors are synchronized by a semaphore. Thus
+ * it should never be the case that two errors are indicated at once and the
+ * LED will indicate the first type of error to occur.
+ * 
+ * @param params An int* used to store the current output value of the LED.
+ *               This object should not be destroyed or modified while the
+ *               timer using this callback is active.
+ */
+void timerFlashErrCallback(void *params);
+
 #endif /* ROUTINES_H_ */

@@ -57,48 +57,41 @@
 /** @brief The name of the non-volatile storage entry for the wifi password. */
 #define WIFI_PASS_NVS_NAME "wifi_pass"
 
+/** @brief The name of the non-volatile storage entry for the most recent
+ *         road segment speed data retrieved from the server.
+*/
+#define SPEED_DATA_NVS_NAME "speed_data"
+
 /**
  * @brief Calls spinForever if x is not ESP_OK.
  * 
  * @param x A value of type esp_err_t.
- * @param occurred A pointer to a bool that indicates whether an error has 
- *                 occurred at any point in the program or not. This bool is 
- *                 shared by all  tasks and should only be accessed after 
- *                 errMutex has been obtained.
- * @param errMutex A handle to a mutex that guards access to the bool pointed to
- *                 by occurred.
+ * @param errResources A pointer to an ErrorResources holding global error
+ *                     handling resources. If NULL, immediately spins.
  */
-#define SPIN_IF_ERR(x, occurred, errMutex) \
-      if (x != ESP_OK) { spinForever(occurred, errMutex); }
+#define SPIN_IF_ERR(x, errResources) \
+      if (x != ESP_OK) { throwFatalError(errResources, false); }
 
 /**
  * @brief Calls spinForever if x is not true.
  * 
  * @param x A bool.
- * @param occurred A pointer to a bool that indicates whether an error has 
- *                 occurred at any point in the program or not. This bool is 
- *                 shared by all  tasks and should only be accessed after 
- *                 errMutex has been obtained.
- * @param errMutex A handle to a mutex that guards access to the bool pointed to
- *                 by occurred.
+ * @param errResources A pointer to an ErrorResources holding global error
+ *                     handling resources. If NULL, immediately spins.
  */
-#define SPIN_IF_FALSE(x, occurred, errMutex) \
-      if (!x) { spinForever(occurred, errMutex); } 
+#define SPIN_IF_FALSE(x, errResources) \
+      if (!x) { throwFatalError(errResources, false); } 
 
 /**
  * @brief Calls updateSettingsAndRestart if x is not ESP_OK.
  * 
  * @param x A value of type esp_err_t.
  * @param handle The non-volatile storage handle to store user settings in.
- * @param occurred A pointer to a bool that indicates whether an error has 
- *                 occurred at any point in the program or not. This bool is 
- *                 shared by all  tasks and should only be accessed after 
- *                 errMutex has been obtained.
- * @param errMutex A handle to a mutex that guards access to the bool pointed to
- *                 by occurred.
+ * @param errResources A pointer to an ErrorResources holding global error
+ *                     handling resources. If NULL, immediately spins.
  */
-#define UPDATE_SETTINGS_IF_ERR(x, handle, occurred, errMutex) \
-      if (x != ESP_OK) { updateSettingsAndRestart(handle, occurred, errMutex); }
+#define UPDATE_SETTINGS_IF_ERR(x, handle, errResources) \
+      if (x != ESP_OK) { updateNvsSettings(handle, errResources); }
 
 /**
  * @brief Calls updateSettingsAndRestart if x is not true.
@@ -109,30 +102,15 @@
  *                 occurred at any point in the program or not. This bool is 
  *                 shared by all  tasks and should only be accessed after 
  *                 errMutex has been obtained.
- * @param errMutex A handle to a mutex that guards access to the bool pointed to
- *                 by occurred.
+ * @param errResources A pointer to an ErrorResources holding global error
+ *                     handling resources. If NULL, immediately spins.
  */
-#define UPDATE_SETTINGS_IF_FALSE(x, handle, occurred, errMutex) \
-      if (!x) { updateSettingsAndRestart(handle, occurred, errMutex); }
+#define UPDATE_SETTINGS_IF_FALSE(x, handle, errResources) \
+      if (!x) { updateNvsSettings(handle, errResources); }
 
-#define INDICATE_ERR(occurred, errMutex) \
-      if (!boolWithTestSet(occurred, errMutex)) {               \
-          gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);    \
-          gpio_set_level(ERR_LED_PIN, 1);                       \
-      }
-
-/**
- * @brief User non-volatile storage settings.
- * 
- * @note This struct is populated when user non-volatile storage settings
- *       are retrieved with retrieveNvsEntries.
- */
-struct UserSettings {
-  char *wifiSSID; /*!< A string containing the wifi SSID. */
-  size_t wifiSSIDLen; /*!< The length of the wifiSSID string. */
-  char *wifiPass; /*!< A string containing the wifi password. */
-  size_t wifiPassLen; /*!< The length of the wifiPass string. */
-};
+#define INDICATE_ERR() \
+      gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);    \
+      gpio_set_level(ERR_LED_PIN, 1);                       \
 
 /**
  * @brief Determines whether user settings currently exist in non-volatile
@@ -174,6 +152,8 @@ esp_err_t removeExtraNvsEntries(nvs_handle_t nvsHandle);
  * @returns ESP_OK if successful, otherwise ESP_FAIL.
  */
 esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle);
+
+esp_err_t getNvsSpeedData(nvs_handle_t);
 
 esp_err_t initDotMatrices(QueueHandle_t I2CQueue);
 esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir);
@@ -283,22 +263,41 @@ esp_err_t quickClearLEDs(QueueHandle_t dotQueue);
  */
 esp_err_t clearLEDs(QueueHandle_t dotQueue, Direction currDir);
 
+void throwNoConnError(ErrorResources *errRes, bool callerHasErrMutex);
+
+void throwHandleableError(ErrorResources *errRes, bool callerHasErrMutex);
+
+void throwFatalError(ErrorResources *errRes, bool callerHasErrMutex);
+
+void resolveNoConnError(ErrorResources *errRes, bool resolveNone, bool callerHasErrMutex);
+
+void resolveHandleableError(ErrorResources *errRes, bool resolveNone, bool callerHasErrMutex);
+
 /**
- * @brief Handles errors that are not due to a user settings issue by trapping
- *        the task in a delay forever loop after setting the error LED high.
+ * @brief Creates a periodic timer that toggles the error LED.
  * 
- * @note This function requires a full system restart from the user and is
- *       intended to give the user time to retrieve error logs.
+ * @note Sets a timer that calls timerFlashErrCallback. If a timer could not
+ *       be started, then the error LED is set high.
  * 
- * @param errorOccurred A pointer to a bool that indicates whether an error
- *                      has occurred at any point in the program or not. This
- *                      bool is shared by all tasks and should only be accessed
- *                      after errorOccurredMutex has been obtained, ideally
- *                      through the use of the boolWithTestSet function.
- * @param errorOccurredMutex A handle to a mutex that guards access to the bool
- *                           pointed to by errorOccurred.
+ * @param timer A pointer to a timer handle that will point to the new timer
+ *              if successful (ONLY if ESP_OK is returned).
+ * @param ledStatus A pointer to an integer that will be used by the timer
+ *                   callback. This should not be modified or destroyed until
+ *                   the timer is no longer in use.
+ * @param errResources A pointer to an ErrorResources holding global error
+ *                     handling resources.
  */
-void spinForever(bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex);
+void startErrorFlashing(ErrorResources *errRes, bool callerHasErrMutex);
+
+/**
+ * @brief Stops the periodic timer that toggles the error LED.
+ * s
+ * @param errResources A pointer to an ErrorResources holding global error
+ *                     handling resources.
+ * 
+ * @returns ESP_OK if successful, otherwise ESP_FAIL.
+ */
+void stopErrorFlashing(ErrorResources *errRes, bool callerHasErrMutex);
 
 /**
  * @brief Handles errors that are due to a user settings issue by setting the
@@ -317,25 +316,6 @@ void spinForever(bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex);
  * @param errorOccurredMutex A handle to a mutex that guards access to the bool
  *                           pointed to by errorOccurred.
  */
-void updateSettingsAndRestart(nvs_handle_t nvsHandle, bool *errorOccurred, SemaphoreHandle_t errorOccurredMutex);
-
-/**
- * Atomically tests and sets val to true. Returns whether
- * val was already true.
- */
-
-/**
- * @brief Atomically tests and sets val to true.
- * 
- * @param val A pointer to a bool that indicates whether an error has occurred 
- *            at any point in the program or not. This bool is shared by all 
- *            tasks and should only be accessed after mutex has been obtained.
- * @param mutex A handle to a mutex that guards access to the bool pointed to by
- *              val.
- * 
- * @returns True if val was true before this function was called, otherwise 
- *          false.
- */
-bool boolWithTestSet(bool *val, SemaphoreHandle_t mutex);
+void updateNvsSettings(nvs_handle_t nvsHandle, ErrorResources *errResources);
 
 #endif /* UTILITIES_H_ */
