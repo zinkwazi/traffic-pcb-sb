@@ -76,17 +76,37 @@ esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], int speedsSize, Direction dir,
         contentLength = esp_http_client_fetch_headers(client);
     }
     if (contentLength <= 0) {
+        ESP_LOGW(TAG, "contentLength <= 0");
+        if (esp_http_client_close(client) != ESP_OK) {
+            ESP_LOGE(TAG, "failed to close client");
+        }
         return ESP_FAIL;
     }
+    int status = esp_http_client_get_status_code(client);
     if (esp_http_client_get_status_code(client) != 200) {
+        ESP_LOGE(TAG, "status code is %d", status);
+        if (esp_http_client_close(client) != ESP_OK) {
+            ESP_LOGE(TAG, "failed to close client");
+        }
         return ESP_FAIL;
     }
     responseStr = malloc(sizeof(char) * (contentLength + 100));
     if (responseStr == NULL) {
+        if (esp_http_client_close(client) != ESP_OK) {
+            ESP_LOGE(TAG, "failed to close client");
+        }
         return ESP_FAIL;
     }
     int len = esp_http_client_read(client, responseStr, contentLength);
+    while (len == -ESP_ERR_HTTP_EAGAIN) {
+        len = esp_http_client_read(client, responseStr, contentLength);
+    }
     if (esp_http_client_close(client) != ESP_OK) {
+        ESP_LOGE(TAG, "failed to close client");
+        return ESP_FAIL;
+    }
+    if (len == -1) {
+        ESP_LOGE(TAG, "esp_http_client_read returned -1");
         return ESP_FAIL;
     }
     for (int i = 0; i < contentLength && i < speedsSize; i++) {
@@ -95,74 +115,67 @@ esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], int speedsSize, Direction dir,
     return ESP_OK;
 }
 
-void handleRefreshNorth(bool *aborted, QueueHandle_t I2CQueue, QueueHandle_t dotQueue, esp_http_client_handle_t client) {
-    DotCommand command;
+void updateLED(QueueHandle_t I2CQueue, uint16_t ledNum, uint8_t speed) {
     uint8_t red, green, blue;
-    uint8_t speeds[MAX_NUM_LEDS];
-    int speedsSize = MAX_NUM_LEDS + 1;
-    ESP_LOGI(TAG, "Refreshing North...");
-    *aborted = false;
-    /* connect to API and query speeds */
-    if (tomtomGetServerSpeeds(speeds, speedsSize, NORTH, client, CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 5) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to retrieve segment speeds from server");
-        return;
-    }
-    for (int ndx = speedsSize - 1; ndx > 0; ndx--) {
-        setColor(&red, &green, &blue, speeds[ndx]);
-        if (dotsSetColor(I2CQueue, ndx, red, green, blue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
-            dotsSetScaling(I2CQueue, ndx, 0xFF, 0xFF, 0xFF, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK)
-        {
-            ESP_LOGE(TAG, "failed to change led %d color", ndx);
-        }
-        if (xQueuePeek(dotQueue, &command, 0) == pdTRUE) {
-            /* A new command has been issued, quick clear and abort command */
-            ESP_LOGI(TAG, "Quick Clearing...");
-            if (dotsReset(I2CQueue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
-                dotsSetGlobalCurrentControl(I2CQueue, DOTS_GLOBAL_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK ||
-                dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) 
-            {
-                ESP_LOGE(TAG, "failed to reset dot matrices");
-            }
-            *aborted = true;
-            return;
-        }
-        vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_UPDATE_PERIOD));
+    setColor(&red, &green, &blue, speed);
+    if (dotsSetColor(I2CQueue, ledNum, red, green, blue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
+        dotsSetScaling(I2CQueue, ledNum, 0xFF, 0xFF, 0xFF, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK)
+    {
+        ESP_LOGE(TAG, "failed to change led %d color", ledNum);
     }
 }
 
-void handleRefreshSouth(bool *aborted, QueueHandle_t I2CQueue, QueueHandle_t dotQueue, esp_http_client_handle_t client) {
+bool mustAbort(QueueHandle_t I2CQueue, QueueHandle_t dotQueue) {
     DotCommand command;
-    uint8_t red, green, blue;
-    uint8_t speeds[MAX_NUM_LEDS];
-    int speedsSize = MAX_NUM_LEDS + 1;
-    ESP_LOGI(TAG, "Refreshing South...");
+    if (xQueuePeek(dotQueue, &command, 0) == pdTRUE) {
+        /* A new command has been issued, quick clear and abort command */
+        ESP_LOGI(TAG, "Quick Clearing...");
+        if (dotsReset(I2CQueue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
+            dotsSetGlobalCurrentControl(I2CQueue, DOTS_GLOBAL_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK ||
+            dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) 
+        {
+            ESP_LOGE(TAG, "failed to reset dot matrices");
+        }
+        return true;
+    }
+    return false;
+}
+
+esp_err_t handleRefresh(bool *aborted, Direction dir, QueueHandle_t I2CQueue, QueueHandle_t dotQueue, esp_http_client_handle_t client) {
+    static const int speedsSize = MAX_NUM_LEDS + 1;
+    static uint8_t speeds[MAX_NUM_LEDS + 1]; // +1 because 0 is not an led number
     *aborted = false;
     /* connect to API and query speeds */
-    if (tomtomGetServerSpeeds(speeds, speedsSize, NORTH, client, CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 5) != ESP_OK) {
+    if (tomtomGetServerSpeeds(speeds, speedsSize, dir, client, CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 1) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to retrieve segment speeds from server");
-        return;
+        return ESP_FAIL;
     }
-    for (int ndx = 1; ndx < speedsSize - 1; ndx++) {
-        setColor(&red, &green, &blue, speeds[ndx]);
-        if (dotsSetColor(I2CQueue, ndx, red, green, blue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
-            dotsSetScaling(I2CQueue, ndx, 0xFF, 0xFF, 0xFF, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK)
-        {
-            ESP_LOGE(TAG, "failed to change led %d color", ndx);
-        }
-        if (xQueuePeek(dotQueue, &command, 0) == pdTRUE) {
-            /* A new command has been issued, quick clear and abort command */
-            ESP_LOGI(TAG, "Quick Clearing...");
-            if (dotsReset(I2CQueue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
-                dotsSetGlobalCurrentControl(I2CQueue, DOTS_GLOBAL_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK ||
-                dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) 
-            {
-                ESP_LOGE(TAG, "failed to reset dot matrices");
+    switch (dir) {
+        case NORTH:
+            for (int ndx = speedsSize - 1; ndx > 0; ndx--) {
+                updateLED(I2CQueue, ndx, speeds[ndx]);
+                if (mustAbort(I2CQueue, dotQueue)) {
+                    *aborted = true;
+                    return ESP_OK;
+                }
+                vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_UPDATE_PERIOD));
             }
-            *aborted = true;
-            return;
-        }
-        vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_UPDATE_PERIOD));
+            break;
+        case SOUTH:
+            for (int ndx = 1; ndx < speedsSize - 1; ndx++) {
+                updateLED(I2CQueue, ndx, speeds[ndx]);
+                if (mustAbort(I2CQueue, dotQueue)) {
+                    *aborted = true;
+                    return ESP_OK;
+                }
+                vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_UPDATE_PERIOD));
+            }
+            break;
     }
+    for (int i = 0; i < speedsSize; i++) {
+        speeds[i] = 0;
+    }
+    return ESP_OK;
 }
 
 esp_err_t createDotWorkerTask(DotWorkerTaskResources *resources) {
@@ -200,7 +213,7 @@ void tomtomErrorTimerCallback(void *params) {
  */
 void vDotWorkerTask(void *pvParameters) {
     esp_http_client_config_t httpConfig = {
-        .host = "api.tomtom.com",
+        .host = CONFIG_DATA_SERVER,
         .path = "/",
         .auth_type = API_AUTH_TYPE,
         .method = API_METHOD,
@@ -231,10 +244,16 @@ void vDotWorkerTask(void *pvParameters) {
         /* update led colors */
         switch (dot.type) {
             case REFRESH_NORTH:
-                handleRefreshNorth(&prevCommandAborted, res->I2CQueue, res->dotQueue, client);
+                if (handleRefresh(&prevCommandAborted, NORTH, res->I2CQueue, res->dotQueue, client) != ESP_OK) {
+                    esp_http_client_cleanup(client);
+                    client = esp_http_client_init(&httpConfig);
+                }
                 break;
             case REFRESH_SOUTH:
-                handleRefreshSouth(&prevCommandAborted, res->I2CQueue, res->dotQueue, client);
+                if (handleRefresh(&prevCommandAborted, SOUTH, res->I2CQueue, res->dotQueue, client) != ESP_OK) {
+                    esp_http_client_cleanup(client);
+                    client = esp_http_client_init(&httpConfig);
+                }
                 break;
             case CLEAR_NORTH:
                 if (prevCommandAborted) {
