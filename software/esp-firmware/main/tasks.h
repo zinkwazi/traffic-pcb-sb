@@ -85,15 +85,7 @@ struct DotWorkerTaskResources {
                                objects. This task issues commands to this queue 
                                to be handled by the I2C gatekeeper, implemented 
                                by vI2CGatekeeperTask. */
-  bool *errorOccurred; /*!< A pointer to a bool that indicates whether an error
-                            has occurred at any point in the program or not.
-                            This bool is shared by all tasks and should only be 
-                            accessed after errorOccurredMutex has been obtained,
-                            ideally through the use of the boolWithTestSet 
-                            function. */
-  SemaphoreHandle_t errorOccurredMutex; /*!< A handle to a mutex that guards 
-                                             access to the boolpointed to by 
-                                             errorOccurred. */
+  ErrorResources *errRes; /*!< Holds global error handling resources. */
 };
 
 typedef struct DotWorkerTaskResources DotWorkerTaskResources;

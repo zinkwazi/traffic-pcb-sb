@@ -218,7 +218,7 @@ void app_main(void)
       &errRes
     );
     TaskHandle_t otaTask = NULL;
-    if (xTaskCreate(vOTATask, "OTATask", OTA_TASK_STACK, NULL, OTA_TASK_PRIO, &otaTask) != pdPASS) {
+    if (xTaskCreate(vOTATask, "OTATask", OTA_TASK_STACK, &errRes, OTA_TASK_PRIO, &otaTask) != pdPASS) {
       throwFatalError(&errRes, false);
     }
     /* initialize pins */
