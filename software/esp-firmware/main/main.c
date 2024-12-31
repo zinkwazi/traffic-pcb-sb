@@ -124,7 +124,7 @@ void app_main(void)
     /* Remove unnecessary NVS entries */
     ESP_LOGI(TAG, "removing unnecessary nvs entries");
     SPIN_IF_ERR(
-      removeExtraNvsEntries(nvsHandle),
+      removeExtraMainNvsEntries(nvsHandle),
       NULL
     );
     /* Ensure NVS entries exist */

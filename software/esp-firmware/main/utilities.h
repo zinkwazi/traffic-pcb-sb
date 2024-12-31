@@ -139,7 +139,7 @@ esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle);
  * 
  * @returns ESP_OK if successful, otherwise ESP_FAIL.
  */
-esp_err_t removeExtraNvsEntries(nvs_handle_t nvsHandle);
+esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle);
 
 /**
  * @brief Queries the user for settings and writes responses in non-volatile

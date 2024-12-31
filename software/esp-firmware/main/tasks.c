@@ -39,11 +39,12 @@
 #define MEDIUM_CUTOFF_PERCENT (80)
 
 /* The URL of server data (to be appended with version) */
-#define URL_DATA_SERVER_NORTH (CONFIG_DATA_SERVER "/current_data/data_north_")
-#define URL_DATA_SERVER_SOUTH (CONFIG_DATA_SERVER "/current_data/data_south_")
+#define URL_DATA_SERVER_NORTH (CONFIG_DATA_SERVER "/current_data/data_north2_")
+#define URL_DATA_SERVER_SOUTH (CONFIG_DATA_SERVER "/current_data/data_south2_")
 #define URL_DATA_TYPICAL_NORTH (CONFIG_DATA_SERVER "/current_data/typical_north_")
 #define URL_DATA_TYPICAL_SOUTH (CONFIG_DATA_SERVER "/current_data/typical_south_")
 #define URL_DATA_FILE_TYPE (".dat")
+
 
 #define API_METHOD HTTP_METHOD_GET
 #define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
@@ -63,6 +64,51 @@ void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t percentFlow) 
         *green = FAST_GREEN;
         *blue = FAST_BLUE;
     }
+}
+
+esp_err_t getSpeedsFromNvs(uint8_t *speeds, Direction dir, bool currentSpeeds) {
+    nvs_handle_t nvsHandle;
+    size_t size = MAX_NUM_LEDS;
+    if (nvs_open("worker", NVS_READONLY, &nvsHandle) != ESP_OK) {
+        return ESP_FAIL;
+    }
+    char *key = NULL;
+    if (currentSpeeds) {
+        key = (dir == NORTH) ? "current_north" : "current_south";
+    } else {
+        key = (dir == NORTH) ? "typical_north" : "typical_south";
+    }
+    if (nvs_get_blob(nvsHandle, key, speeds, &size) != ESP_OK) {
+        return ESP_FAIL;
+    }
+    if (size == 0 || size / sizeof(uint8_t) != MAX_NUM_LEDS) {
+        return ESP_FAIL;
+    }
+    nvs_close(nvsHandle);
+    return ESP_OK;
+}
+
+esp_err_t setSpeedsToNvs(uint8_t *speeds, Direction dir, bool currentSpeeds) {
+    nvs_handle_t nvsHandle;
+    size_t size = MAX_NUM_LEDS * sizeof(uint8_t);
+    esp_err_t err = ESP_OK;
+    if ((err = nvs_open("worker", NVS_READWRITE, &nvsHandle)) != ESP_OK) {
+        return ESP_FAIL;
+    }
+    char *key = NULL;
+    if (currentSpeeds) {
+        key = (dir == NORTH) ? "current_north" : "current_south";
+    } else {
+        key = (dir == NORTH) ? "typical_north" : "typical_south";
+    }
+    if (nvs_set_blob(nvsHandle, key, speeds, size) != ESP_OK) {
+        return ESP_FAIL;
+    }
+    if (nvs_commit(nvsHandle) != ESP_OK) {
+        return ESP_FAIL;
+    }
+    nvs_close(nvsHandle);
+    return ESP_OK;
 }
 
 esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], esp_http_client_handle_t client, char *baseURL, char *version, int retryNum) {
@@ -153,21 +199,35 @@ bool mustAbort(QueueHandle_t I2CQueue, QueueHandle_t dotQueue) {
 
 esp_err_t handleRefresh(bool *aborted, Direction dir, uint8_t typicalSpeeds[], QueueHandle_t I2CQueue, QueueHandle_t dotQueue, esp_http_client_handle_t client, ErrorResources *errRes, bool prevConnError) {
     static uint8_t speeds[MAX_NUM_LEDS];
+    esp_err_t ret = ESP_OK;
     *aborted = false;
     /* connect to API and query speeds */
     char *baseURL = (dir == NORTH) ? URL_DATA_SERVER_NORTH : URL_DATA_SERVER_SOUTH; 
     if (tomtomGetServerSpeeds(speeds, client, baseURL, 
                               CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 
-                              API_RETRY_CONN_NUM) != ESP_OK) 
+                              API_RETRY_CONN_NUM) != ESP_OK)
     {
-        ESP_LOGE(TAG, "Failed to retrieve segment speeds from server");
+        /* failed to get typical north speeds from server, search nvs */
+        ESP_LOGW(TAG, "failed to retrieve segment speeds from server");
+        if (getSpeedsFromNvs(speeds, dir, true) != ESP_OK)
+        {
+            throwFatalError(errRes, false);
+        }
         if (!prevConnError) {
             throwNoConnError(errRes, false);
         }
-        return ESP_FAIL;
-    } else if (prevConnError) {
-        resolveNoConnError(errRes, false, false);
+        ret = ESP_FAIL;
+    } else {
+        /* successfully retrieved current segment speeds from server */
+        if (prevConnError) {
+            resolveNoConnError(errRes, false, false);
+        }
+        ESP_LOGI(TAG, "updating segment speeds in non-volatile storage");
+        if (setSpeedsToNvs(speeds, dir, true) != ESP_OK) {
+            ESP_LOGW(TAG, "failed to update segment speeds in non-volatile storage");
+        }
     }
+
     switch (dir) {
         case NORTH:
             for (int ndx = MAX_NUM_LEDS - 1; ndx > 0; ndx--) {
@@ -179,7 +239,7 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, uint8_t typicalSpeeds[], Q
                 updateLED(I2CQueue, ndx, percentFlow);
                 if (mustAbort(I2CQueue, dotQueue)) {
                     *aborted = true;
-                    return ESP_OK;
+                    return ret;
                 }
                 vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_UPDATE_PERIOD));
             }
@@ -194,13 +254,13 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, uint8_t typicalSpeeds[], Q
                 updateLED(I2CQueue, ndx, percentFlow);
                 if (mustAbort(I2CQueue, dotQueue)) {
                     *aborted = true;
-                    return ESP_OK;
+                    return ret;
                 }
                 vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_UPDATE_PERIOD));
             }
             break;
     }
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t createDotWorkerTask(DotWorkerTaskResources *resources) {
@@ -222,12 +282,46 @@ esp_err_t createDotWorkerTask(DotWorkerTaskResources *resources) {
   return ESP_OK;
 }
 
-void tomtomErrorTimerCallback(void *params) {
-    static int currentOutput = 0;
-    gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);
-    currentOutput = (currentOutput == 0) ? 1 : 0;
-    gpio_set_level(ERR_LED_PIN, currentOutput);
+esp_err_t removeExtraWorkerNvsEntries(void) {
+  esp_err_t ret;
+  nvs_iterator_t nvs_iter;
+  nvs_handle_t nvsHandle;
+  if (nvs_open("worker", NVS_READWRITE, &nvsHandle) != ESP_OK) {
+    return ESP_FAIL;
+  }
+  if (nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter) != ESP_OK) {
+    return ESP_FAIL;
+  }
+  ret = nvs_entry_next(&nvs_iter);
+  while (ret != ESP_OK) {
+    nvs_entry_info_t info;
+    if (nvs_entry_info(nvs_iter, &info) != ESP_OK) {
+      return ESP_FAIL;
+    }
+    if (strcmp(info.namespace_name, "worker") == 0 &&
+            (strcmp(info.key, "current_north") == 0 ||
+             strcmp(info.key, "current_south") == 0 ||
+             strcmp(info.key, "typical_north") == 0 ||
+             strcmp(info.key, "typical_south") == 0))
+    {
+      ret = nvs_entry_next(&nvs_iter);
+      continue;
+    }
+    ESP_LOGI(TAG, "removing nvs entry: %s", info.key);
+    if (nvs_erase_key(nvsHandle, info.key) != ESP_OK) {
+      return ESP_FAIL;
+    }
+    ret = nvs_entry_next(&nvs_iter);
+  }
+  if (nvs_commit(nvsHandle) != ESP_OK) {
+    return ESP_FAIL;
+  }
+  if (ret == ESP_ERR_INVALID_ARG) {
+    return ESP_FAIL;
+  }
+  return ESP_OK;
 }
+
 
 /**
  * Accepts requests for dot updates off of
@@ -255,6 +349,11 @@ void vDotWorkerTask(void *pvParameters) {
         throwFatalError(res->errRes, false);
     }
 
+    /* remove extra non-volatile storage entries from partition */
+    if (removeExtraWorkerNvsEntries() != ESP_OK) {
+        throwFatalError(res->errRes, false);
+    }
+
     /* retrieve typical speeds from the server */
     static uint8_t typicalSpeedsNorth[MAX_NUM_LEDS];
     static uint8_t typicalSpeedsSouth[MAX_NUM_LEDS];
@@ -262,17 +361,37 @@ void vDotWorkerTask(void *pvParameters) {
                               CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 
                               API_RETRY_CONN_NUM) != ESP_OK) 
     {
-        ESP_LOGE(TAG, "failed to retrieve typical northbound speeds from server");
-        esp_http_client_cleanup(client);
-        throwFatalError(res->errRes, false);
+        /* failed to get typical north speeds from server, search nvs */
+        ESP_LOGW(TAG, "failed to retrieve typical northbound speeds from server, searching non-volatile storage");
+        if (esp_http_client_cleanup(client) != ESP_OK ||
+            (client = esp_http_client_init(&httpConfig)) == NULL ||
+            getSpeedsFromNvs(typicalSpeedsNorth, NORTH, false) != ESP_OK)
+        {
+            throwFatalError(res->errRes, false);
+        }
+    } else {
+        ESP_LOGI(TAG, "setting typical north speeds in non-volatile storage");
+        if (setSpeedsToNvs(typicalSpeedsNorth, NORTH, false) != ESP_OK) {
+            ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
+        }
     }
     if (tomtomGetServerSpeeds(typicalSpeedsSouth, client, URL_DATA_TYPICAL_SOUTH, 
                               CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 
                               API_RETRY_CONN_NUM) != ESP_OK) 
     {
-        ESP_LOGE(TAG, "failed to retrieve typical southbound speeds from server");
-        esp_http_client_cleanup(client);
-        throwFatalError(res->errRes, false);
+        /* failed to get typical north speeds from server, search nvs */
+        ESP_LOGW(TAG, "failed to retrieve typical southbound speeds from server, searching non-volatile storage");
+        if (esp_http_client_cleanup(client) != ESP_OK ||
+            (client = esp_http_client_init(&httpConfig)) == NULL ||
+            getSpeedsFromNvs(typicalSpeedsSouth, SOUTH, false) != ESP_OK)
+        {
+            throwFatalError(res->errRes, false);
+        }
+    } else {
+        ESP_LOGI(TAG, "setting typical south speeds in non-volatile storage");
+        if (setSpeedsToNvs(typicalSpeedsNorth, SOUTH, false) != ESP_OK) {
+            ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
+        }
     }
 
     /* Wait for commands and execute them forever */

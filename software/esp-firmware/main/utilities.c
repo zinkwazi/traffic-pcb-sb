@@ -61,7 +61,7 @@ esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle) {
   return ret;
 }
 
-esp_err_t removeExtraNvsEntries(nvs_handle_t nvsHandle) {
+esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle) {
   esp_err_t ret;
   nvs_iterator_t nvs_iter;
   if (nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter) != ESP_OK) {
