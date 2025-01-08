@@ -6,23 +6,25 @@
 	(property "Reference" "G***"
 		(at 0 0 0)
 		(layer "F.SilkS")
+		(hide yes)
 		(uuid "97723356-b52e-40fc-829e-258c5116d863")
 		(effects
 			(font
-				(size 1.5 1.5)
-				(thickness 0.3)
+				(size 1 1)
+				(thickness 0.25)
+				(bold yes)
 			)
 		)
 	)
 	(property "Value" "LOGO"
-		(at 0.75 0 0)
+		(at 0 -0.003 0)
 		(layer "F.SilkS")
-		(hide yes)
 		(uuid "2e8791c2-4a0b-44f4-942a-7201185ab02c")
 		(effects
 			(font
-				(size 1.5 1.5)
-				(thickness 0.3)
+				(size 1 1)
+				(thickness 0.25)
+				(bold yes)
 			)
 		)
 	)
