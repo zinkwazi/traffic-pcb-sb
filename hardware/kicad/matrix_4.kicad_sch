@@ -2290,6 +2290,12 @@
 		(uuid "02e10646-e83f-4ebf-ba71-aa97b0361344")
 	)
 	(junction
+		(at 208.28 247.65)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "03d78262-d950-44ff-ad9b-5193dad126cb")
+	)
+	(junction
 		(at 158.75 63.5)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2306,6 +2312,18 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "054b2a71-86f7-40c8-a2ee-23b58649a213")
+	)
+	(junction
+		(at 157.48 209.55)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "0766ea8d-1e75-436d-a162-bfe14ebf7f9f")
+	)
+	(junction
+		(at 182.88 209.55)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "07af3ee3-c479-42cb-be37-9f40b8ef7ada")
 	)
 	(junction
 		(at 146.05 82.55)
@@ -2596,6 +2614,12 @@
 		(uuid "22bbf903-0427-4528-a61f-240e9248d052")
 	)
 	(junction
+		(at 259.08 228.6)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "23187992-a81a-444f-91f1-891646707168")
+	)
+	(junction
 		(at 171.45 115.57)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2674,6 +2698,12 @@
 		(uuid "2d7db7ec-d8ed-4ea9-ab8e-255376d54a8a")
 	)
 	(junction
+		(at 233.68 228.6)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "2dcdb40c-d43b-45fa-8a57-7da3c5802f68")
+	)
+	(junction
 		(at 146.05 186.69)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2714,6 +2744,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "329ff0b5-a42f-4016-bdfe-2967a66eb679")
+	)
+	(junction
+		(at 157.48 247.65)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "3340972c-55af-4100-ab7a-03ee2b2282a8")
 	)
 	(junction
 		(at 158.75 129.54)
@@ -2842,6 +2878,12 @@
 		(uuid "3e145ebe-77ce-4d99-a350-694239e2dacd")
 	)
 	(junction
+		(at 182.88 247.65)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "3f292e1c-ebfc-4058-beed-4793e9aac46c")
+	)
+	(junction
 		(at 146.05 34.29)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2948,6 +2990,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "4b077643-7447-4b32-b4ac-ed7590702ddc")
+	)
+	(junction
+		(at 246.38 228.6)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "4bdd7cda-6a4f-4abe-b4ee-6cd7472e35da")
 	)
 	(junction
 		(at 170.18 114.3)
@@ -3244,6 +3292,12 @@
 		(uuid "6387f583-0934-4aab-b0d4-e95d0e15b6f5")
 	)
 	(junction
+		(at 259.08 209.55)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "63a7a15f-f2e9-48e2-a50d-0b2d8cbb7dc3")
+	)
+	(junction
 		(at 171.45 196.85)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3490,6 +3544,12 @@
 		(uuid "7c0a7536-ab67-4abb-a90a-38631bc8a160")
 	)
 	(junction
+		(at 170.18 247.65)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "7ce29102-f360-4093-b4a0-5d6f86407b77")
+	)
+	(junction
 		(at 246.38 152.4)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3536,6 +3596,18 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "8144d99d-59be-4ef8-b0a6-0f91cf67cc08")
+	)
+	(junction
+		(at 195.58 228.6)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "82ec70a1-96f7-41d3-a1c2-be8d32814b1c")
+	)
+	(junction
+		(at 220.98 247.65)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "8356b07f-2c64-4757-8e45-69164a0b36e2")
 	)
 	(junction
 		(at 209.55 91.44)
@@ -3658,6 +3730,12 @@
 		(uuid "93bd3a80-40c5-4ba2-a5bf-c829b64cf8a3")
 	)
 	(junction
+		(at 220.98 209.55)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "93bd8322-21d3-44ad-a39f-0f454d6f106b")
+	)
+	(junction
 		(at 222.25 229.87)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3734,6 +3812,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "99e75de7-8d69-4fde-9a89-174a0ed8eab5")
+	)
+	(junction
+		(at 170.18 209.55)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "9a36442b-dd08-4294-a4be-03983166d3e4")
 	)
 	(junction
 		(at 220.98 114.3)
@@ -3862,6 +3946,12 @@
 		(uuid "a45fcec8-ff24-410c-8f22-5ec1cec4bdcf")
 	)
 	(junction
+		(at 170.18 228.6)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "a474ba3b-2003-43b3-9307-643788b8c6b2")
+	)
+	(junction
 		(at 171.45 254)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3874,6 +3964,12 @@
 		(uuid "a4e3392d-7c1b-469c-a73e-29da95bae40b")
 	)
 	(junction
+		(at 233.68 209.55)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "a60a9aa0-21b4-45f4-ae77-43fa0db2cea0")
+	)
+	(junction
 		(at 234.95 172.72)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3884,6 +3980,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "a9585e50-f36b-4f5e-a84e-cca4cc067804")
+	)
+	(junction
+		(at 208.28 209.55)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "ab702ebd-6f65-4172-8dc1-c4a2fb74f117")
 	)
 	(junction
 		(at 234.95 248.92)
@@ -3982,6 +4084,12 @@
 		(uuid "b61bf331-02db-4e7e-841c-4eff0a0fdce1")
 	)
 	(junction
+		(at 157.48 228.6)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "b6a6ea27-98c3-4926-8905-696c87c1dfcb")
+	)
+	(junction
 		(at 196.85 110.49)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4004,6 +4112,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "b89b062c-65fc-4346-8a0d-1f079be900dc")
+	)
+	(junction
+		(at 182.88 228.6)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "b8cb61a7-7446-40d8-b046-a8ec73174544")
 	)
 	(junction
 		(at 171.45 153.67)
@@ -4186,6 +4300,12 @@
 		(uuid "ca2f422e-dcbf-4451-bede-eaee70c9e81c")
 	)
 	(junction
+		(at 233.68 247.65)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "cc119790-e3e1-4501-ab84-a99dbfc6f4a8")
+	)
+	(junction
 		(at 158.75 58.42)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4244,6 +4364,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "d203eb93-5f96-4e6f-93ed-a02afb19513b")
+	)
+	(junction
+		(at 208.28 228.6)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "d24a8e58-4dd1-4879-b2e0-cb240f719e58")
 	)
 	(junction
 		(at 234.95 177.8)
@@ -4402,6 +4528,12 @@
 		(uuid "deb712b3-eb9a-4af2-bb83-956e3ec67220")
 	)
 	(junction
+		(at 246.38 209.55)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "df40c225-1094-4b1c-a292-48cd22a0ffeb")
+	)
+	(junction
 		(at 184.15 58.42)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4448,6 +4580,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "e2dc70bf-55d9-4648-a7f7-23ddeaba5990")
+	)
+	(junction
+		(at 195.58 209.55)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "e318be80-c823-4900-88b1-548eb970caf4")
 	)
 	(junction
 		(at 209.55 44.45)
@@ -4526,6 +4664,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "eaa33750-689c-4eb9-a1a2-60a0644db10f")
+	)
+	(junction
+		(at 220.98 228.6)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "eaf3decc-7b6a-4f49-a395-981dea4663ae")
 	)
 	(junction
 		(at 158.75 267.97)
@@ -4664,6 +4808,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "fc3d41f8-5c46-41c1-8da4-ddae253ebf1a")
+	)
+	(junction
+		(at 195.58 247.65)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "fe637080-105b-456e-8fb4-41db7218c372")
 	)
 	(junction
 		(at 259.08 133.35)
@@ -5844,6 +5994,16 @@
 			(type default)
 		)
 		(uuid "189bf6d5-8fd9-46f5-9e65-cff7373e5999")
+	)
+	(wire
+		(pts
+			(xy 220.98 228.6) (xy 220.98 247.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "18a244e6-856b-48c5-8b3b-d9a9e41559d9")
 	)
 	(wire
 		(pts
@@ -7217,6 +7377,16 @@
 	)
 	(wire
 		(pts
+			(xy 182.88 209.55) (xy 182.88 228.6)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3483306c-1b17-4314-95db-c8d364e6fc94")
+	)
+	(wire
+		(pts
 			(xy 222.25 152.4) (xy 223.52 152.4)
 		)
 		(stroke
@@ -8047,6 +8217,16 @@
 	)
 	(wire
 		(pts
+			(xy 157.48 209.55) (xy 157.48 228.6)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "434c2e9a-b628-4554-9f4b-5842bee01acc")
+	)
+	(wire
+		(pts
 			(xy 209.55 204.47) (xy 210.82 204.47)
 		)
 		(stroke
@@ -8174,6 +8354,16 @@
 			(type default)
 		)
 		(uuid "473b6a45-c084-4125-b04d-9a737b474f6e")
+	)
+	(wire
+		(pts
+			(xy 195.58 247.65) (xy 195.58 266.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "474b11f4-5cc3-4b2a-9fb2-46e024b0897d")
 	)
 	(wire
 		(pts
@@ -8407,6 +8597,16 @@
 	)
 	(wire
 		(pts
+			(xy 157.48 247.65) (xy 157.48 266.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4c27d275-cd83-4eaf-b224-fab58493bb9c")
+	)
+	(wire
+		(pts
 			(xy 157.48 38.1) (xy 157.48 57.15)
 		)
 		(stroke
@@ -8534,6 +8734,16 @@
 			(type default)
 		)
 		(uuid "4ee5da63-ad8b-4489-a0cd-ad0accd85fd4")
+	)
+	(wire
+		(pts
+			(xy 170.18 247.65) (xy 170.18 266.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4ef4b3a3-1b06-4351-9cc2-7b84310030e4")
 	)
 	(wire
 		(pts
@@ -8977,6 +9187,16 @@
 	)
 	(wire
 		(pts
+			(xy 233.68 228.6) (xy 233.68 247.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "54303b57-7099-45b7-80e9-05fb9a5e892c")
+	)
+	(wire
+		(pts
 			(xy 234.95 58.42) (xy 234.95 57.15)
 		)
 		(stroke
@@ -8984,6 +9204,16 @@
 			(type default)
 		)
 		(uuid "548e0c99-a08c-485b-b124-38e3765b9bf5")
+	)
+	(wire
+		(pts
+			(xy 157.48 228.6) (xy 157.48 247.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "54bb470e-3c12-40fb-9ffd-7a2982d173fa")
 	)
 	(wire
 		(pts
@@ -9497,6 +9727,16 @@
 	)
 	(wire
 		(pts
+			(xy 259.08 228.6) (xy 259.08 247.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "60930d7f-87cf-4014-8948-180b8bcbdd7a")
+	)
+	(wire
+		(pts
 			(xy 209.55 91.44) (xy 222.25 91.44)
 		)
 		(stroke
@@ -9614,6 +9854,16 @@
 			(type default)
 		)
 		(uuid "63024be5-3d96-4dbb-a33f-4ab021d6361c")
+	)
+	(wire
+		(pts
+			(xy 170.18 228.6) (xy 170.18 247.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6317877f-dd4f-4bbe-b2cf-802c06bf9b86")
 	)
 	(wire
 		(pts
@@ -10047,6 +10297,16 @@
 	)
 	(wire
 		(pts
+			(xy 208.28 209.55) (xy 208.28 228.6)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6cf1d8d2-2842-4d91-b827-ab280d4bad55")
+	)
+	(wire
+		(pts
 			(xy 184.15 261.62) (xy 185.42 261.62)
 		)
 		(stroke
@@ -10074,6 +10334,16 @@
 			(type default)
 		)
 		(uuid "6dd1b253-b0f1-489a-af50-34efd5514e08")
+	)
+	(wire
+		(pts
+			(xy 208.28 228.6) (xy 208.28 247.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6e0139e4-d0b4-4682-9498-56f3d096a889")
 	)
 	(wire
 		(pts
@@ -10204,6 +10474,16 @@
 			(type default)
 		)
 		(uuid "721f2ac5-94d0-417a-be6d-f14855cc3b4d")
+	)
+	(wire
+		(pts
+			(xy 195.58 209.55) (xy 195.58 228.6)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "724b9776-a2ff-465c-8276-56437a8cf3df")
 	)
 	(wire
 		(pts
@@ -10754,6 +11034,16 @@
 			(type default)
 		)
 		(uuid "7e71e8d5-ab53-499d-ad92-41ffb6169f1a")
+	)
+	(wire
+		(pts
+			(xy 182.88 247.65) (xy 182.88 266.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7eaadce9-9e16-4af1-9b8a-15245aa122a8")
 	)
 	(wire
 		(pts
@@ -12867,6 +13157,16 @@
 	)
 	(wire
 		(pts
+			(xy 246.38 228.6) (xy 246.38 247.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a3d9d8d6-ab62-4cb4-8df1-9c9e0386b3c2")
+	)
+	(wire
+		(pts
 			(xy 247.65 43.18) (xy 248.92 43.18)
 		)
 		(stroke
@@ -13437,6 +13737,16 @@
 	)
 	(wire
 		(pts
+			(xy 233.68 247.65) (xy 233.68 266.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b1fdc2c9-2071-4ad9-8dc3-c689d4abe1e1")
+	)
+	(wire
+		(pts
 			(xy 209.55 82.55) (xy 222.25 82.55)
 		)
 		(stroke
@@ -13494,6 +13804,16 @@
 			(type default)
 		)
 		(uuid "b2e35d54-b158-44e6-b2c8-dd1f3bff2e51")
+	)
+	(wire
+		(pts
+			(xy 182.88 228.6) (xy 182.88 247.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b30c2d3b-cae6-448f-8848-a6724e509984")
 	)
 	(wire
 		(pts
@@ -13564,6 +13884,16 @@
 			(type default)
 		)
 		(uuid "b53c72ee-311b-4ce6-a56e-43d466dc5fd1")
+	)
+	(wire
+		(pts
+			(xy 220.98 209.55) (xy 220.98 228.6)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b5626fc7-bc81-4428-ac41-5f58fd444403")
 	)
 	(wire
 		(pts
@@ -14004,6 +14334,16 @@
 			(type default)
 		)
 		(uuid "bc60fdeb-d5db-4111-8a8a-c6e502c90bec")
+	)
+	(wire
+		(pts
+			(xy 233.68 209.55) (xy 233.68 228.6)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bc88da2b-e54d-4a8c-8107-c1862d570a08")
 	)
 	(wire
 		(pts
@@ -15567,6 +15907,16 @@
 	)
 	(wire
 		(pts
+			(xy 170.18 209.55) (xy 170.18 228.6)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d853df41-745d-4605-ab6c-bee9258da2f1")
+	)
+	(wire
+		(pts
 			(xy 234.95 77.47) (xy 247.65 77.47)
 		)
 		(stroke
@@ -15647,6 +15997,16 @@
 	)
 	(wire
 		(pts
+			(xy 208.28 247.65) (xy 208.28 266.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "da4210b6-86b0-46a8-827e-c4d4c00c4a3e")
+	)
+	(wire
+		(pts
 			(xy 209.55 254) (xy 209.55 252.73)
 		)
 		(stroke
@@ -15684,6 +16044,16 @@
 			(type default)
 		)
 		(uuid "dad6f96f-5d01-4d7c-96dc-619d48c96c51")
+	)
+	(wire
+		(pts
+			(xy 246.38 209.55) (xy 246.38 228.6)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "dae98bdc-ff40-4c92-be7a-83b7c8c57fb8")
 	)
 	(wire
 		(pts
@@ -16427,6 +16797,16 @@
 	)
 	(wire
 		(pts
+			(xy 220.98 247.65) (xy 220.98 266.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ed05e41b-078c-45ac-b19c-f8af5e41af42")
+	)
+	(wire
+		(pts
 			(xy 222.25 233.68) (xy 223.52 233.68)
 		)
 		(stroke
@@ -16704,6 +17084,16 @@
 			(type default)
 		)
 		(uuid "f3d25868-c801-4379-8bfe-c3984425049b")
+	)
+	(wire
+		(pts
+			(xy 259.08 209.55) (xy 259.08 228.6)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f3e33c2a-f261-4613-9b04-a13c29060be6")
 	)
 	(wire
 		(pts
@@ -17014,6 +17404,16 @@
 			(type default)
 		)
 		(uuid "f95e8fa5-b1d2-42c3-b1fb-210ac8609938")
+	)
+	(wire
+		(pts
+			(xy 195.58 228.6) (xy 195.58 247.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f9930510-1d7c-4707-a9c4-60ef59b98e59")
 	)
 	(wire
 		(pts
@@ -19267,6 +19667,154 @@
 	)
 	(symbol
 		(lib_id "Device:LED_RABG")
+		(at 190.5 266.7 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "1473daf8-9b82-4b6b-b925-e103daa98193")
+		(property "Reference" "LED423"
+			(at 188.595 257.175 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 190.5 255.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 190.5 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 190.5 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 190.5 266.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "ced4b18a-58c7-4517-8766-77d1cd0cd538")
+		)
+		(pin "4"
+			(uuid "eed59b23-8043-4029-a0ec-d4144f11f390")
+		)
+		(pin "2"
+			(uuid "6af5f7ee-0dde-4962-b398-5f7a471b182a")
+		)
+		(pin "3"
+			(uuid "493016a6-4cc9-4720-9212-c67a3297e871")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED423")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 152.4 247.65 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "14ea3084-52a0-4e88-9501-bfd84f93a015")
+		(property "Reference" "LED411"
+			(at 150.495 238.125 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 152.4 236.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 152.4 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 152.4 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 152.4 247.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "a15444e7-bd50-458c-bdce-484608139205")
+		)
+		(pin "4"
+			(uuid "c3849f64-9d93-425d-bf5c-75b3cfa7ac5f")
+		)
+		(pin "2"
+			(uuid "0ed8175b-7fa3-4cfc-b970-0da519d4b0b7")
+		)
+		(pin "3"
+			(uuid "6f40f4f7-bd2d-4b01-b647-988c1039de96")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED411")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
 		(at 190.5 133.35 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -19340,6 +19888,154 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 241.3 247.65 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "160f529e-2f13-4669-9d66-a56c60b59585")
+		(property "Reference" "LED418"
+			(at 239.395 238.125 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 241.3 236.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 241.3 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 241.3 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 241.3 247.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "4cc56ae5-db20-4c41-8ed9-4cc5f28505aa")
+		)
+		(pin "4"
+			(uuid "4d893452-ca45-4a43-a2ca-d78c00455449")
+		)
+		(pin "2"
+			(uuid "552fff3d-624c-4dc0-9a9f-e97c9b3b0fda")
+		)
+		(pin "3"
+			(uuid "a994e27e-3e10-427d-8e0a-07010b009903")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED418")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 177.8 266.7 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "16267aa5-2823-47b8-a246-10f1baddcef2")
+		(property "Reference" "LED422"
+			(at 175.895 257.175 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 177.8 255.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 177.8 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 177.8 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 177.8 266.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "dd5b561a-3201-447a-9bb9-a3988a164375")
+		)
+		(pin "4"
+			(uuid "01f992f6-db73-4c1d-b210-85ec7e5819eb")
+		)
+		(pin "2"
+			(uuid "3c0798df-a48e-4615-9046-d72e9a134b91")
+		)
+		(pin "3"
+			(uuid "f5edff54-35ef-49a6-a32d-23b748651867")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED422")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:R_Small_US")
 		(at 137.16 210.82 90)
 		(unit 1)
@@ -19401,6 +20097,154 @@
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
 					(reference "R178")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 165.1 247.65 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "1941a5ec-1325-4492-b5d4-1c7165d19241")
+		(property "Reference" "LED412"
+			(at 163.195 238.125 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 165.1 236.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 165.1 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 165.1 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 165.1 247.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "2b44c6e5-4275-4cb0-9ae3-70d32799dec7")
+		)
+		(pin "4"
+			(uuid "43446b11-161a-409e-97bf-b1821a92af42")
+		)
+		(pin "2"
+			(uuid "c24da4bf-3f00-4ef9-968b-d9d9f4d587e2")
+		)
+		(pin "3"
+			(uuid "b83453e1-6aee-4134-8e21-43082cc61cb6")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED412")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 215.9 247.65 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "1945a1e3-89b1-4aad-8482-a0abc8d9c71c")
+		(property "Reference" "LED416"
+			(at 213.995 238.125 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 215.9 236.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 215.9 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 215.9 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 215.9 247.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "188833c2-8e7a-40ee-9a75-2c8a0ffb2cca")
+		)
+		(pin "4"
+			(uuid "0f184d18-3c1c-4975-85ed-65ad28b5baaf")
+		)
+		(pin "2"
+			(uuid "2ea26e94-c7d1-4bc9-a5de-40ebad30c074")
+		)
+		(pin "3"
+			(uuid "a0fd0696-e7bb-4ee3-af50-9fc8661f30e9")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED416")
 					(unit 1)
 				)
 			)
@@ -20345,6 +21189,80 @@
 	)
 	(symbol
 		(lib_id "Device:LED_RABG")
+		(at 190.5 228.6 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "2eee885e-068c-49cb-a115-797bb4112c46")
+		(property "Reference" "LED405"
+			(at 188.595 219.075 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 190.5 217.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 190.5 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 190.5 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 190.5 228.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "b8c10050-c21d-42e8-a4a0-157a752d5e1c")
+		)
+		(pin "4"
+			(uuid "f569b4b5-aa35-47cf-a47a-d14502b6bc1a")
+		)
+		(pin "2"
+			(uuid "85588cd5-1693-4efa-822b-ac76d3b67b44")
+		)
+		(pin "3"
+			(uuid "eff9e1d3-4db2-4f20-8252-99e369181cf6")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED405")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
 		(at 203.2 209.55 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -21057,6 +21975,80 @@
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
 					(reference "LED137")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 177.8 228.6 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "4196c032-9859-47b3-98c4-49f8e22328a8")
+		(property "Reference" "LED404"
+			(at 175.895 219.075 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 177.8 217.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 177.8 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 177.8 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 177.8 228.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "55a4ca7f-27b6-4328-b0ac-f8b37e2509e4")
+		)
+		(pin "4"
+			(uuid "d1d8df26-1ae8-4f24-a11f-5ee135047eef")
+		)
+		(pin "2"
+			(uuid "ea5beb7b-3f35-49bf-9593-eaec9a0a7206")
+		)
+		(pin "3"
+			(uuid "e15dcdde-d925-4650-8404-749a634455a4")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED404")
 					(unit 1)
 				)
 			)
@@ -21976,6 +22968,80 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 241.3 228.6 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "57a5ecdf-29ee-4d6c-8198-7c45a65d98ee")
+		(property "Reference" "LED409"
+			(at 239.395 219.075 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 241.3 217.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 241.3 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 241.3 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 241.3 228.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "a3e422a2-43e2-45e0-baa4-9d42d20841e1")
+		)
+		(pin "4"
+			(uuid "db238790-143a-44dc-a329-0495e498cb69")
+		)
+		(pin "2"
+			(uuid "fea472a8-50ab-4c5e-919c-84d93b7adf30")
+		)
+		(pin "3"
+			(uuid "c71389ca-9f06-4cd9-b83f-ba9f1a2dc7cb")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED409")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:R_Small_US")
 		(at 137.16 72.39 90)
 		(unit 1)
@@ -22252,6 +23318,80 @@
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
 					(reference "LED121")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 215.9 266.7 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "5dacdab9-977e-490b-882a-7c7e731af4e3")
+		(property "Reference" "LED425"
+			(at 213.995 257.175 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 215.9 255.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 215.9 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 215.9 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 215.9 266.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "6411233e-10d4-42d9-8078-7696222a6a7d")
+		)
+		(pin "4"
+			(uuid "fa084aee-b2dc-47b8-b786-3178dae6bd86")
+		)
+		(pin "2"
+			(uuid "2c0b569c-9577-4125-828d-914581078272")
+		)
+		(pin "3"
+			(uuid "0a0f3abb-c118-4c25-a0dd-ce0661c7d501")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED425")
 					(unit 1)
 				)
 			)
@@ -22622,6 +23762,154 @@
 	)
 	(symbol
 		(lib_id "Device:LED_RABG")
+		(at 152.4 228.6 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "64c9b8e6-cd83-44c2-b6e7-b8a652278bf9")
+		(property "Reference" "LED402"
+			(at 150.495 219.075 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 152.4 217.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 152.4 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 152.4 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 152.4 228.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "4c282a8b-7701-4901-868b-d7a150a43bbe")
+		)
+		(pin "4"
+			(uuid "289332c5-f751-41e3-aba1-b3df1798c3b1")
+		)
+		(pin "2"
+			(uuid "d6014fe0-e292-440f-af8a-45ecef28977c")
+		)
+		(pin "3"
+			(uuid "bd17c45a-bb70-4ee2-96f4-0e7f50bf8252")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED402")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 215.9 228.6 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "653d5f93-618a-4e5a-b243-2fa1c7d94762")
+		(property "Reference" "LED407"
+			(at 213.995 219.075 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 215.9 217.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 215.9 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 215.9 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 215.9 228.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "841d1052-7a42-4349-80cc-5263447680ae")
+		)
+		(pin "4"
+			(uuid "55e52c8b-e951-44f7-b97c-7f3c551ca8f0")
+		)
+		(pin "2"
+			(uuid "5c3726a2-4fe0-4eac-aa24-1a896c59681b")
+		)
+		(pin "3"
+			(uuid "eddb2fe9-819b-4e56-95d1-85dad871a11d")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED407")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
 		(at 177.8 114.3 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -22756,6 +24044,80 @@
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
 					(reference "R168")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 254 228.6 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "6a0450c9-74ac-4b17-840c-d874233faef5")
+		(property "Reference" "LED410"
+			(at 252.095 219.075 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 254 217.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 254 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 254 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 254 228.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "6ce0b24b-be39-4004-baf5-7d90f3a00ced")
+		)
+		(pin "4"
+			(uuid "10c842fc-63c2-4372-b772-c7638b9a2395")
+		)
+		(pin "2"
+			(uuid "b9d02752-f193-4a49-85e7-7ae6cd8d9606")
+		)
+		(pin "3"
+			(uuid "43e9e521-958f-4c9b-b7a1-e668911f7f1f")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED410")
 					(unit 1)
 				)
 			)
@@ -23765,6 +25127,80 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 203.2 266.7 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "7a7fa7ca-54c8-46a9-b61a-15f61a7e501e")
+		(property "Reference" "LED424"
+			(at 201.295 257.175 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 203.2 255.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 203.2 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 203.2 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 203.2 266.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "a8389183-86b9-4a7c-890f-3f08e22a8261")
+		)
+		(pin "4"
+			(uuid "25f352ef-c5b5-42d9-8ee2-7f9dc4247dcb")
+		)
+		(pin "2"
+			(uuid "8329be2f-533c-4ea7-a0aa-1a7e5544be14")
+		)
+		(pin "3"
+			(uuid "2503a3ec-ca99-4b80-8ff5-2abaf8f71e7a")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED424")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 55.88 55.88 0)
 		(unit 1)
@@ -24330,6 +25766,80 @@
 	)
 	(symbol
 		(lib_id "Device:LED_RABG")
+		(at 165.1 228.6 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "87e559bb-65f4-4c98-b2cb-7fd175e94eed")
+		(property "Reference" "LED403"
+			(at 163.195 219.075 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 165.1 217.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 165.1 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 165.1 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 165.1 228.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "fea490a7-3b36-40c7-ab0c-90cc6335286d")
+		)
+		(pin "4"
+			(uuid "529417e7-1344-4fae-9cbe-3870506ad168")
+		)
+		(pin "2"
+			(uuid "f6fcb97b-76cd-422b-8d37-5cc22376804e")
+		)
+		(pin "3"
+			(uuid "ca6a77b9-a4e5-41c9-87b7-67a6c0c6986a")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED403")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
 		(at 254 209.55 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -24471,6 +25981,80 @@
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
 					(reference "LED140")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 177.8 247.65 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "8c751c79-14cb-4e7e-8ee6-ce8e99a47580")
+		(property "Reference" "LED413"
+			(at 175.895 238.125 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 177.8 236.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 177.8 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 177.8 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 177.8 247.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "625f2849-cb16-44f0-9a42-e4ad9e56cf13")
+		)
+		(pin "4"
+			(uuid "925fe4a2-3514-440e-a42b-b408c4e0ef21")
+		)
+		(pin "2"
+			(uuid "4ece3f5f-c59f-46f6-a313-80bcce897395")
+		)
+		(pin "3"
+			(uuid "f674a1e8-193f-423f-b4eb-32f46a285e04")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED413")
 					(unit 1)
 				)
 			)
@@ -24901,6 +26485,80 @@
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
 					(reference "LED72")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 203.2 228.6 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "9fc3388b-f7e2-46a3-92af-3ffab8e7349b")
+		(property "Reference" "LED406"
+			(at 201.295 219.075 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 203.2 217.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 203.2 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 203.2 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 203.2 228.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "148d349a-4d8d-4519-94e3-952b6301c4df")
+		)
+		(pin "4"
+			(uuid "01f10a9b-55b6-4d1b-a74c-26dabdbbe0d1")
+		)
+		(pin "2"
+			(uuid "14a70166-b807-46a6-b7ce-af93d084bd2e")
+		)
+		(pin "3"
+			(uuid "5eea18c9-4b30-4999-b2e8-df68960a5a24")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED406")
 					(unit 1)
 				)
 			)
@@ -26049,6 +27707,80 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 228.6 228.6 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "b7501e48-fe1a-47ab-b279-fc29140bbd59")
+		(property "Reference" "LED408"
+			(at 226.695 219.075 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 228.6 217.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 228.6 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 228.6 229.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 228.6 228.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "ae656ee6-c4e4-4d3c-abb5-e4ba6004b532")
+		)
+		(pin "4"
+			(uuid "308c8fe3-e4b4-42be-90b3-9f2a10c87ce5")
+		)
+		(pin "2"
+			(uuid "4d31366e-93e4-4452-953c-89778d1f27c3")
+		)
+		(pin "3"
+			(uuid "bc229555-329d-4f61-bb83-7d42a61b3eb2")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED408")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:R_Small_US")
 		(at 137.16 243.84 90)
 		(unit 1)
@@ -26406,6 +28138,154 @@
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
 					(reference "LED139")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 190.5 247.65 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "ba160921-ac49-4452-9c82-34f22f614ded")
+		(property "Reference" "LED414"
+			(at 188.595 238.125 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 190.5 236.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 190.5 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 190.5 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 190.5 247.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "6dae6ea2-b739-491a-9d25-b4222e9b3bca")
+		)
+		(pin "4"
+			(uuid "256a9896-3877-41e6-89b1-132d0e6827c5")
+		)
+		(pin "2"
+			(uuid "861a9564-bb46-468a-a859-e318924a2512")
+		)
+		(pin "3"
+			(uuid "e227f60f-6035-4b1a-8592-ce7de31b26a4")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED414")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 203.2 247.65 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "bb2150f5-1735-4a2a-a5d6-a3fce3463bd8")
+		(property "Reference" "LED415"
+			(at 201.295 238.125 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 203.2 236.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 203.2 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 203.2 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 203.2 247.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "5d270888-f5b9-4dd1-95a9-0db47f69d3ba")
+		)
+		(pin "4"
+			(uuid "82d11899-12ef-45ae-acc5-142f667eba3d")
+		)
+		(pin "2"
+			(uuid "6cf46215-5e75-4879-9483-44e049252faa")
+		)
+		(pin "3"
+			(uuid "e59af8c6-6772-4655-b14f-b7c0b8aede6d")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED415")
 					(unit 1)
 				)
 			)
@@ -27016,6 +28896,80 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 228.6 247.65 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "c0bc728a-fc10-4950-a299-8c75f7d72772")
+		(property "Reference" "LED417"
+			(at 226.695 238.125 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 228.6 236.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 228.6 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 228.6 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 228.6 247.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "95e8088e-da35-4295-a58d-f4a7551e41cf")
+		)
+		(pin "4"
+			(uuid "f822f925-1850-495f-9093-cecda3b852aa")
+		)
+		(pin "2"
+			(uuid "d8d11eb8-31a2-4401-b58d-4701727b4af1")
+		)
+		(pin "3"
+			(uuid "c78c88fb-84b6-4cd9-ba0c-28b873e4bb68")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED417")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:R_Small_US")
 		(at 137.16 196.85 90)
 		(unit 1)
@@ -27576,6 +29530,80 @@
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
 					(reference "R167")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 228.6 266.7 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "d24cb3c3-8701-4076-a756-dd1cd20cd00e")
+		(property "Reference" "LED426"
+			(at 226.695 257.175 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 228.6 255.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 228.6 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 228.6 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 228.6 266.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "54e14d15-9665-4d3c-8002-e3151cbcb6cb")
+		)
+		(pin "4"
+			(uuid "aea8fe6c-eb03-4146-8f03-1ac0c264f5d8")
+		)
+		(pin "2"
+			(uuid "4ba5f3f5-2798-4441-b4c6-9284829359a8")
+		)
+		(pin "3"
+			(uuid "883ddddc-0ab9-46e0-af80-fbdb5697b5f6")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED426")
 					(unit 1)
 				)
 			)
@@ -28644,6 +30672,80 @@
 	)
 	(symbol
 		(lib_id "Device:LED_RABG")
+		(at 152.4 266.7 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "ee0d3bd6-6caa-4df5-b290-20774a1bae04")
+		(property "Reference" "LED420"
+			(at 150.495 257.175 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 152.4 255.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 152.4 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 152.4 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 152.4 266.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "6b51c3a1-6533-4fc1-bf92-64b20135abba")
+		)
+		(pin "4"
+			(uuid "20fe8d84-3cf1-427d-b99e-a15b53ef7ebc")
+		)
+		(pin "2"
+			(uuid "bd751013-2a78-4b51-a786-acc13c98d376")
+		)
+		(pin "3"
+			(uuid "53a1b441-29bc-4cb9-a61d-6301a6700403")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED420")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
 		(at 177.8 76.2 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -28792,6 +30894,80 @@
 	)
 	(symbol
 		(lib_id "Device:LED_RABG")
+		(at 165.1 266.7 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "f548222a-2159-411d-905d-e04aec2cde9b")
+		(property "Reference" "LED421"
+			(at 163.195 257.175 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 165.1 255.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 165.1 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 165.1 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 165.1 266.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "6a79bc9d-3b0a-4868-9756-31a3a3d4396c")
+		)
+		(pin "4"
+			(uuid "03c86fc2-6dca-4f75-84b6-852342d16895")
+		)
+		(pin "2"
+			(uuid "d9728a14-054d-435b-a082-07ec0e028180")
+		)
+		(pin "3"
+			(uuid "047dbf09-68ea-4cc9-af96-77bdf4b675fe")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED421")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
 		(at 190.5 209.55 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -28933,6 +31109,80 @@
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
 					(reference "LED337")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 254 247.65 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "fa78f4f5-130b-413a-8629-55c29df41e55")
+		(property "Reference" "LED419"
+			(at 252.095 238.125 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 254 236.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 254 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 254 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 254 247.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "d807e7d0-6300-480b-b8f4-94e89cd8d28f")
+		)
+		(pin "4"
+			(uuid "919f2046-e5df-437f-8821-c99840f8eb89")
+		)
+		(pin "2"
+			(uuid "a5adfe05-bf05-4b51-90bf-1e5d37b1843c")
+		)
+		(pin "3"
+			(uuid "bc59b25b-1071-496c-98c6-0f2b4cea8a71")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "LED419")
 					(unit 1)
 				)
 			)
