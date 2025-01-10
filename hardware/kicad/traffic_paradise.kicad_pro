@@ -38,8 +38,8 @@
         "other_text_upright": false,
         "pads": {
           "drill": 0.0,
-          "height": 3.0,
-          "width": 1.2
+          "height": 2.5,
+          "width": 2.5
         },
         "silk_line_width": 0.1,
         "silk_text_italic": false,
@@ -662,6 +662,10 @@
     [
       "8dd6618c-1a80-4fae-a98a-23e19309c792",
       "Matrix 3"
+    ],
+    [
+      "229965e3-107a-47b9-9b24-fdc53810a62f",
+      "Matrix 4"
     ]
   ],
   "text_variables": {}
