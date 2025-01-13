@@ -17713,437 +17713,8 @@
 		)
 		(uuid "f2f38f17-c10d-4d53-9569-8c284f05b2c5")
 	)
-	(label "ROW14"
-		(at 105.41 106.68 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "05b2bb32-4ab3-4cb5-83b9-c4bf37bd3105")
-	)
-	(label "ROW24"
-		(at 120.65 186.69 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "06b23fbe-e46f-447a-a371-6d86fad34170")
-	)
-	(label "COL7"
-		(at 46.99 119.38 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "1007b7a6-a621-4a56-b88f-39801d92561b")
-	)
-	(label "ROW11"
-		(at 120.65 101.6 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "167b3aa7-ab71-4c90-981f-bb704e46f1f3")
-	)
-	(label "ROW32"
-		(at 120.65 234.95 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "18c7336a-faf2-4366-bfdf-6d1688c1fccb")
-	)
-	(label "COL6"
-		(at 46.99 121.92 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "1911af57-e789-45a0-b86e-ddc048f5e378")
-	)
-	(label "ROW29"
-		(at 120.65 215.9 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "195b5a24-00c5-4b30-9afd-2a09882bac7d")
-	)
-	(label "COL1"
-		(at 46.99 132.08 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "1dfe94f9-3d7a-4e93-822d-fbf41ad2d9cc")
-	)
-	(label "ROW25"
-		(at 105.41 81.28 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "1e8b475a-6491-4564-a245-e36814883506")
-	)
-	(label "ROW6"
-		(at 120.65 72.39 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "27738ae5-5ca7-46d0-8e92-f25e2489b796")
-	)
-	(label "ROW1"
-		(at 105.41 137.16 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "2b3fbeaa-867e-4c09-95c9-e0cc189a9814")
-	)
-	(label "ROW24"
-		(at 105.41 78.74 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "30ccd261-2264-43dd-a2e7-968deb108961")
-	)
-	(label "ROW31"
-		(at 105.41 58.42 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "3266c371-b380-4b69-9abc-bdcd5670aea8")
-	)
-	(label "ROW27"
-		(at 105.41 48.26 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "34e297d3-c9da-4934-8afd-7f84721ee737")
-	)
-	(label "ROW15"
-		(at 120.65 129.54 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "36068dc6-fbbd-4a25-8317-9dbd5affc1eb")
-	)
-	(label "ROW33"
-		(at 105.41 63.5 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "36ce77f7-a82f-4e08-a27d-99055635ceed")
-	)
-	(label "ROW15"
-		(at 105.41 93.98 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "387df1f6-49e1-4457-9b7c-1c3190a026ea")
-	)
-	(label "COL8"
-		(at 46.99 116.84 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "3bf7b93a-7b38-402f-9c37-9c6418c4e2ca")
-	)
-	(label "ROW9"
-		(at 120.65 91.44 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "3ce545a2-c670-4994-b3f0-c13985d0e2a8")
-	)
-	(label "ROW18"
-		(at 120.65 148.59 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "3da2bc62-d01f-45bf-8d8a-b2340eda8747")
-	)
-	(label "ROW38"
-		(at 120.65 273.05 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "3e59ad88-b6e7-45db-ae10-62770c7e445b")
-	)
-	(label "COL2"
-		(at 182.88 25.4 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "40d16a4e-489e-4161-b207-1540d2703b14")
-	)
-	(label "COL7"
-		(at 246.38 25.4 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "42640006-8e6b-4b75-8bef-66cedf0b2472")
-	)
-	(label "ROW32"
-		(at 105.41 60.96 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "4d8cae3c-16e4-4169-8554-1bca65315438")
-	)
-	(label "ROW0"
-		(at 105.41 132.08 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "513d2347-5209-4afa-9bd5-1a0f3bed661e")
-	)
-	(label "ROW36"
-		(at 120.65 262.89 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "52476adc-1d35-425b-9600-29302affa838")
-	)
-	(label "ROW8"
-		(at 120.65 82.55 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "54097f11-a5e4-4362-9c6e-1b4718578393")
-	)
-	(label "ROW21"
-		(at 120.65 167.64 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "543c8abf-0e64-4012-9443-73c28fca6bc4")
-	)
-	(label "ROW20"
-		(at 105.41 88.9 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "55cd5819-47c3-4997-a1c2-8f3c3604a9b4")
-	)
-	(label "COL5"
-		(at 46.99 124.46 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "58354321-a480-4036-85c5-4f9d9d7e2c01")
-	)
-	(label "ROW6"
-		(at 105.41 116.84 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "5e104b02-84eb-4ad1-bb07-83bee7be14bc")
-	)
-	(label "ROW16"
-		(at 120.65 134.62 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "64ea73d6-8dd9-4e82-b06d-4a4f5fc10580")
-	)
-	(label "ROW35"
-		(at 105.41 68.58 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "65d3ff8c-e9d8-4e08-abf3-9a1b9b776392")
-	)
-	(label "ROW30"
-		(at 105.41 55.88 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "6780e017-3362-48ef-83f7-330181c9c62d")
-	)
-	(label "ROW30"
-		(at 120.65 224.79 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "6f0e778f-cd47-4532-bc90-74c7b39ae0c4")
-	)
-	(label "ROW4"
-		(at 120.65 58.42 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "6f86abe9-0cd0-488b-817c-136e73142d00")
-	)
-	(label "ROW23"
-		(at 105.41 76.2 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "7209b541-83cf-48ab-9523-49252792375e")
-	)
 	(label "ROW26"
-		(at 120.65 196.85 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "764680c6-68a4-476f-8015-34dd734cdc2a")
-	)
-	(label "ROW34"
-		(at 120.65 248.92 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "78cec89d-def9-47a7-af84-fe946360d603")
-	)
-	(label "ROW38"
-		(at 105.41 45.72 180)
+		(at 105.41 83.82 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -18151,447 +17722,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "7b929dde-1233-4f9b-b44c-23b1f8acca9a")
-	)
-	(label "ROW17"
-		(at 105.41 99.06 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "7c0d1b55-4e3b-46ca-92d6-8cca196631e3")
-	)
-	(label "ROW2"
-		(at 120.65 44.45 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "7c8f7c91-aa47-41b0-b5a1-4b7328a5c47c")
-	)
-	(label "ROW12"
-		(at 120.65 110.49 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "7d78b854-136a-4819-a9d8-30a3b3dd3d0b")
-	)
-	(label "ROW25"
-		(at 120.65 191.77 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "85fd98fe-9474-4ee4-a133-4fbf1a3c5d84")
-	)
-	(label "ROW14"
-		(at 120.65 120.65 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "876aeda1-b137-4191-b0ca-383ef19f3b7a")
-	)
-	(label "ROW8"
-		(at 105.41 121.92 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "8b0a7954-8398-4654-ae20-d3a5a9f0227c")
-	)
-	(label "ROW1"
-		(at 120.65 39.37 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "8c7d90f7-81e1-4d51-97a7-b590273270fe")
-	)
-	(label "ROW37"
-		(at 120.65 267.97 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "8cd33244-5856-4262-b66d-300c3682ca68")
-	)
-	(label "ROW28"
-		(at 120.65 210.82 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "8d104581-3953-41e1-9ea7-ee121394fa71")
-	)
-	(label "ROW35"
-		(at 120.65 254 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "95336d46-8b93-4f4f-8914-8cd889be0704")
-	)
-	(label "ROW5"
-		(at 105.41 127 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "95f054d4-361a-4017-9584-18c2cefd7dbd")
-	)
-	(label "ROW21"
-		(at 105.41 71.12 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "96ab077a-7c7a-42c1-8649-7ac47efd7e61")
-	)
-	(label "ROW10"
-		(at 120.65 96.52 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "996c62c9-a9a1-4732-a9ee-ff16f09d848f")
-	)
-	(label "COL6"
-		(at 233.68 25.4 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "9f8f3c41-c0ee-4d50-94e9-045a2053dad3")
-	)
-	(label "ROW22"
-		(at 120.65 172.72 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "a5ca1c33-26c5-4032-a3f7-e91d22fd1556")
-	)
-	(label "ROW31"
-		(at 120.65 229.87 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "a60ac07c-80b2-452b-943f-2334994fd421")
-	)
-	(label "ROW16"
-		(at 105.41 96.52 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "a627f048-87ac-4faa-b37b-e5f4ad3f3ec8")
-	)
-	(label "COL2"
-		(at 46.99 134.62 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "a7e29e3c-27c3-4188-aa6d-cf2658a4a714")
-	)
-	(label "ROW33"
-		(at 120.65 243.84 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "ab26e4ec-0a96-4b52-925d-ffec71bc8bea")
-	)
-	(label "ROW27"
-		(at 120.65 205.74 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "abdc53a6-b544-40b2-a6fb-561a096335b7")
-	)
-	(label "ROW18"
-		(at 105.41 86.36 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "abfae582-1053-4a04-af38-19ddda8dd1fc")
-	)
-	(label "ROW36"
-		(at 105.41 40.64 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "b43f026e-621c-4d6e-b901-4266a4c801c7")
-	)
-	(label "ROW9"
-		(at 105.41 109.22 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "b4fea502-d0fb-4a63-87f0-78eccfc1fdf2")
-	)
-	(label "ROW13"
-		(at 120.65 115.57 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "b551924a-8fa9-4af9-815e-ba1ed77634ef")
-	)
-	(label "COL4"
-		(at 46.99 127 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "b55d017b-16d0-467f-965e-33e691f01eef")
-	)
-	(label "ROW34"
-		(at 105.41 66.04 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "b5b7fa11-31f6-423f-b99f-42ef6694aa70")
-	)
-	(label "COL8"
-		(at 259.08 25.4 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "ba045198-8ac2-4164-85e6-0a2fa8fb6ffc")
-	)
-	(label "ROW23"
-		(at 120.65 177.8 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "ba5ca457-b45d-43b9-94e9-3205f12d15bf")
-	)
-	(label "ROW20"
-		(at 120.65 158.75 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "bda155ed-a8ed-4173-8470-de1eb3f45f69")
-	)
-	(label "COL1"
-		(at 170.18 25.4 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "c292c500-92d3-4f13-ad9d-20ea41fa0451")
-	)
-	(label "ROW4"
-		(at 105.41 129.54 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "c29b7827-a067-4892-aca3-c78c15dfa2bd")
-	)
-	(label "ROW17"
-		(at 120.65 139.7 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "c8ee5c08-56f6-4c8e-ba7c-091a707f6ca3")
-	)
-	(label "ROW13"
-		(at 105.41 104.14 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "c9f91d25-0e1f-4143-abe2-1ee8111d797d")
-	)
-	(label "ROW2"
-		(at 105.41 134.62 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "cc01f733-9c96-4c99-a1e9-c6a6671adaf5")
-	)
-	(label "COL0"
-		(at 157.48 25.4 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "cd68d675-752e-4dcc-9436-25aedb507d15")
-	)
-	(label "ROW22"
-		(at 105.41 73.66 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "cecdfa0a-5505-464e-81c4-8041cd985dc6")
-	)
-	(label "ROW29"
-		(at 105.41 53.34 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "ced11a61-5b4f-407e-a329-81c66b108522")
-	)
-	(label "ROW5"
-		(at 120.65 63.5 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "cfacad08-4b98-4144-82bd-88517951b553")
-	)
-	(label "COL5"
-		(at 220.98 25.4 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "d556a961-3c65-4e40-b6e9-331f041e046f")
-	)
-	(label "ROW19"
-		(at 120.65 153.67 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "d745441c-78eb-42b1-a8b8-9ba33d123aa3")
+		(uuid "02d5041e-d9b1-4202-84b8-bce35c2dbf25")
 	)
 	(label "COL3"
 		(at 46.99 137.16 0)
@@ -18602,10 +17733,10 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "d74b90c5-66e6-4877-bd5e-b8f0c6ce3d4f")
+		(uuid "070307d4-2b30-4b6b-ba6e-e7030b3b10f4")
 	)
-	(label "ROW12"
-		(at 105.41 101.6 180)
+	(label "ROW36"
+		(at 105.41 40.64 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -18613,10 +17744,142 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "d8bfa8d6-d38a-4ccd-8e1c-389f38557ed3")
+		(uuid "0c21932b-79da-4c88-be94-a774b5eb9580")
+	)
+	(label "ROW5"
+		(at 105.41 127 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "0d405493-f7da-4a96-8504-9cf9894d8e5b")
+	)
+	(label "ROW34"
+		(at 105.41 66.04 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "0ea53552-5bf8-4084-a231-682399edfe6e")
+	)
+	(label "ROW29"
+		(at 120.65 215.9 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "0f64e4e6-f7e0-49d5-9677-49ac4b464ec5")
+	)
+	(label "ROW35"
+		(at 120.65 254 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "10d2113a-5bbf-414e-8fc0-790f37ad5c31")
+	)
+	(label "ROW15"
+		(at 120.65 129.54 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "11ab3437-8e99-4306-8b1a-492c6911244c")
+	)
+	(label "ROW18"
+		(at 120.65 148.59 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "1257c18f-1e01-4e7d-abfa-34162b943212")
+	)
+	(label "COL5"
+		(at 46.99 124.46 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "153bfc58-927c-4463-bd93-b1f42c7acbce")
+	)
+	(label "ROW16"
+		(at 105.41 96.52 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "196d5ecc-6425-4761-844e-950f1516d90c")
+	)
+	(label "COL1"
+		(at 46.99 132.08 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "1c7d1152-c312-4d5e-a444-49fec2fa9fba")
+	)
+	(label "COL2"
+		(at 46.99 134.62 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "1df652ef-0aeb-4584-93e1-8f60caf655b1")
+	)
+	(label "ROW24"
+		(at 105.41 78.74 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "1faa6a5a-d3e5-4883-a060-9d411faf543f")
+	)
+	(label "ROW15"
+		(at 105.41 93.98 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "220d4154-4ef4-42f3-97ba-08a9ceb5603e")
 	)
 	(label "COL4"
-		(at 208.28 25.4 0)
+		(at 46.99 127 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -18624,10 +17887,10 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "d9097ff5-54b0-438b-b152-50977b692fc8")
+		(uuid "2463408d-c14c-4644-9f60-d8a3968e4e7c")
 	)
-	(label "ROW3"
-		(at 120.65 53.34 0)
+	(label "ROW27"
+		(at 120.65 205.74 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -18635,98 +17898,43 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "da79fe65-78d1-43cc-96bc-d66a61bf484c")
-	)
-	(label "COL3"
-		(at 195.58 25.4 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "de6268d2-9061-4893-9e78-75f65d7fae90")
-	)
-	(label "ROW28"
-		(at 105.41 50.8 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "e87ea2a0-101a-4664-8b64-ee12b4f30ed4")
-	)
-	(label "ROW11"
-		(at 105.41 114.3 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "e9cd292a-b3fd-4360-aad8-5893e27791aa")
-	)
-	(label "ROW0"
-		(at 120.65 34.29 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "eed4aecf-bc16-4c41-8c46-5644c404594d")
-	)
-	(label "COL0"
-		(at 46.99 129.54 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "f2365609-337f-4b10-8bf7-0bf6318c23ff")
-	)
-	(label "ROW26"
-		(at 105.41 83.82 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "f3f019e0-877a-4692-bb8e-5ec223f75538")
-	)
-	(label "ROW10"
-		(at 105.41 111.76 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "f62e4aca-dccd-4a44-9b3e-af3fee36ba92")
-	)
-	(label "ROW3"
-		(at 105.41 124.46 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "f8cd76dc-1757-4dd8-b7a9-3aa34920bc64")
+		(uuid "260e954c-31bf-4780-ab2a-0d88d77febe2")
 	)
 	(label "ROW37"
-		(at 105.41 43.18 180)
+		(at 120.65 267.97 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "28d2d9f0-d52e-40a7-938d-b4da3fdc75bf")
+	)
+	(label "ROW30"
+		(at 120.65 224.79 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "2e638e1e-aa4a-4fdd-b3ea-3b80f617a602")
+	)
+	(label "ROW33"
+		(at 120.65 243.84 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "42e67833-a571-489b-a624-0e20a75f8666")
+	)
+	(label "ROW8"
+		(at 105.41 121.92 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -18734,7 +17942,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "f9143e33-d164-4ce9-8672-da1fa0435902")
+		(uuid "43fca366-46fb-4ddf-8ad7-e0ae0dd20678")
 	)
 	(label "ROW7"
 		(at 105.41 119.38 180)
@@ -18745,10 +17953,32 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "f9a1007b-7e1e-4dba-8d66-c26a564170dc")
+		(uuid "4a5b363a-1b77-4c69-b598-0011735b38ac")
 	)
-	(label "ROW7"
-		(at 120.65 77.47 0)
+	(label "ROW2"
+		(at 105.41 134.62 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "582c07d6-310e-4fba-aea8-9d3cb2d58636")
+	)
+	(label "ROW31"
+		(at 105.41 58.42 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "5bbba804-314a-4af8-9af9-7995fec1dec1")
+	)
+	(label "ROW13"
+		(at 120.65 115.57 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -18756,7 +17986,18 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "fd098d09-ed9c-4884-a8cd-17d4d206fe34")
+		(uuid "5bcfd8d7-b285-48b5-8c43-cfe657a833f9")
+	)
+	(label "ROW24"
+		(at 120.65 186.69 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "5ca54f69-5e64-49ea-979a-89a5540f4901")
 	)
 	(label "ROW19"
 		(at 105.41 91.44 180)
@@ -18767,7 +18008,766 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "ff7e5494-ccd1-4648-838a-878e09f2354d")
+		(uuid "5e6e4378-0c83-45b0-a652-61cdd527e9bd")
+	)
+	(label "ROW21"
+		(at 120.65 167.64 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "6477897f-ce2c-4c4f-ae2e-7af4f4ab78e7")
+	)
+	(label "ROW32"
+		(at 120.65 234.95 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "64e6a2e9-42b9-4d60-98e5-b557fbea533d")
+	)
+	(label "ROW32"
+		(at 105.41 60.96 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "68d8eaee-f951-4dd7-a999-33c32ae17060")
+	)
+	(label "ROW10"
+		(at 120.65 96.52 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "6c984c86-3e6a-4be4-8fe6-e3a1042391fd")
+	)
+	(label "COL4"
+		(at 208.28 25.4 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "6e8912db-8d3f-4ef8-89b2-6cd9f558d729")
+	)
+	(label "COL6"
+		(at 46.99 121.92 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "6f31e8ba-192d-429b-ab37-48c6fe89a88e")
+	)
+	(label "COL1"
+		(at 170.18 25.4 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "7061e8d0-b260-451c-999c-b9bb2c9ada70")
+	)
+	(label "ROW8"
+		(at 120.65 82.55 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "70f2112f-db93-4e53-8faf-c3c3522283db")
+	)
+	(label "ROW27"
+		(at 105.41 48.26 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "7360ca3d-897a-456d-9295-6c41adf60ec3")
+	)
+	(label "ROW11"
+		(at 105.41 114.3 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "7b8523e0-bca4-4324-8dfd-c72488fd83db")
+	)
+	(label "COL0"
+		(at 46.99 129.54 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "7c3344dc-4fef-47e8-9732-92ec01bd7c87")
+	)
+	(label "ROW4"
+		(at 105.41 129.54 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "7e5101df-ad36-4a44-9917-2174767b1025")
+	)
+	(label "ROW34"
+		(at 120.65 248.92 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "7e607be1-315d-425f-ae70-9174ca21e582")
+	)
+	(label "ROW25"
+		(at 120.65 191.77 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "7e9655fd-4060-4f3f-ad84-0126114bae8d")
+	)
+	(label "ROW10"
+		(at 105.41 111.76 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "80626baa-2330-44ed-b1a4-c753120c65aa")
+	)
+	(label "ROW20"
+		(at 105.41 88.9 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "807383b0-b119-485f-9976-8f5e99afe57f")
+	)
+	(label "ROW14"
+		(at 105.41 106.68 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "84fad2f8-1279-4aab-a113-37149a97c740")
+	)
+	(label "ROW28"
+		(at 120.65 210.82 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "8ff8ca32-2d83-4f9c-bd6e-e184136fafa3")
+	)
+	(label "ROW14"
+		(at 120.65 120.65 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "917de09b-e1a2-4a56-8532-49ed4b0f70fc")
+	)
+	(label "ROW6"
+		(at 105.41 116.84 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "93f11bd0-ad34-4c4d-b3cd-a3878dde84ce")
+	)
+	(label "ROW3"
+		(at 105.41 124.46 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "97df8771-c0cc-40cd-a8df-2dc611c51ba8")
+	)
+	(label "ROW13"
+		(at 105.41 104.14 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "98d02baf-260a-4518-9503-fbdc902fc579")
+	)
+	(label "ROW2"
+		(at 120.65 44.45 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9a3afafe-de12-48fd-9155-bc6a61183479")
+	)
+	(label "ROW9"
+		(at 120.65 91.44 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9a4c0b10-4dd9-459f-9081-ce732534f188")
+	)
+	(label "COL5"
+		(at 220.98 25.4 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9a6b640a-7696-438f-b508-beebffc725ba")
+	)
+	(label "ROW6"
+		(at 120.65 72.39 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9bcc3da4-50e4-4186-b96a-7b8ed92369af")
+	)
+	(label "COL2"
+		(at 182.88 25.4 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9c511117-7a31-448d-b910-81d8cd395030")
+	)
+	(label "ROW19"
+		(at 120.65 153.67 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9ebd4186-fd51-4f89-8abd-bb56b89851e7")
+	)
+	(label "COL8"
+		(at 46.99 116.84 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "a129508a-6b01-49a8-a33d-1cab8e790428")
+	)
+	(label "ROW26"
+		(at 120.65 196.85 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "a7f80608-8703-47b4-848b-4213109bd126")
+	)
+	(label "ROW1"
+		(at 105.41 137.16 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "a84fb8f7-c680-4f3f-8383-0aad8ed4c42c")
+	)
+	(label "ROW17"
+		(at 120.65 139.7 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "a9bb18b8-516a-4205-8abe-b58089e86c4e")
+	)
+	(label "ROW29"
+		(at 105.41 53.34 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "aa0e337a-4d7f-4b89-8335-26c604078d61")
+	)
+	(label "ROW17"
+		(at 105.41 99.06 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "ab014e6a-2d32-472e-a1e2-45fa507b9407")
+	)
+	(label "COL3"
+		(at 195.58 25.4 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "ae40ce02-6bbb-485d-bc50-5b582feff808")
+	)
+	(label "COL7"
+		(at 246.38 25.4 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "b0e6c4fb-f828-4b8a-b235-133619bf434d")
+	)
+	(label "ROW25"
+		(at 105.41 81.28 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "b25faf13-c765-4e43-b5a9-a67f290b1958")
+	)
+	(label "ROW36"
+		(at 120.65 262.89 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "b391da8e-3fd5-4f64-9f00-baf0e8684873")
+	)
+	(label "ROW30"
+		(at 105.41 55.88 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "b79ccb74-e80e-4521-a001-1260a3da30d5")
+	)
+	(label "ROW22"
+		(at 120.65 172.72 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "b9ec9dcf-78c3-45d0-be4b-8a1ee5940f1b")
+	)
+	(label "COL8"
+		(at 259.08 25.4 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "ba03a650-4cfc-4c60-9082-c59f285d0ceb")
+	)
+	(label "ROW23"
+		(at 120.65 177.8 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "bf55bff3-f118-401e-b24d-9da84e299610")
+	)
+	(label "ROW38"
+		(at 105.41 45.72 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "bfd1ac14-ce63-49d1-9211-a178dd80373f")
+	)
+	(label "ROW38"
+		(at 120.65 273.05 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "c4a69fc5-09bc-49bd-aa83-cf463d7d4b73")
+	)
+	(label "ROW5"
+		(at 120.65 63.5 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "c78c5eb7-8c55-4511-ad0a-fe8b8687e328")
+	)
+	(label "ROW1"
+		(at 120.65 39.37 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "ca9472ea-a900-4b72-88a6-14344c481c4f")
+	)
+	(label "ROW21"
+		(at 105.41 71.12 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "cabde203-cfe1-49d5-8090-ef8b85f2bcbc")
+	)
+	(label "ROW33"
+		(at 105.41 63.5 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "cc2ed667-8815-4d89-8c62-63ebd7e2a459")
+	)
+	(label "ROW11"
+		(at 120.65 101.6 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "ce8296df-a130-4b03-949c-3e1d90dbdd2c")
+	)
+	(label "ROW35"
+		(at 105.41 68.58 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "cecd1b9a-4b64-4be6-b63f-4e0152539d2f")
+	)
+	(label "ROW28"
+		(at 105.41 50.8 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "d4308ebf-275c-4527-9ae0-798c0a20655b")
+	)
+	(label "ROW37"
+		(at 105.41 43.18 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "d67ffe74-970b-42de-be93-f8dcb51e6829")
+	)
+	(label "ROW20"
+		(at 120.65 158.75 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "d7049296-b176-4f80-a9c6-feac437e43d4")
+	)
+	(label "COL0"
+		(at 157.48 25.4 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "dc4702f6-63a7-4f58-9a9f-9dfe5e048dd2")
+	)
+	(label "ROW12"
+		(at 120.65 110.49 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "dc5b8579-b8c1-4bd5-8d01-0bcaf746b485")
+	)
+	(label "ROW16"
+		(at 120.65 134.62 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "dd4b0fbc-5103-438a-819e-df79207ff94f")
+	)
+	(label "ROW7"
+		(at 120.65 77.47 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "de9bf4dd-cbd5-4095-be80-fdd9c848f242")
+	)
+	(label "COL6"
+		(at 233.68 25.4 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "e3025cec-786b-4685-ab6c-410b986781cd")
+	)
+	(label "ROW22"
+		(at 105.41 73.66 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "e6f76eb7-214c-4078-8948-fb4f05410063")
+	)
+	(label "ROW23"
+		(at 105.41 76.2 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "e77f610a-7859-44a3-894c-684cc4b5f7d6")
+	)
+	(label "ROW0"
+		(at 120.65 34.29 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "eac4a050-5005-4414-a582-0fc678e9277e")
+	)
+	(label "ROW12"
+		(at 105.41 101.6 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "eba3a85d-f83a-4b5f-8008-65015255354e")
+	)
+	(label "ROW3"
+		(at 120.65 53.34 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "f52f6ff9-cd69-43c5-9e01-1cb68b445215")
+	)
+	(label "ROW4"
+		(at 120.65 58.42 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "f63731a0-acb1-4b94-b74d-0f5ad0081892")
+	)
+	(label "ROW0"
+		(at 105.41 132.08 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "f763b22b-be58-4794-9f38-c728ff3e20cb")
+	)
+	(label "ROW9"
+		(at 105.41 109.22 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "f9f7a1b2-53cf-4599-8fc8-7f413315e664")
+	)
+	(label "ROW31"
+		(at 120.65 229.87 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "fa48dfc2-dd06-4b5c-9abf-6efbc4ac127e")
+	)
+	(label "ROW18"
+		(at 105.41 86.36 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "fdaeaab1-1ffe-407a-99f8-a9a5566ddd5d")
+	)
+	(label "COL7"
+		(at 46.99 119.38 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "fdbea827-d1dd-4ee7-80e6-f8b13b2e287e")
 	)
 	(hierarchical_label "SDA1"
 		(shape input)
@@ -18779,19 +18779,7 @@
 			)
 			(justify right)
 		)
-		(uuid "29c79449-c403-471b-b92c-aef8e157f0e7")
-	)
-	(hierarchical_label "SDB1"
-		(shape input)
-		(at 33.02 88.9 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "a54ef4d1-d444-47a0-bb05-bd1069b8d3f3")
+		(uuid "2bea648e-99d3-4688-8b33-4a9048a551e3")
 	)
 	(hierarchical_label "INT1"
 		(shape input)
@@ -18803,7 +18791,7 @@
 			)
 			(justify right)
 		)
-		(uuid "c920574b-d8b5-4b8e-88d4-5a6f011bc28b")
+		(uuid "658f5deb-e661-49a1-be6c-f0b5ad23abdb")
 	)
 	(hierarchical_label "SCL1"
 		(shape input)
@@ -18815,7 +18803,19 @@
 			)
 			(justify right)
 		)
-		(uuid "e12c17fd-1f9e-4e86-aaf7-b230f24f1686")
+		(uuid "6afdd359-2b52-4010-8da2-3d801be0d68d")
+	)
+	(hierarchical_label "SDB1"
+		(shape input)
+		(at 33.02 88.9 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "d9cee0f7-5c77-43e2-9caa-6b8c05c431f3")
 	)
 	(symbol
 		(lib_id "Device:LED_RABG")
@@ -18886,281 +18886,6 @@
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
 					(reference "LED44")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:LED_RABG")
-		(at 165.1 209.55 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "0379f705-4126-42ca-8681-dc05c93d91e4")
-		(property "Reference" "LED110"
-			(at 163.195 200.025 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "LED_ARGB"
-			(at 165.1 198.12 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 165.1 210.82 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 165.1 210.82 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 165.1 209.55 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "e2b9cfc8-1685-4e50-ba81-ab7be1e8e6a8")
-		)
-		(pin "4"
-			(uuid "ab3131a3-edd1-40ff-80f2-9ff450643f0a")
-		)
-		(pin "2"
-			(uuid "61a64d71-e742-496c-93ec-7a0f1ecb81e9")
-		)
-		(pin "3"
-			(uuid "ee2d31b2-ab86-4948-a2f5-de42086a3082")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED110")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 40.64 104.14 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "05f7102c-a77f-458a-90cf-fc6293fbe224")
-		(property "Reference" "#PWR033"
-			(at 40.64 110.49 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 40.64 109.22 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" ""
-			(at 40.64 104.14 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 40.64 104.14 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 40.64 104.14 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "a47e8db3-da95-4434-a325-d94dc7c2c547")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "#PWR033")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 91.44 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "073dd7ca-94c6-4c38-90b8-a011d2ddb73f")
-		(property "Reference" "R24"
-			(at 133.985 90.17 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "51"
-			(at 139.7 90.17 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 91.44 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 91.44 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 91.44 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "a8fe56ea-9162-4644-95dd-bf2ef6e3bc5e")
-		)
-		(pin "2"
-			(uuid "710f0b8f-3510-46f1-91d3-c46359ef637a")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R24")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 172.72 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "074cc483-48cc-44d7-ac53-2e4e1b1876ce")
-		(property "Reference" "R38"
-			(at 133.985 171.45 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "20"
-			(at 139.7 171.45 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 172.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 172.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 172.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "f8e62aa6-1a92-4618-8260-850ac72ebbe1")
-		)
-		(pin "2"
-			(uuid "04fa0f81-bdf3-42ff-bb3b-a3fbcd6cc93a")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R38")
 					(unit 1)
 				)
 			)
@@ -19315,6 +19040,73 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 248.92 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "09c947f5-33fc-4b2f-9578-4e5c0704ab7a")
+		(property "Reference" "R50"
+			(at 133.985 247.65 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "20"
+			(at 139.7 247.65 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "75d1e758-a520-43fb-bf78-02eac9df2a9d")
+		)
+		(pin "2"
+			(uuid "e8b66e8c-b4e3-4644-b43b-ace2562a35f8")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R50")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:LED_RABG")
 		(at 241.3 247.65 0)
 		(unit 1)
@@ -19463,32 +19255,33 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 44.45 90)
+		(lib_id "Device:LED_RABG")
+		(at 165.1 171.45 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "0d94a07a-d026-4593-831e-622fa0a48632")
-		(property "Reference" "R13"
-			(at 133.985 43.18 90)
+		(uuid "0e12f909-b96a-405d-ab2b-cac72c5e7c3b")
+		(property "Reference" "LED83"
+			(at 163.195 161.925 0)
 			(effects
 				(font
 					(size 1 1)
 				)
 			)
 		)
-		(property "Value" "20"
-			(at 139.7 43.18 90)
+		(property "Value" "LED_ARGB"
+			(at 165.1 160.02 0)
 			(effects
 				(font
-					(size 1 1)
+					(size 1.27 1.27)
 				)
+				(hide yes)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 44.45 0)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 165.1 172.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -19497,7 +19290,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 44.45 0)
+			(at 165.1 172.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -19505,8 +19298,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 44.45 0)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 165.1 171.45 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -19515,15 +19308,21 @@
 			)
 		)
 		(pin "1"
-			(uuid "041d1e8d-b030-4cc5-be95-6bad1bcac17b")
+			(uuid "d3c08eb8-7498-4cce-aa0d-b983cac54030")
+		)
+		(pin "4"
+			(uuid "042852c2-636f-4574-97f2-ab19d0325201")
 		)
 		(pin "2"
-			(uuid "d530e193-73a8-485f-ae3e-2bbd0260f774")
+			(uuid "1857b880-2151-429e-bbc0-8555a777365d")
+		)
+		(pin "3"
+			(uuid "32c55ad9-454c-42e9-a3f3-446f8b4beed3")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R13")
+					(reference "LED83")
 					(unit 1)
 				)
 			)
@@ -19605,15 +19404,15 @@
 	)
 	(symbol
 		(lib_id "Device:R_Small_US")
-		(at 137.16 39.37 90)
+		(at 137.16 153.67 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "0f71c65e-8c05-47fb-b846-207695390a22")
-		(property "Reference" "R12"
-			(at 133.985 38.1 90)
+		(uuid "11e9d53d-3fdf-4b09-82a2-aba5b18f7b0e")
+		(property "Reference" "R35"
+			(at 133.985 152.4 90)
 			(effects
 				(font
 					(size 1 1)
@@ -19621,7 +19420,7 @@
 			)
 		)
 		(property "Value" "20"
-			(at 139.7 38.1 90)
+			(at 139.7 152.4 90)
 			(effects
 				(font
 					(size 1 1)
@@ -19629,7 +19428,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 39.37 0)
+			(at 137.16 153.67 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -19638,7 +19437,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 39.37 0)
+			(at 137.16 153.67 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -19647,7 +19446,7 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
-			(at 137.16 39.37 0)
+			(at 137.16 153.67 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -19656,82 +19455,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "786aced6-88bf-4bbb-ae2a-5e8cfa7a3c4b")
+			(uuid "1212e43f-47f1-4b09-9536-29f9cf0ebf82")
 		)
 		(pin "2"
-			(uuid "dde15792-125c-47c9-98b5-052c67e557c9")
+			(uuid "38a2c1d2-e466-441f-9ecb-48b1a47e611b")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R12")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 248.92 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "100ac635-2bc9-41e0-8167-9458e335671c")
-		(property "Reference" "R50"
-			(at 133.985 247.65 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "20"
-			(at 139.7 247.65 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 248.92 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 248.92 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 248.92 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "75d1e758-a520-43fb-bf78-02eac9df2a9d")
-		)
-		(pin "2"
-			(uuid "e8b66e8c-b4e3-4644-b43b-ace2562a35f8")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R50")
+					(reference "R35")
 					(unit 1)
 				)
 			)
@@ -19961,15 +19693,15 @@
 	)
 	(symbol
 		(lib_id "Device:R_Small_US")
-		(at 137.16 210.82 90)
+		(at 137.16 134.62 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "16b660ca-e94a-4063-b158-911ab5483543")
-		(property "Reference" "R44"
-			(at 133.985 209.55 90)
+		(uuid "1502fa7c-7256-4177-b8ec-06d5659e55aa")
+		(property "Reference" "R32"
+			(at 133.985 133.35 90)
 			(effects
 				(font
 					(size 1 1)
@@ -19977,7 +19709,7 @@
 			)
 		)
 		(property "Value" "20"
-			(at 139.7 209.55 90)
+			(at 139.7 133.35 90)
 			(effects
 				(font
 					(size 1 1)
@@ -19985,7 +19717,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 210.82 0)
+			(at 137.16 134.62 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -19994,7 +19726,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 210.82 0)
+			(at 137.16 134.62 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -20003,7 +19735,7 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
-			(at 137.16 210.82 0)
+			(at 137.16 134.62 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -20012,15 +19744,149 @@
 			)
 		)
 		(pin "1"
-			(uuid "63a16549-a876-4e58-bb92-40ded0e21b1a")
+			(uuid "76c0c0ec-909c-4d8e-a6fc-33dbc3e062fa")
 		)
 		(pin "2"
-			(uuid "d03f0016-ac50-499e-a25f-cbc7d1272914")
+			(uuid "681243df-3ee0-4564-b7dc-47eb2f372896")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R44")
+					(reference "R32")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 50.8 45.72 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "1caf0299-9aae-42b3-becf-1a81fa010bdb")
+		(property "Reference" "#PWR025"
+			(at 50.8 52.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 50.8 50.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 50.8 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 50.8 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 50.8 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "666125aa-2519-4dad-b424-ccdcc1c19c34")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "#PWR025")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 39.37 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "1dd6795d-b3a3-4d7e-aa12-b7e083af51ac")
+		(property "Reference" "R12"
+			(at 133.985 38.1 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "20"
+			(at 139.7 38.1 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 39.37 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 39.37 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 39.37 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "786aced6-88bf-4bbb-ae2a-5e8cfa7a3c4b")
+		)
+		(pin "2"
+			(uuid "dde15792-125c-47c9-98b5-052c67e557c9")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R12")
 					(unit 1)
 				)
 			)
@@ -20323,147 +20189,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 57.15 45.72 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "207fcd4d-6fe1-4b58-bed6-512ee4ba350b")
-		(property "Reference" "#PWR026"
-			(at 57.15 52.07 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 57.15 50.8 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" ""
-			(at 57.15 45.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 57.15 45.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 57.15 45.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "848c5a93-ad8f-4699-bbc8-ab19640b10a1")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "#PWR026")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:LED_RABG")
-		(at 165.1 38.1 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "2200affa-fe2a-438c-be6d-0f16190ce352")
-		(property "Reference" "LED2"
-			(at 163.195 28.575 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "LED_ARGB"
-			(at 165.1 26.67 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 165.1 39.37 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 165.1 39.37 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 165.1 38.1 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "d68576ec-5aff-4c2b-a977-53e1109b7b6e")
-		)
-		(pin "4"
-			(uuid "efc71598-fd93-44d1-ab45-88f15b1a2590")
-		)
-		(pin "2"
-			(uuid "5549c93e-8e44-4339-aa18-46824e0d8b64")
-		)
-		(pin "3"
-			(uuid "e1970389-8a1c-4e8f-8e9f-31673486f20b")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED2")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:LED_RABG")
 		(at 215.9 228.6 0)
 		(unit 1)
@@ -20686,136 +20411,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:+3.3V")
-		(at 36.83 74.93 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "25e4c42e-5ee4-4c22-abf2-9334dbcff5e4")
-		(property "Reference" "#PWR032"
-			(at 36.83 78.74 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "+3.3V"
-			(at 36.195 71.12 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 36.83 74.93 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 36.83 74.93 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
-			(at 36.83 74.93 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "bf48a8e9-ef16-4c7f-afdc-6a64db9b0fda")
-		)
-		(instances
-			(project "traffic_paradise"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "#PWR032")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:+3.3V")
-		(at 40.64 74.93 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "26824449-8a48-4f55-8b82-425cc7af98e9")
-		(property "Reference" "#PWR035"
-			(at 40.64 78.74 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "+3.3V"
-			(at 41.275 71.12 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 40.64 74.93 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 40.64 74.93 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
-			(at 40.64 74.93 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "b36c6810-8e7e-4621-b79f-96038afacb92")
-		)
-		(instances
-			(project "traffic_paradise"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "#PWR035")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:LED_RABG")
 		(at 241.3 171.45 0)
 		(unit 1)
@@ -20884,6 +20479,140 @@
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
 					(reference "LED89")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 44.45 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "2986c1df-ecaf-4411-bac2-35c20bd23006")
+		(property "Reference" "R13"
+			(at 133.985 43.18 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "20"
+			(at 139.7 43.18 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 44.45 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 44.45 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 44.45 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "041d1e8d-b030-4cc5-be95-6bad1bcac17b")
+		)
+		(pin "2"
+			(uuid "d530e193-73a8-485f-ae3e-2bbd0260f774")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R13")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 34.29 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "2a640134-b5a0-47d7-80e5-cbb60e607a65")
+		(property "Reference" "R11"
+			(at 133.985 33.02 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "51"
+			(at 139.7 33.02 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 34.29 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 34.29 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 34.29 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "b71a28c9-255a-44a5-b72f-c9c98d74bdeb")
+		)
+		(pin "2"
+			(uuid "98b86be4-39ea-4ce8-86d7-606fa0666b38")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R11")
 					(unit 1)
 				)
 			)
@@ -21113,15 +20842,15 @@
 	)
 	(symbol
 		(lib_id "Device:R_Small_US")
-		(at 137.16 215.9 90)
+		(at 137.16 58.42 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "2ff57208-9ec4-4b55-966d-2bda3b0dd4a1")
-		(property "Reference" "R45"
-			(at 133.985 214.63 90)
+		(uuid "2f8d160e-9c8e-4645-965a-11befd9ea249")
+		(property "Reference" "R15"
+			(at 133.985 57.15 90)
 			(effects
 				(font
 					(size 1 1)
@@ -21129,7 +20858,7 @@
 			)
 		)
 		(property "Value" "20"
-			(at 139.7 214.63 90)
+			(at 139.7 57.15 90)
 			(effects
 				(font
 					(size 1 1)
@@ -21137,7 +20866,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 215.9 0)
+			(at 137.16 58.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21146,7 +20875,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 215.9 0)
+			(at 137.16 58.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21155,7 +20884,7 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
-			(at 137.16 215.9 0)
+			(at 137.16 58.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21164,15 +20893,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "bdb45045-ee04-4fc6-bf8a-d1c3227f8c80")
+			(uuid "a5433ef4-d640-4cbe-8f04-7dadf93b6155")
 		)
 		(pin "2"
-			(uuid "83f54bd5-f159-4f39-98a2-81d72515caf4")
+			(uuid "d365f76f-3265-4637-b4f3-a6c338edc50f")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R45")
+					(reference "R15")
 					(unit 1)
 				)
 			)
@@ -21475,73 +21204,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 82.55 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "3831026a-dca0-4944-8b24-7c467788dc04")
-		(property "Reference" "R23"
-			(at 133.985 81.28 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "20"
-			(at 139.7 81.28 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 82.55 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 82.55 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 82.55 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "3f9f55c9-1130-4a7c-814d-95d2209d1119")
-		)
-		(pin "2"
-			(uuid "ba5dd888-e689-4230-adb5-099e8bfcb3c3")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R23")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:LED_RABG")
 		(at 190.5 228.6 0)
 		(unit 1)
@@ -21616,17 +21278,24 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 73.66 144.78 0)
+		(lib_id "Device:LED_RABG")
+		(at 165.1 38.1 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "38aa9a5f-d985-49dc-b1f4-bf978941d7ec")
-		(property "Reference" "#PWR034"
-			(at 73.66 151.13 0)
+		(uuid "39814e92-c962-4a27-8c58-73da057a6806")
+		(property "Reference" "LED2"
+			(at 163.195 28.575 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 165.1 26.67 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21634,8 +21303,8 @@
 				(hide yes)
 			)
 		)
-		(property "Value" "GND"
-			(at 73.66 149.86 0)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 165.1 39.37 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21643,8 +21312,8 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" ""
-			(at 73.66 144.78 0)
+		(property "Datasheet" "~"
+			(at 165.1 39.37 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21652,17 +21321,8 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
-			(at 73.66 144.78 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 73.66 144.78 0)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 165.1 38.1 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21671,12 +21331,21 @@
 			)
 		)
 		(pin "1"
-			(uuid "7e964f4a-392d-4056-a97d-0d5bf97b792f")
+			(uuid "d68576ec-5aff-4c2b-a977-53e1109b7b6e")
+		)
+		(pin "4"
+			(uuid "efc71598-fd93-44d1-ab45-88f15b1a2590")
+		)
+		(pin "2"
+			(uuid "5549c93e-8e44-4339-aa18-46824e0d8b64")
+		)
+		(pin "3"
+			(uuid "e1970389-8a1c-4e8f-8e9f-31673486f20b")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "#PWR034")
+					(reference "LED2")
 					(unit 1)
 				)
 			)
@@ -21831,6 +21500,147 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 205.74 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "4024378d-84e4-45d8-8ef4-5df8c73e582d")
+		(property "Reference" "R43"
+			(at 133.985 204.47 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "51"
+			(at 139.7 204.47 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 205.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 205.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 205.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "22c924c5-cd5c-4354-b2ce-f6252f2458b6")
+		)
+		(pin "2"
+			(uuid "5121a90f-5e73-4c72-b0c9-5d5a63506f06")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R43")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 177.8 57.15 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "40742ffc-3e9c-4b57-923b-677b5d20f269")
+		(property "Reference" "LED12"
+			(at 175.895 47.625 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 177.8 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 177.8 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 177.8 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 177.8 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "424f44dd-9f25-443a-bfb5-31a97145a549")
+		)
+		(pin "4"
+			(uuid "a28ef820-eddf-4292-bbac-27d66fcbe6de")
+		)
+		(pin "2"
+			(uuid "fbe61a2a-fd88-493f-ad63-425dd911e37a")
+		)
+		(pin "3"
+			(uuid "d5baecee-e006-4941-9538-aa58d1abc39e")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "LED12")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:LED_RABG")
 		(at 254 190.5 0)
 		(unit 1)
@@ -21905,140 +21715,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 167.64 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "436b2d35-7eef-4b71-bc7c-a6b794c6f22e")
-		(property "Reference" "R37"
-			(at 133.985 166.37 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "51"
-			(at 139.7 166.37 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 167.64 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 167.64 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 167.64 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "68df5bbc-0475-4416-bdec-a2abf9352c6a")
-		)
-		(pin "2"
-			(uuid "a625580b-ca50-4a7d-9712-752dd5f39f7e")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R37")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 53.34 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "43a09841-6e0c-4bc5-b22e-bed4d03e526b")
-		(property "Reference" "R14"
-			(at 133.985 52.07 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "51"
-			(at 139.7 52.07 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 53.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 53.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 53.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "4dfad4f5-9f7d-44d1-94d7-e3d40ea679e3")
-		)
-		(pin "2"
-			(uuid "9aec8ef7-4273-4725-826f-bda66ed3590c")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R14")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:LED_RABG")
 		(at 177.8 209.55 0)
 		(unit 1)
@@ -22107,140 +21783,6 @@
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
 					(reference "LED111")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 36.83 77.47 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "459c440b-a12c-4428-9895-20e653c0a20e")
-		(property "Reference" "R18"
-			(at 38.735 74.93 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "4.7k"
-			(at 38.735 80.01 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 36.83 77.47 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 36.83 77.47 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 36.83 77.47 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "e8763ffc-f84e-497f-b7fa-411852996c90")
-		)
-		(pin "2"
-			(uuid "c4e0392f-d0d0-414f-a9bd-da3085335a63")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R18")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 63.5 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "4600dbe9-198c-4fe8-b37b-a743d66041a9")
-		(property "Reference" "R16"
-			(at 133.985 62.23 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "20"
-			(at 139.7 62.23 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 63.5 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 63.5 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 63.5 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "bd140087-dbf4-4dc0-a8b7-7cc51e4d0e09")
-		)
-		(pin "2"
-			(uuid "a0754b94-5096-41f9-8180-2454624a2635")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R16")
 					(unit 1)
 				)
 			)
@@ -22543,32 +22085,17 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 153.67 90)
+		(lib_id "power:GND")
+		(at 55.88 55.88 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "4b82b4fe-0cee-436a-8def-2d712d288aac")
-		(property "Reference" "R35"
-			(at 133.985 152.4 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "20"
-			(at 139.7 152.4 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 153.67 0)
+		(fields_autoplaced yes)
+		(uuid "4c213f9f-aad8-41fb-9f39-9bef7e98ad87")
+		(property "Reference" "#PWR028"
+			(at 55.88 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -22576,8 +22103,8 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
-			(at 137.16 153.67 0)
+		(property "Value" "GND"
+			(at 55.88 60.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -22585,8 +22112,26 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 153.67 0)
+		(property "Footprint" ""
+			(at 55.88 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 55.88 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 55.88 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -22595,15 +22140,227 @@
 			)
 		)
 		(pin "1"
-			(uuid "1212e43f-47f1-4b09-9536-29f9cf0ebf82")
-		)
-		(pin "2"
-			(uuid "38a2c1d2-e466-441f-9ecb-48b1a47e611b")
+			(uuid "e0d4f8e7-1d1c-4de7-93ef-26d4a9cb13a8")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R35")
+					(reference "#PWR028")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 63.5 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "4df7a803-1ac7-4acc-a31b-2599bd984c89")
+		(property "Reference" "R16"
+			(at 133.985 62.23 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "20"
+			(at 139.7 62.23 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 63.5 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 63.5 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 63.5 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "bd140087-dbf4-4dc0-a8b7-7cc51e4d0e09")
+		)
+		(pin "2"
+			(uuid "a0754b94-5096-41f9-8180-2454624a2635")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R16")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 152.4 95.25 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "4e4b28d2-35fe-45b0-8933-2615588fd25a")
+		(property "Reference" "LED28"
+			(at 150.495 85.725 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 152.4 83.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 152.4 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 152.4 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 152.4 95.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "0ed9c3b5-c5d3-49f7-9a8c-3e76359581db")
+		)
+		(pin "4"
+			(uuid "4d496224-2fb9-49a1-b4ec-c189572c3091")
+		)
+		(pin "2"
+			(uuid "e4761ba8-e89d-4e92-b93e-50b1b2028c61")
+		)
+		(pin "3"
+			(uuid "9d5b5bf8-e921-4237-9521-db10841515ac")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "LED28")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 152.4 76.2 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "4f4c3f8a-fed3-470f-92be-8ec3db18b526")
+		(property "Reference" "LED19"
+			(at 150.495 66.675 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 152.4 64.77 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 152.4 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 152.4 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 152.4 76.2 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "fc5d5c57-b98f-432f-a670-2c4eb527c3c2")
+		)
+		(pin "4"
+			(uuid "3197a9c3-fa96-45a7-a886-d14163af1ad6")
+		)
+		(pin "2"
+			(uuid "fb2e90f6-9c15-4f3f-8d8a-a1323d1a79fc")
+		)
+		(pin "3"
+			(uuid "faba9348-bd8a-4ea5-8857-3f3034860711")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "LED19")
 					(unit 1)
 				)
 			)
@@ -22685,15 +22442,15 @@
 	)
 	(symbol
 		(lib_id "Device:R_Small_US")
-		(at 137.16 58.42 90)
+		(at 137.16 177.8 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "54f05d2f-d83d-40a7-9c6b-652d5cf6cc27")
-		(property "Reference" "R15"
-			(at 133.985 57.15 90)
+		(uuid "546b2f08-d00a-4117-a2da-e6c8bb603380")
+		(property "Reference" "R39"
+			(at 133.985 176.53 90)
 			(effects
 				(font
 					(size 1 1)
@@ -22701,7 +22458,7 @@
 			)
 		)
 		(property "Value" "20"
-			(at 139.7 57.15 90)
+			(at 139.7 176.53 90)
 			(effects
 				(font
 					(size 1 1)
@@ -22709,7 +22466,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 58.42 0)
+			(at 137.16 177.8 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -22718,7 +22475,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 58.42 0)
+			(at 137.16 177.8 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -22727,7 +22484,7 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
-			(at 137.16 58.42 0)
+			(at 137.16 177.8 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -22736,15 +22493,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "a5433ef4-d640-4cbe-8f04-7dadf93b6155")
+			(uuid "7c939018-be59-46f9-ac35-4ef621cfb2d7")
 		)
 		(pin "2"
-			(uuid "d365f76f-3265-4637-b4f3-a6c338edc50f")
+			(uuid "90cffff3-70bc-4ed8-857f-ec5a82f1a1cd")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R15")
+					(reference "R39")
 					(unit 1)
 				)
 			)
@@ -22752,15 +22509,15 @@
 	)
 	(symbol
 		(lib_id "Device:R_Small_US")
-		(at 137.16 101.6 90)
+		(at 137.16 196.85 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "554e4ac4-ff58-4203-aff8-dc0434375521")
-		(property "Reference" "R26"
-			(at 133.985 100.33 90)
+		(uuid "55ce8045-949d-4ebf-8cc0-8100d6c0f383")
+		(property "Reference" "R42"
+			(at 133.985 195.58 90)
 			(effects
 				(font
 					(size 1 1)
@@ -22768,7 +22525,7 @@
 			)
 		)
 		(property "Value" "20"
-			(at 139.7 100.33 90)
+			(at 139.7 195.58 90)
 			(effects
 				(font
 					(size 1 1)
@@ -22776,7 +22533,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 101.6 0)
+			(at 137.16 196.85 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -22785,7 +22542,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 101.6 0)
+			(at 137.16 196.85 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -22794,7 +22551,7 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
-			(at 137.16 101.6 0)
+			(at 137.16 196.85 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -22803,15 +22560,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "159dd240-e774-45b8-bcf6-3bb14ee19fc8")
+			(uuid "7fbdeb20-9bc5-4024-977c-c09782418666")
 		)
 		(pin "2"
-			(uuid "5c199828-c41f-418a-91b0-8a121bd67265")
+			(uuid "794a621d-a315-4655-b9df-e210cd16a484")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R26")
+					(reference "R42")
 					(unit 1)
 				)
 			)
@@ -22886,6 +22643,73 @@
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
 					(reference "LED502")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 96.52 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "56cabce6-1035-4713-aff2-456e5af362bc")
+		(property "Reference" "R25"
+			(at 133.985 95.25 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "20"
+			(at 139.7 95.25 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "7ac8a9aa-c307-4710-b683-950ca9c5e494")
+		)
+		(pin "2"
+			(uuid "beaf5604-1934-42d7-8f1c-13012baad13a")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R25")
 					(unit 1)
 				)
 			)
@@ -23040,16 +22864,90 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 72.39 90)
+		(lib_id "Device:LED_RABG")
+		(at 152.4 57.15 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "58ae7d36-bc2e-4ba5-9ead-7ba557eb40db")
-		(property "Reference" "R17"
-			(at 133.985 71.12 90)
+		(uuid "584b1cb1-41f9-42d1-966b-b0e735225ca3")
+		(property "Reference" "LED10"
+			(at 150.495 47.625 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 152.4 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 152.4 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 152.4 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 152.4 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "1d847c96-f5ec-46bb-929e-43db4dcca704")
+		)
+		(pin "4"
+			(uuid "a3de04c2-3476-45f0-b657-6f17d484c212")
+		)
+		(pin "2"
+			(uuid "3ac00c29-93a9-4b60-a449-30c9b05d2320")
+		)
+		(pin "3"
+			(uuid "c7566247-5dac-4f00-bb7f-b99120391da0")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "LED10")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 262.89 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "5ea6a0d3-9ced-4724-bfc2-108a1c8e277e")
+		(property "Reference" "R52"
+			(at 133.985 261.62 90)
 			(effects
 				(font
 					(size 1 1)
@@ -23057,7 +22955,7 @@
 			)
 		)
 		(property "Value" "51"
-			(at 139.7 71.12 90)
+			(at 139.7 261.62 90)
 			(effects
 				(font
 					(size 1 1)
@@ -23065,7 +22963,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 72.39 0)
+			(at 137.16 262.89 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -23074,7 +22972,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 72.39 0)
+			(at 137.16 262.89 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -23083,7 +22981,7 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
-			(at 137.16 72.39 0)
+			(at 137.16 262.89 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -23092,149 +22990,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "0e8151c2-e887-4e37-807f-f22bcd930219")
+			(uuid "e022f4c2-7cb1-40a9-84bf-09bfb12f0382")
 		)
 		(pin "2"
-			(uuid "086ca925-b4e1-48d4-8162-8e04d95b883e")
+			(uuid "bd8426e4-4aa6-4148-9a2b-7404a0b89b8e")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R17")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 49.53 55.88 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "5bd6f3be-4bd5-4549-9fb4-678b7e4af7d9")
-		(property "Reference" "#PWR027"
-			(at 49.53 62.23 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 49.53 60.96 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" ""
-			(at 49.53 55.88 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 49.53 55.88 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 49.53 55.88 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "a9433d4e-afaa-4960-bc75-d4bc50dc1088")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "#PWR027")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 96.52 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "5debdc28-4149-42ca-b867-d54a8f11fac3")
-		(property "Reference" "R25"
-			(at 133.985 95.25 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "20"
-			(at 139.7 95.25 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 96.52 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 96.52 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 96.52 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "7ac8a9aa-c307-4710-b683-950ca9c5e494")
-		)
-		(pin "2"
-			(uuid "beaf5604-1934-42d7-8f1c-13012baad13a")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R25")
+					(reference "R52")
 					(unit 1)
 				)
 			)
@@ -23383,6 +23147,140 @@
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
 					(reference "LED16")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 186.69 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "60817764-5418-4b4e-922c-573195fe97c7")
+		(property "Reference" "R40"
+			(at 133.985 185.42 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "51"
+			(at 139.7 185.42 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 186.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 186.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 186.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "167f12be-53dd-4d0f-aa42-adef8bec66af")
+		)
+		(pin "2"
+			(uuid "7211cb51-97c3-4edf-bd1e-033595e042c0")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R40")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 129.54 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "61f39525-2708-4040-af75-49fa79e6abb2")
+		(property "Reference" "R31"
+			(at 133.985 128.27 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "51"
+			(at 139.7 128.27 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "c381d351-049c-4052-a2b7-b24dfb2a1937")
+		)
+		(pin "2"
+			(uuid "694ab83a-aa23-4715-a512-52e3be99f04d")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R31")
 					(unit 1)
 				)
 			)
@@ -23685,6 +23583,73 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 215.9 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "65d498e4-a86d-4960-9e77-b323a53e5d8b")
+		(property "Reference" "R45"
+			(at 133.985 214.63 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "20"
+			(at 139.7 214.63 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 215.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 215.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 215.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "bdb45045-ee04-4fc6-bf8a-d1c3227f8c80")
+		)
+		(pin "2"
+			(uuid "83f54bd5-f159-4f39-98a2-81d72515caf4")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R45")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:LED_RABG")
 		(at 228.6 171.45 0)
 		(unit 1)
@@ -23759,157 +23724,16 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:LED_RABG")
-		(at 152.4 209.55 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "67911323-f9c4-413d-ab22-fee3ccbac04c")
-		(property "Reference" "LED109"
-			(at 150.495 200.025 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "LED_ARGB"
-			(at 152.4 198.12 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 152.4 210.82 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 152.4 210.82 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 152.4 209.55 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "6c2f42ca-3f76-4b52-8a09-0a8cf5645f66")
-		)
-		(pin "4"
-			(uuid "33d6c9ca-9771-442a-809d-d4bd168f6512")
-		)
-		(pin "2"
-			(uuid "85581e92-6de4-40cd-8e64-8a4100143d06")
-		)
-		(pin "3"
-			(uuid "5a5de905-298f-426e-8634-30d6c368c141")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED109")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:R_Small_US")
-		(at 137.16 148.59 90)
+		(at 137.16 115.57 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "698464b1-5e66-4e9a-b356-fb6c650495a9")
-		(property "Reference" "R34"
-			(at 133.985 147.32 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "51"
-			(at 139.7 147.32 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 148.59 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 148.59 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 148.59 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "124abfd9-d223-42ac-b73d-8fcbfe4e0056")
-		)
-		(pin "2"
-			(uuid "a36da785-c690-4a22-9b8a-bb5759149aef")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R34")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 191.77 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "6ba9555a-c502-446b-a363-9dbf1107f27a")
-		(property "Reference" "R41"
-			(at 133.985 190.5 90)
+		(uuid "6811984b-9d91-4b5f-8a73-0206b0150d82")
+		(property "Reference" "R29"
+			(at 133.985 114.3 90)
 			(effects
 				(font
 					(size 1 1)
@@ -23917,7 +23741,7 @@
 			)
 		)
 		(property "Value" "20"
-			(at 139.7 190.5 90)
+			(at 139.7 114.3 90)
 			(effects
 				(font
 					(size 1 1)
@@ -23925,7 +23749,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 191.77 0)
+			(at 137.16 115.57 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -23934,7 +23758,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 191.77 0)
+			(at 137.16 115.57 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -23943,7 +23767,7 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
-			(at 137.16 191.77 0)
+			(at 137.16 115.57 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -23952,48 +23776,47 @@
 			)
 		)
 		(pin "1"
-			(uuid "0bd45697-0d14-4bc3-a145-25a5acaf352f")
+			(uuid "1c1960b7-b8c4-4aa1-b47c-aaa7c7de753a")
 		)
 		(pin "2"
-			(uuid "8e72aeb5-42ee-41fb-a643-c86b9b39aa49")
+			(uuid "b142d4e4-8fb0-4946-8993-2d55684e77ee")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R41")
+					(reference "R29")
 					(unit 1)
 				)
 			)
 		)
 	)
 	(symbol
-		(lib_id "Device:LED_RABG")
-		(at 152.4 114.3 0)
+		(lib_id "Device:R_Small_US")
+		(at 137.16 158.75 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "6bbd847d-91cc-4a12-8abd-7eace65b6a68")
-		(property "Reference" "LED37"
-			(at 150.495 104.775 0)
+		(uuid "69ff7392-58db-4fae-ba51-4746f9dd5332")
+		(property "Reference" "R36"
+			(at 133.985 157.48 90)
 			(effects
 				(font
 					(size 1 1)
 				)
 			)
 		)
-		(property "Value" "LED_ARGB"
-			(at 152.4 102.87 0)
+		(property "Value" "20"
+			(at 139.7 157.48 90)
 			(effects
 				(font
-					(size 1.27 1.27)
+					(size 1 1)
 				)
-				(hide yes)
 			)
 		)
-		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 152.4 115.57 0)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 158.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -24002,7 +23825,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 152.4 115.57 0)
+			(at 137.16 158.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -24010,8 +23833,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 152.4 114.3 0)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 158.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -24020,21 +23843,151 @@
 			)
 		)
 		(pin "1"
-			(uuid "ed1ae93c-e1b8-4bf3-99c6-9dc1c775ffe4")
-		)
-		(pin "4"
-			(uuid "f7e22505-25f6-41cb-b552-ef7a237f85cb")
+			(uuid "e343988a-7685-495a-8714-bc820f0c48a0")
 		)
 		(pin "2"
-			(uuid "39ff4b41-b4df-4faf-b724-fa193568fb55")
-		)
-		(pin "3"
-			(uuid "51774b4c-d3cd-425c-80db-bbb4f890b51e")
+			(uuid "e1164d9c-3515-48eb-88e5-1d415410fb5a")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED37")
+					(reference "R36")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 254 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "6bc13700-f536-4ee0-816f-8131f02366e6")
+		(property "Reference" "R51"
+			(at 133.985 252.73 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "20"
+			(at 139.7 252.73 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 254 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 254 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 254 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "85b64d8f-0856-4cb6-9cc5-de2c759a704d")
+		)
+		(pin "2"
+			(uuid "3be8dbdc-d722-41f3-8925-f54b0b5f4584")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R51")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C_Small")
+		(at 50.8 43.18 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "6dc78e88-3b5d-4966-a9c5-0ae85b913050")
+		(property "Reference" "C11"
+			(at 51.435 41.91 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "1uF"
+			(at 51.435 45.085 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+			(at 50.8 43.18 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 50.8 43.18 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Unpolarized capacitor, small symbol"
+			(at 50.8 43.18 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "4a30cd71-20ea-4f31-af66-60cad8025c46")
+		)
+		(pin "1"
+			(uuid "ad149c4a-c220-4fd7-80b5-4e0731641c93")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "C11")
 					(unit 1)
 				)
 			)
@@ -24115,24 +24068,17 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:LED_RABG")
-		(at 152.4 76.2 0)
+		(lib_id "power:GND")
+		(at 49.53 55.88 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "7105eafe-5c40-4208-8cb7-3a9a96e0bbb1")
-		(property "Reference" "LED19"
-			(at 150.495 66.675 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "LED_ARGB"
-			(at 152.4 64.77 0)
+		(fields_autoplaced yes)
+		(uuid "6f84bb4a-5169-4ef4-96b0-d2cb189a8d32")
+		(property "Reference" "#PWR027"
+			(at 49.53 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -24140,8 +24086,8 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 152.4 77.47 0)
+		(property "Value" "GND"
+			(at 49.53 60.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -24149,8 +24095,8 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
-			(at 152.4 77.47 0)
+		(property "Footprint" ""
+			(at 49.53 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -24158,8 +24104,17 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 152.4 76.2 0)
+		(property "Datasheet" ""
+			(at 49.53 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 49.53 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -24168,236 +24123,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "fc5d5c57-b98f-432f-a670-2c4eb527c3c2")
-		)
-		(pin "4"
-			(uuid "3197a9c3-fa96-45a7-a886-d14163af1ad6")
-		)
-		(pin "2"
-			(uuid "fb2e90f6-9c15-4f3f-8d8a-a1323d1a79fc")
-		)
-		(pin "3"
-			(uuid "faba9348-bd8a-4ea5-8857-3f3034860711")
+			(uuid "a9433d4e-afaa-4960-bc75-d4bc50dc1088")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED19")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:LED_RABG")
-		(at 165.1 133.35 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "72060187-17b0-41d6-b22e-f06de633c7af")
-		(property "Reference" "LED56"
-			(at 163.195 123.825 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "LED_ARGB"
-			(at 165.1 121.92 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 165.1 134.62 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 165.1 134.62 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 165.1 133.35 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "888fdb6e-3940-401d-a661-9c3031380537")
-		)
-		(pin "4"
-			(uuid "30b06b00-92f2-4f9b-ae58-006b4e4ef56f")
-		)
-		(pin "2"
-			(uuid "c2612057-b450-4a3a-adf4-8393c0590f0c")
-		)
-		(pin "3"
-			(uuid "5c095f57-531d-4e53-a9e8-482602a7d780")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED56")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:LED_RABG")
-		(at 165.1 114.3 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "723bd64a-fb02-4015-a872-902b95930e44")
-		(property "Reference" "LED38"
-			(at 163.195 104.775 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "LED_ARGB"
-			(at 165.1 102.87 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 165.1 115.57 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 165.1 115.57 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 165.1 114.3 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "0c9abbd4-c866-401b-9b30-ad3b516f3bbb")
-		)
-		(pin "4"
-			(uuid "8e5ad364-c001-4f35-a1ff-e2084e72a66e")
-		)
-		(pin "2"
-			(uuid "fc383713-1645-44c6-b006-9710e23a3804")
-		)
-		(pin "3"
-			(uuid "089326de-a951-4f8e-aca5-cea7b2acbc70")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED38")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 186.69 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "72d1c08a-0aa4-4121-a7d4-d5b711c8fa5c")
-		(property "Reference" "R40"
-			(at 133.985 185.42 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "51"
-			(at 139.7 185.42 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 186.69 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 186.69 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 186.69 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "167f12be-53dd-4d0f-aa42-adef8bec66af")
-		)
-		(pin "2"
-			(uuid "7211cb51-97c3-4edf-bd1e-033595e042c0")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R40")
+					(reference "#PWR027")
 					(unit 1)
 				)
 			)
@@ -24405,15 +24136,15 @@
 	)
 	(symbol
 		(lib_id "Device:C_Small")
-		(at 49.53 53.34 0)
+		(at 57.15 43.18 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "72d90499-447b-4db2-a7ae-82e94ef5ad5b")
-		(property "Reference" "C13"
-			(at 50.165 52.07 0)
+		(uuid "701fc71f-7186-47e4-98c0-8581c5585ec3")
+		(property "Reference" "C12"
+			(at 57.785 41.91 0)
 			(effects
 				(font
 					(size 1 1)
@@ -24421,8 +24152,8 @@
 				(justify left)
 			)
 		)
-		(property "Value" "1uF"
-			(at 50.165 55.245 0)
+		(property "Value" "0.1uF"
+			(at 57.785 45.085 0)
 			(effects
 				(font
 					(size 1 1)
@@ -24431,7 +24162,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
-			(at 49.53 53.34 0)
+			(at 57.15 43.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -24440,7 +24171,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 49.53 53.34 0)
+			(at 57.15 43.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -24449,7 +24180,7 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor, small symbol"
-			(at 49.53 53.34 0)
+			(at 57.15 43.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -24458,15 +24189,216 @@
 			)
 		)
 		(pin "2"
-			(uuid "8526b8fa-0baa-4b69-9ceb-3e12b04924f3")
+			(uuid "c006ec04-f78d-45d5-9db8-bc67052c8e50")
 		)
 		(pin "1"
-			(uuid "c75a2a08-358a-403a-b756-b0a935f07735")
+			(uuid "969d729b-183b-46a7-88c6-57088de1d7c8")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "C13")
+					(reference "C12")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 72.39 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "74022b9d-02a2-4bf4-8d57-99b608c4e79a")
+		(property "Reference" "R17"
+			(at 133.985 71.12 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "51"
+			(at 139.7 71.12 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "0e8151c2-e887-4e37-807f-f22bcd930219")
+		)
+		(pin "2"
+			(uuid "086ca925-b4e1-48d4-8162-8e04d95b883e")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R17")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 120.65 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "74b0d343-497b-4054-8121-526059b96e41")
+		(property "Reference" "R30"
+			(at 133.985 119.38 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "20"
+			(at 139.7 119.38 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "c9a246d1-3490-4027-a9be-db1502602e10")
+		)
+		(pin "2"
+			(uuid "44d24604-3d9a-41c0-934d-61304440fc22")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R30")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 110.49 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "74bd70b5-8b2c-4d44-bbaf-dd50dc3816c5")
+		(property "Reference" "R28"
+			(at 133.985 109.22 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "51"
+			(at 139.7 109.22 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 110.49 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 110.49 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 110.49 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "818887c2-6352-41c0-aaa7-2498aeb26913")
+		)
+		(pin "2"
+			(uuid "1df7f480-c1d3-4e56-aa34-89c2fd6c5958")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R28")
 					(unit 1)
 				)
 			)
@@ -24548,80 +24480,6 @@
 	)
 	(symbol
 		(lib_id "Device:LED_RABG")
-		(at 165.1 95.25 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "7676afa6-82ec-4b06-98a5-8aed06346654")
-		(property "Reference" "LED29"
-			(at 163.195 85.725 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "LED_ARGB"
-			(at 165.1 83.82 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 165.1 96.52 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 165.1 96.52 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 165.1 95.25 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "7524188c-485f-481b-acef-d6c6191239e1")
-		)
-		(pin "4"
-			(uuid "3ead8ee9-ff8b-4946-8c79-1e7707e7569c")
-		)
-		(pin "2"
-			(uuid "53c268e7-0a39-4569-953b-33d447b8ac37")
-		)
-		(pin "3"
-			(uuid "e7a3b1c6-8f9c-4630-83fc-081539461464")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED29")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:LED_RABG")
 		(at 215.9 247.65 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -24689,6 +24547,73 @@
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
 					(reference "LED506")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 148.59 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "783cd2a6-5172-41ea-8714-d06283076ad1")
+		(property "Reference" "R34"
+			(at 133.985 147.32 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "51"
+			(at 139.7 147.32 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 148.59 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 148.59 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 148.59 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "124abfd9-d223-42ac-b73d-8fcbfe4e0056")
+		)
+		(pin "2"
+			(uuid "a36da785-c690-4a22-9b8a-bb5759149aef")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R34")
 					(unit 1)
 				)
 			)
@@ -24770,23 +24695,23 @@
 	)
 	(symbol
 		(lib_id "Device:R_Small_US")
-		(at 137.16 129.54 90)
+		(at 137.16 229.87 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "7919ae8a-7c2d-4305-b47c-6388a6867120")
-		(property "Reference" "R31"
-			(at 133.985 128.27 90)
+		(uuid "7ace9265-92cd-4c33-b397-1480dc03fd2b")
+		(property "Reference" "R47"
+			(at 133.985 228.6 90)
 			(effects
 				(font
 					(size 1 1)
 				)
 			)
 		)
-		(property "Value" "51"
-			(at 139.7 128.27 90)
+		(property "Value" "20"
+			(at 139.7 228.6 90)
 			(effects
 				(font
 					(size 1 1)
@@ -24794,7 +24719,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 129.54 0)
+			(at 137.16 229.87 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -24803,7 +24728,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 129.54 0)
+			(at 137.16 229.87 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -24812,7 +24737,7 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
-			(at 137.16 129.54 0)
+			(at 137.16 229.87 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -24821,82 +24746,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "c381d351-049c-4052-a2b7-b24dfb2a1937")
+			(uuid "67a59185-bb43-4ce2-b771-b2a457af6649")
 		)
 		(pin "2"
-			(uuid "694ab83a-aa23-4715-a512-52e3be99f04d")
+			(uuid "b34ab406-d056-47d1-a734-19045ba5f52d")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R31")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 262.89 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "79e8823c-b663-4746-ae05-24bf579cb52d")
-		(property "Reference" "R52"
-			(at 133.985 261.62 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "51"
-			(at 139.7 261.62 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 262.89 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 262.89 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 262.89 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "e022f4c2-7cb1-40a9-84bf-09bfb12f0382")
-		)
-		(pin "2"
-			(uuid "bd8426e4-4aa6-4148-9a2b-7404a0b89b8e")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R52")
+					(reference "R47")
 					(unit 1)
 				)
 			)
@@ -24977,73 +24835,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 55.88 55.88 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "7c7b6b94-dabb-49f6-92e2-e342e01d97da")
-		(property "Reference" "#PWR028"
-			(at 55.88 62.23 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 55.88 60.96 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" ""
-			(at 55.88 55.88 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 55.88 55.88 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 55.88 55.88 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "e0d4f8e7-1d1c-4de7-93ef-26d4a9cb13a8")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "#PWR028")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:LED_RABG")
 		(at 228.6 95.25 0)
 		(unit 1)
@@ -25118,32 +24909,16 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 205.74 90)
+		(lib_id "power:+5V")
+		(at 44.45 39.37 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "7dafa507-29db-43d3-95f4-b9b232ce2e2b")
-		(property "Reference" "R43"
-			(at 133.985 204.47 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "51"
-			(at 139.7 204.47 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 205.74 0)
+		(uuid "7e122236-c5df-4cb0-b7cc-c37253fb4615")
+		(property "Reference" "#PWR056"
+			(at 44.45 43.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -25151,8 +24926,16 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
-			(at 137.16 205.74 0)
+		(property "Value" "+5V"
+			(at 44.45 35.56 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 44.45 39.37 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -25160,8 +24943,17 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 205.74 0)
+		(property "Datasheet" ""
+			(at 44.45 39.37 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 44.45 39.37 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -25170,15 +24962,79 @@
 			)
 		)
 		(pin "1"
-			(uuid "22c924c5-cd5c-4354-b2ce-f6252f2458b6")
+			(uuid "1193debe-f4b3-4a07-a557-bf61b08069a3")
+		)
+		(instances
+			(project ""
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "#PWR056")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 167.64 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "7e26b93c-5eda-483f-9b43-0e4e52895158")
+		(property "Reference" "R37"
+			(at 133.985 166.37 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "51"
+			(at 139.7 166.37 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 167.64 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 167.64 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 167.64 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "68df5bbc-0475-4416-bdec-a2abf9352c6a")
 		)
 		(pin "2"
-			(uuid "5121a90f-5e73-4c72-b0c9-5d5a63506f06")
+			(uuid "a625580b-ca50-4a7d-9712-752dd5f39f7e")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R43")
+					(reference "R37")
 					(unit 1)
 				)
 			)
@@ -25259,6 +25115,73 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 40.64 104.14 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "803ddb49-20f4-4c58-899b-13fcc87ef5a0")
+		(property "Reference" "#PWR033"
+			(at 40.64 110.49 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 40.64 109.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 40.64 104.14 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 40.64 104.14 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 40.64 104.14 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "a47e8db3-da95-4434-a325-d94dc7c2c547")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "#PWR033")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:LED_RABG")
 		(at 152.4 228.6 0)
 		(unit 1)
@@ -25327,140 +25250,6 @@
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
 					(reference "LED145")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 50.8 45.72 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "824fdbb7-490e-4404-84f4-0561bac0cab3")
-		(property "Reference" "#PWR025"
-			(at 50.8 52.07 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 50.8 50.8 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" ""
-			(at 50.8 45.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 50.8 45.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 50.8 45.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "666125aa-2519-4dad-b424-ccdcc1c19c34")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "#PWR025")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 177.8 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "8283dc5b-e76f-4e23-ac48-148c1a0586fb")
-		(property "Reference" "R39"
-			(at 133.985 176.53 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "20"
-			(at 139.7 176.53 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 177.8 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 177.8 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 177.8 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "7c939018-be59-46f9-ac35-4ef621cfb2d7")
-		)
-		(pin "2"
-			(uuid "90cffff3-70bc-4ed8-857f-ec5a82f1a1cd")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R39")
 					(unit 1)
 				)
 			)
@@ -25615,6 +25404,142 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 267.97 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "88766e32-6f41-46a3-97d8-f3326c10de00")
+		(property "Reference" "R53"
+			(at 133.985 266.7 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "20"
+			(at 139.7 266.7 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "65bfb5a2-f89b-4eb6-92ee-e1cac5df71e0")
+		)
+		(pin "2"
+			(uuid "278d7ef3-b292-4252-97a9-bfa66110d3f2")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R53")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C_Small")
+		(at 49.53 53.34 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "8bcddb4e-f80d-4ee4-b165-216bc223f09a")
+		(property "Reference" "C13"
+			(at 50.165 52.07 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "1uF"
+			(at 50.165 55.245 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+			(at 49.53 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 49.53 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Unpolarized capacitor, small symbol"
+			(at 49.53 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "8526b8fa-0baa-4b69-9ceb-3e12b04924f3")
+		)
+		(pin "1"
+			(uuid "c75a2a08-358a-403a-b756-b0a935f07735")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "C13")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:LED_RABG")
 		(at 203.2 95.25 0)
 		(unit 1)
@@ -25690,23 +25615,23 @@
 	)
 	(symbol
 		(lib_id "Device:R_Small_US")
-		(at 137.16 34.29 90)
+		(at 137.16 191.77 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "917b0781-9716-4a4c-90a4-f9ed2d31eb36")
-		(property "Reference" "R11"
-			(at 133.985 33.02 90)
+		(uuid "90181167-b59b-4210-a848-716dc345449a")
+		(property "Reference" "R41"
+			(at 133.985 190.5 90)
 			(effects
 				(font
 					(size 1 1)
 				)
 			)
 		)
-		(property "Value" "51"
-			(at 139.7 33.02 90)
+		(property "Value" "20"
+			(at 139.7 190.5 90)
 			(effects
 				(font
 					(size 1 1)
@@ -25714,7 +25639,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 34.29 0)
+			(at 137.16 191.77 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -25723,7 +25648,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 34.29 0)
+			(at 137.16 191.77 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -25732,7 +25657,7 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
-			(at 137.16 34.29 0)
+			(at 137.16 191.77 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -25741,15 +25666,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "b71a28c9-255a-44a5-b72f-c9c98d74bdeb")
+			(uuid "0bd45697-0d14-4bc3-a145-25a5acaf352f")
 		)
 		(pin "2"
-			(uuid "98b86be4-39ea-4ce8-86d7-606fa0666b38")
+			(uuid "8e72aeb5-42ee-41fb-a643-c86b9b39aa49")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R11")
+					(reference "R41")
 					(unit 1)
 				)
 			)
@@ -25978,32 +25903,33 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 40.64 77.47 0)
+		(lib_id "Device:LED_RABG")
+		(at 152.4 114.3 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "96b14d85-55ae-408c-952c-82819a58c674")
-		(property "Reference" "R19"
-			(at 42.545 74.93 0)
+		(uuid "979a397b-3e1a-41f3-860a-fb2e89e07788")
+		(property "Reference" "LED37"
+			(at 150.495 104.775 0)
 			(effects
 				(font
 					(size 1 1)
 				)
 			)
 		)
-		(property "Value" "4.7k"
-			(at 42.545 80.01 0)
+		(property "Value" "LED_ARGB"
+			(at 152.4 102.87 0)
 			(effects
 				(font
-					(size 1 1)
+					(size 1.27 1.27)
 				)
+				(hide yes)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 40.64 77.47 0)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 152.4 115.57 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -26012,7 +25938,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 40.64 77.47 0)
+			(at 152.4 115.57 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -26020,8 +25946,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Resistor, small US symbol"
-			(at 40.64 77.47 0)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 152.4 114.3 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -26030,15 +25956,21 @@
 			)
 		)
 		(pin "1"
-			(uuid "86bc367c-9d0a-45ee-bd7b-e0e9014778fc")
+			(uuid "ed1ae93c-e1b8-4bf3-99c6-9dc1c775ffe4")
+		)
+		(pin "4"
+			(uuid "f7e22505-25f6-41cb-b552-ef7a237f85cb")
 		)
 		(pin "2"
-			(uuid "64b4609e-59f5-4dc1-a1e9-9946b4d3f693")
+			(uuid "39ff4b41-b4df-4faf-b724-fa193568fb55")
+		)
+		(pin "3"
+			(uuid "51774b4c-d3cd-425c-80db-bbb4f890b51e")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R19")
+					(reference "LED37")
 					(unit 1)
 				)
 			)
@@ -26120,6 +26052,80 @@
 	)
 	(symbol
 		(lib_id "Device:LED_RABG")
+		(at 152.4 209.55 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "9b4c328e-ff9f-4dae-b8a3-12f6eec42c2b")
+		(property "Reference" "LED109"
+			(at 150.495 200.025 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 152.4 198.12 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 152.4 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 152.4 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 152.4 209.55 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "6c2f42ca-3f76-4b52-8a09-0a8cf5645f66")
+		)
+		(pin "4"
+			(uuid "33d6c9ca-9771-442a-809d-d4bd168f6512")
+		)
+		(pin "2"
+			(uuid "85581e92-6de4-40cd-8e64-8a4100143d06")
+		)
+		(pin "3"
+			(uuid "5a5de905-298f-426e-8634-30d6c368c141")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "LED109")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
 		(at 152.4 247.65 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -26193,32 +26199,33 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 77.47 90)
+		(lib_id "Device:LED_RABG")
+		(at 152.4 171.45 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "a051e1ba-ed9a-4f39-8ae6-b570d45fdc38")
-		(property "Reference" "R22"
-			(at 133.985 76.2 90)
+		(uuid "a0f5c5c4-d8bf-4cf8-b26c-6bc6e97b4753")
+		(property "Reference" "LED82"
+			(at 150.495 161.925 0)
 			(effects
 				(font
 					(size 1 1)
 				)
 			)
 		)
-		(property "Value" "20"
-			(at 139.7 76.2 90)
+		(property "Value" "LED_ARGB"
+			(at 152.4 160.02 0)
 			(effects
 				(font
-					(size 1 1)
+					(size 1.27 1.27)
 				)
+				(hide yes)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 77.47 0)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 152.4 172.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -26227,7 +26234,80 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 77.47 0)
+			(at 152.4 172.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 152.4 171.45 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "af4732a9-41f4-4f16-9ac4-fc6fdbb707c4")
+		)
+		(pin "4"
+			(uuid "6a49059c-08b3-4f55-b8e6-6dd902abc570")
+		)
+		(pin "2"
+			(uuid "a0df821a-c2a7-4b6f-9d23-714c0c673aeb")
+		)
+		(pin "3"
+			(uuid "0ebd886a-bfc2-4483-960e-1566fd3ff214")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "LED82")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 91.44 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "a291a5f4-d850-4c56-95e1-a94390cd1cb2")
+		(property "Reference" "R24"
+			(at 133.985 90.17 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "51"
+			(at 139.7 90.17 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 91.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 91.44 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -26236,7 +26316,7 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
-			(at 137.16 77.47 0)
+			(at 137.16 91.44 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -26245,114 +26325,47 @@
 			)
 		)
 		(pin "1"
-			(uuid "b3917c72-3e49-4d43-b78e-f92747dc7d3b")
+			(uuid "a8fe56ea-9162-4644-95dd-bf2ef6e3bc5e")
 		)
 		(pin "2"
-			(uuid "9c035844-6896-40d3-96b8-682104444954")
+			(uuid "710f0b8f-3510-46f1-91d3-c46359ef637a")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R22")
+					(reference "R24")
 					(unit 1)
 				)
 			)
 		)
 	)
 	(symbol
-		(lib_id "power:+5V")
-		(at 44.45 39.37 0)
+		(lib_id "Device:R_Small_US")
+		(at 137.16 53.34 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "a34e129c-6dc3-4773-bcd4-510bd9c5557c")
-		(property "Reference" "#PWR056"
-			(at 44.45 43.18 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "+5V"
-			(at 44.45 35.56 0)
+		(uuid "a5c127b7-5c36-4bca-ae9d-86a79591bafb")
+		(property "Reference" "R14"
+			(at 133.985 52.07 90)
 			(effects
 				(font
 					(size 1 1)
 				)
 			)
 		)
-		(property "Footprint" ""
-			(at 44.45 39.37 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 44.45 39.37 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"+5V\""
-			(at 44.45 39.37 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "1193debe-f4b3-4a07-a557-bf61b08069a3")
-		)
-		(instances
-			(project ""
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "#PWR056")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:C_Small")
-		(at 57.15 43.18 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "a59e9c77-55b1-48cd-9392-67acdbcfa111")
-		(property "Reference" "C12"
-			(at 57.785 41.91 0)
+		(property "Value" "51"
+			(at 139.7 52.07 90)
 			(effects
 				(font
 					(size 1 1)
 				)
-				(justify left)
 			)
 		)
-		(property "Value" "0.1uF"
-			(at 57.785 45.085 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
-			(at 57.15 43.18 0)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 53.34 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -26361,7 +26374,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 57.15 43.18 0)
+			(at 137.16 53.34 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -26369,25 +26382,25 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Unpolarized capacitor, small symbol"
-			(at 57.15 43.18 0)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 53.34 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 				(hide yes)
 			)
-		)
-		(pin "2"
-			(uuid "c006ec04-f78d-45d5-9db8-bc67052c8e50")
 		)
 		(pin "1"
-			(uuid "969d729b-183b-46a7-88c6-57088de1d7c8")
+			(uuid "4dfad4f5-9f7d-44d1-94d7-e3d40ea679e3")
+		)
+		(pin "2"
+			(uuid "9aec8ef7-4273-4725-826f-bda66ed3590c")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "C12")
+					(reference "R14")
 					(unit 1)
 				)
 			)
@@ -26469,15 +26482,15 @@
 	)
 	(symbol
 		(lib_id "Device:LED_RABG")
-		(at 152.4 171.45 0)
+		(at 165.1 76.2 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "ac26ea79-266c-4a13-aba5-70f3fca3c38f")
-		(property "Reference" "LED82"
-			(at 150.495 161.925 0)
+		(uuid "abc45357-f722-4eb2-b659-4aee76114daf")
+		(property "Reference" "LED20"
+			(at 163.195 66.675 0)
 			(effects
 				(font
 					(size 1 1)
@@ -26485,7 +26498,7 @@
 			)
 		)
 		(property "Value" "LED_ARGB"
-			(at 152.4 160.02 0)
+			(at 165.1 64.77 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -26494,7 +26507,7 @@
 			)
 		)
 		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 152.4 172.72 0)
+			(at 165.1 77.47 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -26503,7 +26516,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 152.4 172.72 0)
+			(at 165.1 77.47 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -26512,7 +26525,7 @@
 			)
 		)
 		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 152.4 171.45 0)
+			(at 165.1 76.2 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -26521,21 +26534,90 @@
 			)
 		)
 		(pin "1"
-			(uuid "af4732a9-41f4-4f16-9ac4-fc6fdbb707c4")
+			(uuid "33b1455e-9730-4f76-b169-2848b7116d21")
 		)
 		(pin "4"
-			(uuid "6a49059c-08b3-4f55-b8e6-6dd902abc570")
+			(uuid "58808500-b5cc-4456-a11c-5e8519a6f411")
 		)
 		(pin "2"
-			(uuid "a0df821a-c2a7-4b6f-9d23-714c0c673aeb")
+			(uuid "a2e59914-e4b7-48fa-9c62-fcba984bc166")
 		)
 		(pin "3"
-			(uuid "0ebd886a-bfc2-4483-960e-1566fd3ff214")
+			(uuid "d4d4b91c-05d7-4025-92f1-af6f338d6df8")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED82")
+					(reference "LED20")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C_Small")
+		(at 55.88 53.34 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "abeca925-8b60-4384-bfc5-c2802b71a512")
+		(property "Reference" "C14"
+			(at 56.515 52.07 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "0.1uF"
+			(at 56.515 55.245 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+			(at 55.88 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 55.88 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Unpolarized capacitor, small symbol"
+			(at 55.88 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "778d5870-4ff2-4c73-81b7-608f4d9e3bd4")
+		)
+		(pin "1"
+			(uuid "36f232e0-3e3d-474b-a78b-3baf140be4b1")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "C14")
 					(unit 1)
 				)
 			)
@@ -26616,140 +26698,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 273.05 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "adcd4526-b439-4a37-8512-164b7944d19c")
-		(property "Reference" "R54"
-			(at 133.985 271.78 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "20"
-			(at 139.7 271.78 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 273.05 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 273.05 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 273.05 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "3329a027-b6af-4e2e-bcac-5b24336edb02")
-		)
-		(pin "2"
-			(uuid "132467db-8ead-4db0-a0b2-c3d995266e6f")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R54")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 134.62 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "adfbc7c7-d07e-4623-97fc-6b7bca2dd497")
-		(property "Reference" "R32"
-			(at 133.985 133.35 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "20"
-			(at 139.7 133.35 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 134.62 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 134.62 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 134.62 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "76c0c0ec-909c-4d8e-a6fc-33dbc3e062fa")
-		)
-		(pin "2"
-			(uuid "681243df-3ee0-4564-b7dc-47eb2f372896")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R32")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:LED_RABG")
 		(at 228.6 152.4 0)
 		(unit 1)
@@ -26824,90 +26772,16 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:LED_RABG")
-		(at 165.1 171.45 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "b25cde37-6125-408c-92a7-2ba0c94aebf5")
-		(property "Reference" "LED83"
-			(at 163.195 161.925 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "LED_ARGB"
-			(at 165.1 160.02 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 165.1 172.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 165.1 172.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 165.1 171.45 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "d3c08eb8-7498-4cce-aa0d-b983cac54030")
-		)
-		(pin "4"
-			(uuid "042852c2-636f-4574-97f2-ab19d0325201")
-		)
-		(pin "2"
-			(uuid "1857b880-2151-429e-bbc0-8555a777365d")
-		)
-		(pin "3"
-			(uuid "32c55ad9-454c-42e9-a3f3-446f8b4beed3")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED83")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:R_Small_US")
-		(at 137.16 234.95 90)
+		(at 137.16 101.6 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "b272e2f8-ed91-4633-8d00-796e75cd7bcc")
-		(property "Reference" "R48"
-			(at 133.985 233.68 90)
+		(uuid "b0b2764d-d4d7-468d-a89b-95828502dfb4")
+		(property "Reference" "R26"
+			(at 133.985 100.33 90)
 			(effects
 				(font
 					(size 1 1)
@@ -26915,7 +26789,7 @@
 			)
 		)
 		(property "Value" "20"
-			(at 139.7 233.68 90)
+			(at 139.7 100.33 90)
 			(effects
 				(font
 					(size 1 1)
@@ -26923,7 +26797,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 234.95 0)
+			(at 137.16 101.6 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -26932,7 +26806,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 234.95 0)
+			(at 137.16 101.6 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -26941,7 +26815,7 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
-			(at 137.16 234.95 0)
+			(at 137.16 101.6 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -26950,15 +26824,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "b383ce31-813b-4d2c-b7b8-c599b46a5d41")
+			(uuid "159dd240-e774-45b8-bcf6-3bb14ee19fc8")
 		)
 		(pin "2"
-			(uuid "13de2f0f-e01f-4946-9c1f-6a313c424385")
+			(uuid "5c199828-c41f-418a-91b0-8a121bd67265")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R48")
+					(reference "R26")
 					(unit 1)
 				)
 			)
@@ -27113,73 +26987,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 243.84 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "b775dd34-984c-4bdb-8638-4e0de4d8d2e5")
-		(property "Reference" "R49"
-			(at 133.985 242.57 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "51"
-			(at 139.7 242.57 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 243.84 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 243.84 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 243.84 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "bbdba5c6-aea9-4f43-85d6-b1f8de6ce873")
-		)
-		(pin "2"
-			(uuid "eda4ca77-65b6-4481-ba7d-255885009443")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R49")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:LED_RABG")
 		(at 241.3 38.1 0)
 		(unit 1)
@@ -27255,15 +27062,15 @@
 	)
 	(symbol
 		(lib_id "Device:LED_RABG")
-		(at 165.1 57.15 0)
+		(at 165.1 133.35 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "b8a4ba99-58cc-4fe8-82e9-9039a7a7876a")
-		(property "Reference" "LED11"
-			(at 163.195 47.625 0)
+		(uuid "b8a31949-cde3-41be-a1f8-dd2c0af569f6")
+		(property "Reference" "LED56"
+			(at 163.195 123.825 0)
 			(effects
 				(font
 					(size 1 1)
@@ -27271,7 +27078,7 @@
 			)
 		)
 		(property "Value" "LED_ARGB"
-			(at 165.1 45.72 0)
+			(at 165.1 121.92 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27280,7 +27087,7 @@
 			)
 		)
 		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 165.1 58.42 0)
+			(at 165.1 134.62 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27289,7 +27096,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 165.1 58.42 0)
+			(at 165.1 134.62 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27298,7 +27105,7 @@
 			)
 		)
 		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 165.1 57.15 0)
+			(at 165.1 133.35 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27307,164 +27114,21 @@
 			)
 		)
 		(pin "1"
-			(uuid "5183aa68-c146-4dae-b7f6-123204f33a89")
+			(uuid "888fdb6e-3940-401d-a661-9c3031380537")
 		)
 		(pin "4"
-			(uuid "4cd31d12-ddfa-4ca5-8c05-4ea43e68894e")
+			(uuid "30b06b00-92f2-4f9b-ae58-006b4e4ef56f")
 		)
 		(pin "2"
-			(uuid "03ca8b3d-b708-4dc0-bf01-d07ababd23b0")
+			(uuid "c2612057-b450-4a3a-adf4-8393c0590f0c")
 		)
 		(pin "3"
-			(uuid "aac3045e-8389-4755-91ad-25816d078f6e")
+			(uuid "5c095f57-531d-4e53-a9e8-482602a7d780")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED11")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:LED_RABG")
-		(at 165.1 76.2 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "b92b40ac-e160-4bdc-929c-1431d87a820d")
-		(property "Reference" "LED20"
-			(at 163.195 66.675 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "LED_ARGB"
-			(at 165.1 64.77 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 165.1 77.47 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 165.1 77.47 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 165.1 76.2 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "33b1455e-9730-4f76-b169-2848b7116d21")
-		)
-		(pin "4"
-			(uuid "58808500-b5cc-4456-a11c-5e8519a6f411")
-		)
-		(pin "2"
-			(uuid "a2e59914-e4b7-48fa-9c62-fcba984bc166")
-		)
-		(pin "3"
-			(uuid "d4d4b91c-05d7-4025-92f1-af6f338d6df8")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED20")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:C_Small")
-		(at 50.8 43.18 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "bb93a2fb-9f95-4431-bfd3-ac881e63efbf")
-		(property "Reference" "C11"
-			(at 51.435 41.91 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "1uF"
-			(at 51.435 45.085 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
-			(at 50.8 43.18 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 50.8 43.18 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Unpolarized capacitor, small symbol"
-			(at 50.8 43.18 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "4a30cd71-20ea-4f31-af66-60cad8025c46")
-		)
-		(pin "1"
-			(uuid "ad149c4a-c220-4fd7-80b5-4e0731641c93")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "C11")
+					(reference "LED56")
 					(unit 1)
 				)
 			)
@@ -27619,32 +27283,33 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 224.79 90)
+		(lib_id "Device:LED_RABG")
+		(at 241.3 209.55 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "bdbbb301-de52-498a-a1e6-0288784a8c75")
-		(property "Reference" "R46"
-			(at 133.985 223.52 90)
+		(uuid "bec345cd-e52b-4028-b850-26686e33bf26")
+		(property "Reference" "LED116"
+			(at 239.395 200.025 0)
 			(effects
 				(font
 					(size 1 1)
 				)
 			)
 		)
-		(property "Value" "51"
-			(at 139.7 223.52 90)
+		(property "Value" "LED_ARGB"
+			(at 241.3 198.12 0)
 			(effects
 				(font
-					(size 1 1)
+					(size 1.27 1.27)
 				)
+				(hide yes)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 224.79 0)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 241.3 210.82 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27653,7 +27318,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 224.79 0)
+			(at 241.3 210.82 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27661,8 +27326,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 224.79 0)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 241.3 209.55 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27671,15 +27336,21 @@
 			)
 		)
 		(pin "1"
-			(uuid "1be2faca-2fa3-4f0d-a513-9cde39b27fde")
+			(uuid "a5efa2b1-71ee-4f7a-a804-6bb59a2efcb6")
+		)
+		(pin "4"
+			(uuid "b3695cc8-3cf5-482b-925f-1ae1f3aa52d0")
 		)
 		(pin "2"
-			(uuid "b265ddd0-6a26-4a68-91c1-6ccbaf28a7f0")
+			(uuid "a667b357-e056-41ee-ab80-3aee97442143")
+		)
+		(pin "3"
+			(uuid "9a3b7c85-1ced-4a2d-8f46-92f560ab5198")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R46")
+					(reference "LED116")
 					(unit 1)
 				)
 			)
@@ -27693,7 +27364,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "be3d412c-a050-4638-bfe2-48b17d836bb5")
+		(uuid "bfb73c1b-6963-4d35-b17b-1e6d920b9e3c")
 		(property "Reference" "U5"
 			(at 63.5 36.83 0)
 			(effects
@@ -27932,33 +27603,32 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:LED_RABG")
-		(at 241.3 209.55 0)
+		(lib_id "Device:R_Small_US")
+		(at 46.99 102.87 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "bec345cd-e52b-4028-b850-26686e33bf26")
-		(property "Reference" "LED116"
-			(at 239.395 200.025 0)
+		(uuid "c0844187-2477-43c1-a4fb-0f73dc1a514f")
+		(property "Reference" "R27"
+			(at 43.815 101.6 90)
 			(effects
 				(font
 					(size 1 1)
 				)
 			)
 		)
-		(property "Value" "LED_ARGB"
-			(at 241.3 198.12 0)
+		(property "Value" "10k"
+			(at 50.165 101.6 90)
 			(effects
 				(font
-					(size 1.27 1.27)
+					(size 1 1)
 				)
-				(hide yes)
 			)
 		)
-		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 241.3 210.82 0)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 46.99 102.87 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27967,7 +27637,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 241.3 210.82 0)
+			(at 46.99 102.87 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27975,8 +27645,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 241.3 209.55 0)
+		(property "Description" "Resistor, small US symbol"
+			(at 46.99 102.87 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27985,21 +27655,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "a5efa2b1-71ee-4f7a-a804-6bb59a2efcb6")
-		)
-		(pin "4"
-			(uuid "b3695cc8-3cf5-482b-925f-1ae1f3aa52d0")
+			(uuid "763ae1fc-d707-4808-951c-41b9c3d8aa74")
 		)
 		(pin "2"
-			(uuid "a667b357-e056-41ee-ab80-3aee97442143")
-		)
-		(pin "3"
-			(uuid "9a3b7c85-1ced-4a2d-8f46-92f560ab5198")
+			(uuid "20ddb2e9-eaab-47ca-a559-612c89d92186")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED116")
+					(reference "R27")
 					(unit 1)
 				)
 			)
@@ -28080,32 +27744,33 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 196.85 90)
+		(lib_id "Device:LED_RABG")
+		(at 165.1 114.3 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "c2797ff3-3c40-47e1-87ad-e62d0924830e")
-		(property "Reference" "R42"
-			(at 133.985 195.58 90)
+		(uuid "c1bdd255-072d-43ee-a547-c937e5d9115d")
+		(property "Reference" "LED38"
+			(at 163.195 104.775 0)
 			(effects
 				(font
 					(size 1 1)
 				)
 			)
 		)
-		(property "Value" "20"
-			(at 139.7 195.58 90)
+		(property "Value" "LED_ARGB"
+			(at 165.1 102.87 0)
 			(effects
 				(font
-					(size 1 1)
+					(size 1.27 1.27)
 				)
+				(hide yes)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 196.85 0)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 165.1 115.57 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28114,7 +27779,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 196.85 0)
+			(at 165.1 115.57 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28122,8 +27787,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 196.85 0)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 165.1 114.3 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28132,15 +27797,95 @@
 			)
 		)
 		(pin "1"
-			(uuid "7fbdeb20-9bc5-4024-977c-c09782418666")
+			(uuid "0c9abbd4-c866-401b-9b30-ad3b516f3bbb")
+		)
+		(pin "4"
+			(uuid "8e5ad364-c001-4f35-a1ff-e2084e72a66e")
 		)
 		(pin "2"
-			(uuid "794a621d-a315-4655-b9df-e210cd16a484")
+			(uuid "fc383713-1645-44c6-b006-9710e23a3804")
+		)
+		(pin "3"
+			(uuid "089326de-a951-4f8e-aca5-cea7b2acbc70")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R42")
+					(reference "LED38")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 165.1 95.25 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "c202be31-58b6-405f-b3ce-feef2c1938bb")
+		(property "Reference" "LED29"
+			(at 163.195 85.725 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 165.1 83.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 165.1 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 165.1 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 165.1 95.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "7524188c-485f-481b-acef-d6c6191239e1")
+		)
+		(pin "4"
+			(uuid "3ead8ee9-ff8b-4946-8c79-1e7707e7569c")
+		)
+		(pin "2"
+			(uuid "53c268e7-0a39-4569-953b-33d447b8ac37")
+		)
+		(pin "3"
+			(uuid "e7a3b1c6-8f9c-4630-83fc-081539461464")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "LED29")
 					(unit 1)
 				)
 			)
@@ -28215,6 +27960,73 @@
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
 					(reference "LED23")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 57.15 45.72 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "c31cede8-64ba-44ce-a51e-baabbb0437a9")
+		(property "Reference" "#PWR026"
+			(at 57.15 52.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 57.15 50.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 57.15 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 57.15 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 57.15 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "848c5a93-ad8f-4699-bbc8-ab19640b10a1")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "#PWR026")
 					(unit 1)
 				)
 			)
@@ -28369,34 +28181,33 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:C_Small")
-		(at 55.88 53.34 0)
+		(lib_id "Device:LED_RABG")
+		(at 177.8 38.1 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "c982b155-864b-4bd7-a2ea-3c337c94a700")
-		(property "Reference" "C14"
-			(at 56.515 52.07 0)
+		(uuid "c617fd46-fb3c-4716-836b-c6e7e95c1209")
+		(property "Reference" "LED3"
+			(at 175.895 28.575 0)
 			(effects
 				(font
 					(size 1 1)
 				)
-				(justify left)
 			)
 		)
-		(property "Value" "0.1uF"
-			(at 56.515 55.245 0)
+		(property "Value" "LED_ARGB"
+			(at 177.8 26.67 0)
 			(effects
 				(font
-					(size 1 1)
+					(size 1.27 1.27)
 				)
-				(justify left)
+				(hide yes)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
-			(at 55.88 53.34 0)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 177.8 39.37 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28405,7 +28216,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 55.88 53.34 0)
+			(at 177.8 39.37 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28413,25 +28224,98 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Unpolarized capacitor, small symbol"
-			(at 55.88 53.34 0)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 177.8 38.1 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 				(hide yes)
 			)
-		)
-		(pin "2"
-			(uuid "778d5870-4ff2-4c73-81b7-608f4d9e3bd4")
 		)
 		(pin "1"
-			(uuid "36f232e0-3e3d-474b-a78b-3baf140be4b1")
+			(uuid "ecd3dd45-d17f-4b3a-b249-78022a526442")
+		)
+		(pin "4"
+			(uuid "0d74f92a-cd2d-4633-8e14-b8589975181b")
+		)
+		(pin "2"
+			(uuid "84b5fb19-3ba6-449b-bfc3-222008e7a74f")
+		)
+		(pin "3"
+			(uuid "067b84b2-72cf-4457-879a-c52d8f547d6a")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "C14")
+					(reference "LED3")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 210.82 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "c9ab78b8-8130-4aea-80d6-9e800d0701d4")
+		(property "Reference" "R44"
+			(at 133.985 209.55 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "20"
+			(at 139.7 209.55 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "63a16549-a876-4e58-bb92-40ded0e21b1a")
+		)
+		(pin "2"
+			(uuid "d03f0016-ac50-499e-a25f-cbc7d1272914")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R44")
 					(unit 1)
 				)
 			)
@@ -28506,80 +28390,6 @@
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
 					(reference "LED77")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:LED_RABG")
-		(at 177.8 38.1 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "cbe6e316-fca2-4ca3-98bc-a7e6210e5106")
-		(property "Reference" "LED3"
-			(at 175.895 28.575 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "LED_ARGB"
-			(at 177.8 26.67 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 177.8 39.37 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 177.8 39.37 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 177.8 38.1 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "ecd3dd45-d17f-4b3a-b249-78022a526442")
-		)
-		(pin "4"
-			(uuid "0d74f92a-cd2d-4633-8e14-b8589975181b")
-		)
-		(pin "2"
-			(uuid "84b5fb19-3ba6-449b-bfc3-222008e7a74f")
-		)
-		(pin "3"
-			(uuid "067b84b2-72cf-4457-879a-c52d8f547d6a")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED3")
 					(unit 1)
 				)
 			)
@@ -28808,32 +28618,16 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 110.49 90)
+		(lib_id "power:+3.3V")
+		(at 36.83 74.93 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "d16e0624-d6cc-4dd0-a45c-83a7837b0126")
-		(property "Reference" "R28"
-			(at 133.985 109.22 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "51"
-			(at 139.7 109.22 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 110.49 0)
+		(uuid "cf325ddf-f54d-4361-94d5-610e0e29d265")
+		(property "Reference" "#PWR032"
+			(at 36.83 78.74 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28841,8 +28635,16 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
-			(at 137.16 110.49 0)
+		(property "Value" "+3.3V"
+			(at 36.195 71.12 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 36.83 74.93 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28850,8 +28652,17 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 110.49 0)
+		(property "Datasheet" ""
+			(at 36.83 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
+			(at 36.83 74.93 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28860,15 +28671,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "818887c2-6352-41c0-aaa7-2498aeb26913")
-		)
-		(pin "2"
-			(uuid "1df7f480-c1d3-4e56-aa34-89c2fd6c5958")
+			(uuid "bf48a8e9-ef16-4c7f-afdc-6a64db9b0fda")
 		)
 		(instances
-			(project "v0"
+			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R28")
+					(reference "#PWR032")
 					(unit 1)
 				)
 			)
@@ -28876,15 +28684,15 @@
 	)
 	(symbol
 		(lib_id "Device:R_Small_US")
-		(at 137.16 139.7 90)
+		(at 137.16 82.55 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "d173ec57-7bf0-466e-b243-d1ee46a91bb1")
-		(property "Reference" "R33"
-			(at 133.985 138.43 90)
+		(uuid "d100468d-1eb9-482a-b5f7-23c089b588bc")
+		(property "Reference" "R23"
+			(at 133.985 81.28 90)
 			(effects
 				(font
 					(size 1 1)
@@ -28892,7 +28700,7 @@
 			)
 		)
 		(property "Value" "20"
-			(at 139.7 138.43 90)
+			(at 139.7 81.28 90)
 			(effects
 				(font
 					(size 1 1)
@@ -28900,7 +28708,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 139.7 0)
+			(at 137.16 82.55 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28909,7 +28717,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 139.7 0)
+			(at 137.16 82.55 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28918,7 +28726,7 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
-			(at 137.16 139.7 0)
+			(at 137.16 82.55 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28927,47 +28735,31 @@
 			)
 		)
 		(pin "1"
-			(uuid "55962c64-7950-49d1-987a-12dde910dda8")
+			(uuid "3f9f55c9-1130-4a7c-814d-95d2209d1119")
 		)
 		(pin "2"
-			(uuid "58c3e1bb-1c16-49ad-8d08-6f3060eb7338")
+			(uuid "ba5dd888-e689-4230-adb5-099e8bfcb3c3")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R33")
+					(reference "R23")
 					(unit 1)
 				)
 			)
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 267.97 90)
+		(lib_id "power:+3.3V")
+		(at 40.64 74.93 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "d377b5b6-4419-427c-9087-07e4b3c9913b")
-		(property "Reference" "R53"
-			(at 133.985 266.7 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "20"
-			(at 139.7 266.7 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 267.97 0)
+		(uuid "d6563f16-3b61-4e19-900e-b01df885e64f")
+		(property "Reference" "#PWR035"
+			(at 40.64 78.74 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28975,8 +28767,16 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
-			(at 137.16 267.97 0)
+		(property "Value" "+3.3V"
+			(at 41.275 71.12 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 40.64 74.93 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28984,8 +28784,17 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 267.97 0)
+		(property "Datasheet" ""
+			(at 40.64 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
+			(at 40.64 74.93 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28994,15 +28803,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "65bfb5a2-f89b-4eb6-92ee-e1cac5df71e0")
-		)
-		(pin "2"
-			(uuid "278d7ef3-b292-4252-97a9-bfa66110d3f2")
+			(uuid "b36c6810-8e7e-4621-b79f-96038afacb92")
 		)
 		(instances
-			(project "v0"
+			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R53")
+					(reference "#PWR035")
 					(unit 1)
 				)
 			)
@@ -29158,23 +28964,23 @@
 	)
 	(symbol
 		(lib_id "Device:R_Small_US")
-		(at 137.16 229.87 90)
+		(at 137.16 243.84 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "db709b2e-9049-4d94-905b-76bbde4d7838")
-		(property "Reference" "R47"
-			(at 133.985 228.6 90)
+		(uuid "d9603536-88ef-458f-8055-ee2473fde0ae")
+		(property "Reference" "R49"
+			(at 133.985 242.57 90)
 			(effects
 				(font
 					(size 1 1)
 				)
 			)
 		)
-		(property "Value" "20"
-			(at 139.7 228.6 90)
+		(property "Value" "51"
+			(at 139.7 242.57 90)
 			(effects
 				(font
 					(size 1 1)
@@ -29182,7 +28988,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 229.87 0)
+			(at 137.16 243.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -29191,7 +28997,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 229.87 0)
+			(at 137.16 243.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -29200,7 +29006,7 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
-			(at 137.16 229.87 0)
+			(at 137.16 243.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -29209,15 +29015,149 @@
 			)
 		)
 		(pin "1"
-			(uuid "67a59185-bb43-4ce2-b771-b2a457af6649")
+			(uuid "bbdba5c6-aea9-4f43-85d6-b1f8de6ce873")
 		)
 		(pin "2"
-			(uuid "b34ab406-d056-47d1-a734-19045ba5f52d")
+			(uuid "eda4ca77-65b6-4481-ba7d-255885009443")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R47")
+					(reference "R49")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 36.83 77.47 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "d970dda2-40cf-4d4d-ae1e-42881f083f9e")
+		(property "Reference" "R18"
+			(at 38.735 74.93 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "4.7k"
+			(at 38.735 80.01 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 36.83 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 36.83 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 36.83 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "e8763ffc-f84e-497f-b7fa-411852996c90")
+		)
+		(pin "2"
+			(uuid "c4e0392f-d0d0-414f-a9bd-da3085335a63")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R18")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 234.95 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "d9e997ce-9b30-4860-9207-d3ecd1b20871")
+		(property "Reference" "R48"
+			(at 133.985 233.68 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "20"
+			(at 139.7 233.68 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 234.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 234.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 234.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "b383ce31-813b-4d2c-b7b8-c599b46a5d41")
+		)
+		(pin "2"
+			(uuid "13de2f0f-e01f-4946-9c1f-6a313c424385")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R48")
 					(unit 1)
 				)
 			)
@@ -29372,32 +29312,33 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 115.57 90)
+		(lib_id "Device:LED_RABG")
+		(at 165.1 209.55 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "de228c08-7f5d-4ec6-bc15-7bb17fcd3a77")
-		(property "Reference" "R29"
-			(at 133.985 114.3 90)
+		(uuid "dd087dc7-894a-4603-9743-ba8156ff9c7c")
+		(property "Reference" "LED110"
+			(at 163.195 200.025 0)
 			(effects
 				(font
 					(size 1 1)
 				)
 			)
 		)
-		(property "Value" "20"
-			(at 139.7 114.3 90)
+		(property "Value" "LED_ARGB"
+			(at 165.1 198.12 0)
 			(effects
 				(font
-					(size 1 1)
+					(size 1.27 1.27)
 				)
+				(hide yes)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 115.57 0)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 165.1 210.82 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -29406,7 +29347,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 115.57 0)
+			(at 165.1 210.82 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -29414,75 +29355,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 115.57 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "1c1960b7-b8c4-4aa1-b47c-aaa7c7de753a")
-		)
-		(pin "2"
-			(uuid "b142d4e4-8fb0-4946-8993-2d55684e77ee")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R29")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 120.65 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "df4e9eef-9762-4a60-af3b-7a6b1cff6be0")
-		(property "Reference" "R30"
-			(at 133.985 119.38 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "20"
-			(at 139.7 119.38 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 120.65 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 120.65 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 120.65 0)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 165.1 209.55 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -29491,82 +29365,21 @@
 			)
 		)
 		(pin "1"
-			(uuid "c9a246d1-3490-4027-a9be-db1502602e10")
+			(uuid "e2b9cfc8-1685-4e50-ba81-ab7be1e8e6a8")
+		)
+		(pin "4"
+			(uuid "ab3131a3-edd1-40ff-80f2-9ff450643f0a")
 		)
 		(pin "2"
-			(uuid "44d24604-3d9a-41c0-934d-61304440fc22")
+			(uuid "61a64d71-e742-496c-93ec-7a0f1ecb81e9")
+		)
+		(pin "3"
+			(uuid "ee2d31b2-ab86-4948-a2f5-de42086a3082")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R30")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 158.75 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "e362a699-b8da-4791-b889-0e4329695a59")
-		(property "Reference" "R36"
-			(at 133.985 157.48 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "20"
-			(at 139.7 157.48 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 158.75 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 137.16 158.75 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 137.16 158.75 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "e343988a-7685-495a-8714-bc820f0c48a0")
-		)
-		(pin "2"
-			(uuid "e1164d9c-3515-48eb-88e5-1d415410fb5a")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R36")
+					(reference "LED110")
 					(unit 1)
 				)
 			)
@@ -29870,90 +29683,23 @@
 	)
 	(symbol
 		(lib_id "Device:R_Small_US")
-		(at 46.99 102.87 90)
+		(at 40.64 77.47 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "ec30ed5c-5591-4bf3-aecf-ddc6748a7cab")
-		(property "Reference" "R27"
-			(at 43.815 101.6 90)
+		(uuid "e95af842-09af-4213-83f6-db496db2c6b3")
+		(property "Reference" "R19"
+			(at 42.545 74.93 0)
 			(effects
 				(font
 					(size 1 1)
 				)
 			)
 		)
-		(property "Value" "10k"
-			(at 50.165 101.6 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 46.99 102.87 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 46.99 102.87 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small US symbol"
-			(at 46.99 102.87 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "763ae1fc-d707-4808-951c-41b9c3d8aa74")
-		)
-		(pin "2"
-			(uuid "20ddb2e9-eaab-47ca-a559-612c89d92186")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R27")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 137.16 254 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "ec6441f1-6c58-4246-b725-6107692fb424")
-		(property "Reference" "R51"
-			(at 133.985 252.73 90)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "20"
-			(at 139.7 252.73 90)
+		(property "Value" "4.7k"
+			(at 42.545 80.01 0)
 			(effects
 				(font
 					(size 1 1)
@@ -29961,7 +29707,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 137.16 254 0)
+			(at 40.64 77.47 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -29970,7 +29716,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 137.16 254 0)
+			(at 40.64 77.47 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -29979,7 +29725,7 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
-			(at 137.16 254 0)
+			(at 40.64 77.47 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -29988,15 +29734,82 @@
 			)
 		)
 		(pin "1"
-			(uuid "85b64d8f-0856-4cb6-9cc5-de2c759a704d")
+			(uuid "86bc367c-9d0a-45ee-bd7b-e0e9014778fc")
 		)
 		(pin "2"
-			(uuid "3be8dbdc-d722-41f3-8925-f54b0b5f4584")
+			(uuid "64b4609e-59f5-4dc1-a1e9-9946b4d3f693")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "R51")
+					(reference "R19")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 77.47 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "ec1fef28-10f9-41a3-a0ec-af3af63b287a")
+		(property "Reference" "R22"
+			(at 133.985 76.2 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "20"
+			(at 139.7 76.2 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "b3917c72-3e49-4d43-b78e-f92747dc7d3b")
+		)
+		(pin "2"
+			(uuid "9c035844-6896-40d3-96b8-682104444954")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R22")
 					(unit 1)
 				)
 			)
@@ -30145,6 +29958,73 @@
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
 					(reference "LED63")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 224.79 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "ed864bb5-3520-446f-bfd5-b0bfefb36a98")
+		(property "Reference" "R46"
+			(at 133.985 223.52 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "51"
+			(at 139.7 223.52 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 224.79 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 224.79 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 224.79 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "1be2faca-2fa3-4f0d-a513-9cde39b27fde")
+		)
+		(pin "2"
+			(uuid "b265ddd0-6a26-4a68-91c1-6ccbaf28a7f0")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R46")
 					(unit 1)
 				)
 			)
@@ -30373,6 +30253,73 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R_Small_US")
+		(at 137.16 273.05 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "f2c41bc4-4331-4596-9036-1d6717e5811b")
+		(property "Reference" "R54"
+			(at 133.985 271.78 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "20"
+			(at 139.7 271.78 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 273.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 273.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 273.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "3329a027-b6af-4e2e-bcac-5b24336edb02")
+		)
+		(pin "2"
+			(uuid "132467db-8ead-4db0-a0b2-c3d995266e6f")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "R54")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:LED_RABG")
 		(at 203.2 228.6 0)
 		(unit 1)
@@ -30447,33 +30394,32 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:LED_RABG")
-		(at 177.8 57.15 0)
+		(lib_id "Device:R_Small_US")
+		(at 137.16 139.7 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "f8898156-882c-492d-8af9-4ab1a3aaccd1")
-		(property "Reference" "LED12"
-			(at 175.895 47.625 0)
+		(uuid "f9baf14c-7298-400e-b9b7-4a4fb744525e")
+		(property "Reference" "R33"
+			(at 133.985 138.43 90)
 			(effects
 				(font
 					(size 1 1)
 				)
 			)
 		)
-		(property "Value" "LED_ARGB"
-			(at 177.8 45.72 0)
+		(property "Value" "20"
+			(at 139.7 138.43 90)
 			(effects
 				(font
-					(size 1.27 1.27)
+					(size 1 1)
 				)
-				(hide yes)
 			)
 		)
-		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 177.8 58.42 0)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -30482,7 +30428,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 177.8 58.42 0)
+			(at 137.16 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -30490,82 +30436,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 177.8 57.15 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "424f44dd-9f25-443a-bfb5-31a97145a549")
-		)
-		(pin "4"
-			(uuid "a28ef820-eddf-4292-bbac-27d66fcbe6de")
-		)
-		(pin "2"
-			(uuid "fbe61a2a-fd88-493f-ad63-425dd911e37a")
-		)
-		(pin "3"
-			(uuid "d5baecee-e006-4941-9538-aa58d1abc39e")
-		)
-		(instances
-			(project "v0"
-				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED12")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:LED_RABG")
-		(at 152.4 95.25 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "fa69ef07-e43e-480b-aa65-bfeda4c2c338")
-		(property "Reference" "LED28"
-			(at 150.495 85.725 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Value" "LED_ARGB"
-			(at 152.4 83.82 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 152.4 96.52 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 152.4 96.52 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 152.4 95.25 0)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -30574,21 +30446,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "0ed9c3b5-c5d3-49f7-9a8c-3e76359581db")
-		)
-		(pin "4"
-			(uuid "4d496224-2fb9-49a1-b4ec-c189572c3091")
+			(uuid "55962c64-7950-49d1-987a-12dde910dda8")
 		)
 		(pin "2"
-			(uuid "e4761ba8-e89d-4e92-b93e-50b1b2028c61")
-		)
-		(pin "3"
-			(uuid "9d5b5bf8-e921-4237-9521-db10841515ac")
+			(uuid "58c3e1bb-1c16-49ad-8d08-6f3060eb7338")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED28")
+					(reference "R33")
 					(unit 1)
 				)
 			)
@@ -30669,33 +30535,32 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:LED_RABG")
-		(at 152.4 57.15 0)
+		(lib_id "Device:R_Small_US")
+		(at 137.16 172.72 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "fceee2bd-a0a5-4624-a1ac-e4e4680b6a17")
-		(property "Reference" "LED10"
-			(at 150.495 47.625 0)
+		(uuid "fdb0a1af-ceec-47d0-b5cd-9f06836c6f61")
+		(property "Reference" "R38"
+			(at 133.985 171.45 90)
 			(effects
 				(font
 					(size 1 1)
 				)
 			)
 		)
-		(property "Value" "LED_ARGB"
-			(at 152.4 45.72 0)
+		(property "Value" "20"
+			(at 139.7 171.45 90)
 			(effects
 				(font
-					(size 1.27 1.27)
+					(size 1 1)
 				)
-				(hide yes)
 			)
 		)
-		(property "Footprint" "map_lbr:LED_RGB_0606"
-			(at 152.4 58.42 0)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 172.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -30704,7 +30569,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 152.4 58.42 0)
+			(at 137.16 172.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -30712,8 +30577,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "RGB LED, red/anode/blue/green"
-			(at 152.4 57.15 0)
+		(property "Description" "Resistor, small US symbol"
+			(at 137.16 172.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -30722,21 +30587,156 @@
 			)
 		)
 		(pin "1"
-			(uuid "1d847c96-f5ec-46bb-929e-43db4dcca704")
-		)
-		(pin "4"
-			(uuid "a3de04c2-3476-45f0-b657-6f17d484c212")
+			(uuid "f8e62aa6-1a92-4618-8260-850ac72ebbe1")
 		)
 		(pin "2"
-			(uuid "3ac00c29-93a9-4b60-a449-30c9b05d2320")
-		)
-		(pin "3"
-			(uuid "c7566247-5dac-4f00-bb7f-b99120391da0")
+			(uuid "04fa0f81-bdf3-42ff-bb3b-a3fbcd6cc93a")
 		)
 		(instances
 			(project "v0"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED10")
+					(reference "R38")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 73.66 144.78 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "fdd08c2a-b3d0-4f4a-b3f7-59675a28e16c")
+		(property "Reference" "#PWR034"
+			(at 73.66 151.13 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 73.66 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 73.66 144.78 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 73.66 144.78 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 73.66 144.78 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "7e964f4a-392d-4056-a97d-0d5bf97b792f")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "#PWR034")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:LED_RABG")
+		(at 165.1 57.15 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "ffe2329c-9f6f-41b4-843f-0693777aef6c")
+		(property "Reference" "LED11"
+			(at 163.195 47.625 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "LED_ARGB"
+			(at 165.1 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "map_lbr:LED_RGB_0606"
+			(at 165.1 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 165.1 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RGB LED, red/anode/blue/green"
+			(at 165.1 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "5183aa68-c146-4dae-b7f6-123204f33a89")
+		)
+		(pin "4"
+			(uuid "4cd31d12-ddfa-4ca5-8c05-4ea43e68894e")
+		)
+		(pin "2"
+			(uuid "03ca8b3d-b708-4dc0-bf01-d07ababd23b0")
+		)
+		(pin "3"
+			(uuid "aac3045e-8389-4755-91ad-25816d078f6e")
+		)
+		(instances
+			(project "v0"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
+					(reference "LED11")
 					(unit 1)
 				)
 			)
