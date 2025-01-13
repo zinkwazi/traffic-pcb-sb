@@ -49,7 +49,10 @@
 /** @brief The queue size of the dot command queue. */
 #define DOTS_QUEUE_SIZE 1
 
-enum DotCommandType {
+/**
+ * @brief Describes the type of command that the worker task will handle.
+ */
+enum WorkerCommandType {
     /* refresh the dots moving from south to north */
     REFRESH_NORTH,
     /* refresh the dots moving from north to south */
@@ -62,22 +65,24 @@ enum DotCommandType {
     QUICK_CLEAR,
 };
 
-typedef enum DotCommandType DotCommandType;
+typedef enum WorkerCommandType WorkerCommandType;
 
-/* A command for the dot worker task, eventually to hold animation info */
-struct DotCommand {
-    DotCommandType type;
+/**
+ * @brief A command for the dot worker task, eventually to hold animation info.
+ * */
+struct WorkerCommand {
+    WorkerCommandType type;
 };
 
-typedef struct DotCommand DotCommand;
+typedef struct WorkerCommand WorkerCommand;
 
 /**
  * @brief Stores references to objects necessary for the worker task.
  * 
- * @note The dot worker task, implemented by vDotWorkerTask, does its work 
- * within the context of these resources and is created by createDotWorkerTask.
+ * @note The dot worker task, implemented by vWorkerTask, does its work 
+ * within the context of these resources and is created by createWorkerTask.
  */
-struct DotWorkerTaskResources {
+struct WorkerTaskResources {
   QueueHandle_t dotQueue; /*!< A handle to a queue that holds struct DotCommand 
                                objects. This task retrieves commands from this 
                                queue and performs work to fulfill them. */
@@ -88,34 +93,67 @@ struct DotWorkerTaskResources {
   ErrorResources *errRes; /*!< Holds global error handling resources. */
 };
 
-typedef struct DotWorkerTaskResources DotWorkerTaskResources;
+typedef struct WorkerTaskResources WorkerTaskResources;
 
 /**
- * @brief Initializes the dot worker task, which is implemented by 
- *        vDotWorkerTask.
+ * @brief Initializes the worker task, which is implemented by vWorkerTask.
  * 
- * @note The dot worker task receives commands from the main task. It is the
- *       task that does the most 'business logic' of the application. It
- *       relieves the main task of these duties so that it can quickly respond
- *       to user input.
- * 
- * @param resources A collection of pointers to objects necessary for the
- *                  worker task to accept and fulfill commands.
- * 
+ * @param handle A pointer to a handle which will refer to the created task
+ *               if successful.
+ * @param dotQueue A handle to a queue that holds struct DotCommand 
+ *                 objects. This task retrieves commands from this 
+ *                 queue and performs work to fulfill them.
+ * @param I2CQueue A handle to a queue that holds struct I2CCommand 
+ *                 objects. This task issues commands to this queue 
+ *                 to be handled by the I2C gatekeeper, implemented 
+ *                 by vI2CGatekeeperTask.
+ * @param errRes A pointer to global error handling resources.
  * @returns ESP_OK if successful, otherwise ESP_FAIL.
  */
-esp_err_t createDotWorkerTask(DotWorkerTaskResources *resources);
+esp_err_t createWorkerTask(TaskHandle_t *handle, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, ErrorResources *errRes);
 
 /**
- * Toggles the error LED to indicate that
- * an issue requesting traffic data from TomTom
- * has occurred, which is likely due to an invalid
- * or overused api key.
+ * @brief Implements the worker task, which is responsible for handling
+ *        commands of type WorkerCommand sent from the main task.
+ * 
+ * @note The worker task receives commands from the main task. It is the task 
+ *       that does the most 'business logic' of the application. It relieves 
+ *       the main task of these duties so that it can quickly respond to user 
+ *       input.
+ * 
+ * @param pvParameters A pointer to a WorkerTaskResources object which
+ *                     should remain valid through the lifetime of the task.
  */
-void tomtomErrorTimerCallback(void *params);
+void vWorkerTask(void *pvParameters);
 
+/**
+ * @brief Initializes the over-the-air (OTA) task, which is implemented by
+ *        vOTATask.
+ * 
+ * @note This function creates shallow copies of parameters that will be 
+ *       provided to the task in static memory. It assumes that only one of 
+ *       this type of task will be created; any additional tasks will have 
+ *       pointers to the same location in static memory.
+ * 
+ * @param handle A pointer to a handle which will refer to the created task
+ *               if successful.
+ * @param errorResources A pointer to an ErrorResources object. A deep copy
+ *                       of the object will be created in static memory.
+ *                       
+ * @returns ESP_OK if the task was created successfully, otherwise ESP_FAIL.
+ */
+esp_err_t createOTATask(TaskHandle_t *handle, const ErrorResources *errorResources);
 
-void vDotWorkerTask(void *pvParameters);
+/**
+ * @brief Implements the over-the-air (OTA) task, which is responsible for
+ *        handling user requests to update to the latest version of firmware.
+ * 
+ * @note To avoid runtime errors, the OTA task should only be created by the
+ *       createOTATask function.
+ * 
+ * @param pvParameters A pointer to an ErrorResources object which should
+ *                     remain valid through the lifetime of the task.
+ */
 void vOTATask(void* pvParameters);
 
 #endif /* WORKER_H_ */

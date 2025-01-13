@@ -105,6 +105,43 @@ void executeI2CCommand(I2CCommand *command) {
     }
 }
 
+
+/**
+ * @brief Initializes the I2C gatekeeper task, which is implemented by 
+ *        vI2CGatekeeperTask.
+ * 
+ * @note The gatekeeper is intended to be the only task that interacts with the
+ *       I2C peripheral in order to keep dot matrices in known states.
+ * 
+ * @param handle A pointer to a handle which will refer to the created task
+ *               if successful.
+ * @param I2CQueue A handle to a queue that holds struct I2CCommand
+ *                 objects. This task retrieves commands from this queue and
+ *                 performs I2C transactions to fulfill them.
+ * @param port The port of the I2C bus lines.
+ * @param sdaPin The pin of the SDA I2C line on the I2C port.
+ * @param sclPin The pin of the SCL I2C line on the I2C port.
+ * 
+ * @returns ESP_OK if successful, otherwise ESP_FAIL.
+ */
+esp_err_t createI2CGatekeeperTask(TaskHandle_t *handle, QueueHandle_t I2CQueue, i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin) {
+    static I2CGatekeeperTaskParams taskResources;
+    BaseType_t success;
+    /* input guards */
+    if (I2CQueue == NULL) {
+        return ESP_FAIL;
+    }
+    /* package parameters */
+    taskResources.I2CQueue = I2CQueue;
+    taskResources.port = port;
+    taskResources.sdaPin = sdaPin;
+    taskResources.sclPin = sclPin;
+    /* create task */
+    success = xTaskCreate(vI2CGatekeeperTask, "I2CGatekeeper", CONFIG_I2C_GATEKEEPER_STACK,
+                          &taskResources, CONFIG_I2C_GATEKEEPER_PRIO, handle);
+    return (success) ? ESP_OK : ESP_FAIL;
+}
+
 /**
  * This task manages interaction with the I2C peripheral,
  * which should be interacted with only through the functions

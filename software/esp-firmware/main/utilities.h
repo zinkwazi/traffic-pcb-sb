@@ -176,21 +176,6 @@ esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir);
 esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct UserSettings *settings);
 
 /**
- * @brief Initializes the I2C gatekeeper task, which is implemented by 
- *        vI2CGatekeeperTask.
- * 
- * @note The gatekeeper is intended to be the only task that interacts with the
- *       I2C peripheral in order to keep dot matrices in known states.
- * 
- * @param I2CQueue A handle to a queue that holds struct I2CCommand
- *                 objects. This task retrieves commands from this queue and
- *                 performs I2C transactions to fulfill them.
- * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- */
-esp_err_t createI2CGatekeeperTask(QueueHandle_t I2CQueue);
-
-/**
  * @brief Configures and sets initial levels of the direction LEDs.
  * 
  * @returns ESP_OK if successful, otherwise ESP_FAIL.

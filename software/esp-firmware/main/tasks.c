@@ -21,7 +21,6 @@
 #include "main_types.h"
 
 /* LED color configuration */
-#define DOTS_GLOBAL_CURRENT (0x70) // MAX Current: 0x80
 
 #define SLOW_RED (0xFF)
 #define SLOW_GREEN (0x00)
@@ -35,9 +34,6 @@
 #define FAST_GREEN (0x00)
 #define FAST_BLUE (0x10)
 
-#define SLOW_CUTOFF_PERCENT (50)
-#define MEDIUM_CUTOFF_PERCENT (80)
-
 /* The URL of server data (to be appended with version) */
 #define URL_DATA_SERVER_NORTH (CONFIG_DATA_SERVER "/current_data/data_north_")
 #define URL_DATA_SERVER_SOUTH (CONFIG_DATA_SERVER "/current_data/data_south_")
@@ -45,17 +41,16 @@
 #define URL_DATA_TYPICAL_SOUTH (CONFIG_DATA_SERVER "/current_data/typical_south_")
 #define URL_DATA_FILE_TYPE (".dat")
 
-
 #define API_METHOD HTTP_METHOD_GET
 #define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
 #define API_RETRY_CONN_NUM 5
 
 void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t percentFlow) {
-    if (percentFlow < SLOW_CUTOFF_PERCENT) {
+    if (percentFlow < CONFIG_SLOW_CUTOFF_PERCENT) {
         *red = SLOW_RED;
         *green = SLOW_GREEN;
         *blue = SLOW_BLUE;
-    } else if (percentFlow < MEDIUM_CUTOFF_PERCENT) {
+    } else if (percentFlow < CONFIG_MEDIUM_CUTOFF_PERCENT) {
         *red = MEDIUM_RED;
         *green = MEDIUM_GREEN;
         *blue = MEDIUM_BLUE;
@@ -117,7 +112,7 @@ esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], esp_http_client_handle_t clien
     /* construct url string */
     strcpy(urlStr, baseURL);
     strcat(urlStr, version);
-    strcat(urlStr, ".dat");
+    strcat(urlStr, URL_DATA_FILE_TYPE);
     ESP_LOGI(TAG, "%s", urlStr);
     /* request data */
     if (esp_http_client_set_url(client, urlStr) != ESP_OK) {
@@ -182,12 +177,12 @@ void updateLED(QueueHandle_t I2CQueue, uint16_t ledNum, uint8_t percentFlow) {
 }
 
 bool mustAbort(QueueHandle_t I2CQueue, QueueHandle_t dotQueue) {
-    DotCommand command;
+    WorkerCommand command;
     if (xQueuePeek(dotQueue, &command, 0) == pdTRUE) {
         /* A new command has been issued, quick clear and abort command */
         ESP_LOGI(TAG, "Quick Clearing...");
         if (dotsReset(I2CQueue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
-            dotsSetGlobalCurrentControl(I2CQueue, DOTS_GLOBAL_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK ||
+            dotsSetGlobalCurrentControl(I2CQueue, CONFIG_GLOBAL_LED_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK ||
             dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) 
         {
             ESP_LOGE(TAG, "failed to reset dot matrices");
@@ -222,10 +217,10 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, uint8_t typicalSpeeds[], Q
         if (prevConnError) {
             resolveNoConnError(errRes, false, false);
         }
-        ESP_LOGI(TAG, "updating segment speeds in non-volatile storage");
-        if (setSpeedsToNvs(speeds, dir, true) != ESP_OK) {
-            ESP_LOGW(TAG, "failed to update segment speeds in non-volatile storage");
-        }
+        // ESP_LOGI(TAG, "updating segment speeds in non-volatile storage");
+        // if (setSpeedsToNvs(speeds, dir, true) != ESP_OK) {
+        //     ESP_LOGW(TAG, "failed to update segment speeds in non-volatile storage");
+        // }
     }
 
     switch (dir) {
@@ -263,23 +258,25 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, uint8_t typicalSpeeds[], Q
     return ret;
 }
 
-esp_err_t createDotWorkerTask(DotWorkerTaskResources *resources) {
+esp_err_t createWorkerTask(TaskHandle_t *handle, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, ErrorResources *errRes) {
+  static WorkerTaskResources taskResources;
   BaseType_t success;
   /* input guards */
-  if (resources->dotQueue == NULL ||
-      resources->I2CQueue == NULL ||
-      resources->errRes == NULL)
+  if (dotQueue == NULL ||
+      I2CQueue == NULL ||
+      errRes == NULL ||
+      errRes->errMutex == NULL)
   {
     return ESP_FAIL;
   }
+  /* copy resources */
+  taskResources.dotQueue = dotQueue;
+  taskResources.I2CQueue = I2CQueue;
+  taskResources.errRes = errRes;
   /* create task */
-  success = xTaskCreate(vDotWorkerTask, "worker", DOTS_WORKER_STACK, 
-                        resources, DOTS_WORKER_PRIO, NULL);
-  if (success != pdPASS) {
-    ESP_LOGE(TAG, "failed to create dot worker task");
-    return ESP_FAIL;
-  }
-  return ESP_OK;
+  success = xTaskCreate(vWorkerTask, "worker", DOTS_WORKER_STACK, 
+                        &taskResources, DOTS_WORKER_PRIO, handle);
+  return (success == pdPASS) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t removeExtraWorkerNvsEntries(void) {
@@ -329,7 +326,7 @@ esp_err_t removeExtraWorkerNvsEntries(void) {
  * then sends a command to the I2C gatekeeper
  * to update the color of the dot.
  */
-void vDotWorkerTask(void *pvParameters) {
+void vWorkerTask(void *pvParameters) {
     esp_http_client_config_t httpConfig = {
         .host = CONFIG_DATA_SERVER,
         .path = "/",
@@ -340,40 +337,48 @@ void vDotWorkerTask(void *pvParameters) {
         .user_data = NULL,
     };
 
-    DotWorkerTaskResources *res = (DotWorkerTaskResources *) pvParameters;
+    ESP_LOGI(TAG, "worker task created");
+
+    WorkerTaskResources *res = (WorkerTaskResources *) pvParameters;
     esp_http_client_handle_t client;
-    DotCommand dot;
+    WorkerCommand dot;
 
     client = esp_http_client_init(&httpConfig);
     if (client == NULL) {
+        ESP_LOGI(TAG, "client is null");
         throwFatalError(res->errRes, false);
     }
 
     /* remove extra non-volatile storage entries from partition */
-    if (removeExtraWorkerNvsEntries() != ESP_OK) {
-        throwFatalError(res->errRes, false);
-    }
+    // if (removeExtraWorkerNvsEntries() != ESP_OK) {
+    //     ESP_LOGI(TAG, '')
+    //     throwFatalError(res->errRes, false);
+    // }
 
     /* retrieve typical speeds from the server */
     static uint8_t typicalSpeedsNorth[MAX_NUM_LEDS];
     static uint8_t typicalSpeedsSouth[MAX_NUM_LEDS];
+    // for (int i = 0; i < MAX_NUM_LEDS; i++) {
+    //     typicalSpeedsNorth[i] = 70;
+    //     typicalSpeedsSouth[i] = 70;
+    // }
     if (tomtomGetServerSpeeds(typicalSpeedsNorth, client, URL_DATA_TYPICAL_NORTH, 
                               CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 
                               API_RETRY_CONN_NUM) != ESP_OK) 
     {
         /* failed to get typical north speeds from server, search nvs */
         ESP_LOGW(TAG, "failed to retrieve typical northbound speeds from server, searching non-volatile storage");
-        if (esp_http_client_cleanup(client) != ESP_OK ||
-            (client = esp_http_client_init(&httpConfig)) == NULL ||
-            getSpeedsFromNvs(typicalSpeedsNorth, NORTH, false) != ESP_OK)
-        {
-            throwFatalError(res->errRes, false);
-        }
+        // if (esp_http_client_cleanup(client) != ESP_OK ||
+        //     (client = esp_http_client_init(&httpConfig)) == NULL ||
+        //     getSpeedsFromNvs(typicalSpeedsNorth, NORTH, false) != ESP_OK)
+        // {
+        //     throwFatalError(res->errRes, false);
+        // }
     } else {
-        ESP_LOGI(TAG, "setting typical north speeds in non-volatile storage");
-        if (setSpeedsToNvs(typicalSpeedsNorth, NORTH, false) != ESP_OK) {
-            ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
-        }
+        // ESP_LOGI(TAG, "setting typical north speeds in non-volatile storage");
+        // if (setSpeedsToNvs(typicalSpeedsNorth, NORTH, false) != ESP_OK) {
+        //     ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
+        // }
     }
     if (tomtomGetServerSpeeds(typicalSpeedsSouth, client, URL_DATA_TYPICAL_SOUTH, 
                               CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 
@@ -381,17 +386,17 @@ void vDotWorkerTask(void *pvParameters) {
     {
         /* failed to get typical north speeds from server, search nvs */
         ESP_LOGW(TAG, "failed to retrieve typical southbound speeds from server, searching non-volatile storage");
-        if (esp_http_client_cleanup(client) != ESP_OK ||
-            (client = esp_http_client_init(&httpConfig)) == NULL ||
-            getSpeedsFromNvs(typicalSpeedsSouth, SOUTH, false) != ESP_OK)
-        {
-            throwFatalError(res->errRes, false);
-        }
+        // if (esp_http_client_cleanup(client) != ESP_OK ||
+        //     (client = esp_http_client_init(&httpConfig)) == NULL ||
+        //     getSpeedsFromNvs(typicalSpeedsSouth, SOUTH, false) != ESP_OK)
+        // {
+        //     throwFatalError(res->errRes, false);
+        // }
     } else {
-        ESP_LOGI(TAG, "setting typical south speeds in non-volatile storage");
-        if (setSpeedsToNvs(typicalSpeedsNorth, SOUTH, false) != ESP_OK) {
-            ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
-        }
+        // ESP_LOGI(TAG, "setting typical south speeds in non-volatile storage");
+        // if (setSpeedsToNvs(typicalSpeedsNorth, SOUTH, false) != ESP_OK) {
+        //     ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
+        // }
     }
 
     /* Wait for commands and execute them forever */
@@ -455,7 +460,7 @@ void vDotWorkerTask(void *pvParameters) {
             case QUICK_CLEAR:
                 ESP_LOGI(TAG, "Quick Clearing...");
                 if (dotsReset(res->I2CQueue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
-                    dotsSetGlobalCurrentControl(res->I2CQueue, DOTS_GLOBAL_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK ||
+                    dotsSetGlobalCurrentControl(res->I2CQueue, CONFIG_GLOBAL_LED_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK ||
                     dotsSetOperatingMode(res->I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) 
                 {
                     ESP_LOGE(TAG, "failed to reset dot matrices");
@@ -470,6 +475,25 @@ void vDotWorkerTask(void *pvParameters) {
     ESP_LOGE(TAG, "dot worker task is exiting! This should be impossible!");
     esp_http_client_cleanup(client);
     vTaskDelete(NULL); // exit safely (should never happen)
+}
+
+esp_err_t createOTATask(TaskHandle_t *handle, const ErrorResources *errorResources) {
+    static ErrorResources taskErrorResources;
+    BaseType_t success;
+    /* input guards */
+    if (errorResources == NULL ||
+        errorResources->errMutex == NULL)
+    {
+        return ESP_FAIL;
+    }
+    /* copy parameters */
+    taskErrorResources.err = errorResources->err;
+    taskErrorResources.errMutex = errorResources->errMutex;
+    taskErrorResources.errTimer = errorResources->errTimer;
+    /* create OTA task */
+    success = xTaskCreate(vOTATask, "OTATask", OTA_TASK_STACK,
+                          &taskErrorResources, OTA_TASK_PRIO, handle);
+    return (success == pdPASS) ? ESP_OK : ESP_FAIL;
 }
 
 void vOTATask(void* pvParameters) {

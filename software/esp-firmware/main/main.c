@@ -189,7 +189,7 @@ void app_main(void)
       (I2CQueue != NULL),
       NULL
     );
-    dotQueue = xQueueCreate(DOTS_QUEUE_SIZE, sizeof(DotCommand));
+    dotQueue = xQueueCreate(DOTS_QUEUE_SIZE, sizeof(WorkerCommand));
     SPIN_IF_FALSE(
       (dotQueue != NULL),
       &errRes
@@ -201,26 +201,19 @@ void app_main(void)
     );
     /* create tasks */
     ESP_LOGI(TAG, "creating tasks");
+    TaskHandle_t otaTask;
     SPIN_IF_ERR(
-      createI2CGatekeeperTask(I2CQueue),
+      createI2CGatekeeperTask(NULL, I2CQueue, I2C_PORT, SDA_PIN, SCL_PIN),
       &errRes
     );
-    static DotWorkerTaskResources workerResources = {
-      .dotQueue = NULL,
-      .I2CQueue = NULL,
-      .errRes = NULL,
-    };
-    workerResources.dotQueue = dotQueue;
-    workerResources.I2CQueue = I2CQueue;
-    workerResources.errRes = &errRes;
     SPIN_IF_ERR(
-      createDotWorkerTask(&workerResources),
+      createWorkerTask(NULL, dotQueue, I2CQueue, &errRes),
       &errRes
     );
-    TaskHandle_t otaTask = NULL;
-    if (xTaskCreate(vOTATask, "OTATask", OTA_TASK_STACK, &errRes, OTA_TASK_PRIO, &otaTask) != pdPASS) {
-      throwFatalError(&errRes, false);
-    }
+    SPIN_IF_ERR(
+      createOTATask(&otaTask, &errRes),
+      &errRes
+    );
     /* initialize pins */
     ESP_LOGI(TAG, "initializing pins");
     SPIN_IF_ERR(

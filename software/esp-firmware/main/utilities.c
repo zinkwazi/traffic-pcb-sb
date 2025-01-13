@@ -170,28 +170,6 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct UserSettings *settin
   return ESP_OK;
 }
 
-esp_err_t createI2CGatekeeperTask(QueueHandle_t I2CQueue) {
-  BaseType_t success;
-  I2CGatekeeperTaskParams *params;
-  /* input guards */
-  if (I2CQueue == NULL) {
-    return ESP_FAIL;
-  }
-  /* create parameters */
-  params = malloc(sizeof(I2CGatekeeperTaskParams));
-  if (params == NULL) {
-    return ESP_FAIL;
-  }
-  params->I2CQueue = I2CQueue;
-  params->port = I2C_PORT;
-  params->sdaPin = SDA_PIN;
-  params->sclPin = SCL_PIN;
-  /* create task */
-  success = xTaskCreate(vI2CGatekeeperTask, "I2CGatekeeper", I2C_GATEKEEPER_STACK,
-                        params, I2C_GATEKEEPER_PRIO, NULL);
-  return (success == pdPASS) ? ESP_OK : ESP_FAIL;
-}
-
 esp_err_t initDirectionLEDs(void) {
     /* Set GPIO directions */
     if (gpio_set_direction(LED_NORTH_PIN, GPIO_MODE_OUTPUT) != ESP_OK) {
@@ -272,7 +250,7 @@ esp_err_t disableDirectionButtonIntr(void) {
 }
 
 esp_err_t quickClearLEDs(QueueHandle_t dotQueue) {
-  DotCommand command;
+  WorkerCommand command;
   /* empty the queue */
   while (xQueueReceive(dotQueue, &command, 0) == pdTRUE) {}
   /* send quick clear command */
@@ -284,7 +262,7 @@ esp_err_t quickClearLEDs(QueueHandle_t dotQueue) {
 }
 
 esp_err_t clearLEDs(QueueHandle_t dotQueue, Direction currDir) {
-  DotCommand command;
+  WorkerCommand command;
   /* empty the queue */
   while (xQueueReceive(dotQueue, &command, 0) == pdTRUE) {}
   /* determine clearing direction */
@@ -307,7 +285,7 @@ esp_err_t clearLEDs(QueueHandle_t dotQueue, Direction currDir) {
 
 esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir) {
   esp_err_t ret = ESP_OK;
-  DotCommand command;
+  WorkerCommand command;
   int northLvl, southLvl, eastLvl, westLvl;
   /* input guards */
   if (dotQueue == NULL) {
@@ -440,7 +418,9 @@ void throwFatalError(ErrorResources *errRes, bool callerHasErrMutex) {
   errRes->err = FATAL_ERR;
   
   xSemaphoreGive(errRes->errMutex); // give up mutex in caller's name
-  for (;;) {}
+  for (;;) {
+    vTaskDelay(INT_MAX);
+  }
 }
 
 void resolveNoConnError(ErrorResources *errRes, bool resolveNone, bool callerHasErrMutex) {

@@ -89,11 +89,51 @@ menu "Main Application"
 
     config GLOBAL_LED_CURRENT
         int "Global LED Current"
-        default 37
+        default 112
         help
             The maximum current that is delivered to an LED, which is also
             the current delivered to an LED with a scaling factor of 0xFF.
             This value should not exceed 0x80 (128) as that corresponds to the
             maximum operating current that an LED can handle.
+    
+    config SLOW_CUTOFF_PERCENT
+        int "Slow LED Cutoff"
+        default 50
+        help
+            The percentage of road segment free flow speed below which the current
+            segment speed is considered slow, exclusive of the cutoff. This
+            should be lower than MEDIUM_CUTOFF_PERCENT.
+
+    config MEDIUM_CUTOFF_PERCENT
+        int "Medium LED Cutoff"
+        default 80
+        help
+            The percentage of road segment free flow speed below which the current
+            segment speed is considered medium, exclusive of the cutoff. This should
+            be higher than SLOW_CUTOFF_PERCENT.
+
+    config MAIN_STACK
+        int "Stack size in bytes of the main task"
+        default 3584
+
+    config MAIN_PRIO
+        int "Priority of the main task"
+        default 3
+
+    config WORKER_STACK
+        int "Stack size in bytes of the worker task"
+        default 4184
+    
+    config WORKER_PRIO
+        int "Priority of the worker task"
+        default 1
+    
+    config OTA_STACK
+        int "Stack size in bytes of the OTA task"
+        default 3584
+
+    config OTA_PRIO
+        int "Priority of the OTA task"
+        default 4
 
 endmenu
