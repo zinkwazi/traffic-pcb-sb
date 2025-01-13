@@ -13,7 +13,7 @@
 /* A mapping from LED number to corresponding 
 matrix registers for each color (red, green, blue). */
 static const LEDReg LEDNumToReg[] = {
-    {0xFF, 0xFF, 0xFF, 0xFF}, // there is no lED with number 0
+    {0xFF, 0xFF, 0xFF, 0xFF}, // there is no LED with number 0
     {0x8D, 0x8F, 0x8E, 1}, // 1, start matrix 1
     {0x96, 0x98, 0x97, 1}, // 2
     {0x9F, 0xA1, 0xA0, 1}, // 3
