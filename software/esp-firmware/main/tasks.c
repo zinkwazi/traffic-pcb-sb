@@ -350,35 +350,34 @@ void vWorkerTask(void *pvParameters) {
     }
 
     /* remove extra non-volatile storage entries from partition */
-    // if (removeExtraWorkerNvsEntries() != ESP_OK) {
-    //     ESP_LOGI(TAG, '')
-    //     throwFatalError(res->errRes, false);
-    // }
+    if (removeExtraWorkerNvsEntries() != ESP_OK) {
+        throwFatalError(res->errRes, false);
+    }
 
     /* retrieve typical speeds from the server */
     static uint8_t typicalSpeedsNorth[MAX_NUM_LEDS];
     static uint8_t typicalSpeedsSouth[MAX_NUM_LEDS];
-    // for (int i = 0; i < MAX_NUM_LEDS; i++) {
-    //     typicalSpeedsNorth[i] = 70;
-    //     typicalSpeedsSouth[i] = 70;
-    // }
+    for (int i = 0; i < MAX_NUM_LEDS; i++) {
+        typicalSpeedsNorth[i] = 70;
+        typicalSpeedsSouth[i] = 70;
+    }
     if (tomtomGetServerSpeeds(typicalSpeedsNorth, client, URL_DATA_TYPICAL_NORTH, 
                               CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 
                               API_RETRY_CONN_NUM) != ESP_OK) 
     {
         /* failed to get typical north speeds from server, search nvs */
         ESP_LOGW(TAG, "failed to retrieve typical northbound speeds from server, searching non-volatile storage");
-        // if (esp_http_client_cleanup(client) != ESP_OK ||
-        //     (client = esp_http_client_init(&httpConfig)) == NULL ||
-        //     getSpeedsFromNvs(typicalSpeedsNorth, NORTH, false) != ESP_OK)
-        // {
-        //     throwFatalError(res->errRes, false);
-        // }
+        if (esp_http_client_cleanup(client) != ESP_OK ||
+            (client = esp_http_client_init(&httpConfig)) == NULL ||
+            getSpeedsFromNvs(typicalSpeedsNorth, NORTH, false) != ESP_OK)
+        {
+            throwFatalError(res->errRes, false);
+        }
     } else {
-        // ESP_LOGI(TAG, "setting typical north speeds in non-volatile storage");
-        // if (setSpeedsToNvs(typicalSpeedsNorth, NORTH, false) != ESP_OK) {
-        //     ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
-        // }
+        ESP_LOGI(TAG, "setting typical north speeds in non-volatile storage");
+        if (setSpeedsToNvs(typicalSpeedsNorth, NORTH, false) != ESP_OK) {
+            ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
+        }
     }
     if (tomtomGetServerSpeeds(typicalSpeedsSouth, client, URL_DATA_TYPICAL_SOUTH, 
                               CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 
@@ -386,17 +385,17 @@ void vWorkerTask(void *pvParameters) {
     {
         /* failed to get typical north speeds from server, search nvs */
         ESP_LOGW(TAG, "failed to retrieve typical southbound speeds from server, searching non-volatile storage");
-        // if (esp_http_client_cleanup(client) != ESP_OK ||
-        //     (client = esp_http_client_init(&httpConfig)) == NULL ||
-        //     getSpeedsFromNvs(typicalSpeedsSouth, SOUTH, false) != ESP_OK)
-        // {
-        //     throwFatalError(res->errRes, false);
-        // }
+        if (esp_http_client_cleanup(client) != ESP_OK ||
+            (client = esp_http_client_init(&httpConfig)) == NULL ||
+            getSpeedsFromNvs(typicalSpeedsSouth, SOUTH, false) != ESP_OK)
+        {
+            throwFatalError(res->errRes, false);
+        }
     } else {
-        // ESP_LOGI(TAG, "setting typical south speeds in non-volatile storage");
-        // if (setSpeedsToNvs(typicalSpeedsNorth, SOUTH, false) != ESP_OK) {
-        //     ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
-        // }
+        ESP_LOGI(TAG, "setting typical south speeds in non-volatile storage");
+        if (setSpeedsToNvs(typicalSpeedsNorth, SOUTH, false) != ESP_OK) {
+            ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
+        }
     }
 
     /* Wait for commands and execute them forever */
