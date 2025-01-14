@@ -211,6 +211,8 @@ esp_err_t establishWifiConnection(void)
         ESP_LOGI(TAG, "did not connect to wifi AP");
         unregisterWifiHandler();
         xEventGroupClearBits(wifiEvents, WIFI_CONNECTED_BIT | WIFI_DISCONNECTED_BIT);
+        registerWifiHandler(wifiEventHandler, NULL);
+        esp_wifi_connect(); // start handler loop
         return ESP_FAIL;
     }
     ESP_LOGI(TAG, "connected to wifi AP");
