@@ -217,10 +217,10 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, uint8_t typicalSpeeds[], Q
         if (prevConnError) {
             resolveNoConnError(errRes, false, false);
         }
-        // ESP_LOGI(TAG, "updating segment speeds in non-volatile storage");
-        // if (setSpeedsToNvs(speeds, dir, true) != ESP_OK) {
-        //     ESP_LOGW(TAG, "failed to update segment speeds in non-volatile storage");
-        // }
+        ESP_LOGI(TAG, "updating segment speeds in non-volatile storage");
+        if (setSpeedsToNvs(speeds, dir, true) != ESP_OK) {
+            ESP_LOGW(TAG, "failed to update segment speeds in non-volatile storage");
+        }
     }
 
     switch (dir) {

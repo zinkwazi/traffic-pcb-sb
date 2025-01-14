@@ -43,7 +43,17 @@
 
 void dirButtonISR(void *params) {
   TaskHandle_t mainTask = ((struct dirButtonISRParams *) params)->mainTask;
+  TickType_t *lastISR = ((struct dirButtonISRParams *) params)->lastISR;
   bool *toggle = ((struct dirButtonISRParams *) params)->toggle;
+
+  /* debounce interrupt */
+  TickType_t currentTick = xTaskGetTickCountFromISR();
+  if (currentTick - *lastISR < pdMS_TO_TICKS(CONFIG_DEBOUNCE_PERIOD)) {
+    return;
+  } else {
+    *lastISR = currentTick;
+  }
+
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   *toggle = true;
   vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
@@ -52,11 +62,15 @@ void dirButtonISR(void *params) {
 
 void otaButtonISR(void *params) {
   TaskHandle_t otaTask = (TaskHandle_t) params;
-  xTaskNotifyGive(otaTask);
+
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  vTaskNotifyGiveFromISR(otaTask, &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void timerCallback(void *params) {
   TaskHandle_t mainTask = (TaskHandle_t) params;
+
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);

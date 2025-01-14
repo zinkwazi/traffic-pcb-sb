@@ -222,8 +222,10 @@ void app_main(void)
     );
     /* create timer */
     bool toggle = false;
+    TickType_t lastTickISR = 0;
     struct dirButtonISRParams timerParams;
     timerParams.mainTask = xTaskGetCurrentTaskHandle();
+    timerParams.lastISR = &lastTickISR;
     timerParams.toggle = &toggle;
     esp_timer_create_args_t timerArgs = {
       .callback = dirButtonISR, // use 'timerCallback' to not trigger direction change (with .arg = xTaskGetCurrentTaskHandle())
@@ -246,7 +248,7 @@ void app_main(void)
       &errRes
     );
     SPIN_IF_ERR(
-      initDirectionButton(&toggle),
+      initDirectionButton(&lastTickISR, &toggle),
       &errRes
     );
     /* quick clear LEDs */
@@ -286,12 +288,16 @@ void app_main(void)
         enableDirectionButtonIntr(),
         &errRes
       );
-      uint32_t ulNotificationValue = ulTaskNotifyTake(0, INT_MAX);
-      while (ulNotificationValue != 1) { // a timeout occurred while waiting for button press
-        continue;
-      }
+      uint32_t notificationValue;
+      do {
+        notificationValue = ulTaskNotifyTake(pdTRUE, INT_MAX);
+      } while (notificationValue != 1); // a timeout occurred while waiting for button press
       SPIN_IF_ERR(
         disableDirectionButtonIntr(),
+        &errRes
+      );
+      SPIN_IF_ERR(
+        esp_timer_stop(timer),
         &errRes
       );
       if (toggle) {

@@ -200,9 +200,10 @@ esp_err_t initDirectionLEDs(void) {
     return ESP_OK;
 }
 
-esp_err_t initDirectionButton(bool *toggle) {
+esp_err_t initDirectionButton(TickType_t *lastISR, bool *toggle) {
   struct dirButtonISRParams *params = malloc(sizeof(params));
   params->mainTask = xTaskGetCurrentTaskHandle();
+  params->lastISR = lastISR;
   params->toggle = toggle;
   if (gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT) != ESP_OK) { // pin has an external pullup
     return ESP_FAIL;

@@ -54,6 +54,13 @@ menu "Main Application"
             The amount of time in milliseconds (1/1000th of a second) between 
             clearing of LEDs.
 
+    config DEBOUNCE_PERIOD
+        int "Button Debounce Period"
+        default 200
+        help
+            The amount of time in milliseconds (1/1000th of a second) that
+            additional button interrupts will not be registered after an initial interrupt.
+
     config NUM_RETRY_HTTP_REQUEST
         int "Num Retry HTTP Request"
         default 5

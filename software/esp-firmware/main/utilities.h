@@ -186,12 +186,14 @@ esp_err_t initDirectionLEDs(void);
  * @brief Initializes the direction button and attaches dirButtonISR to a 
  *        negative edge of the GPIO pin.
  * 
+ * @param lastISR A pointer to a TickType_t that is passed to dirButtonISR. The
+ *                object is used for button debouncing.
  * @param toggle A pointer to a bool that is passed to dirButtonISR. The bool
  *               should be in-scope for the duration of use of dirButtonISR.
  * 
  * @returns ESP_OK if successful, otherwise ESP_FAIL.
  */
-esp_err_t initDirectionButton(bool *toggle);
+esp_err_t initDirectionButton(TickType_t *lastISR, bool *toggle);
 
 /**
  * @brief Initializes the OTA button (IO0) and attaches otaButtonISR to a 

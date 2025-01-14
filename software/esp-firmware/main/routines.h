@@ -23,6 +23,8 @@
 struct dirButtonISRParams {
   TaskHandle_t mainTask; /*!< A handle to the main task used to send a 
                               notification. */
+  TickType_t *lastISR; /*!< The tick that the last button interrupt was serviced.
+                           Used for button debouncing. */
   bool *toggle; /*!< Indicates to the main task that the LED direction should
                      change from North to South or vice versa. The bool should
                      remain in-scope for the duration of use of this struct. */ 
