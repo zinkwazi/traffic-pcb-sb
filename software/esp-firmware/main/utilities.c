@@ -402,16 +402,23 @@ void throwHandleableError(ErrorResources *errRes, bool callerHasErrMutex) {
   }
 
   if (!callerHasErrMutex) {
+    ESP_LOGI(TAG, "releasing error semaphore");
     xSemaphoreGive(errRes->errMutex);
   }
 }
 
 void throwFatalError(ErrorResources *errRes, bool callerHasErrMutex) {
+  ESP_LOGE(TAG, "FATAL_ERR thrown!");
+  if (errRes == NULL) {
+    gpio_set_level(ERR_LED_PIN, 1);
+    for (;;) {
+      vTaskDelay(INT_MAX);
+    }
+  }
+
   if (!callerHasErrMutex) {
     while (xSemaphoreTake(errRes->errMutex, INT_MAX) != pdTRUE) {}
   }
-
-  ESP_LOGE(TAG, "FATAL_ERR thrown!");
   if (errRes->errTimer != NULL) {
     stopErrorFlashing(errRes, true);
   }
@@ -539,15 +546,17 @@ void stopErrorFlashing(ErrorResources *errRes, bool callerHasErrMutex) {
   }
 }
 
-void updateNvsSettings(nvs_handle_t nvsHandle, ErrorResources *errRes) {
+void  updateNvsSettings(nvs_handle_t nvsHandle, ErrorResources *errRes) {
+  static int currentLEDOutput;
   throwHandleableError(errRes, false); // turns on error LED
   
   /* flash direction LEDs to indicate settings update is requested */
+  currentLEDOutput = 0;
   const esp_timer_create_args_t flashTimerArgs = {
     .callback = timerFlashDirCallback,
     .dispatch_method = ESP_TIMER_TASK,
     .name = "flashDirTimer",
-    .arg = NULL,
+    .arg = &currentLEDOutput,
   };
   esp_timer_handle_t flashDirTimer;
   if (esp_timer_create(&flashTimerArgs, &flashDirTimer) != ESP_OK) {
@@ -558,6 +567,12 @@ void updateNvsSettings(nvs_handle_t nvsHandle, ErrorResources *errRes) {
   }
   /* request settings update from user */
   if (getNvsEntriesFromUser(nvsHandle) != ESP_OK) {
+    throwFatalError(errRes, false);
+  }
+
+  if (esp_timer_stop(flashDirTimer) != ESP_OK ||
+      esp_timer_delete(flashDirTimer) != ESP_OK)
+  {
     throwFatalError(errRes, false);
   }
 

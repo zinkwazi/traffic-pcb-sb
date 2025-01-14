@@ -250,14 +250,29 @@ esp_err_t quickClearLEDs(QueueHandle_t dotQueue);
  */
 esp_err_t clearLEDs(QueueHandle_t dotQueue, Direction currDir);
 
+/**
+ * Expects errRes to not be NULL!
+ */
 void throwNoConnError(ErrorResources *errRes, bool callerHasErrMutex);
 
+/**
+ * Expects errRes to not be NULL!
+ */
 void throwHandleableError(ErrorResources *errRes, bool callerHasErrMutex);
 
+/**
+ * Expects errRes to not be NULL!
+ */
 void throwFatalError(ErrorResources *errRes, bool callerHasErrMutex);
 
+/**
+ * Expects errRes to not be NULL!
+ */
 void resolveNoConnError(ErrorResources *errRes, bool resolveNone, bool callerHasErrMutex);
 
+/**
+ * Expects errRes to not be NULL!
+ */
 void resolveHandleableError(ErrorResources *errRes, bool resolveNone, bool callerHasErrMutex);
 
 /**

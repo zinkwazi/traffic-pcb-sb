@@ -524,6 +524,12 @@ void vOTATask(void* pvParameters) {
             unregisterWifiHandler();
             esp_restart();
         }
+        
         ESP_LOGI(TAG, "did not complete OTA update successfully!");
+        vTaskDelay(pdMS_TO_TICKS(500)); // leave LEDs on for a bit
+        gpio_set_level(LED_NORTH_PIN, 0);
+        gpio_set_level(LED_EAST_PIN, 0);
+        gpio_set_level(LED_SOUTH_PIN, 0);
+        gpio_set_level(LED_WEST_PIN, 0);
     }
 }

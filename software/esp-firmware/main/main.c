@@ -115,29 +115,29 @@ void app_main(void)
     ESP_LOGI(TAG, "initializing nvs");
     SPIN_IF_ERR(
       nvs_flash_init(),
-      NULL
+      &errRes
     );
     SPIN_IF_ERR(
       nvs_open("main", NVS_READWRITE, &nvsHandle),
-      NULL
+      &errRes
     );
     /* Remove unnecessary NVS entries */
     ESP_LOGI(TAG, "removing unnecessary nvs entries");
     SPIN_IF_ERR(
       removeExtraMainNvsEntries(nvsHandle),
-      NULL
+      &errRes
     );
     /* Ensure NVS entries exist */
     ESP_LOGI(TAG, "checking whether nvs entries exist");
     UPDATE_SETTINGS_IF_ERR(
       nvsEntriesExist(nvsHandle),
-      nvsHandle, NULL
+      nvsHandle, &errRes
     );
     /* Check manual settings update button (dir button held on startup) */
     ESP_LOGI(TAG, "checking manual change settings button");
     SPIN_IF_ERR(
       gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT), // pin has external pullup
-      NULL
+      &errRes
     );
     if (gpio_get_level(T_SW_PIN) == 0) {
       updateNvsSettings(nvsHandle, &errRes);
@@ -146,17 +146,17 @@ void app_main(void)
     ESP_LOGI(TAG, "retrieving NVS entries");
     UPDATE_SETTINGS_IF_ERR(
       retrieveNvsEntries(nvsHandle, &settings),
-      nvsHandle, NULL
+      nvsHandle, &errRes
     );
     /* initialize tcp/ip stack */
     ESP_LOGI(TAG, "initializing TCP/IP stack");
     SPIN_IF_ERR(
       esp_netif_init(),
-      NULL
+      &errRes
     );
     SPIN_IF_ERR(
       esp_event_loop_create_default(),
-      NULL
+      &errRes
     );
     esp_netif_create_default_wifi_sta();
     /* Establish wifi connection & tls */
@@ -164,30 +164,27 @@ void app_main(void)
     wifi_init_config_t default_wifi_cfg = WIFI_INIT_CONFIG_DEFAULT();
     SPIN_IF_ERR(
       esp_wifi_init(&default_wifi_cfg),
-      NULL
+      &errRes
     );
     SPIN_IF_ERR(
       gpio_set_direction(WIFI_LED_PIN, GPIO_MODE_OUTPUT),
-      NULL
+      &errRes
     );
     SPIN_IF_ERR(
       initWifi(settings.wifiSSID, settings.wifiPass, WIFI_LED_PIN), // allows use of establishWifiConnection and isWifiConnected
-      NULL
+      &errRes
     );
-    UPDATE_SETTINGS_IF_ERR(
-      establishWifiConnection(), nvsHandle,
-      NULL
-    );
+    establishWifiConnection(); // do not do anything if this returns an error
     esp_tls_t *tls = esp_tls_init();
     SPIN_IF_FALSE(
       (tls != NULL),
-      NULL
+      &errRes
     );
     /* Create queues and event groups */
     I2CQueue = xQueueCreate(I2C_QUEUE_SIZE, sizeof(I2CCommand));
     SPIN_IF_FALSE(
       (I2CQueue != NULL),
-      NULL
+      &errRes
     );
     dotQueue = xQueueCreate(DOTS_QUEUE_SIZE, sizeof(WorkerCommand));
     SPIN_IF_FALSE(

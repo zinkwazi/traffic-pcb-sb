@@ -128,7 +128,6 @@ esp_err_t unregisterWifiHandler(void) {
                                             ESP_EVENT_ANY_ID,
                                             instanceAnyIP);
     if (ret != ESP_OK) {
-        ESP_LOGI(TAG, "FAIL");
         return ret;
     }
     ret = esp_event_handler_instance_unregister(IP_EVENT,
