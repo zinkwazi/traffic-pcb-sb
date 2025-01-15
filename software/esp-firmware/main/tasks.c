@@ -286,7 +286,10 @@ esp_err_t removeExtraWorkerNvsEntries(void) {
   if (nvs_open("worker", NVS_READWRITE, &nvsHandle) != ESP_OK) {
     return ESP_FAIL;
   }
-  if (nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter) != ESP_OK) {
+  esp_err_t err = nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter);
+  if (err == ESP_ERR_NVS_NOT_FOUND) {
+    return ESP_OK; // no entries to remove
+  } else if (err != ESP_OK) {
     return ESP_FAIL;
   }
   ret = nvs_entry_next(&nvs_iter);
@@ -345,7 +348,6 @@ void vWorkerTask(void *pvParameters) {
 
     client = esp_http_client_init(&httpConfig);
     if (client == NULL) {
-        ESP_LOGI(TAG, "client is null");
         throwFatalError(res->errRes, false);
     }
 
@@ -368,11 +370,11 @@ void vWorkerTask(void *pvParameters) {
         /* failed to get typical north speeds from server, search nvs */
         ESP_LOGW(TAG, "failed to retrieve typical northbound speeds from server, searching non-volatile storage");
         if (esp_http_client_cleanup(client) != ESP_OK ||
-            (client = esp_http_client_init(&httpConfig)) == NULL ||
-            getSpeedsFromNvs(typicalSpeedsNorth, NORTH, false) != ESP_OK)
+            (client = esp_http_client_init(&httpConfig)) == NULL)
         {
             throwFatalError(res->errRes, false);
         }
+        getSpeedsFromNvs(typicalSpeedsNorth, NORTH, false); // don't care if this fails
     } else {
         ESP_LOGI(TAG, "setting typical north speeds in non-volatile storage");
         if (setSpeedsToNvs(typicalSpeedsNorth, NORTH, false) != ESP_OK) {
@@ -386,11 +388,11 @@ void vWorkerTask(void *pvParameters) {
         /* failed to get typical north speeds from server, search nvs */
         ESP_LOGW(TAG, "failed to retrieve typical southbound speeds from server, searching non-volatile storage");
         if (esp_http_client_cleanup(client) != ESP_OK ||
-            (client = esp_http_client_init(&httpConfig)) == NULL ||
-            getSpeedsFromNvs(typicalSpeedsSouth, SOUTH, false) != ESP_OK)
+            (client = esp_http_client_init(&httpConfig)) == NULL)
         {
             throwFatalError(res->errRes, false);
         }
+        getSpeedsFromNvs(typicalSpeedsSouth, SOUTH, false); // don't care if this fails
     } else {
         ESP_LOGI(TAG, "setting typical south speeds in non-volatile storage");
         if (setSpeedsToNvs(typicalSpeedsNorth, SOUTH, false) != ESP_OK) {

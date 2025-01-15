@@ -409,6 +409,7 @@ void throwHandleableError(ErrorResources *errRes, bool callerHasErrMutex) {
 
 void throwFatalError(ErrorResources *errRes, bool callerHasErrMutex) {
   ESP_LOGE(TAG, "FATAL_ERR thrown!");
+  gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);
   if (errRes == NULL) {
     gpio_set_level(ERR_LED_PIN, 1);
     for (;;) {
