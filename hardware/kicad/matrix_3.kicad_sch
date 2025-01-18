@@ -2368,6 +2368,12 @@
 		(uuid "0c86545a-7271-4a79-a74d-746ffe56950b")
 	)
 	(junction
+		(at 40.64 100.33)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "0e050552-008d-45c0-8286-b094014d437d")
+	)
+	(junction
 		(at 234.95 189.23)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -6677,16 +6683,6 @@
 	)
 	(wire
 		(pts
-			(xy 33.02 97.79) (xy 60.96 97.79)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "298ce918-8ddd-45a2-8d98-23a485c07998")
-	)
-	(wire
-		(pts
 			(xy 184.15 106.68) (xy 185.42 106.68)
 		)
 		(stroke
@@ -10174,6 +10170,16 @@
 			(type default)
 		)
 		(uuid "74f54db3-012e-463b-856b-a659958085c4")
+	)
+	(wire
+		(pts
+			(xy 40.64 97.79) (xy 40.64 100.33)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "75a7059c-92b2-4922-b526-9f6aa8d69fc5")
 	)
 	(wire
 		(pts
@@ -14757,6 +14763,16 @@
 	)
 	(wire
 		(pts
+			(xy 60.96 97.79) (xy 40.64 97.79)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "df9ad55c-3a2b-4b70-a40e-99896426b1ce")
+	)
+	(wire
+		(pts
 			(xy 196.85 137.16) (xy 196.85 135.89)
 		)
 		(stroke
@@ -16355,7 +16371,17 @@
 		)
 		(uuid "fff53ab6-9e32-47a0-9d31-e2bffe859252")
 	)
-	(text "I2C ADDR = 10\n"
+	(text "I2C2"
+		(exclude_from_sim no)
+		(at 52.07 77.216 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "07798ee0-962e-438f-a148-815fabcd2779")
+	)
+	(text "I2C ADDR = 00"
 		(exclude_from_sim no)
 		(at 52.705 94.615 0)
 		(effects
@@ -16760,17 +16786,6 @@
 			(justify right bottom)
 		)
 		(uuid "60e322a7-b562-43b8-a31b-af017921fad2")
-	)
-	(label "SDA3"
-		(at 33.02 97.79 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "6d935e3b-814a-4647-9a07-8efc3fc72983")
 	)
 	(label "COL6"
 		(at 233.68 22.86 0)
