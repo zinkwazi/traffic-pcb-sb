@@ -49,9 +49,8 @@ void buttonISR(void *params) {
     portYIELD_FROM_ISR(higherPrioTaskWoken);
 }
 
-void app_main(void)
-{
-/* Initialize direction button */
+void runLEDColorTest(void) {
+    /* Initialize direction button */
     SemaphoreHandle_t sema = xSemaphoreCreateBinary();
     gpio_install_isr_service(0);
     gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT);
@@ -65,12 +64,6 @@ void app_main(void)
     dSetOperatingMode(NORMAL_OPERATION);
     for (int i = 1; i < MAX_NUM_LEDS; i++) {
         LEDReg reg = LEDNumToReg[i];
-        if (i < 296) {
-            ESP_LOGI(TAG, "LED %d RED  , 0x%X", i, reg.red);
-            ESP_LOGI(TAG, "LED %d GREEN, 0x%X", i, reg.green);
-            ESP_LOGI(TAG, "LED %d BLUE , 0x%X", i, reg.blue);
-            continue;
-        }
         dSetScaling(i, 0xFF, 0xFF, 0xFF);
 
         dSetColor(i, 0xFF, 0x00, 0x00);
@@ -92,5 +85,34 @@ void app_main(void)
         gpio_intr_disable(T_SW_PIN);
 
         dSetColor(i, 0x00, 0x00, 0x00);
+    }
+}
+
+void runPowerTest(void) {
+    dotsResetStaticVars();
+    dInitializeBus(I2C_PORT, SDA_PIN, SCL_PIN);
+    dAssertConnected();
+    dReset();
+    dSetGlobalCurrentControl(0x80);
+    dSetOperatingMode(NORMAL_OPERATION);
+    for (int i = 1; i < MAX_NUM_LEDS; i++) {
+        dSetScaling(i, 0xFF, 0xFF, 0xFF);
+        dSetColor(i, 0xFF, 0xFF, 0xFF);
+    }
+}
+
+void app_main(void)
+{
+#if CONFIG_RUN_LED_COLOR_TEST == true
+    ESP_LOGI(TAG, "Running LED Color Test");
+    runLEDColorTest();
+#endif
+#if CONFIG_RUN_POWER_TEST == true
+    ESP_LOGI(TAG, "Running Power Test");
+    runPowerTest();
+#endif
+    ESP_LOGI(TAG, "All tests complete.");
+    for (;;) {
+        vTaskDelay(INT_MAX);
     }
 }

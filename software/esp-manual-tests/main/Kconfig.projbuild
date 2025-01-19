@@ -1,0 +1,11 @@
+menu "Test Application"
+
+    config RUN_LED_COLOR_TEST
+        bool "Run LED Color Test"
+        default true
+    
+    config RUN_POWER_TEST
+        bool "Run Power Test"
+        default true
+
+endmenu
