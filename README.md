@@ -39,9 +39,6 @@ Server errors indicate that live data could not be retrieved from the server and
 ### Unrecoverable Errors
 In the case that the firmware encounters an unrecoverable error, such as a memory allocation error, the error LED will turn on. These errors will not automatically cause a system restart because the error logs should be checked (via UART at 115200 baud through the USB-C connector) and posted as an issue to the repo. Once the logs are retrieved, simply reboot the system via the 'EN' button and forget anything ever happened :).
 
-### JTAG Access
-To enable debugging of the ESP32, the JTAG interface can be accessed through the pinout to the right of the control panel. The board contains JTAG circuitry that handles ESP32 strapping pins and electrically isolates the pinout to the rest of the board with op-amps acting as unity gain buffers. By default, JTAG circuitry is completely disconnected from the rest of the board (even ground and power) and can be connected by soldering breadboarding wires between the connection points near the JTAG pinout.
-
 ### Versioning
 In the 'releases' tab of the repository you can find various firmware binaries that can manually be flashed onto the device in case something goes wrong with OTA updates. The versioning system is built such that updates should always select the most up to date version for the particular version and board revision the firmware is running on. Releases are handled manually, so there may be an issue where the ESP32 starts selecting firmware updates for a different version of the device. In this case, manually flash the image that corresponds to V[board version]\_[revision]\_[firmware_version]. This will get OTA updates back on the correct track. Note that if the server on which early firmware versions look for OTA updates is down and has been superseded by another server, then firmware must be flashed manually.
 
@@ -54,6 +51,8 @@ Ordering of configuration in the version string is as follows: [A/F: data source
 
 ### Pricing
 TomTom's current API price is $0.75 per 1000 requests. An LED refresh in the North direction requires 266 requests and the South direction requires 275 requests (some LEDs correspond to the same openLR road segment). Therefore, these require just about $0.20 to $0.21 cents per refresh. An LED refresh period of 5 minutes will cost roughly $57 to $60 per day, 15 minutes at $20 per day, 20 minutes at $15, 30 minutes at $10, 60 minutes at $5. The user should be aware that V1_0_1 and earlier refresh data every time the direction button is pressed, resulting in many API calls that are only bounded by the user's lack of enthusiasm for button pressing.
+
+Traffic data is retrieved via TomTom. To avoid redundant API calls, the device currently retrieves data from a secondary server that processes all of the traffic data into exactly what is needed for the device to operate. Thus, past V1_0_1 there is no cost when the user presses the "Toggle" button. However, V1_0_1 and earlier versions connect directly to the TomTom API and retrieve new data every time the "Toggle" button is pressed. It is recommended that these versions are not used. If they are used, please provide the device with a free-tier API key as the device is likely to rack up a significant amount of costs (roughly $0.20 to $0.21 per refresh). We are in the process of switching to a different endpoint which will significantly reduce this cost.
 
 # Contribution Guide
 **Under Construction**
