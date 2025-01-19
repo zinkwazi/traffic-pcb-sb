@@ -61,6 +61,12 @@ menu "Main Application"
             The amount of time in milliseconds (1/1000th of a second) that
             additional button interrupts will not be registered after an initial interrupt.
 
+    config OTA_LEFT_ON_MS
+        int "OTA Left On Time"
+        default 1000
+        help
+            The amount of time to leave the direction LEDs on after an OTA update has failed.
+
     config NUM_RETRY_HTTP_REQUEST
         int "Num Retry HTTP Request"
         default 5
@@ -94,6 +100,13 @@ menu "Main Application"
             Whether the TomTom component should simulate API
             data or actually make API calls using the provided API key.
 
+    config TIMER_CAUSES_TOGGLE
+        bool "Timer Causes Toggle"
+        default false
+        help
+            Whether the LED refresh timer should cause the current direction
+            of traffic being displayed to be toggled.
+
     config GLOBAL_LED_CURRENT
         int "Global LED Current"
         default 112
@@ -118,10 +131,6 @@ menu "Main Application"
             The percentage of road segment free flow speed below which the current
             segment speed is considered medium, exclusive of the cutoff. This should
             be higher than SLOW_CUTOFF_PERCENT.
-
-    config MAIN_STACK
-        int "Stack size in bytes of the main task"
-        default 3584
 
     config MAIN_PRIO
         int "Priority of the main task"

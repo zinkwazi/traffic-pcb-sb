@@ -274,8 +274,8 @@ esp_err_t createWorkerTask(TaskHandle_t *handle, QueueHandle_t dotQueue, QueueHa
   taskResources.I2CQueue = I2CQueue;
   taskResources.errRes = errRes;
   /* create task */
-  success = xTaskCreate(vWorkerTask, "worker", DOTS_WORKER_STACK, 
-                        &taskResources, DOTS_WORKER_PRIO, handle);
+  success = xTaskCreate(vWorkerTask, "worker", CONFIG_WORKER_STACK, 
+                        &taskResources, CONFIG_WORKER_PRIO, handle);
   return (success == pdPASS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -492,8 +492,8 @@ esp_err_t createOTATask(TaskHandle_t *handle, const ErrorResources *errorResourc
     taskErrorResources.errMutex = errorResources->errMutex;
     taskErrorResources.errTimer = errorResources->errTimer;
     /* create OTA task */
-    success = xTaskCreate(vOTATask, "OTATask", OTA_TASK_STACK,
-                          &taskErrorResources, OTA_TASK_PRIO, handle);
+    success = xTaskCreate(vOTATask, "OTATask", CONFIG_OTA_STACK,
+                          &taskErrorResources, CONFIG_OTA_PRIO, handle);
     return (success == pdPASS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -528,10 +528,12 @@ void vOTATask(void* pvParameters) {
         }
         
         ESP_LOGI(TAG, "did not complete OTA update successfully!");
-        vTaskDelay(pdMS_TO_TICKS(500)); // leave LEDs on for a bit
+        throwHandleableError(errRes, false);
+        vTaskDelay(pdMS_TO_TICKS(CONFIG_OTA_LEFT_ON_MS)); // leave LEDs on for a bit
         gpio_set_level(LED_NORTH_PIN, 0);
         gpio_set_level(LED_EAST_PIN, 0);
         gpio_set_level(LED_SOUTH_PIN, 0);
         gpio_set_level(LED_WEST_PIN, 0);
+        resolveHandleableError(errRes, false, false);
     }
 }

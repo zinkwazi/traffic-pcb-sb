@@ -20,7 +20,7 @@
  * @brief The input parameters to dirButtonISR, which gives the routine
  * pointers to the main task's objects.
  */
-struct dirButtonISRParams {
+struct DirButtonISRParams {
   TaskHandle_t mainTask; /*!< A handle to the main task used to send a 
                               notification. */
   TickType_t *lastISR; /*!< The tick that the last button interrupt was serviced.
@@ -29,6 +29,27 @@ struct dirButtonISRParams {
                      change from North to South or vice versa. The bool should
                      remain in-scope for the duration of use of this struct. */ 
 };
+
+typedef struct DirButtonISRParams DirButtonISRParams;
+
+struct RefreshTimerParams {
+  TaskHandle_t mainTask;
+  bool *toggle;
+};
+
+typedef struct RefreshTimerParams RefreshTimerParams;
+
+/**
+ * @brief Initializes the direction button and attaches dirButtonISR to a 
+ *        negative edge of the GPIO pin.
+ * 
+ * @param toggle A pointer to a bool that is passed to dirButtonISR. The bool
+ *               should be in-scope for the duration of use of dirButtonISR.
+ * 
+ * @returns ESP_OK if successful, otherwise ESP_FAIL.
+ */
+esp_err_t initDirectionButton(bool *toggle);
+
 
 /**
  * @brief Interrupt service routine that handles direction button presses.
@@ -45,6 +66,16 @@ struct dirButtonISRParams {
 void dirButtonISR(void *params);
 
 /**
+ * @brief Initializes the OTA button (IO0) and attaches otaButtonISR to a 
+ *        negative edge of the GPIO pin.
+ * 
+ * @param otaTask A handle to the OTA task, which is implemented by vOTATask.
+ * 
+ * @returns ESP_OK if successful, otherwise ESP_FAIL.
+ */
+esp_err_t initIOButton(TaskHandle_t otaTask);
+
+/**
  * @brief Interrupt service routine that handles OTA button presses.
  * 
  * Handles OTA button presses to tell the main task to trigger an over-the-air
@@ -53,6 +84,8 @@ void dirButtonISR(void *params);
  * @param params A TaskHandle_t that is the handle of the main task.
  */
 void otaButtonISR(void *params);
+
+esp_timer_handle_t createRefreshTimer(TaskHandle_t mainTask, bool *toggle);
 
 /**
  * @brief Callback that periodically sends a task notification to the main task.
@@ -63,7 +96,7 @@ void otaButtonISR(void *params);
  * 
  * @param params A TaskHandle_t that is the handle of the main task.
  */
-void timerCallback(void *params);
+void refreshTimerCallback(void *params);
 
 /**
  * @brief Callback that toggles all the direction LEDs.
@@ -77,21 +110,5 @@ void timerCallback(void *params);
  *               timer using this callback is active.
  */
 void timerFlashDirCallback(void *params);
-
-/**
- * @brief Callback that toggles the error LED.
- * 
- * Callback that is called from a timer that is active when the worker task
- * encounters an error. This periodically toggles the error LED, causing it
- * to flash. While this will take precedence over another error that causes
- * a solid high on the error LED, errors are synchronized by a semaphore. Thus
- * it should never be the case that two errors are indicated at once and the
- * LED will indicate the first type of error to occur.
- * 
- * @param params An int* used to store the current output value of the LED.
- *               This object should not be destroyed or modified while the
- *               timer using this callback is active.
- */
-void timerFlashErrCallback(void *params);
 
 #endif /* ROUTINES_H_ */

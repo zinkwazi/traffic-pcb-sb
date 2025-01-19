@@ -170,51 +170,24 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct UserSettings *settin
   return ESP_OK;
 }
 
-esp_err_t initDirectionLEDs(void) {
-    /* Set GPIO directions */
-    if (gpio_set_direction(LED_NORTH_PIN, GPIO_MODE_OUTPUT) != ESP_OK) {
-      return ESP_FAIL;
-    }
-    if (gpio_set_direction(LED_EAST_PIN, GPIO_MODE_OUTPUT) != ESP_OK) {
-      return ESP_FAIL;
-    }
-    if (gpio_set_direction(LED_SOUTH_PIN, GPIO_MODE_OUTPUT) != ESP_OK) {
-      return ESP_FAIL;
-    }
-    if (gpio_set_direction(LED_WEST_PIN, GPIO_MODE_OUTPUT) != ESP_OK) {
-      return ESP_FAIL;
-    }
-    /* Set GPIO levels */
-    if (gpio_set_level(LED_NORTH_PIN, 0) != ESP_OK) {
-      return ESP_FAIL;
-    }
-    if (gpio_set_level(LED_EAST_PIN, 0) != ESP_OK) {
-      return ESP_FAIL;
-    }
-    if (gpio_set_level(LED_SOUTH_PIN, 0) != ESP_OK) {
-      return ESP_FAIL;
-    }
-    if (gpio_set_level(LED_WEST_PIN, 0) != ESP_OK) {
-      return ESP_FAIL;
-    }
-    return ESP_OK;
-}
-
-esp_err_t initDirectionButton(TickType_t *lastISR, bool *toggle) {
-  struct dirButtonISRParams *params = malloc(sizeof(params));
-  params->mainTask = xTaskGetCurrentTaskHandle();
-  params->lastISR = lastISR;
-  params->toggle = toggle;
-  if (gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT) != ESP_OK) { // pin has an external pullup
+esp_err_t initDirectionButton(bool *toggle) {
+  static DirButtonISRParams params;
+  static TickType_t lastTickISR;
+  /* input guards */
+  if (toggle == NULL) {
     return ESP_FAIL;
   }
-  if (gpio_set_intr_type(T_SW_PIN, GPIO_INTR_NEGEDGE) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  if (gpio_isr_handler_add(T_SW_PIN, dirButtonISR, params) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  if (gpio_intr_enable(T_SW_PIN) != ESP_OK) {
+  /* copy parameters */
+  lastTickISR = false;
+  params.mainTask = xTaskGetCurrentTaskHandle();
+  params.lastISR = &lastTickISR;
+  params.toggle = toggle;
+  /* setup button and install ISR */
+  if (gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT) != ESP_OK || // pin has an external pullup
+      gpio_set_intr_type(T_SW_PIN, GPIO_INTR_NEGEDGE) != ESP_OK ||
+      gpio_isr_handler_add(T_SW_PIN, dirButtonISR, &params) != ESP_OK ||
+      gpio_intr_enable(T_SW_PIN) != ESP_OK)
+  {
     return ESP_FAIL;
   }
   return ESP_OK;
@@ -335,216 +308,6 @@ error_with_dir_leds_off:
   ESP_ERROR_CHECK(gpio_set_level(LED_SOUTH_PIN, 0));
   ESP_ERROR_CHECK(gpio_set_level(LED_WEST_PIN, 0));
   return ret;
-}
-
-void throwNoConnError(ErrorResources *errRes, bool callerHasErrMutex) {
-  if (!callerHasErrMutex) {
-    while (xSemaphoreTake(errRes->errMutex, INT_MAX) != pdTRUE) {}
-  }
-  
-  switch (errRes->err) {
-    case NO_ERR:
-      errRes->err = NO_SERVER_CONNECT_ERR;
-      /* falls through */
-    case NO_SERVER_CONNECT_ERR:
-      if (errRes->errTimer == NULL) {
-        startErrorFlashing(errRes, true);
-      }
-      break;
-    case HANDLEABLE_ERR:
-      errRes->err = HANDLEABLE_AND_NO_SERVER_CONNECT_ERR;
-      // do not flash because solid takes priority
-      break;
-    case HANDLEABLE_AND_NO_SERVER_CONNECT_ERR:
-      break;
-    case FATAL_ERR:
-      throwFatalError(errRes, true);
-      break;
-    default:
-      throwFatalError(errRes, true);
-      break;
-  }
-
-  if (!callerHasErrMutex) {
-    xSemaphoreGive(errRes->errMutex);
-  }
-}
-
-void throwHandleableError(ErrorResources *errRes, bool callerHasErrMutex) {
-  if (!callerHasErrMutex) {
-    while (xSemaphoreTake(errRes->errMutex, INT_MAX) != pdTRUE) {}
-  }
-
-  if (errRes->errTimer != NULL) {
-    stopErrorFlashing(errRes, true);
-  }
-  INDICATE_ERR();
-  switch (errRes->err) {
-    case NO_ERR:
-      errRes->err = HANDLEABLE_ERR;
-      break;
-    case NO_SERVER_CONNECT_ERR:
-      errRes->err = HANDLEABLE_AND_NO_SERVER_CONNECT_ERR;
-      break;
-    case HANDLEABLE_ERR:
-      // cannot have multiple handleable errors at once
-      /* falls through */
-    case HANDLEABLE_AND_NO_SERVER_CONNECT_ERR:
-      // cannot have multiple handleable errors at once
-      ESP_LOGE(TAG, "multiple HANDLEABLE_ERR thrown!");
-      /* falls through */
-    case FATAL_ERR:
-      throwFatalError(errRes, true);
-      break;
-    default:
-      throwFatalError(errRes, true);
-      break;
-  }
-
-  if (!callerHasErrMutex) {
-    ESP_LOGI(TAG, "releasing error semaphore");
-    xSemaphoreGive(errRes->errMutex);
-  }
-}
-
-void throwFatalError(ErrorResources *errRes, bool callerHasErrMutex) {
-  ESP_LOGE(TAG, "FATAL_ERR thrown!");
-  gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);
-  if (errRes == NULL) {
-    gpio_set_level(ERR_LED_PIN, 1);
-    for (;;) {
-      vTaskDelay(INT_MAX);
-    }
-  }
-
-  if (!callerHasErrMutex) {
-    while (xSemaphoreTake(errRes->errMutex, INT_MAX) != pdTRUE) {}
-  }
-  if (errRes->errTimer != NULL) {
-    stopErrorFlashing(errRes, true);
-  }
-  gpio_set_level(ERR_LED_PIN, 1);
-  errRes->err = FATAL_ERR;
-  
-  xSemaphoreGive(errRes->errMutex); // give up mutex in caller's name
-  for (;;) {
-    vTaskDelay(INT_MAX);
-  }
-}
-
-void resolveNoConnError(ErrorResources *errRes, bool resolveNone, bool callerHasErrMutex) {
-  if (!callerHasErrMutex) {
-    while (xSemaphoreTake(errRes->errMutex, INT_MAX) != pdTRUE) {}
-  }
-
-  ESP_LOGW(TAG, "resolving NO_SERVER_CONNECT_ERR");
-  if (errRes->errTimer != NULL) {
-    stopErrorFlashing(errRes, true);
-    gpio_set_level(ERR_LED_PIN, 0);
-  }
-  switch (errRes->err) {
-    case NO_SERVER_CONNECT_ERR:
-      errRes->err = NO_ERR;
-      break;
-    case HANDLEABLE_AND_NO_SERVER_CONNECT_ERR:
-      errRes->err = HANDLEABLE_ERR;
-      break;
-    case NO_ERR:
-      /* falls through */
-    case HANDLEABLE_ERR:
-      if (resolveNone) {
-        break;
-      }
-      ESP_LOGE(TAG, "resolving NO_SERVER_CONNECT_ERR without its error state");
-      /* falls through */
-    case FATAL_ERR:
-      /* falls through */
-    default:
-      throwFatalError(errRes, true);
-      break;
-  }
-
-  if (!callerHasErrMutex) {
-    xSemaphoreGive(errRes->errMutex);
-  }
-}
-
-void resolveHandleableError(ErrorResources *errRes, bool resolveNone, bool callerHasErrMutex) {
-  if (!callerHasErrMutex) {
-    while (xSemaphoreTake(errRes->errMutex, INT_MAX) != pdTRUE) {}
-  }
-
-  ESP_LOGW(TAG, "resolving HANDLEABLE_ERR");
-  switch (errRes->err) {
-    case HANDLEABLE_ERR:
-      errRes->err = NO_ERR;
-      gpio_set_level(ERR_LED_PIN, 0);
-      break;
-    case HANDLEABLE_AND_NO_SERVER_CONNECT_ERR:
-      errRes->err = NO_SERVER_CONNECT_ERR;
-      if (errRes->errTimer == NULL) {
-        startErrorFlashing(errRes, true);
-      }
-      break;
-    case NO_ERR:
-      /* falls through */
-    case NO_SERVER_CONNECT_ERR:
-      if (resolveNone) {
-        break;
-      }
-      ESP_LOGE(TAG, "resolving HANDLEABLE_ERR without its error state");
-      /* falls through */
-    case FATAL_ERR:
-      /* falls through */
-    default:
-      throwFatalError(errRes, true);
-      break;
-  }
-
-  if (!callerHasErrMutex) {
-    xSemaphoreGive(errRes->errMutex);
-  }
-}
-
-void startErrorFlashing(ErrorResources *errRes, bool callerHasErrMutex) {
-    const esp_timer_create_args_t timerArgs = {
-      .callback = timerFlashErrCallback,
-      .arg = NULL,
-      .dispatch_method = ESP_TIMER_TASK,
-      .name = "errorTimer",
-    };
-
-    if (!callerHasErrMutex) {
-      while (xSemaphoreTake(errRes->errMutex, INT_MAX) != pdTRUE) {}
-    }
-
-    gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);
-    if (esp_timer_create(&timerArgs, &(errRes->errTimer)) != ESP_OK) {
-      throwFatalError(errRes, true);
-    }
-    if (esp_timer_start_periodic(errRes->errTimer, CONFIG_ERROR_PERIOD * 1000) != ESP_OK) {
-      esp_timer_delete(errRes->errTimer);
-      errRes->errTimer = NULL;
-      throwFatalError(errRes, true);
-    }
-
-    if (!callerHasErrMutex) {
-      xSemaphoreGive(errRes->errMutex);
-    }
-}
-
-void stopErrorFlashing(ErrorResources *errRes, bool callerHasErrMutex) {
-  if (!callerHasErrMutex) {
-    while (xSemaphoreTake(errRes->errMutex, INT_MAX) != pdTRUE) {}
-  }
-
-  esp_timer_stop(errRes->errTimer);
-  esp_timer_delete(errRes->errTimer);
-  errRes->errTimer = NULL;
-
-  if (!callerHasErrMutex) {
-    xSemaphoreGive(errRes->errMutex);
-  }
 }
 
 void  updateNvsSettings(nvs_handle_t nvsHandle, ErrorResources *errRes) {

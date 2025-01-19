@@ -42,9 +42,9 @@
 #include "led_registers.h"
 
 void dirButtonISR(void *params) {
-  TaskHandle_t mainTask = ((struct dirButtonISRParams *) params)->mainTask;
-  TickType_t *lastISR = ((struct dirButtonISRParams *) params)->lastISR;
-  bool *toggle = ((struct dirButtonISRParams *) params)->toggle;
+  TaskHandle_t mainTask = ((DirButtonISRParams *) params)->mainTask;
+  TickType_t *lastISR = ((DirButtonISRParams *) params)->lastISR;
+  bool *toggle = ((DirButtonISRParams *) params)->toggle;
 
   /* debounce interrupt */
   TickType_t currentTick = xTaskGetTickCountFromISR();
@@ -68,7 +68,29 @@ void otaButtonISR(void *params) {
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void timerCallback(void *params) {
+esp_timer_handle_t createRefreshTimer(TaskHandle_t mainTask, bool *toggle) {
+  static RefreshTimerParams params;
+  esp_timer_create_args_t timerArgs;
+  esp_timer_handle_t ret;
+  /* input guards */
+  if (mainTask == NULL || toggle == NULL) {
+    return false;
+  }
+  /* copy parameters */
+  params.mainTask = mainTask;
+  params.toggle = toggle;
+  /* create timer */
+  timerArgs.callback = refreshTimerCallback;
+  timerArgs.arg = &params;
+  timerArgs.dispatch_method = ESP_TIMER_ISR;
+  timerArgs.name = "refreshTimer";
+  if (esp_timer_create(&timerArgs, &ret) != ESP_OK) {
+    return NULL;
+  }
+  return ret;
+}
+
+void refreshTimerCallback(void *params) {
   TaskHandle_t mainTask = (TaskHandle_t) params;
 
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -83,10 +105,4 @@ void timerFlashDirCallback(void *params) {
   gpio_set_level(LED_EAST_PIN, *currentOutput);
   gpio_set_level(LED_WEST_PIN, *currentOutput);
   gpio_set_level(LED_SOUTH_PIN, *currentOutput);
-}
-
-void timerFlashErrCallback(void *params) {
-    static int currentOutput = 0;
-    currentOutput = (currentOutput == 1) ? 0 : 1;
-    gpio_set_level(ERR_LED_PIN, currentOutput);
 }

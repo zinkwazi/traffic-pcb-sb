@@ -1,6 +1,12 @@
-idf_component_register(SRCS "routines.c" "tasks.c" "utilities.c" "wifi.c" "main.c"
-                    INCLUDE_DIRS "."
-                    REQUIRES DotsMatrix
+idf_component_register(SRCS "src/main.c" 
+                            "src/routines.c"
+                            "src/tasks.c" 
+                            "src/utilities.c" 
+                            "src/wifi.c"
+                    INCLUDE_DIRS "include"
+                    REQUIRES common
+                             app_errors  
+                             led_matrix
                              esp_timer
                              esp_wifi
                              esp_http_client

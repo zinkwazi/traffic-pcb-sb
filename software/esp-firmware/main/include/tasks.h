@@ -18,36 +18,12 @@
 #include "pinout.h"
 #include "tasks.h"
 #include "main_types.h"
+#include "error.h"
 
 #define TAG "tasks"
 
 #define RETRY_CREATE_HTTP_HANDLE_TICKS 500
 #define CHECK_ERROR_PERIOD_TICKS 500
-
-/** @brief The stack size allocated for the OTA task. */
-#define OTA_TASK_STACK (ESP_TASK_MAIN_STACK)
-/** @brief The task priority of the OTA task. */
-#define OTA_TASK_PRIO (4)
-
-
-/** @brief The task priority of the main task. */
-#define MAIN_TASK_PRIO (3)
-
-
-/** @brief The stack size allocated for the I2C gatekeeper task. */
-#define I2C_GATEKEEPER_STACK (ESP_TASK_MAIN_STACK - 1400)
-/** @brief The task priority of the I2C gatekeeper task. */
-#define I2C_GATEKEEPER_PRIO (2)
-/** @brief The queue size in elements of the I2C command queue. */
-#define I2C_QUEUE_SIZE 20
-
-
-/** @brief The stack size allocated for the dot worker task. */
-#define DOTS_WORKER_STACK (ESP_TASK_MAIN_STACK + 1000)
-/** @brief The task priority of the dot worker task. */
-#define DOTS_WORKER_PRIO (1)
-/** @brief The queue size of the dot command queue. */
-#define DOTS_QUEUE_SIZE 1
 
 /**
  * @brief Describes the type of command that the worker task will handle.

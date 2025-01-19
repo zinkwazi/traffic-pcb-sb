@@ -46,6 +46,7 @@
 #include "utilities.h"
 #include "wifi.h"
 #include "main_types.h"
+#include "error.h"
 
 /* Component includes */
 #include "dots_commands.h"
@@ -107,10 +108,6 @@
  */
 #define UPDATE_SETTINGS_IF_FALSE(x, handle, errResources) \
       if (!x) { updateNvsSettings(handle, errResources); }
-
-#define INDICATE_ERR() \
-      gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);    \
-      gpio_set_level(ERR_LED_PIN, 1);                       \
 
 /**
  * @brief Determines whether user settings currently exist in non-volatile
@@ -176,36 +173,6 @@ esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir);
 esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct UserSettings *settings);
 
 /**
- * @brief Configures and sets initial levels of the direction LEDs.
- * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- */
-esp_err_t initDirectionLEDs(void);
-
-/**
- * @brief Initializes the direction button and attaches dirButtonISR to a 
- *        negative edge of the GPIO pin.
- * 
- * @param lastISR A pointer to a TickType_t that is passed to dirButtonISR. The
- *                object is used for button debouncing.
- * @param toggle A pointer to a bool that is passed to dirButtonISR. The bool
- *               should be in-scope for the duration of use of dirButtonISR.
- * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- */
-esp_err_t initDirectionButton(TickType_t *lastISR, bool *toggle);
-
-/**
- * @brief Initializes the OTA button (IO0) and attaches otaButtonISR to a 
- *        negative edge of the GPIO pin.
- * 
- * @param otaTask A handle to the OTA task, which is implemented by vOTATask.
- * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- */
-esp_err_t initIOButton(TaskHandle_t otaTask);
-
-/**
  * @brief Enables the direction button interrupt, which is handled by
  *        dirButtonISR.
  * 
@@ -249,57 +216,6 @@ esp_err_t quickClearLEDs(QueueHandle_t dotQueue);
  * @returns ESP_OK if successful, otherwise ESP_FAIL.
  */
 esp_err_t clearLEDs(QueueHandle_t dotQueue, Direction currDir);
-
-/**
- * Expects errRes to not be NULL!
- */
-void throwNoConnError(ErrorResources *errRes, bool callerHasErrMutex);
-
-/**
- * Expects errRes to not be NULL!
- */
-void throwHandleableError(ErrorResources *errRes, bool callerHasErrMutex);
-
-/**
- * Expects errRes to not be NULL!
- */
-void throwFatalError(ErrorResources *errRes, bool callerHasErrMutex);
-
-/**
- * Expects errRes to not be NULL!
- */
-void resolveNoConnError(ErrorResources *errRes, bool resolveNone, bool callerHasErrMutex);
-
-/**
- * Expects errRes to not be NULL!
- */
-void resolveHandleableError(ErrorResources *errRes, bool resolveNone, bool callerHasErrMutex);
-
-/**
- * @brief Creates a periodic timer that toggles the error LED.
- * 
- * @note Sets a timer that calls timerFlashErrCallback. If a timer could not
- *       be started, then the error LED is set high.
- * 
- * @param timer A pointer to a timer handle that will point to the new timer
- *              if successful (ONLY if ESP_OK is returned).
- * @param ledStatus A pointer to an integer that will be used by the timer
- *                   callback. This should not be modified or destroyed until
- *                   the timer is no longer in use.
- * @param errResources A pointer to an ErrorResources holding global error
- *                     handling resources.
- */
-void startErrorFlashing(ErrorResources *errRes, bool callerHasErrMutex);
-
-/**
- * @brief Stops the periodic timer that toggles the error LED.
- * s
- * @param errResources A pointer to an ErrorResources holding global error
- *                     handling resources.
- * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- */
-void stopErrorFlashing(ErrorResources *errRes, bool callerHasErrMutex);
 
 /**
  * @brief Handles errors that are due to a user settings issue by setting the
