@@ -141,8 +141,9 @@ esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], esp_http_client_handle_t clien
         }
         return ESP_FAIL;
     }
-    responseStr = malloc(sizeof(char) * (contentLength + 100));
+    responseStr = malloc(sizeof(char) * contentLength);
     if (responseStr == NULL) {
+        ESP_LOGE(TAG, "failed to allocate %d bytes for http response", contentLength);
         if (esp_http_client_close(client) != ESP_OK) {
             ESP_LOGE(TAG, "failed to close client");
         }
@@ -154,15 +155,18 @@ esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], esp_http_client_handle_t clien
     }
     if (esp_http_client_close(client) != ESP_OK) {
         ESP_LOGE(TAG, "failed to close client");
+        free(responseStr);
         return ESP_FAIL;
     }
     if (len == -1) {
         ESP_LOGE(TAG, "esp_http_client_read returned -1");
+        free(responseStr);
         return ESP_FAIL;
     }
     for (int i = 0; i < contentLength && i < MAX_NUM_LEDS; i++) {
         speeds[i] = (uint8_t) responseStr[i];
     }
+    free(responseStr);
     return ESP_OK;
 }
 

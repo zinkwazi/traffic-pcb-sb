@@ -171,6 +171,7 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, UserSettings *settings)
     return ESP_FAIL;
   }
   if (nvs_get_str(nvsHandle, WIFI_SSID_NVS_NAME, settings->wifiSSID, &(settings->wifiSSIDLen)) != ESP_OK) {
+    free(settings->wifiSSID);
     return ESP_FAIL;
   }
   /* retrieve wifi password */
@@ -182,8 +183,11 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, UserSettings *settings)
     return ESP_FAIL;
   }
   if (nvs_get_str(nvsHandle, WIFI_PASS_NVS_NAME, settings->wifiPass, &(settings->wifiPassLen)) != ESP_OK) {
+    free(settings->wifiSSID);
+    free(settings->wifiPass);
     return ESP_FAIL;
   }
+  /* dynamically allocated SSID and password will exist for the duration of the program */
   return ESP_OK;
 }
 
