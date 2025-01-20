@@ -213,7 +213,7 @@ void initializeApplication(MainTaskResources *res, MainTaskState *state) {
   /* create tasks */
   ESP_LOGI(TAG, "Creating tasks...");
   SPIN_IF_ERR(
-    createI2CGatekeeperTask(NULL, I2CQueue, I2C_PORT, SDA_PIN, SCL_PIN),
+    createI2CGatekeeperTask(NULL, I2CQueue),
     res->errRes
   );
   SPIN_IF_ERR(

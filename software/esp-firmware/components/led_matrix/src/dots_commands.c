@@ -17,6 +17,7 @@
 #include "esp_check.h"
 
 #include "dots_matrix.h"
+#include "pinout.h"
 
 /* A struct for placing parameters on the I2C command queue */
 struct SetColorParams {
@@ -126,7 +127,7 @@ void executeI2CCommand(PageState *state, MatrixHandles matrices, I2CCommand *com
  * 
  * @returns ESP_OK if successful, otherwise ESP_FAIL.
  */
-esp_err_t createI2CGatekeeperTask(TaskHandle_t *handle, QueueHandle_t I2CQueue, i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin) {
+esp_err_t createI2CGatekeeperTask(TaskHandle_t *handle, QueueHandle_t I2CQueue) {
     static I2CGatekeeperTaskParams taskResources;
     BaseType_t success;
     /* input guards */
@@ -135,9 +136,6 @@ esp_err_t createI2CGatekeeperTask(TaskHandle_t *handle, QueueHandle_t I2CQueue, 
     }
     /* package parameters */
     taskResources.I2CQueue = I2CQueue;
-    taskResources.port = port;
-    taskResources.sdaPin = sdaPin;
-    taskResources.sclPin = sclPin;
     /* create task */
     success = xTaskCreate(vI2CGatekeeperTask, "I2CGatekeeper", CONFIG_I2C_GATEKEEPER_STACK,
                           &taskResources, CONFIG_I2C_GATEKEEPER_PRIO, handle);
@@ -157,7 +155,7 @@ void vI2CGatekeeperTask(void *pvParameters) {
     MatrixHandles matrices;
     esp_err_t err;
     /* One time setup */
-    err = dInitializeBus(&state, &matrices, params->port, params->sdaPin, params->sclPin);
+    err = dInitializeBus(&state, &matrices, I2C_PORT, SDA_PIN, SCL_PIN);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Could not initialize I2C bus");
     }

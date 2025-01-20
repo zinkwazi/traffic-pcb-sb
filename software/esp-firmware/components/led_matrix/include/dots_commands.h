@@ -65,14 +65,11 @@ typedef struct I2CCommand I2CCommand;
 
 struct I2CGatekeeperTaskParams {
     QueueHandle_t I2CQueue;
-    i2c_port_num_t port;
-    gpio_num_t sdaPin;
-    gpio_num_t sclPin;
 };
 
 typedef struct I2CGatekeeperTaskParams I2CGatekeeperTaskParams;
 
-esp_err_t createI2CGatekeeperTask(TaskHandle_t *handle, QueueHandle_t I2CQueue, i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
+esp_err_t createI2CGatekeeperTask(TaskHandle_t *handle, QueueHandle_t I2CQueue);
 void vI2CGatekeeperTask(void *pvParameters);
 
 esp_err_t dotsSetOperatingMode(QueueHandle_t queue, enum Operation setting, bool notify, bool blocking);
