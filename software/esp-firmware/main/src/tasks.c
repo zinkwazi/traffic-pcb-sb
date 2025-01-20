@@ -143,7 +143,7 @@ esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], esp_http_client_handle_t clien
     }
     responseStr = malloc(sizeof(char) * contentLength);
     if (responseStr == NULL) {
-        ESP_LOGE(TAG, "failed to allocate %d bytes for http response", contentLength);
+        ESP_LOGE(TAG, "failed to allocate %lld bytes for http response", contentLength);
         if (esp_http_client_close(client) != ESP_OK) {
             ESP_LOGE(TAG, "failed to close client");
         }
