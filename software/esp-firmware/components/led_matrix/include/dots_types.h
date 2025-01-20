@@ -7,6 +7,16 @@
 
 #include <stdint.h>
 
+enum MatrixLocation {
+    MAT1_PAGE0,
+    MAT1_PAGE1,
+    MAT2_PAGE0,
+    MAT2_PAGE1,
+    MAT3_PAGE0,
+    MAT3_PAGE1,
+    MAT_NONE,
+};
+
 /**
  * @brief Contains the matrix registers that correspond to an LED.
  */
@@ -14,7 +24,7 @@ struct LEDReg {
     uint8_t red;
     uint8_t green;
     uint8_t blue;
-    uint8_t page; // all LEDs have their registers on the same page
+    enum MatrixLocation matrix; // all LEDs have their registers on the same page
 };
 
 typedef struct LEDReg LEDReg;

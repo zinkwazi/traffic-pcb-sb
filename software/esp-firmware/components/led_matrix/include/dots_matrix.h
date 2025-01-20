@@ -22,7 +22,7 @@ enum PWMFrequency {
 };
 
 enum ResistorSetting {
-    NONE = 0,
+    RES_NONE = 0,
     HALF_K = 1,
     ONE_K = 2,
     TWO_K = 3,
@@ -67,29 +67,40 @@ struct PageState {
     uint8_t mat3;
 };
 
+typedef struct PageState PageState;
+
+struct MatrixHandles {
+    i2c_master_bus_handle_t I2CBus;
+    i2c_master_dev_handle_t mat1Handle;
+    i2c_master_dev_handle_t mat2Handle;
+    i2c_master_dev_handle_t mat3Handle;
+};
+
+typedef struct MatrixHandles MatrixHandles;
+
 /* Functions available as gatekeeper commands */
-esp_err_t dSetOperatingMode(enum Operation setting);
-esp_err_t dSetOpenShortDetection(enum ShortDetectionEnable setting);
-esp_err_t dSetLogicLevel(enum LogicLevel setting);
-esp_err_t dSetSWxSetting(enum SWXSetting setting);
-esp_err_t dSetGlobalCurrentControl(uint8_t value);
-esp_err_t dSetResistorPullupSetting(enum ResistorSetting setting);
-esp_err_t dSetResistorPulldownSetting(enum ResistorSetting setting);
-esp_err_t dSetPWMFrequency(enum PWMFrequency freq);
-esp_err_t dReset(void);
-esp_err_t dSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
-esp_err_t dSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
+esp_err_t dSetOperatingMode(PageState *state, MatrixHandles matrices, enum Operation setting);
+esp_err_t dSetOpenShortDetection(PageState *state, MatrixHandles matrices, enum ShortDetectionEnable setting);
+esp_err_t dSetLogicLevel(PageState *state, MatrixHandles matrices, enum LogicLevel setting);
+esp_err_t dSetSWxSetting(PageState *state, MatrixHandles matrices, enum SWXSetting setting);
+esp_err_t dSetGlobalCurrentControl(PageState *state, MatrixHandles matrices, uint8_t value);
+esp_err_t dSetResistorPullupSetting(PageState *state, MatrixHandles matrices, enum ResistorSetting setting);
+esp_err_t dSetResistorPulldownSetting(PageState *state, MatrixHandles matrices, enum ResistorSetting setting);
+esp_err_t dSetPWMFrequency(PageState *state, MatrixHandles matrices, enum PWMFrequency freq);
+esp_err_t dReset(PageState *state, MatrixHandles matrices);
+esp_err_t dSetColor(PageState *state, MatrixHandles matrices, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
+esp_err_t dSetScaling(PageState *state, MatrixHandles matrices, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
 
 /* Internal functions */
 void dotsResetStaticVars(void);
-esp_err_t dInitializeBus(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
-esp_err_t dAssertConnected(void);
+esp_err_t dInitializeBus(PageState *state, MatrixHandles *matrices, i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
+esp_err_t dAssertConnected(PageState *state, MatrixHandles matrices);
 void dSetBits(uint8_t *reg, uint8_t bitMask, uint8_t value);
-esp_err_t dSetPage(i2c_master_dev_handle_t device, uint8_t page);
-esp_err_t dGetRegister(uint8_t *result, i2c_master_dev_handle_t device, uint8_t page, uint8_t addr);
-esp_err_t dGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3, uint8_t page, uint8_t addr);
-esp_err_t dSetRegister(i2c_master_dev_handle_t device, uint8_t page, uint8_t addr, uint8_t data);
-esp_err_t dSetRegisters(uint8_t page, uint8_t addr, uint8_t data);
-esp_err_t dSetRegistersSeparate(uint8_t page, uint8_t addr, uint8_t mat1val, uint8_t mat2val, uint8_t mat3val);
+esp_err_t dSetPage(PageState *state, MatrixHandles matrices, i2c_master_dev_handle_t device, uint8_t page);
+esp_err_t dGetRegister(uint8_t *result, PageState *state, MatrixHandles matrices, i2c_master_dev_handle_t device, uint8_t page, uint8_t addr);
+esp_err_t dGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3, PageState *state, MatrixHandles matrices, uint8_t page, uint8_t addr);
+esp_err_t dSetRegister(PageState *state, MatrixHandles matrices, i2c_master_dev_handle_t device, uint8_t page, uint8_t addr, uint8_t data);
+esp_err_t dSetRegisters(PageState *state, MatrixHandles matrices, uint8_t page, uint8_t addr, uint8_t data);
+esp_err_t dSetRegistersSeparate(PageState *state, MatrixHandles matrices, uint8_t page, uint8_t addr, uint8_t mat1val, uint8_t mat2val, uint8_t mat3val);
 
 #endif /* d_MATRIX_H_ */

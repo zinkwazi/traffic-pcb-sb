@@ -38,50 +38,51 @@ struct SetScalingParams {
  * This function maps the I2CCommandFunc enum to actual functions
  * and executes them, performing error callbacks when necessary.
  */
-void executeI2CCommand(I2CCommand *command) {
+void executeI2CCommand(PageState *state, MatrixHandles matrices, I2CCommand *command) {
     esp_err_t err = ESP_OK;
     ESP_LOGD(TAG, "executing I2C command...");
     switch (command->func) {
         case SET_OPERATING_MODE:
             ESP_LOGD(TAG, "setting operating mode");
-            err = dSetOperatingMode(*((enum Operation*) command->params));
+            err = dSetOperatingMode(state, matrices, *((enum Operation*) command->params));
             break;
         case SET_OPEN_SHORT_DETECTION:
             ESP_LOGD(TAG, "changing open/short detection");
-            err = dSetOpenShortDetection(*((enum ShortDetectionEnable*) command->params));
+            err = dSetOpenShortDetection(state, matrices, *((enum ShortDetectionEnable*) command->params));
             break;
         case SET_LOGIC_LEVEL:
             ESP_LOGD(TAG, "changing logic level");
-            err = dSetLogicLevel(*((enum LogicLevel*) command->params));
+            err = dSetLogicLevel(state, matrices, *((enum LogicLevel*) command->params));
             break;
         case SET_SWX_SETTING:
             ESP_LOGD(TAG, "changing SWx setting");
-            err = dSetSWxSetting(*((enum SWXSetting*) command->params));
+            err = dSetSWxSetting(state, matrices, *((enum SWXSetting*) command->params));
             break;
         case SET_GLOBAL_CURRENT_CONTROL:
             ESP_LOGD(TAG, "changing global current control setting");
-            err = dSetGlobalCurrentControl(*((uint8_t*) command->params));
+            err = dSetGlobalCurrentControl(state, matrices, *((uint8_t*) command->params));
             break;
         case SET_RESISTOR_PULLUP:
             ESP_LOGD(TAG, "changing resistor pullup setting");
-            err = dSetResistorPullupSetting(*((enum ResistorSetting*) command->params));
+            err = dSetResistorPullupSetting(state, matrices, *((enum ResistorSetting*) command->params));
             break;
         case SET_RESISTOR_PULLDOWN:
             ESP_LOGD(TAG, "changing resistor pulldown setting");
-            err = dSetResistorPulldownSetting(*((enum ResistorSetting*) command->params));
+            err = dSetResistorPulldownSetting(state, matrices, *((enum ResistorSetting*) command->params));
             break;
         case SET_PWM_FREQUENCY:
             ESP_LOGD(TAG, "changing PWM frequency");
-            err = dSetPWMFrequency(*((enum PWMFrequency*) command->params));
+            err = dSetPWMFrequency(state, matrices, *((enum PWMFrequency*) command->params));
             break;
         case RESET:
             ESP_LOGD(TAG, "resetting matrices");
-            err = dReset();
+            err = dReset(state, matrices);
             break;
         case SET_COLOR:
             ESP_LOGD(TAG, "changing dot color");
             struct SetColorParams *setColorParams = (struct SetColorParams*) command->params;
-            err = dSetColor(setColorParams->ledNum, 
+            err = dSetColor(state, matrices,
+                            setColorParams->ledNum, 
                             setColorParams->red, 
                             setColorParams->green, 
                             setColorParams->blue);
@@ -89,9 +90,10 @@ void executeI2CCommand(I2CCommand *command) {
         case SET_SCALING:
             ESP_LOGD(TAG, "changing dot scaling");
             struct SetScalingParams *setScalingParams = (struct SetScalingParams*) command->params;
-            err = dSetScaling(setScalingParams->ledNum,
-                              setScalingParams->red, 
-                              setScalingParams->green, 
+            err = dSetScaling(state, matrices,
+                              setScalingParams->ledNum,
+                              setScalingParams->red,
+                              setScalingParams->green,
                               setScalingParams->blue);
             break;
         default:
@@ -151,16 +153,17 @@ esp_err_t createI2CGatekeeperTask(TaskHandle_t *handle, QueueHandle_t I2CQueue, 
 void vI2CGatekeeperTask(void *pvParameters) {
     I2CGatekeeperTaskParams *params = (I2CGatekeeperTaskParams *) pvParameters;
     I2CCommand command;
+    PageState state;
+    MatrixHandles matrices;
     esp_err_t err;
     /* One time setup */
-    dotsResetStaticVars();
-    err = dInitializeBus(params->port, params->sdaPin, params->sclPin);
+    err = dInitializeBus(&state, &matrices, params->port, params->sdaPin, params->sclPin);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Could not initialize I2C bus");
     }
     err = ESP_FAIL;
     while (err != ESP_OK) {
-        err = dAssertConnected();
+        err = dAssertConnected(&state, matrices);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "could not find i2c matrices... retrying...");
             vTaskDelay(500 / portTICK_PERIOD_MS);
@@ -172,7 +175,7 @@ void vI2CGatekeeperTask(void *pvParameters) {
             ESP_LOGD(TAG, "I2C Gatekeeper timed out while waiting for command on queue");
             continue;
         }
-        executeI2CCommand(&command);
+        executeI2CCommand(&state, matrices, &command);
         if (command.params != NULL) {
             free(command.params);
             command.params = NULL;
