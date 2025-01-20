@@ -1,4 +1,4 @@
-#include "error.h"
+#include "app_errors.h"
 #include "pinout.h"
 #include "esp_timer.h"
 #include "esp_log.h"
@@ -7,7 +7,7 @@
 #include "freertos/semphr.h"
 #include <stdbool.h>
 
-#define TAG "error"
+#define TAG "app_error"
 
 static inline void indicateError(void) {
     gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);

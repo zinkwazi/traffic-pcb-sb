@@ -45,184 +45,17 @@
 #include "dots_commands.h"
 #include "led_registers.h"
 
-esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle) {
-  esp_err_t ret;
-  nvs_type_t nvsType;
-  ret = nvs_find_key(nvsHandle, WIFI_SSID_NVS_NAME, &nvsType);
-  ESP_RETURN_ON_FALSE(
-    (ret == ESP_OK && nvsType == NVS_TYPE_STR), ret,
-    TAG, "failed to lookup wifi ssid in non-volatile storage"
-  );
-  ret = nvs_find_key(nvsHandle, WIFI_PASS_NVS_NAME, &nvsType);
-  ESP_RETURN_ON_FALSE(
-    (ret == ESP_OK && nvsType == NVS_TYPE_STR), ret,
-    TAG, "failed to lookup wifi password in non-volatile storage"
-  );
-  return ret;
-}
-
-esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle) {
-  esp_err_t ret;
-  nvs_iterator_t nvs_iter;
-  if (nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  ret = nvs_entry_next(&nvs_iter);
-  while (ret != ESP_OK) {
-    nvs_entry_info_t info;
-    if (nvs_entry_info(nvs_iter, &info) != ESP_OK) {
-      return ESP_FAIL;
-    }
-    if (strcmp(info.namespace_name, "main") == 0 &&
-            (strcmp(info.key, WIFI_SSID_NVS_NAME) == 0 ||
-             strcmp(info.key, WIFI_PASS_NVS_NAME) == 0))
-    {
-      ret = nvs_entry_next(&nvs_iter);
-      continue;
-    }
-    ESP_LOGI(TAG, "removing nvs entry: %s", info.key);
-    if (nvs_erase_key(nvsHandle, info.key) != ESP_OK) {
-      return ESP_FAIL;
-    }
-    ret = nvs_entry_next(&nvs_iter);
-  }
-  if (nvs_commit(nvsHandle) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  if (ret == ESP_ERR_INVALID_ARG) {
-    return ESP_FAIL;
-  }
-  return ESP_OK;
-}
-
-
-esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
-  const unsigned short bufLen = 256;
-  char c;
-  char buf[bufLen];
-  ESP_LOGI(TAG, "Querying settings from user...");
-  printf("\nWifi SSID: ");
-  fflush(stdout);
-  for (int i = 0; i < bufLen; i++) {
-    buf[i] = getchar();
-    if (buf[i] == '\n') {
-      buf[i] = '\0';
-      break;
-    }
-    printf("%c", buf[i]);
-    fflush(stdout);
-  }
-  while ((c = getchar()) != '\n') {}
-  buf[bufLen] = '\0'; // in case the user writes too much
-  fflush(stdout);
-  ESP_RETURN_ON_ERROR(
-    nvs_set_str(nvsHandle, WIFI_SSID_NVS_NAME, buf),
-    TAG, "failed to write wifi SSID to non-volatile storage"
-  );
-  printf("\nWifi Password: ");
-  fflush(stdout);
-  for (int i = 0; i < bufLen; i++) {
-    buf[i] = getchar();
-    if (buf[i] == '\n') {
-      buf[i] = '\0';
-      break;
-    }
-    printf("%c", buf[i]);
-    fflush(stdout);
-  }
-  while ((c = getchar()) != '\n') {}
-  buf[bufLen] = '\0'; // in case the user writes too much
-  fflush(stdout);
-  ESP_RETURN_ON_ERROR(
-    nvs_set_str(nvsHandle, WIFI_PASS_NVS_NAME, buf),
-    TAG, "failed to write wifi password to non-volatile storage"
-  );
-  ESP_RETURN_ON_ERROR(
-    nvs_commit(nvsHandle),
-    TAG, "failed to commit NVS changes"
-  );
-  return ESP_OK;
-}
-
-esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct UserSettings *settings)
-{
-  /* retrieve wifi ssid */
-  if (nvs_get_str(nvsHandle, WIFI_SSID_NVS_NAME, NULL, &(settings->wifiSSIDLen)) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  if ((settings->wifiSSID = malloc(settings->wifiSSIDLen)) == NULL) {
-    return ESP_FAIL;
-  }
-  if (nvs_get_str(nvsHandle, WIFI_SSID_NVS_NAME, settings->wifiSSID, &(settings->wifiSSIDLen)) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  /* retrieve wifi password */
-  if (nvs_get_str(nvsHandle, WIFI_PASS_NVS_NAME, NULL, &(settings->wifiPassLen)) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  if ((settings->wifiPass = malloc(settings->wifiPassLen)) == NULL) {
-    free(settings->wifiSSID);
-    return ESP_FAIL;
-  }
-  if (nvs_get_str(nvsHandle, WIFI_PASS_NVS_NAME, settings->wifiPass, &(settings->wifiPassLen)) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  return ESP_OK;
-}
-
-esp_err_t initDirectionButton(bool *toggle) {
-  static DirButtonISRParams params;
-  static TickType_t lastTickISR;
-  /* input guards */
-  if (toggle == NULL) {
-    return ESP_FAIL;
-  }
-  /* copy parameters */
-  lastTickISR = false;
-  params.mainTask = xTaskGetCurrentTaskHandle();
-  params.lastISR = &lastTickISR;
-  params.toggle = toggle;
-  /* setup button and install ISR */
-  if (gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT) != ESP_OK || // pin has an external pullup
-      gpio_set_intr_type(T_SW_PIN, GPIO_INTR_NEGEDGE) != ESP_OK ||
-      gpio_isr_handler_add(T_SW_PIN, dirButtonISR, &params) != ESP_OK ||
-      gpio_intr_enable(T_SW_PIN) != ESP_OK)
-  {
-    return ESP_FAIL;
-  }
-  return ESP_OK;
-}
-
-esp_err_t initIOButton(TaskHandle_t otaTask) {
-  if (gpio_set_pull_mode(IO_SW_PIN, GPIO_PULLUP_ONLY) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  if (gpio_pullup_en(IO_SW_PIN) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  if (gpio_set_direction(IO_SW_PIN, GPIO_MODE_INPUT) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  if (gpio_set_intr_type(IO_SW_PIN, GPIO_INTR_NEGEDGE) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  if (gpio_isr_handler_add(IO_SW_PIN, otaButtonISR, otaTask) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  if (gpio_intr_enable(IO_SW_PIN) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  return ESP_OK;
-}
-
-esp_err_t enableDirectionButtonIntr(void) {
-  return gpio_intr_enable(T_SW_PIN);
-}
-
-esp_err_t disableDirectionButtonIntr(void) {
-  return gpio_intr_disable(T_SW_PIN);
-}
-
+/**
+ * @brief Sends a command to the worker task to quickly clear all LEDs.
+ * 
+ * @note The worker task, implemented by vDotWorkerTask, quickly clears all
+ *       of the LEDs by resetting all dot matrices.
+ * 
+ * @param dotQueue The queue that the worker task receives commands from, which
+ *                 holds elements of type DotCommand.
+ * 
+ * @returns ESP_OK if successful, otherwise ESP_FAIL.
+ */
 esp_err_t quickClearLEDs(QueueHandle_t dotQueue) {
   WorkerCommand command;
   /* empty the queue */
@@ -235,6 +68,20 @@ esp_err_t quickClearLEDs(QueueHandle_t dotQueue) {
   return ESP_OK;
 }
 
+/**
+ * @brief Sends a command to the worker task to clear all LEDs sequentially in
+ *        a particular direction.
+ * 
+ * @note This is distinct from quickClearLEDs as the worker task, implemented
+ *       by vDotWorkerTask, does not reset the dot matrices to fulfill the 
+ *       command.
+ * 
+ * @param dotQueue The queue that the worker task receives commands from, which
+ *                 holds elements of type DotCommand.
+ * @param currDir  The direction that the LEDs will be cleared toward.
+ *
+ * @returns ESP_OK if successful, otherwise ESP_FAIL.
+ */
 esp_err_t clearLEDs(QueueHandle_t dotQueue, Direction currDir) {
   WorkerCommand command;
   /* empty the queue */
@@ -308,37 +155,4 @@ error_with_dir_leds_off:
   ESP_ERROR_CHECK(gpio_set_level(LED_SOUTH_PIN, 0));
   ESP_ERROR_CHECK(gpio_set_level(LED_WEST_PIN, 0));
   return ret;
-}
-
-void  updateNvsSettings(nvs_handle_t nvsHandle, ErrorResources *errRes) {
-  static int currentLEDOutput;
-  throwHandleableError(errRes, false); // turns on error LED
-  
-  /* flash direction LEDs to indicate settings update is requested */
-  currentLEDOutput = 0;
-  const esp_timer_create_args_t flashTimerArgs = {
-    .callback = timerFlashDirCallback,
-    .dispatch_method = ESP_TIMER_TASK,
-    .name = "flashDirTimer",
-    .arg = &currentLEDOutput,
-  };
-  esp_timer_handle_t flashDirTimer;
-  if (esp_timer_create(&flashTimerArgs, &flashDirTimer) != ESP_OK) {
-    throwFatalError(errRes, false);
-  }
-  if (esp_timer_start_periodic(flashDirTimer, CONFIG_ERROR_PERIOD * 1000) != ESP_OK) {
-    throwFatalError(errRes, false);
-  }
-  /* request settings update from user */
-  if (getNvsEntriesFromUser(nvsHandle) != ESP_OK) {
-    throwFatalError(errRes, false);
-  }
-
-  if (esp_timer_stop(flashDirTimer) != ESP_OK ||
-      esp_timer_delete(flashDirTimer) != ESP_OK)
-  {
-    throwFatalError(errRes, false);
-  }
-
-  resolveHandleableError(errRes, false, false); // returns error LED to previous state
 }

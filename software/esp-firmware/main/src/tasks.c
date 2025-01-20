@@ -258,6 +258,21 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, uint8_t typicalSpeeds[], Q
     return ret;
 }
 
+/**
+ * @brief Initializes the worker task, which is implemented by vWorkerTask.
+ * 
+ * @param handle A pointer to a handle which will refer to the created task
+ *               if successful.
+ * @param dotQueue A handle to a queue that holds struct DotCommand 
+ *                 objects. This task retrieves commands from this 
+ *                 queue and performs work to fulfill them.
+ * @param I2CQueue A handle to a queue that holds struct I2CCommand 
+ *                 objects. This task issues commands to this queue 
+ *                 to be handled by the I2C gatekeeper, implemented 
+ *                 by vI2CGatekeeperTask.
+ * @param errRes A pointer to global error handling resources.
+ * @returns ESP_OK if successful, otherwise ESP_FAIL.
+ */
 esp_err_t createWorkerTask(TaskHandle_t *handle, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, ErrorResources *errRes) {
   static WorkerTaskResources taskResources;
   BaseType_t success;
@@ -324,10 +339,16 @@ esp_err_t removeExtraWorkerNvsEntries(void) {
 
 
 /**
- * Accepts requests for dot updates off of
- * a queue, retrieves the dot's current speed,
- * then sends a command to the I2C gatekeeper
- * to update the color of the dot.
+ * @brief Implements the worker task, which is responsible for handling
+ *        commands of type WorkerCommand sent from the main task.
+ * 
+ * @note The worker task receives commands from the main task. It is the task 
+ *       that does the most 'business logic' of the application. It relieves 
+ *       the main task of these duties so that it can quickly respond to user 
+ *       input.
+ * 
+ * @param pvParameters A pointer to a WorkerTaskResources object which
+ *                     should remain valid through the lifetime of the task.
  */
 void vWorkerTask(void *pvParameters) {
     esp_http_client_config_t httpConfig = {
@@ -478,6 +499,22 @@ void vWorkerTask(void *pvParameters) {
     vTaskDelete(NULL); // exit safely (should never happen)
 }
 
+/**
+ * @brief Initializes the over-the-air (OTA) task, which is implemented by
+ *        vOTATask.
+ * 
+ * @note This function creates shallow copies of parameters that will be 
+ *       provided to the task in static memory. It assumes that only one of 
+ *       this type of task will be created; any additional tasks will have 
+ *       pointers to the same location in static memory.
+ * 
+ * @param handle A pointer to a handle which will refer to the created task
+ *               if successful.
+ * @param errorResources A pointer to an ErrorResources object. A deep copy
+ *                       of the object will be created in static memory.
+ *                       
+ * @returns ESP_OK if the task was created successfully, otherwise ESP_FAIL.
+ */
 esp_err_t createOTATask(TaskHandle_t *handle, const ErrorResources *errorResources) {
     static ErrorResources taskErrorResources;
     BaseType_t success;
@@ -497,6 +534,16 @@ esp_err_t createOTATask(TaskHandle_t *handle, const ErrorResources *errorResourc
     return (success == pdPASS) ? ESP_OK : ESP_FAIL;
 }
 
+/**
+ * @brief Implements the over-the-air (OTA) task, which is responsible for
+ *        handling user requests to update to the latest version of firmware.
+ * 
+ * @note To avoid runtime errors, the OTA task should only be created by the
+ *       createOTATask function.
+ * 
+ * @param pvParameters A pointer to an ErrorResources object which should
+ *                     remain valid through the lifetime of the task.
+ */
 void vOTATask(void* pvParameters) {
     ErrorResources *errRes = (ErrorResources *) pvParameters;
     while (true) {

@@ -39,7 +39,7 @@
 #include "wifi.h"
 #include "routines.h"
 #include "main_types.h"
-#include "error.h"
+#include "app_errors.h"
 
 /* Component includes */
 #include "dots_commands.h"
