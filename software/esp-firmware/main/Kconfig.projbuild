@@ -33,13 +33,6 @@ menu "Main Application"
         help
             The amount of time in minutes between LED refreshes.
 
-    config ERROR_PERIOD
-        int "Error Flash Period"
-        default 500
-        help
-            The amount of time in milliseconds (1/1000th of a second) between 
-            error LED toggling for TomTom errors.
-
     config LED_UPDATE_PERIOD
         int "LED Update Period"
         default 100

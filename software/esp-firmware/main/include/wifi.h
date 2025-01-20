@@ -11,7 +11,6 @@
 #include "driver/gpio.h"
 #include <stdbool.h>
 
-
 esp_err_t initWifi(char *wifiSSID, char* wifiPass, gpio_num_t wifiLED);
 bool isWifiConnected(void);
 esp_err_t establishWifiConnection(void);

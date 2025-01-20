@@ -71,16 +71,9 @@ struct WorkerTaskResources {
 
 typedef struct WorkerTaskResources WorkerTaskResources;
 
-
 esp_err_t createWorkerTask(TaskHandle_t *handle, QueueHandle_t dotQueue, QueueHandle_t I2CQueue, ErrorResources *errRes);
-
-
 void vWorkerTask(void *pvParameters);
-
-
 esp_err_t createOTATask(TaskHandle_t *handle, const ErrorResources *errorResources);
-
-
 void vOTATask(void* pvParameters);
 
 #endif /* WORKER_H_ */
