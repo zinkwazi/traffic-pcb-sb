@@ -3912,6 +3912,16 @@
 	)
 	(wire
 		(pts
+			(xy 88.9 78.74) (xy 88.9 74.93)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "064b3525-8ebe-42a6-9fbc-c37e60b88592")
+	)
+	(wire
+		(pts
 			(xy 280.67 64.77) (xy 276.86 64.77)
 		)
 		(stroke
@@ -4212,13 +4222,13 @@
 	)
 	(wire
 		(pts
-			(xy 73.66 85.09) (xy 73.66 82.55)
+			(xy 72.39 86.36) (xy 88.9 86.36)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "37befa9e-8c0a-4484-8da8-e6bf7e838c27")
+		(uuid "38b51793-79d1-4012-a244-3b87926745e9")
 	)
 	(wire
 		(pts
@@ -4532,6 +4542,16 @@
 	)
 	(wire
 		(pts
+			(xy 88.9 86.36) (xy 88.9 90.17)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "71533945-3071-4951-9bde-2b497bb40edf")
+	)
+	(wire
+		(pts
 			(xy 146.05 74.93) (xy 146.05 76.2)
 		)
 		(stroke
@@ -4549,16 +4569,6 @@
 			(type default)
 		)
 		(uuid "7447a20b-a184-4393-863a-5fb122d2b7a6")
-	)
-	(wire
-		(pts
-			(xy 76.2 77.47) (xy 73.66 77.47)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "74af706b-e0e8-4fe2-b541-eea29e135c66")
 	)
 	(wire
 		(pts
@@ -4632,16 +4642,6 @@
 	)
 	(wire
 		(pts
-			(xy 73.66 77.47) (xy 73.66 76.2)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8843273e-d7e4-4588-9935-73249ba390a6")
-	)
-	(wire
-		(pts
 			(xy 354.33 67.31) (xy 346.71 67.31)
 		)
 		(stroke
@@ -4649,6 +4649,16 @@
 			(type default)
 		)
 		(uuid "884521ef-bce9-4ed4-b287-46741f41a8b8")
+	)
+	(wire
+		(pts
+			(xy 87.63 78.74) (xy 88.9 78.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8aae1d40-8056-4149-ab5f-6468c438d3fd")
 	)
 	(wire
 		(pts
@@ -5082,6 +5092,16 @@
 	)
 	(wire
 		(pts
+			(xy 80.01 78.74) (xy 82.55 78.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e458addc-ccaa-47ad-b12b-4b21fc9ae855")
+	)
+	(wire
+		(pts
 			(xy 59.69 39.37) (xy 60.96 39.37)
 		)
 		(stroke
@@ -5212,6 +5232,16 @@
 	)
 	(wire
 		(pts
+			(xy 72.39 78.74) (xy 74.93 78.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f9a514b5-ab14-4ba6-9e2b-dfb8e8ae0cc1")
+	)
+	(wire
+		(pts
 			(xy 346.71 91.44) (xy 346.71 92.71)
 		)
 		(stroke
@@ -5259,16 +5289,6 @@
 			(type default)
 		)
 		(uuid "fcb32783-d82a-4a74-8f79-8a0edc96f384")
-	)
-	(wire
-		(pts
-			(xy 73.66 82.55) (xy 76.2 82.55)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "fd95f3f4-e14d-4de6-8c20-cdde72b3bdb9")
 	)
 	(rectangle
 		(start 102.87 25.4)
@@ -6190,6 +6210,74 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:Polyfuse_Small")
+		(at 77.47 78.74 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "162c55f1-be19-4299-a3b8-c7597e827290")
+		(property "Reference" "F2"
+			(at 77.47 76.835 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "3A"
+			(at 77.47 80.645 90)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" "Fuse:Fuse_1206_3216Metric"
+			(at 82.55 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 77.47 78.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resettable fuse, polymeric positive temperature coefficient, small symbol"
+			(at 77.47 78.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "7acbb39f-6213-42fe-b2a5-0653de6caf67")
+		)
+		(pin "2"
+			(uuid "10af00c2-f2a4-455d-b72c-bbacaa0d8507")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112"
+					(reference "F2")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:R_Small_US")
 		(at 118.11 64.77 90)
 		(unit 1)
@@ -6790,7 +6878,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 73.66 85.09 0)
+		(at 88.9 90.17 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -6799,7 +6887,7 @@
 		(fields_autoplaced yes)
 		(uuid "3c72c5d7-64f4-4a36-b0f9-fdbc96333e73")
 		(property "Reference" "#PWR066"
-			(at 73.66 91.44 0)
+			(at 88.9 96.52 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6808,7 +6896,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 73.66 90.17 0)
+			(at 88.9 95.25 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6817,7 +6905,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 73.66 85.09 0)
+			(at 88.9 90.17 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6826,7 +6914,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 73.66 85.09 0)
+			(at 88.9 90.17 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6835,7 +6923,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 73.66 85.09 0)
+			(at 88.9 90.17 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7802,7 +7890,7 @@
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
-		(at 76.2 77.47 270)
+		(at 72.39 78.74 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -7811,25 +7899,23 @@
 		(fields_autoplaced yes)
 		(uuid "5f6bb049-04f1-47be-851b-a5ff72c73eb6")
 		(property "Reference" "TP22"
-			(at 81.28 76.1999 90)
+			(at 69.088 73.66 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Value" "TestPoint"
-			(at 81.28 78.7399 90)
+			(at 69.088 76.2 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Footprint" "TestPoint:TestPoint_Pad_D2.5mm"
-			(at 76.2 82.55 0)
+			(at 72.39 73.66 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7838,7 +7924,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 76.2 82.55 0)
+			(at 72.39 73.66 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7847,7 +7933,7 @@
 			)
 		)
 		(property "Description" "test point"
-			(at 76.2 77.47 0)
+			(at 72.39 78.74 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9472,71 +9558,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:VBUS")
-		(at 73.66 76.2 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "b4aa25ed-7669-4b62-aa6a-a8c74ebb896c")
-		(property "Reference" "#PWR067"
-			(at 73.66 80.01 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "VBUS"
-			(at 73.66 72.39 0)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 73.66 76.2 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 73.66 76.2 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"VBUS\""
-			(at 73.66 76.2 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "7edc14a4-aa97-4f0f-9617-f4ec4e95abde")
-		)
-		(instances
-			(project "traffic_paradise"
-				(path "/911505fc-874d-4338-908e-12054bdd5112"
-					(reference "#PWR067")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:LED")
 		(at 123.19 45.72 90)
 		(unit 1)
@@ -9607,6 +9628,72 @@
 		)
 	)
 	(symbol
+		(lib_id "power:+5V")
+		(at 88.9 74.93 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "b8b31cee-4256-45c8-b700-8bbcac077f89")
+		(property "Reference" "#PWR01"
+			(at 88.9 78.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+5V"
+			(at 88.9 69.85 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 88.9 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 88.9 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 88.9 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "8fdf019e-1019-4829-9d9c-5b9c9343e0ff")
+		)
+		(instances
+			(project ""
+				(path "/911505fc-874d-4338-908e-12054bdd5112"
+					(reference "#PWR01")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:D_Schottky_Small")
 		(at 73.66 39.37 180)
 		(unit 1)
@@ -9669,6 +9756,74 @@
 			(project ""
 				(path "/911505fc-874d-4338-908e-12054bdd5112"
 					(reference "D1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:D_Schottky_Small")
+		(at 85.09 78.74 180)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "be028795-d290-47ed-9a0e-7a53647a7918")
+		(property "Reference" "D4"
+			(at 85.09 76.835 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Value" "Schottky"
+			(at 85.09 80.645 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "Diode_SMD:D_SMA"
+			(at 85.09 78.74 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 85.09 78.74 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Schottky diode, small symbol"
+			(at 85.09 78.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "0a7b12a8-876a-4b6a-a287-d791672cd488")
+		)
+		(pin "2"
+			(uuid "7e0067c4-044d-4915-bbc9-572926021fb2")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112"
+					(reference "D4")
 					(unit 1)
 				)
 			)
@@ -11259,7 +11414,7 @@
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
-		(at 76.2 82.55 270)
+		(at 72.39 86.36 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -11268,25 +11423,23 @@
 		(fields_autoplaced yes)
 		(uuid "f7ff3253-5aab-448e-ab63-284fdd3883f8")
 		(property "Reference" "TP21"
-			(at 81.28 81.2799 90)
+			(at 69.088 81.28 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Value" "TestPoint"
-			(at 81.28 83.8199 90)
+			(at 69.088 83.82 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Footprint" "TestPoint:TestPoint_Pad_D2.5mm"
-			(at 76.2 87.63 0)
+			(at 72.39 81.28 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11295,7 +11448,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 76.2 87.63 0)
+			(at 72.39 81.28 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11304,7 +11457,7 @@
 			)
 		)
 		(property "Description" "test point"
-			(at 76.2 82.55 0)
+			(at 72.39 86.36 0)
 			(effects
 				(font
 					(size 1.27 1.27)
