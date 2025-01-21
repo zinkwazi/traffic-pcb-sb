@@ -42,6 +42,15 @@ TEST_CASE("dotsSetOperatingMode gatekeeperNotify", "[dots_commands]")
 
     /* test blocking mechanism */
     TEST_ASSERT_EQUAL(ESP_OK, dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING));
+
+    /* test silent operation */
+    vTaskPrioritySet(gatekeeperHandle, gatekeeperPrio + 2); // if gatekeeper prio is 0, then setting this
+                                                            // tasks prio to -1 would break the test
+    xTaskNotifyGive(xTaskGetCurrentTaskHandle());
+    xTaskNotifyGive(xTaskGetCurrentTaskHandle());
+    TEST_ASSERT_EQUAL(ESP_OK, dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_SILENT, DOTS_ASYNC));
+    while ((returnValue = ulTaskNotifyTake(pdTRUE, INT_MAX)) == 0) {}
+    TEST_ASSERT_EQUAL(2, returnValue); // expect that gatekeeper did not override task notification
 }
 
 /**
@@ -58,7 +67,6 @@ TEST_CASE("dotsSetOperatingMode changesRegisters", "[dots_commands]")
     TEST_ASSERT_NOT_EQUAL(NULL, I2CQueue);
 
     /* Set matrices to software shutdown */
-    ESP_LOGI(TAG, "Manually setting matrices into software shutdown mode");
     PageState state;
     MatrixHandles matrices;
     uint8_t result1, result2, result3;
@@ -68,24 +76,45 @@ TEST_CASE("dotsSetOperatingMode changesRegisters", "[dots_commands]")
     TEST_ASSERT_EQUAL(softwareShutdownBits, ~result1 & softwareShutdownBits);
     TEST_ASSERT_EQUAL(softwareShutdownBits, ~result2 & softwareShutdownBits);
     TEST_ASSERT_EQUAL(softwareShutdownBits, ~result3 & softwareShutdownBits);
-    ESP_LOGI(TAG, "Releasing bus");
     TEST_ASSERT_EQUAL(ESP_OK, dReleaseBus(matrices));
 
-    ESP_LOGI(TAG, "Creating Gatekeeper");
+    /* Check that dotsSetOperatingMode changes software shutdown bits */
     TaskHandle_t gatekeeperHandle;
     TEST_ASSERT_EQUAL(ESP_OK, createI2CGatekeeperTask(&gatekeeperHandle, I2CQueue));
     int gatekeeperPrio = uxTaskPriorityGet(gatekeeperHandle);
     vTaskPrioritySet(NULL, gatekeeperPrio + 1);
     
-    ESP_LOGI(TAG, "Calling dotsSetOperatingMode with NORMAL_OPERATION");
     TEST_ASSERT_EQUAL(ESP_OK, dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING));
-    ESP_LOGI(TAG, "Releasing bus");
     TEST_ASSERT_EQUAL(ESP_OK, dotsReleaseBus(I2CQueue, DOTS_NOTIFY, DOTS_BLOCKING));
-    ESP_LOGI(TAG, "Manually checking matrix registers");
     TEST_ASSERT_EQUAL(ESP_OK, dInitializeBus(&state, &matrices, I2C_PORT, SDA_PIN, SCL_PIN));
     TEST_ASSERT_EQUAL(ESP_OK, dGetRegisters(&result1, &result2, &result3, &state, matrices, configPage, configRegAddr));
     TEST_ASSERT_EQUAL(softwareShutdownBits, result1 & softwareShutdownBits);
     TEST_ASSERT_EQUAL(softwareShutdownBits, result2 & softwareShutdownBits);
     TEST_ASSERT_EQUAL(softwareShutdownBits, result3 & softwareShutdownBits);
+}
+
+TEST_CASE("dotsSetOperatingMode inputGuards", "[dots_commands]")
+{
+    const int I2CQueueSize = 20; // 20 elements
+    TEST_ASSERT_GREATER_THAN(0, I2CQueueSize);
+    QueueHandle_t I2CQueue = xQueueCreate(I2CQueueSize, sizeof(I2CCommand));
+    TEST_ASSERT_NOT_EQUAL(NULL, I2CQueue);
+    TaskHandle_t gatekeeperHandle;
+    TEST_ASSERT_EQUAL(ESP_OK, createI2CGatekeeperTask(&gatekeeperHandle, I2CQueue));
+    int gatekeeperPrio = uxTaskPriorityGet(gatekeeperHandle);
+    vTaskPrioritySet(NULL, gatekeeperPrio + 1);
+
+    /* test NULL queue */
+    ESP_LOGI(TAG, "testing NULL queue handle");
+    TEST_ASSERT_EQUAL(ESP_FAIL, dotsSetOperatingMode(NULL, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING));
+    
+    /* test invalid operation */
+    ESP_LOGI(TAG, "testing INT_MAX operation");
+    TEST_ASSERT_EQUAL(ESP_FAIL, dotsSetOperatingMode(I2CQueue, INT_MAX, DOTS_NOTIFY, DOTS_BLOCKING));
+    TEST_ASSERT_EQUAL(ESP_FAIL, dotsSetOperatingMode(I2CQueue, INT_MAX, DOTS_SILENT, DOTS_BLOCKING));
+    TEST_ASSERT_EQUAL(ESP_FAIL, dotsSetOperatingMode(I2CQueue, INT_MAX, DOTS_NOTIFY, DOTS_ASYNC));
+    while (ulTaskNotifyTake(pdTRUE, INT_MAX) == 0) {} // will timeout the test
+    TEST_ASSERT_EQUAL(ESP_FAIL, dotsSetOperatingMode(I2CQueue, INT_MAX, DOTS_SILENT, DOTS_ASYNC));
+    while (ulTaskNotifyTake(pdTRUE, INT_MAX) == 0) {} // will timeout the test
 }
 
