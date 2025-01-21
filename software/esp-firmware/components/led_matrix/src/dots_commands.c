@@ -232,7 +232,7 @@ void vI2CGatekeeperTask(void *pvParameters)
  * @returns ESP_OK if non-blocking and successfully added a command to the queue.
  *          ESP_OK if blocking and received DOTS_OK_VAL task notification.
  *          DOTS_ERR_VAL if blocking and received non-DOTS_OK_VAL task notification.
- *          ESP_FAIL otherwise (caller should free params).
+ *          ESP_FAIL otherwise (caller should free params and not expect a task notification).
  */
 esp_err_t addCommandToI2CQueue(QueueHandle_t queue, enum I2CCommandFunc func, void *params, TaskHandle_t notifyTask, bool blocking)
 {

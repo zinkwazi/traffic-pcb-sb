@@ -34,11 +34,12 @@ TEST_CASE("dotsSetOperatingMode gatekeeperNotify", "[dots_commands]")
 
     /* test that blocking mechanism actually retrieves task notification
        by setting the wrong value to retrieve */
-    xTaskNotifyGive(xTaskGetCurrentTaskHandle()); // dotsReset should retrieve 1 and fail
-    TEST_ASSERT_EQUAL(ESP_FAIL, dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING));
+    xTaskNotifyGive(xTaskGetCurrentTaskHandle()); // function should retrieve 1 and fail
+    TEST_ASSERT_EQUAL(DOTS_ERR_VAL, dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING));
     /* now expect to retrieve true gatekeeper value */
     uint32_t returnValue = 0;
     while ((returnValue = ulTaskNotifyTake(pdTRUE, INT_MAX)) == 0) {} // will timeout the test
+    TEST_ASSERT_EQUAL(DOTS_OK_VAL, returnValue);
 
     /* test blocking mechanism */
     TEST_ASSERT_EQUAL(ESP_OK, dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING));
@@ -97,6 +98,7 @@ TEST_CASE("dotsSetOperatingMode inputGuards", "[dots_commands]")
 {
     const int I2CQueueSize = 20; // 20 elements
     TEST_ASSERT_GREATER_THAN(0, I2CQueueSize);
+    I2CCommand command;
     QueueHandle_t I2CQueue = xQueueCreate(I2CQueueSize, sizeof(I2CCommand));
     TEST_ASSERT_NOT_EQUAL(NULL, I2CQueue);
     TaskHandle_t gatekeeperHandle;
@@ -105,16 +107,20 @@ TEST_CASE("dotsSetOperatingMode inputGuards", "[dots_commands]")
     vTaskPrioritySet(NULL, gatekeeperPrio + 1);
 
     /* test NULL queue */
-    ESP_LOGI(TAG, "testing NULL queue handle");
     TEST_ASSERT_EQUAL(ESP_FAIL, dotsSetOperatingMode(NULL, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING));
+    TEST_ASSERT_EQUAL(pdFALSE, xQueuePeek(I2CQueue, &command, 0)); // function should only put 1 command on queue
     
     /* test invalid operation */
-    ESP_LOGI(TAG, "testing INT_MAX operation");
     TEST_ASSERT_EQUAL(ESP_FAIL, dotsSetOperatingMode(I2CQueue, INT_MAX, DOTS_NOTIFY, DOTS_BLOCKING));
+    TEST_ASSERT_EQUAL(pdFALSE, xQueuePeek(I2CQueue, &command, 0)); // function should have put nothing on queue
     TEST_ASSERT_EQUAL(ESP_FAIL, dotsSetOperatingMode(I2CQueue, INT_MAX, DOTS_SILENT, DOTS_BLOCKING));
+    TEST_ASSERT_EQUAL(pdFALSE, xQueuePeek(I2CQueue, &command, 0));
     TEST_ASSERT_EQUAL(ESP_FAIL, dotsSetOperatingMode(I2CQueue, INT_MAX, DOTS_NOTIFY, DOTS_ASYNC));
-    while (ulTaskNotifyTake(pdTRUE, INT_MAX) == 0) {} // will timeout the test
+    TEST_ASSERT_EQUAL(pdFALSE, xQueuePeek(I2CQueue, &command, 0));
     TEST_ASSERT_EQUAL(ESP_FAIL, dotsSetOperatingMode(I2CQueue, INT_MAX, DOTS_SILENT, DOTS_ASYNC));
-    while (ulTaskNotifyTake(pdTRUE, INT_MAX) == 0) {} // will timeout the test
+    TEST_ASSERT_EQUAL(pdFALSE, xQueuePeek(I2CQueue, &command, 0));
+
+    /* test no queue command is added during invalid operation */
+    
 }
 
