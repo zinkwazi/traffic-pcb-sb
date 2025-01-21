@@ -822,8 +822,19 @@ esp_err_t dSetScaling(PageState *state, MatrixHandles matrices, uint16_t ledNum,
     return ESP_OK;
 }
 
-#if CONFIG_DISABLE_TESTING_FEATURES == false
+#if CONFIG_DISABLE_TESTING_FEATURES == false // this is inverted for the esp-idf vscode extension
+/*******************************************/
+/*            TESTING FEATURES             */
+/*******************************************/
 esp_err_t dReleaseBus(MatrixHandles matrices) {
-    return i2c_del_master_bus(matrices.I2CBus);
+    esp_err_t ret = i2c_del_master_bus(matrices.I2CBus);
+    if (ret == ESP_OK) {
+        /* remove dangling pointer */
+        matrices.I2CBus = NULL;
+        matrices.mat1Handle = NULL;
+        matrices.mat2Handle = NULL;
+        matrices.mat3Handle = NULL;
+    }
+    return ret;
 }
 #endif /* CONFIG_DISABLE_TESTING_FEATURES == false */

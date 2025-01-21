@@ -16,9 +16,18 @@
 
 enum PWMFrequency {
     TWENTY_NINE_K = 0,
+    MATRIX_PWMFREQ_INVALID_1 = 1,
     THREE_POINT_SIX_K = 2,
+    MATRIX_PWMFREQ_INVALID_3 = 3,
+    MATRIX_PWMFREQ_INVALID_4 = 4,
+    MATRIX_PWMFREQ_INVALID_5 = 5,
+    MATRIX_PWMFREQ_INVALID_6 = 6,
     ONE_POINT_EIGHT_K = 7,
+    MATRIX_PWMFREQ_INVALID_8 = 8,
+    MATRIX_PWMFREQ_INVALID_9 = 9,
+    MATRIX_PWMFREQ_INVALID_10 = 10,
     NINE_HUNDRED = 11,
+    MATRIX_PWMFREQ_MAX = 12, // indicates start of invalid values
 };
 
 enum ResistorSetting {
@@ -30,11 +39,13 @@ enum ResistorSetting {
     EIGHT_K = 5,
     SIXTEEN_K = 6,
     THIRTY_TWO_K = 7,
+    MATRIX_RESISTORSETTING_MAX = 8, // indicates start of invalid values
 };
 
 enum Operation {
     SOFTWARE_SHUTDOWN = 0,
     NORMAL_OPERATION = 1,
+    MATRIX_OPERATION_MAX = 2, // indicates start of invalid values
 };
 
 enum ShortDetectionEnable {
@@ -42,11 +53,13 @@ enum ShortDetectionEnable {
     OPEN_DETECTION = 1,
     SHORT_DETECTION = 2,
     REDUNDANT_OPEN_DETECTION = 3,
+    MATRIX_SHORT_DETECTION_EN_MAX = 4, // indicates start of invalid values
 };
 
 enum LogicLevel {
     STANDARD = 0,
     ALTERNATE = 1,
+    MATRIX_LOGIC_LEVEL_MAX = 2, // indicates start of invalid values
 };
 
 enum SWXSetting {
@@ -59,6 +72,7 @@ enum SWXSetting {
     THREE = 6,
     TWO = 7,
     CURRENT_SINK_ONLY = 8,
+    MATRIX_SWXSETTING_MAX = 9, // indicates start of invalid values
 };
 
 struct PageState {

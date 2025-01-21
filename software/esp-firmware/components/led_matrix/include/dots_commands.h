@@ -54,6 +54,7 @@ enum I2CCommandFunc {
 #if CONFIG_DISABLE_TESTING_FEATURES == false
     RELEASE_BUS,
 #endif /* CONFIG_DISABLE_TESTING_FEATURES == false */
+    I2CCOMMANDFUNC_MAX, // indicates start of invalid functions
 };
 
 typedef enum I2CCommandFunc I2CCommandFunc;
@@ -87,7 +88,10 @@ esp_err_t dotsReset(QueueHandle_t queue, bool notify, bool blocking);
 esp_err_t dotsSetColor(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue, bool notify, bool blocking);
 esp_err_t dotsSetScaling(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue, bool notify, bool blocking);
 
-#if CONFIG_DISABLE_TESTING_FEATURES == false
+#if CONFIG_DISABLE_TESTING_FEATURES == false // this is inverted for the esp-idf vscode extension
+/*******************************************/
+/*            TESTING FEATURES             */
+/*******************************************/
 esp_err_t dotsReleaseBus(QueueHandle_t queue, bool notify, bool blocking);
 #endif /* CONFIG_DISABLE_TESTING_FEATURES == false */
 
