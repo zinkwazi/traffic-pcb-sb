@@ -51,6 +51,9 @@ enum I2CCommandFunc {
     RESET, // dReset
     SET_COLOR, // dSetColor
     SET_SCALING, // dSetScaling
+#if CONFIG_DISABLE_TESTING_FEATURES == false
+    RELEASE_BUS,
+#endif /* CONFIG_DISABLE_TESTING_FEATURES == false */
 };
 
 typedef enum I2CCommandFunc I2CCommandFunc;
@@ -83,5 +86,9 @@ esp_err_t dotsSetPWMFrequency(QueueHandle_t queue, enum PWMFrequency freq, bool 
 esp_err_t dotsReset(QueueHandle_t queue, bool notify, bool blocking);
 esp_err_t dotsSetColor(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue, bool notify, bool blocking);
 esp_err_t dotsSetScaling(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue, bool notify, bool blocking);
+
+#if CONFIG_DISABLE_TESTING_FEATURES == false
+esp_err_t dotsReleaseBus(QueueHandle_t queue, bool notify, bool blocking);
+#endif /* CONFIG_DISABLE_TESTING_FEATURES == false */
 
 #endif /* DOTS_COMMANDS_H_ */

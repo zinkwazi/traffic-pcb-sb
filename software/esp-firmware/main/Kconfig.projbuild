@@ -144,5 +144,5 @@ menu "Main Application"
     config OTA_PRIO
         int "Priority of the OTA task"
         default 4
-
+        
 endmenu

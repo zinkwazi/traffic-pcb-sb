@@ -92,7 +92,6 @@ esp_err_t dSetColor(PageState *state, MatrixHandles matrices, uint16_t ledNum, u
 esp_err_t dSetScaling(PageState *state, MatrixHandles matrices, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
 
 /* Internal functions */
-void dotsResetStaticVars(void);
 esp_err_t dInitializeBus(PageState *state, MatrixHandles *matrices, i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
 esp_err_t dAssertConnected(PageState *state, MatrixHandles matrices);
 void dSetBits(uint8_t *reg, uint8_t bitMask, uint8_t value);
@@ -102,5 +101,9 @@ esp_err_t dGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3, Pa
 esp_err_t dSetRegister(PageState *state, MatrixHandles matrices, i2c_master_dev_handle_t device, uint8_t page, uint8_t addr, uint8_t data);
 esp_err_t dSetRegisters(PageState *state, MatrixHandles matrices, uint8_t page, uint8_t addr, uint8_t data);
 esp_err_t dSetRegistersSeparate(PageState *state, MatrixHandles matrices, uint8_t page, uint8_t addr, uint8_t mat1val, uint8_t mat2val, uint8_t mat3val);
+
+#if CONFIG_DISABLE_TESTING_FEATURES == false
+esp_err_t dReleaseBus(MatrixHandles matrices);
+#endif /* CONFIG_DISABLE_TESTING_FEATURES == false */
 
 #endif /* d_MATRIX_H_ */

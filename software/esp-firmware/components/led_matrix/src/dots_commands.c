@@ -97,6 +97,12 @@ void executeI2CCommand(PageState *state, MatrixHandles matrices, I2CCommand *com
                               setScalingParams->green,
                               setScalingParams->blue);
             break;
+#if CONFIG_DISABLE_TESTING_FEATURES == false
+        case RELEASE_BUS:
+            ESP_LOGD(TAG, "Releasing I2C bus");
+            err = dReleaseBus(matrices);
+            break;
+#endif /* CONFIG_DISABLE_TESTING_FEATURES == false */
         default:
             ESP_LOGW(TAG, "I2C gatekeeper recieved an invalid command");
             return;
@@ -183,6 +189,34 @@ void vI2CGatekeeperTask(void *pvParameters) {
     vTaskDelete(NULL); // exit safely (should never happen)
 }
 
+/**
+ * @brief Adds a command to the I2CQueue and optionally blocks on a task notification
+ *        expected to come from the I2CGatekeeper when it has finished the request.
+ * 
+ * This task blocks on a task notification when notifyTask is not NULL and blocking
+ * is true, ie. DOTS_BLOCKING. When blocking is false, ie. DOTS_ASYNC, a task 
+ * notification is still sent if notifyTask is not NULL. The caller must take care 
+ * that task notifications from the gatekeeper are handled because the gatekeeper
+ * overrides the return value from any unhandled task notifications when it has
+ * finished with another command. It is recommended to either use DOTS_BLOCKING
+ * to ensure that all notifications are retrieved, or entirely disable notifications
+ * by setting notifyTask to NULL.
+ * 
+ * @param[in] queue The I2CQueue, which holds I2CCommand objects that the 
+ *        gatekeeper services.
+ * @param[in] func The command to give the I2CGatekeeper.
+ * @param[in] params A pointer to dynamically allocated memory that the gatekeeper
+ *        becomes the owner of. This memory should correspond to the parameters
+ *        required by the function the gatekeeper will use to service the command.
+ * @param[in] notifyTask The handle of the task that will receive a task notification
+ *        when the gatekeeper completes the command. If NULL, no notification will be sent.
+ * @param[in] blocking Whether this task should wait for a task notification within
+ *        this function after adding a command to the queue or not.
+ * 
+ * @returns ESP_OK if non-blocking and successfully added a command to the queue.
+ *          ESP_OK if blocking and received DOTS_OK_VAL task notification.
+ *          ESP_FAIL otherwise.
+ */
 esp_err_t addCommandToI2CQueue(QueueHandle_t queue, enum I2CCommandFunc func, void *params, TaskHandle_t notifyTask, bool blocking) {
     I2CCommand command = { // queueing is by copy, not reference
         .func = func,
@@ -192,15 +226,18 @@ esp_err_t addCommandToI2CQueue(QueueHandle_t queue, enum I2CCommandFunc func, vo
     while (xQueueSendToBack(queue, &command, INT_MAX) != pdTRUE) {
         ESP_LOGE(TAG, "failed to add command to queue, retrying...");
     }
-    if (blocking) {
-        uint32_t returnValue = ulTaskNotifyTake(pdTRUE, INT_MAX);
+    if (notifyTask != NULL && blocking) {
+        uint32_t returnValue = 0;
+        while (returnValue == 0) {
+            returnValue = ulTaskNotifyTake(pdTRUE, INT_MAX);
+        }
         switch (returnValue) {
             case DOTS_OK_VAL:
                 return ESP_OK;
             case DOTS_ERR_VAL:
                 return ESP_FAIL;
             default:
-                ESP_LOGE(TAG, "received unknown return value from I2C gatekeeper");
+                ESP_LOGE(TAG, "received unknown notification value from gatekeeper: %lu", returnValue);
                 return ESP_FAIL;
         }
     }
@@ -410,3 +447,11 @@ esp_err_t dotsSetScaling(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint
     TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
     return addCommandToI2CQueue(queue, SET_SCALING, (void *) heapParams, notifyTask, blocking);
 }
+
+#if CONFIG_DISABLE_TESTING_FEATURES == false
+esp_err_t dotsReleaseBus(QueueHandle_t queue, bool notify, bool blocking) {
+    /* send command */
+    TaskHandle_t notifyTask = (notify) ? xTaskGetCurrentTaskHandle() : NULL;
+    return addCommandToI2CQueue(queue, RELEASE_BUS, NULL, notifyTask, blocking);
+}
+#endif /* CONFIG_DISABLE_TESTING_FEATURES == false */

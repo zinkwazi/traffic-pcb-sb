@@ -230,6 +230,9 @@ esp_err_t dInitializeBus(PageState *state, MatrixHandles *matrices, i2c_port_num
     {
         return ESP_FAIL;
     }
+    state->mat1 = PWM0_PAGE; // force setPage to actually set the page
+    state->mat2 = PWM0_PAGE; // so that pages are in a known state
+    state->mat3 = PWM0_PAGE;
     if (dSetPage(state, *matrices, matrices->mat1Handle, CONFIG_PAGE) != ESP_OK ||
         dSetPage(state, *matrices, matrices->mat2Handle, CONFIG_PAGE) != ESP_OK ||
         dSetPage(state, *matrices, matrices->mat3Handle, CONFIG_PAGE) != ESP_OK)
@@ -818,3 +821,9 @@ esp_err_t dSetScaling(PageState *state, MatrixHandles matrices, uint16_t ledNum,
     }
     return ESP_OK;
 }
+
+#if CONFIG_DISABLE_TESTING_FEATURES == false
+esp_err_t dReleaseBus(MatrixHandles matrices) {
+    return i2c_del_master_bus(matrices.I2CBus);
+}
+#endif /* CONFIG_DISABLE_TESTING_FEATURES == false */

@@ -16,56 +16,6 @@
 #define GLOBAL_TEST_CURRENT 0x30
 #define GLOBAL_POWER_TEST_CURRENT 0x80
 
-void led_color_test(void) {
-    PageState state;
-    MatrixHandles matrices;
-    VerificationResources res;
-    TEST_ASSERT_EQUAL(ESP_OK, initializeVerificationButtons(&res));
-    TEST_ASSERT_EQUAL(ESP_OK, dInitializeBus(&state, &matrices, I2C_PORT, SDA_PIN, SCL_PIN));
-    TEST_ASSERT_EQUAL(ESP_OK, dAssertConnected(&state, matrices));
-    TEST_ASSERT_EQUAL(ESP_OK, dReset(&state, matrices));
-    TEST_ASSERT_EQUAL(ESP_OK, dSetGlobalCurrentControl(&state, matrices, GLOBAL_TEST_CURRENT));
-    TEST_ASSERT_EQUAL(ESP_OK, dSetOperatingMode(&state, matrices, NORMAL_OPERATION));
-    ESP_LOGI(TAG, "\nPress \"Toggle\" to verify, \"OTA\" to fail:\n");
-    for (int i = 1; i < MAX_NUM_LEDS; i++) {
-        LEDReg reg = LEDNumToReg[i];
-        TEST_ASSERT_EQUAL(ESP_OK, dSetScaling(&state, matrices, i, 0xFF, 0xFF, 0xFF));
-
-        TEST_ASSERT_EQUAL(ESP_OK, dSetColor(&state, matrices, i, 0xFF, 0x00, 0x00));
-        ESP_LOGI(TAG, "LED %d RED  , 0x%X", i, reg.red);
-        assertHumanVerifies("Verify LED...", true, res);
-        
-        TEST_ASSERT_EQUAL(ESP_OK, dSetColor(&state, matrices, i, 0x00, 0xFF, 0x00));
-        ESP_LOGI(TAG, "LED %d GREEN, 0x%X", i, reg.green);
-        assertHumanVerifies("Verify LED...", true, res);
-
-        TEST_ASSERT_EQUAL(ESP_OK, dSetColor(&state, matrices, i, 0x00, 0x00, 0xFF));
-        ESP_LOGI(TAG, "LED %d BLUE , 0x%X", i, reg.blue);
-        assertHumanVerifies("Verify LED...", true, res);
-
-        TEST_ASSERT_EQUAL(ESP_OK, dSetColor(&state, matrices, i, 0x00, 0x00, 0x00));
-    }
-}
-
-void power_test(void) {
-    PageState state;
-    MatrixHandles matrices;
-    VerificationResources res;
-    TEST_ASSERT_EQUAL(ESP_OK, initializeVerificationButtons(&res));
-    TEST_ASSERT_EQUAL(ESP_OK, dInitializeBus(&state, &matrices, I2C_PORT, SDA_PIN, SCL_PIN));
-    TEST_ASSERT_EQUAL(ESP_OK, dAssertConnected(&state, matrices));
-    TEST_ASSERT_EQUAL(ESP_OK, dReset(&state, matrices));
-    TEST_ASSERT_EQUAL(ESP_OK, dSetGlobalCurrentControl(&state, matrices, GLOBAL_POWER_TEST_CURRENT));
-    TEST_ASSERT_EQUAL(ESP_OK, dSetOperatingMode(&state, matrices, NORMAL_OPERATION));
-    for (int i = 1; i < MAX_NUM_LEDS; i++) {
-        TEST_ASSERT_EQUAL(ESP_OK, dSetScaling(&state, matrices, i, 0xFF, 0xFF, 0xFF));
-        TEST_ASSERT_EQUAL(ESP_OK, dSetColor(&state, matrices, i, 0xFF, 0xFF, 0xFF));
-    }
-    ESP_LOGI(TAG, "\nPress \"Toggle\" to verify, \"OTA\" to fail:\n");
-    assertHumanVerifies("Power Draw is acceptable?", true, res);
-    TEST_ASSERT_EQUAL(ESP_OK, dReset(&state, matrices));
-}
-
 void pinout_test(void) {
     VerificationResources res;
     TEST_ASSERT_EQUAL(ESP_OK, initializeVerificationButtons(&res));
@@ -115,7 +65,56 @@ void pinout_test(void) {
     gpio_set_direction(SDA_PIN, GPIO_MODE_OUTPUT);
     assertHumanVerifies("Verify I2C SDA line is high...", true, res);
     gpio_set_level(SDA_PIN, 0);
+}
 
+void power_test(void) {
+    PageState state;
+    MatrixHandles matrices;
+    VerificationResources res;
+    TEST_ASSERT_EQUAL(ESP_OK, initializeVerificationButtons(&res));
+    TEST_ASSERT_EQUAL(ESP_OK, dInitializeBus(&state, &matrices, I2C_PORT, SDA_PIN, SCL_PIN));
+    TEST_ASSERT_EQUAL(ESP_OK, dAssertConnected(&state, matrices));
+    TEST_ASSERT_EQUAL(ESP_OK, dReset(&state, matrices));
+    TEST_ASSERT_EQUAL(ESP_OK, dSetGlobalCurrentControl(&state, matrices, GLOBAL_POWER_TEST_CURRENT));
+    TEST_ASSERT_EQUAL(ESP_OK, dSetOperatingMode(&state, matrices, NORMAL_OPERATION));
+    for (int i = 1; i < MAX_NUM_LEDS; i++) {
+        TEST_ASSERT_EQUAL(ESP_OK, dSetScaling(&state, matrices, i, 0xFF, 0xFF, 0xFF));
+        TEST_ASSERT_EQUAL(ESP_OK, dSetColor(&state, matrices, i, 0xFF, 0xFF, 0xFF));
+    }
+    ESP_LOGI(TAG, "\nPress \"Toggle\" to verify, \"OTA\" to fail:\n");
+    assertHumanVerifies("Power Draw is acceptable?", true, res);
+    TEST_ASSERT_EQUAL(ESP_OK, dReset(&state, matrices));
+}
+
+void led_color_test(void) {
+    PageState state;
+    MatrixHandles matrices;
+    VerificationResources res;
+    TEST_ASSERT_EQUAL(ESP_OK, initializeVerificationButtons(&res));
+    TEST_ASSERT_EQUAL(ESP_OK, dInitializeBus(&state, &matrices, I2C_PORT, SDA_PIN, SCL_PIN));
+    TEST_ASSERT_EQUAL(ESP_OK, dAssertConnected(&state, matrices));
+    TEST_ASSERT_EQUAL(ESP_OK, dReset(&state, matrices));
+    TEST_ASSERT_EQUAL(ESP_OK, dSetGlobalCurrentControl(&state, matrices, GLOBAL_TEST_CURRENT));
+    TEST_ASSERT_EQUAL(ESP_OK, dSetOperatingMode(&state, matrices, NORMAL_OPERATION));
+    ESP_LOGI(TAG, "\nPress \"Toggle\" to verify, \"OTA\" to fail:\n");
+    for (int i = 1; i < MAX_NUM_LEDS; i++) {
+        LEDReg reg = LEDNumToReg[i];
+        TEST_ASSERT_EQUAL(ESP_OK, dSetScaling(&state, matrices, i, 0xFF, 0xFF, 0xFF));
+
+        TEST_ASSERT_EQUAL(ESP_OK, dSetColor(&state, matrices, i, 0xFF, 0x00, 0x00));
+        ESP_LOGI(TAG, "LED %d RED  , 0x%X", i, reg.red);
+        assertHumanVerifies("Verify LED...", true, res);
+        
+        TEST_ASSERT_EQUAL(ESP_OK, dSetColor(&state, matrices, i, 0x00, 0xFF, 0x00));
+        ESP_LOGI(TAG, "LED %d GREEN, 0x%X", i, reg.green);
+        assertHumanVerifies("Verify LED...", true, res);
+
+        TEST_ASSERT_EQUAL(ESP_OK, dSetColor(&state, matrices, i, 0x00, 0x00, 0xFF));
+        ESP_LOGI(TAG, "LED %d BLUE , 0x%X", i, reg.blue);
+        assertHumanVerifies("Verify LED...", true, res);
+
+        TEST_ASSERT_EQUAL(ESP_OK, dSetColor(&state, matrices, i, 0x00, 0x00, 0x00));
+    }
 }
 
 void app_main(void)
