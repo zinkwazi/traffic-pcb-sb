@@ -53,6 +53,9 @@ enum I2CCommandFunc {
     SET_SCALING, // dSetScaling
 #if CONFIG_DISABLE_TESTING_FEATURES == false
     RELEASE_BUS,
+    REAQUIRE_BUS,
+    NOTIFY_OK_VAL,
+    NOTIFY_ERR_VAL,
 #endif /* CONFIG_DISABLE_TESTING_FEATURES == false */
     I2CCOMMANDFUNC_MAX, // indicates start of invalid functions
 };
@@ -90,9 +93,14 @@ esp_err_t dotsSetScaling(QueueHandle_t queue, uint16_t ledNum, uint8_t red, uint
 
 #if CONFIG_DISABLE_TESTING_FEATURES == false // this is inverted for the esp-idf vscode extension
 /*******************************************/
+/*            INTERNAL FUNCTIONS           */
+/*******************************************/
+esp_err_t addCommandToI2CQueue(QueueHandle_t queue, enum I2CCommandFunc func, void *params, TaskHandle_t notifyTask, bool blocking);
+/*******************************************/
 /*            TESTING FEATURES             */
 /*******************************************/
 esp_err_t dotsReleaseBus(QueueHandle_t queue, bool notify, bool blocking);
+esp_err_t dotsReaquireBus(QueueHandle_t queue, bool notify, bool blocking);
 #endif /* CONFIG_DISABLE_TESTING_FEATURES == false */
 
 #endif /* DOTS_COMMANDS_H_ */

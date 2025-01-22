@@ -117,7 +117,7 @@ esp_err_t dSetRegisters(PageState *state, MatrixHandles matrices, uint8_t page, 
 esp_err_t dSetRegistersSeparate(PageState *state, MatrixHandles matrices, uint8_t page, uint8_t addr, uint8_t mat1val, uint8_t mat2val, uint8_t mat3val);
 
 #if CONFIG_DISABLE_TESTING_FEATURES == false
-esp_err_t dReleaseBus(MatrixHandles matrices);
+esp_err_t dReleaseBus(MatrixHandles *matrices);
 #endif /* CONFIG_DISABLE_TESTING_FEATURES == false */
 
 #endif /* d_MATRIX_H_ */

@@ -225,6 +225,9 @@ esp_err_t dInitializeBus(PageState *state, MatrixHandles *matrices, i2c_port_num
     {
         return ESP_FAIL;
     }
+    if (i2c_master_bus_reset(matrices->I2CBus) != ESP_OK) {
+        return ESP_FAIL;
+    }
     /* Assert matrices are connected */
     if (dAssertConnected(state, *matrices) != ESP_OK)
     {
@@ -406,8 +409,10 @@ esp_err_t dGetRegister(uint8_t *result, PageState *state, MatrixHandles matrices
     }
     /* Set page and read config registers */
     dSetPage(state, matrices, device, page);
-    if (i2c_master_transmit_receive(device, &addr, 1, result, 1, I2C_TIMEOUT_MS) != ESP_OK)
+    esp_err_t err = i2c_master_transmit_receive(device, &addr, 1, result, 1, I2C_TIMEOUT_MS);
+    if (err != ESP_OK)
     {
+        ESP_LOGI(TAG, "z: %d", err);
         return ESP_FAIL;
     }
     return ESP_OK;
@@ -577,17 +582,25 @@ esp_err_t dSetRegistersSeparate(PageState *state, MatrixHandles matrices, uint8_
  */
 esp_err_t dSetOperatingMode(PageState *state, MatrixHandles matrices, enum Operation setting)
 {
+    esp_err_t err;
     uint8_t mat1Cfg, mat2Cfg, mat3Cfg;
     /* Read current configuration states */
     if (dGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, state, matrices, CONFIG_PAGE, CONFIG_REG_ADDR) != ESP_OK)
     {
+        ESP_LOGI(TAG, "3");
         return ESP_FAIL;
     }
     /* Generate and set new configuration states */
     dSetBits(&mat1Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t)setting);
     dSetBits(&mat2Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t)setting);
     dSetBits(&mat3Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t)setting);
-    return dSetRegistersSeparate(state, matrices, CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
+    err = dSetRegistersSeparate(state, matrices, CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "1");
+    } else if (err == ESP_FAIL) {
+        ESP_LOGI(TAG, "2");
+    }
+    return err;
 }
 
 /**
@@ -826,15 +839,36 @@ esp_err_t dSetScaling(PageState *state, MatrixHandles matrices, uint16_t ledNum,
 /*******************************************/
 /*            TESTING FEATURES             */
 /*******************************************/
-esp_err_t dReleaseBus(MatrixHandles matrices) {
-    esp_err_t ret = i2c_del_master_bus(matrices.I2CBus);
+esp_err_t dReleaseBus(MatrixHandles *matrices) {
+    esp_err_t ret;
+    /* input guards */
+    if (matrices->I2CBus == NULL) {
+        return ESP_OK;
+    }
+    ret = i2c_master_bus_rm_device(matrices->mat1Handle);
+    if (ret != ESP_OK) {
+        return ESP_FAIL;
+    }
+    ret = i2c_master_bus_rm_device(matrices->mat2Handle);
+    if (ret != ESP_OK) {
+        return ESP_FAIL;
+    }
+    ret = i2c_master_bus_rm_device(matrices->mat3Handle);
+    if (ret != ESP_OK) {
+        return ESP_FAIL;
+    }
+    ret = i2c_del_master_bus(matrices->I2CBus);
     if (ret == ESP_OK) {
         /* remove dangling pointer */
-        matrices.I2CBus = NULL;
-        matrices.mat1Handle = NULL;
-        matrices.mat2Handle = NULL;
-        matrices.mat3Handle = NULL;
+        ESP_LOGI(TAG, "RET IS ESP_OK");
+        matrices->I2CBus = NULL;
+        matrices->mat1Handle = NULL;
+        matrices->mat2Handle = NULL;
+        matrices->mat3Handle = NULL;
+    } else {
+        ESP_LOGI(TAG, "RET IS ESP_FAIL");
     }
+    
     return ret;
 }
 #endif /* CONFIG_DISABLE_TESTING_FEATURES == false */
