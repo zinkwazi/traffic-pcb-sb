@@ -12141,6 +12141,16 @@
 	)
 	(wire
 		(pts
+			(xy 40.64 100.33) (xy 40.64 97.79)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "91954109-3d27-45ff-ab9d-3a2cc930e247")
+	)
+	(wire
+		(pts
 			(xy 234.95 229.87) (xy 247.65 229.87)
 		)
 		(stroke
@@ -12448,6 +12458,16 @@
 			(type default)
 		)
 		(uuid "96c86678-5bca-40c4-81f1-b9550384dcc2")
+	)
+	(wire
+		(pts
+			(xy 60.96 100.33) (xy 40.64 100.33)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "96dbfb59-9f1d-48ad-800f-acff484718af")
 	)
 	(wire
 		(pts
@@ -14088,16 +14108,6 @@
 			(type default)
 		)
 		(uuid "b85e8c32-96e7-4653-baea-e437cb9fdb72")
-	)
-	(wire
-		(pts
-			(xy 33.02 100.33) (xy 60.96 100.33)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "b866fa82-ec45-4c0c-8ccd-3b74bb1a8181")
 	)
 	(wire
 		(pts
@@ -17689,7 +17699,17 @@
 		)
 		(uuid "ff7b9818-3755-47a8-b9a5-c5ae41a0be0b")
 	)
-	(text "I2C ADDR = 01"
+	(text "I2C2"
+		(exclude_from_sim no)
+		(at 52.07 80.01 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "05ac7eeb-2633-4311-b4c0-40b44f0f43b7")
+	)
+	(text "I2C ADDR = 11"
 		(exclude_from_sim no)
 		(at 52.705 97.155 0)
 		(effects
@@ -18479,17 +18499,6 @@
 			(justify right bottom)
 		)
 		(uuid "c29b7827-a067-4892-aca3-c78c15dfa2bd")
-	)
-	(label "SCL4"
-		(at 33.02 100.33 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "c52d93ca-10ce-4cca-9522-2ee1c18acb0d")
 	)
 	(label "ROW17"
 		(at 120.65 139.7 0)
@@ -20881,6 +20890,71 @@
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
 					(reference "LED174")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+5V")
+		(at 40.64 97.79 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "2b1fcb51-b7ff-4f09-ac4d-fddeea142d11")
+		(property "Reference" "#PWR082"
+			(at 40.64 101.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+5V"
+			(at 40.64 93.98 0)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 40.64 97.79 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 40.64 97.79 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 40.64 97.79 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "28235386-83ac-4ea7-b2bf-981b9731d7ca")
+		)
+		(instances
+			(project "traffic_paradise"
+				(path "/911505fc-874d-4338-908e-12054bdd5112/229965e3-107a-47b9-9b24-fdc53810a62f"
+					(reference "#PWR082")
 					(unit 1)
 				)
 			)
