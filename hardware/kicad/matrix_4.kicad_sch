@@ -2308,12 +2308,6 @@
 		(uuid "045d6062-b305-4052-8767-bb1504f77f8f")
 	)
 	(junction
-		(at 36.83 88.9)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "054b2a71-86f7-40c8-a2ee-23b58649a213")
-	)
-	(junction
 		(at 157.48 209.55)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -12901,16 +12895,6 @@
 	)
 	(wire
 		(pts
-			(xy 33.02 88.9) (xy 36.83 88.9)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "9e7e1b08-2bee-4478-81bc-72fbb63fbb7e")
-	)
-	(wire
-		(pts
 			(xy 222.25 91.44) (xy 234.95 91.44)
 		)
 		(stroke
@@ -18786,18 +18770,6 @@
 			(justify right)
 		)
 		(uuid "29c79449-c403-471b-b92c-aef8e157f0e7")
-	)
-	(hierarchical_label "SDB4"
-		(shape input)
-		(at 33.02 88.9 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "a54ef4d1-d444-47a0-bb05-bd1069b8d3f3")
 	)
 	(hierarchical_label "INT4"
 		(shape input)

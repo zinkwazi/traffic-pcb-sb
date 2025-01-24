@@ -2344,12 +2344,6 @@
 		(uuid "052c948c-3461-49dd-b47a-e70baa239439")
 	)
 	(junction
-		(at 36.83 88.9)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "054b2a71-86f7-40c8-a2ee-23b58649a213")
-	)
-	(junction
 		(at 234.95 72.39)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -12815,16 +12809,6 @@
 	)
 	(wire
 		(pts
-			(xy 33.02 88.9) (xy 36.83 88.9)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "9e7e1b08-2bee-4478-81bc-72fbb63fbb7e")
-	)
-	(wire
-		(pts
 			(xy 196.85 262.89) (xy 196.85 261.62)
 		)
 		(stroke
@@ -18804,18 +18788,6 @@
 			(justify right)
 		)
 		(uuid "6afdd359-2b52-4010-8da2-3d801be0d68d")
-	)
-	(hierarchical_label "SDB1"
-		(shape input)
-		(at 33.02 88.9 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "d9cee0f7-5c77-43e2-9caa-6b8c05c431f3")
 	)
 	(symbol
 		(lib_id "Device:LED_RABG")

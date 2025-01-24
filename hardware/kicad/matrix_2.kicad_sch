@@ -3358,12 +3358,6 @@
 		(uuid "7c631f75-9a41-45a9-ad72-6ee2a8889d67")
 	)
 	(junction
-		(at 36.83 86.36)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "7d414cc1-d246-4e17-9899-6bc4f99b1c2b")
-	)
-	(junction
 		(at 222.25 113.03)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -5778,16 +5772,6 @@
 			(type default)
 		)
 		(uuid "16b14c02-d06f-452f-8e7c-f5de0a875d53")
-	)
-	(wire
-		(pts
-			(xy 33.02 86.36) (xy 36.83 86.36)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "16d71546-4dde-49e4-9a99-5a6c231e9385")
 	)
 	(wire
 		(pts
@@ -18360,18 +18344,6 @@
 			(justify right)
 		)
 		(uuid "6c978234-fdef-4e90-9366-5eeb94001fbe")
-	)
-	(hierarchical_label "SDB2"
-		(shape input)
-		(at 33.02 86.36 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "9039f720-0c97-4e5d-bcee-1d4d883abc05")
 	)
 	(symbol
 		(lib_id "Device:R_Small_US")
