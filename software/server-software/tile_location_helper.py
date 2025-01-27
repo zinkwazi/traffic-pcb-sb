@@ -24,7 +24,7 @@ def requestData(tile, key):
     print(f"Requesting data for tile {tile}")
     try:
         response = requests.get(
-            f"https://api.tomtom.com/traffic/map/4/tile/flow/absolute/{tile}.pbf?key={key}&roadTypes=[0,1,2]"
+            f"https://api.tomtom.com/traffic/map/4/tile/flow/absolute/{tile}.pbf?key={key}&roadTypes=[0,1,2,3,4]"
         )
     except:
         print(f"request failed.")
