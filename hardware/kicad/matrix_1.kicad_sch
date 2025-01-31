@@ -19873,7 +19873,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "1e41b6d6-a0d3-4b65-acfb-8cd400a70a77")
-		(property "Reference" "LED414"
+		(property "Reference" "LED413"
 			(at 201.295 238.125 0)
 			(effects
 				(font
@@ -19932,7 +19932,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED414")
+					(reference "LED413")
 					(unit 1)
 				)
 			)
@@ -20599,7 +20599,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "2ba9be60-5dcd-46d7-ae0c-540eac2d29f8")
-		(property "Reference" "LED413"
+		(property "Reference" "LED412"
 			(at 188.595 238.125 0)
 			(effects
 				(font
@@ -20658,7 +20658,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED413")
+					(reference "LED412")
 					(unit 1)
 				)
 			)
@@ -21332,7 +21332,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "3cd8a336-6766-43a4-a4bd-9e280f562196")
-		(property "Reference" "LED416"
+		(property "Reference" "LED414"
 			(at 252.095 200.025 0)
 			(effects
 				(font
@@ -21391,7 +21391,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED416")
+					(reference "LED414")
 					(unit 1)
 				)
 			)
@@ -22555,7 +22555,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "56409d84-e322-4c2f-ba1a-f00875e624f7")
-		(property "Reference" "LED411"
+		(property "Reference" "LED410"
 			(at 163.195 238.125 0)
 			(effects
 				(font
@@ -22614,7 +22614,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED411")
+					(reference "LED410")
 					(unit 1)
 				)
 			)
@@ -24459,7 +24459,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "7704f647-4fda-4180-a00e-3104429c7adb")
-		(property "Reference" "LED415"
+		(property "Reference" "LED325"
 			(at 213.995 238.125 0)
 			(effects
 				(font
@@ -24518,7 +24518,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED415")
+					(reference "LED325")
 					(unit 1)
 				)
 			)
@@ -26105,7 +26105,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "9de3f2b2-3cb9-4409-b85f-c51b516b0cdf")
-		(property "Reference" "LED410"
+		(property "Reference" "LED409"
 			(at 150.495 238.125 0)
 			(effects
 				(font
@@ -26164,7 +26164,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED410")
+					(reference "LED409")
 					(unit 1)
 				)
 			)
@@ -29796,7 +29796,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "ec8ce609-36f6-47b9-988c-b220116bbc62")
-		(property "Reference" "LED412"
+		(property "Reference" "LED411"
 			(at 175.895 238.125 0)
 			(effects
 				(font
@@ -29855,7 +29855,7 @@
 		(instances
 			(project "traffic_paradise"
 				(path "/911505fc-874d-4338-908e-12054bdd5112/11297df2-e2a9-48ca-8c4a-a4275dbea0eb"
-					(reference "LED412")
+					(reference "LED411")
 					(unit 1)
 				)
 			)
