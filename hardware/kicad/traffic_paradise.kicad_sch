@@ -9667,7 +9667,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Schottky diode, small symbol"
+		(property "Description" "Schottky diode, small symbol. Alternate Part: LCSC C2972823"
 			(at 85.09 78.74 0)
 			(effects
 				(font
@@ -11177,7 +11177,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Schottky diode, small symbol"
+		(property "Description" "Schottky diode, small symbol. Alternate Part: LCSC C2972823."
 			(at 73.66 39.37 0)
 			(effects
 				(font
