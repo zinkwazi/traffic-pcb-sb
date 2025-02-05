@@ -10,7 +10,7 @@ import tile_schema_pb2
 # Configuration
 # ================================
 
-API_KEY = ""
+API_KEY = "j7rGuQg6LIAWzgRlZftZzNb2uZASfbvD"
 
 # ================================
 # General Functions
