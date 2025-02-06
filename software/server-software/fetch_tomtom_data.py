@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
 import sys
-import shutil
 import requests
 import csv
-import json
 from enum import Enum
 import os
 from datetime import datetime
@@ -13,8 +11,7 @@ from datetime import datetime
 # Configuration Options
 # ================================
 
-API_KEY = ""
-INPUT_CSV = "led_locations.csv"
+INPUT_CSV = "led_locations_V1_0_5.csv"
 OUTPUT_NORTH = "data_north_V1_0_0.json"
 OUTPUT_SOUTH = "data_south_V1_0_0.json"
 OUTPUT_NORTH_2 = "data_north_V1_0_3.dat"
@@ -247,11 +244,14 @@ def main(speed_type, direction, key, csv_filename, output_filename, output_filen
 # ================================
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "typical":
+    if len(sys.argv) < 1:
+        print("Incorret usage: script api_key [typical]")
+    api_key = sys.argv[1]
+    if len(sys.argv) > 2 and sys.argv[2] == "typical":
         log("retrieving typical speeds")
-        main(SpeedType.TYPICAL, Direction.NORTH, API_KEY, INPUT_CSV, OUTPUT_NORTH_TYPICAL, None)
-        main(SpeedType.TYPICAL, Direction.SOUTH, API_KEY, INPUT_CSV, OUTPUT_SOUTH_TYPICAL, None)
+        main(SpeedType.TYPICAL, Direction.NORTH, api_key, INPUT_CSV, OUTPUT_NORTH_TYPICAL, None)
+        main(SpeedType.TYPICAL, Direction.SOUTH, api_key, INPUT_CSV, OUTPUT_SOUTH_TYPICAL, None)
     else:
         log("retrieving current speeds")
-        main(SpeedType.CURRENT, Direction.NORTH, API_KEY, INPUT_CSV, OUTPUT_NORTH, OUTPUT_NORTH_2)
-        main(SpeedType.CURRENT, Direction.SOUTH, API_KEY, INPUT_CSV, OUTPUT_SOUTH, OUTPUT_SOUTH_2)
+        main(SpeedType.CURRENT, Direction.NORTH, api_key, INPUT_CSV, OUTPUT_NORTH, OUTPUT_NORTH_2)
+        main(SpeedType.CURRENT, Direction.SOUTH, api_key, INPUT_CSV, OUTPUT_SOUTH, OUTPUT_SOUTH_2)

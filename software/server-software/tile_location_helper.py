@@ -10,7 +10,6 @@ import tile_schema_pb2
 # Configuration
 # ================================
 
-API_KEY = "j7rGuQg6LIAWzgRlZftZzNb2uZASfbvD"
 
 # ================================
 # General Functions
@@ -128,8 +127,8 @@ def main(latitude, longitude, key):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("invalid number of arguments. example usage: script.py latitude, longitude.")
-    latitude, longitude = sys.argv[1], sys.argv[2]
-    main(latitude, longitude, API_KEY)
+    if len(sys.argv) != 4:
+        print("invalid number of arguments. example usage: script.py key latitude, longitude.")
+    api_key, latitude, longitude = sys.argv[1], sys.argv[2], sys.argv[3]
+    main(latitude, longitude, api_key)
     
