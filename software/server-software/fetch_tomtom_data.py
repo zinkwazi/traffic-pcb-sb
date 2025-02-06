@@ -12,16 +12,6 @@ from datetime import datetime
 # Configuration Options
 # ================================
 
-API_KEY = "oyIswiArL2kjQ6vW0zQeDWpy13AdhpJG"
-INPUT_CSV = "/home/bearanvil/scripts/current_data/led_locations.csv"
-OUTPUT_NORTH = "/home/bearanvil/public_html/current_data/data_north_V1_0_0.json"
-OUTPUT_SOUTH = "/home/bearanvil/public_html/current_data/data_south_V1_0_0.json"
-OUTPUT_NORTH_2 = "/home/bearanvil/public_html/current_data/data_north_V1_0_3.dat"
-OUTPUT_SOUTH_2 = "/home/bearanvil/public_html/current_data/data_south_V1_0_3.dat"
-OUTPUT_NORTH_TYPICAL = "/home/bearanvil/public_html/current_data/typical_north_V1_0_3.dat"
-OUTPUT_SOUTH_TYPICAL = "/home/bearanvil/public_html/current_data/typical_south_V1_0_3.dat"
-LOG_FILE = "/home/bearanvil/scripts/fetch_tomtom_data.log"
-
 INPUT_CSV = "led_locations_V1_0_5.csv"
 OUTPUT_NORTH = "data_north_V1_0_0.json"
 OUTPUT_SOUTH = "data_south_V1_0_0.json"
