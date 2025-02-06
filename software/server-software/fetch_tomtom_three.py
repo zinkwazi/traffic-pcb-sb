@@ -10,7 +10,7 @@ from datetime import datetime
 
 # ================================
 # Configuration Options
-# ================================
+# ================================s
 
 INPUT_CSV = "led_locations_V1_0_5.csv"
 OUTPUT_NORTH = "data_north_V1_0_0.json"
@@ -76,7 +76,7 @@ def validEntry(entry):
 
     return entry["Latitude"] != None and entry["Longitude"] != None
 
-def requestSegmentData(entry, speed_type):
+def requestSegmentData(entry, speed_type, api_key):
     '''Requests speed data from the TomTom flowSegmentData endpoint.
     Fails if entry is invalid, which is checked with validEntry.
     Returns found speed if successful, -1 otherwise.'''
@@ -86,7 +86,7 @@ def requestSegmentData(entry, speed_type):
     log(f"Requesting data for coordinates ({longitude}, {latitude})")
     try:
         response = requests.get(
-            f"https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json?key={API_KEY}&point={longitude},{latitude}&unit=mph&openLr=true"
+            f"https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json?key={api_key}&point={longitude},{latitude}&unit=mph&openLr=true"
         )
     except:
         log(f"request failed.")
@@ -119,7 +119,7 @@ def requestData(entry, speed_type, key):
         return -1
     longitude, latitude, tile = entry["Longitude"], entry["Latitude"], entry["Tile"]
     if tile == "NULL" or speed_type == SpeedType.TYPICAL:
-        return requestSegmentData(entry, speed_type)
+        return requestSegmentData(entry, speed_type, key)
 
     log(f"Requesting data for coordinates ({longitude}, {latitude}) with corresponding tile {tile}")
     try:

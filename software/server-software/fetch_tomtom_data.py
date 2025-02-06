@@ -75,7 +75,7 @@ def validEntry(entry):
 
     return entry["Latitude"] != None and entry["Longitude"] != None
 
-def requestData(entry, speed_type):
+def requestData(entry, speed_type, api_key):
     '''Requests speed data from the TomTom API. Fails 
     if entry is invalid, which is checked with validEntry.
     Returns found speed if successful, -1 otherwise.'''
@@ -85,7 +85,7 @@ def requestData(entry, speed_type):
     log(f"Requesting data for coordinates ({longitude}, {latitude})")
     try:
         response = requests.get(
-            f"https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json?key={API_KEY}&point={longitude},{latitude}&unit=mph&openLr=true"
+            f"https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json?key={api_key}&point={longitude},{latitude}&unit=mph&openLr=true"
         )
     except:
         log(f"request failed.")
@@ -149,7 +149,7 @@ def decodeReferences(led_to_entry, max_led_num):
     
     return entry_to_leds if not bad_references else None
 
-def requestSpeeds(csv_reader, direction, speed_type):
+def requestSpeeds(csv_reader, direction, speed_type, api_key):
     led_to_entry = {}
     max_led_num = 0
     bad_locations = False
@@ -190,7 +190,7 @@ def requestSpeeds(csv_reader, direction, speed_type):
     speeds = [-1] * (max_led_num + 1)
     for entry_row_num, leds in entry_to_leds.items():
         entry = row_to_entry[entry_row_num]
-        speed = requestData(entry, speed_type)
+        speed = requestData(entry, speed_type, api_key)
         if speed == -1:
             log(f"No speed data found for LEDs {leds}")
             continue
@@ -215,7 +215,7 @@ def main(speed_type, direction, key, csv_filename, output_filename, output_filen
     try:
         with open(csv_filename, 'r') as input_file:
             csv_reader = csv.DictReader(input_file, dialect='excel')
-            speeds = requestSpeeds(csv_reader, direction, speed_type)
+            speeds = requestSpeeds(csv_reader, direction, speed_type, key)
 
             # Debug log to check the contents of current_speeds
             log(f"Final current_speeds: {speeds}")
