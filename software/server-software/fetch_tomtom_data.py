@@ -3,6 +3,7 @@
 import sys
 import requests
 import csv
+import tile_schema_pb2
 from enum import Enum
 import os
 from datetime import datetime
@@ -10,6 +11,16 @@ from datetime import datetime
 # ================================
 # Configuration Options
 # ================================
+
+API_KEY = "oyIswiArL2kjQ6vW0zQeDWpy13AdhpJG"
+INPUT_CSV = "/home/bearanvil/scripts/current_data/led_locations.csv"
+OUTPUT_NORTH = "/home/bearanvil/public_html/current_data/data_north_V1_0_0.json"
+OUTPUT_SOUTH = "/home/bearanvil/public_html/current_data/data_south_V1_0_0.json"
+OUTPUT_NORTH_2 = "/home/bearanvil/public_html/current_data/data_north_V1_0_3.dat"
+OUTPUT_SOUTH_2 = "/home/bearanvil/public_html/current_data/data_south_V1_0_3.dat"
+OUTPUT_NORTH_TYPICAL = "/home/bearanvil/public_html/current_data/typical_north_V1_0_3.dat"
+OUTPUT_SOUTH_TYPICAL = "/home/bearanvil/public_html/current_data/typical_south_V1_0_3.dat"
+LOG_FILE = "/home/bearanvil/scripts/fetch_tomtom_data.log"
 
 INPUT_CSV = "led_locations_V1_0_5.csv"
 OUTPUT_NORTH = "data_north_V1_0_0.json"
@@ -75,9 +86,9 @@ def validEntry(entry):
 
     return entry["Latitude"] != None and entry["Longitude"] != None
 
-def requestData(entry, speed_type, api_key):
-    '''Requests speed data from the TomTom API. Fails 
-    if entry is invalid, which is checked with validEntry.
+def requestSegmentData(entry, speed_type, api_key):
+    '''Requests speed data from the TomTom flowSegmentData endpoint.
+    Fails if entry is invalid, which is checked with validEntry.
     Returns found speed if successful, -1 otherwise.'''
 
     longitude, latitude = entry["Longitude"], entry["Latitude"]
@@ -107,6 +118,75 @@ def requestData(entry, speed_type, api_key):
         log(f"No speed data found in response: {json_response}")
         return -1
     return speed
+
+def requestData(entry, speed_type, key):
+    '''Requests speed data from the TomTom API. Fails 
+    if entry is invalid, which is checked with validEntry.
+    Returns found speed if successful, -1 otherwise.'''
+
+    if not validEntry(entry):
+        log(f"Encountered invalid entry.")
+        return -1
+    longitude, latitude, tile = entry["Longitude"], entry["Latitude"], entry["Tile"]
+    if tile == "NULL" or speed_type == SpeedType.TYPICAL:
+        return requestSegmentData(entry, speed_type, key)
+
+    log(f"Requesting data for coordinates ({longitude}, {latitude}) with corresponding tile {tile}")
+    try:
+        response = requests.get(
+            f"https://api.tomtom.com/traffic/map/4/tile/flow/absolute/{tile}.pbf?key={key}&roadTypes=[0,1,2,3,4]"
+        )
+    except:
+        log(f"request failed.")
+        return -1
+    if response.status_code != 200:
+        log(f"Failed to retrieve data: {response.status_code} - {response.text}")
+        return -1
+
+    response_tile = tile_schema_pb2.Tile()
+    response_tile.ParseFromString(response.content)
+    if len(response_tile.layers) != 1:
+        log(f"Response contains {len(response_tile.layers)} layers when only 1 is expected: {response_tile}")
+        return -1
+    response_layer = response_tile.layers[0]
+    if len(response_layer.features) != 1:
+        log(f"Response contains {len(response_layer.features)} features when only 1 is expected: {response_tile}")
+        return -1
+    response_feature = response_layer.features[0]
+
+    # determine traffic level tag number
+    traffic_level_tag = -1
+    for num, key in enumerate(response_layer.keys):
+        if key == "traffic_level":
+            traffic_level_tag = num
+            break
+    if traffic_level_tag == -1:
+        log(f"Response layer does not contain a tag for \'traffic_level\': {response_tile}")
+        return -1
+    
+    # find traffic level value index in feature
+    traffic_level_feature = -1
+    for tag, val in zip(*[iter(response_feature.tags)] * 2):
+        if tag == traffic_level_tag:
+            traffic_level_feature = val
+            break
+    if traffic_level_feature == -1:
+        log(f"Response feature does not contain a tag corresponding to the traffic level: {response_tile}")
+        return -1
+    
+    # retrieve current speed from traffic level value
+    if len(response_layer.values) < traffic_level_feature + 1:
+        log(f"Response layer does not contain a value at index {traffic_level_feature}: {response_tile}")
+        return -1
+    traffic_level_value = response_layer.values[traffic_level_feature]
+    if not traffic_level_value.HasField("double_value"): # TODO: traffic level could be other type, although it has always been double so far
+        log(f"Response traffic level is not a double: {response_tile}")
+        return -1
+    current_speed = round(traffic_level_value.double_value * 0.621371) # response gives kmph, convert to mph
+    if current_speed == -1:
+        log(f"No speed data found in response: {response_tile}")
+        return -1
+    return current_speed
 
 # ================================
 # General Functions
@@ -149,7 +229,7 @@ def decodeReferences(led_to_entry, max_led_num):
     
     return entry_to_leds if not bad_references else None
 
-def requestSpeeds(csv_reader, direction, speed_type, api_key):
+def requestSpeeds(csv_reader, direction, speed_type, key):
     led_to_entry = {}
     max_led_num = 0
     bad_locations = False
@@ -190,7 +270,7 @@ def requestSpeeds(csv_reader, direction, speed_type, api_key):
     speeds = [-1] * (max_led_num + 1)
     for entry_row_num, leds in entry_to_leds.items():
         entry = row_to_entry[entry_row_num]
-        speed = requestData(entry, speed_type, api_key)
+        speed = requestData(entry, speed_type, key)
         if speed == -1:
             log(f"No speed data found for LEDs {leds}")
             continue
