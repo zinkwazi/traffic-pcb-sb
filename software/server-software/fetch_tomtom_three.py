@@ -6,6 +6,7 @@ import csv
 import tile_schema_pb2
 import random
 from enum import Enum
+from typing import Any
 import os
 from datetime import datetime
 
@@ -13,15 +14,15 @@ from datetime import datetime
 # Configuration Options
 # ================================
 
-INPUT_CSV = "led_locations_V1_0_5.csv"
-V2_0_0_ADD_INPUT_CSV = "led_loc_addendum_V2_0_0.csv"
-OUTPUT_NORTH = "data_northV1_0_5.csv"
-OUTPUT_SOUTH = "data_southV1_0_5.csv"
-OUTPUT_NORTH_2 = "data_north_V1_0_3.dat"
-OUTPUT_SOUTH_2 = "data_north_V1_0_3.dat"
-OUTPUT_NORTH_TYPICAL = "typical_data_north.csv"
-OUTPUT_SOUTH_TYPICAL = "typical_data_south.csv"
-LOG_FILE = "fetch_tomtom_data.log"
+INPUT_CSV = "input/led_locations_V1_0_5.csv"
+V2_0_0_ADD_INPUT_CSV = "input/led_loc_addendum_V2_0_0.csv"
+OUTPUT_NORTH = "output/data_northV1_0_5.csv"
+OUTPUT_SOUTH = "output/data_southV1_0_5.csv"
+OUTPUT_NORTH_2 = "output/data_north_V1_0_3.dat"
+OUTPUT_SOUTH_2 = "output/data_south_V1_0_3.dat"
+OUTPUT_NORTH_TYPICAL = "output/typical_data_north.csv"
+OUTPUT_SOUTH_TYPICAL = "output/typical_data_south.csv"
+LOG_FILE = "output/fetch_tomtom_data.log"
 
 class Direction(Enum):
     NORTH = 1
@@ -267,7 +268,154 @@ def decodeReferences(led_to_entry, max_led_num):
     
     return entry_to_leds if not bad_references else None
 
-def requestSpeeds(csv_reader, direction, speed_type, key, allow_missing=False):
+def getReference(entry: dict[Any, str | Any]) -> int | None:
+    """
+    Returns the entry's reference if an LED number, otherwise returns None.
+    """
+    try:
+        reference = int(entry.get("Reference", None))
+    except:
+        reference = None
+    return reference
+
+def pruneCSVEntries(csv_reader: csv.DictReader, 
+                    direction: Direction, 
+                    allow_missing: bool=False
+                    ) -> list[tuple[dict[Any, str | Any], list[int]]]:
+    """
+    Searches through entries in csv_reader and compiles a list of pairs of
+    entries and lists of LED numbers. This function disregards any entries whose 
+    'Direction' field does not match the specified direction function argument.
+
+    Parameters:
+        csv_reader: Entries in the reader correspond to LEDs, with necessary
+            fields being 'LED Number', 'Direction', 'Latitude', and 'Longitude'.
+            An optional field is 'Reference', which can an entry can specify to 
+            be one of another entry's 'LED Number' in order to tie multiple LED 
+            numbers to the same physical coordinates.
+        direction: Specifies which entries in the csv_reader the function should
+            focus on; those with field 'Direction' not equal to this direction
+            are skipped.
+        allow_missing: False if the function should throw an error when the
+            compiled entries do not form a set of strictly sequential LED
+            numbers with no missing numbers. True if this should not be checked.
+
+    Returns:
+        A list of tuples containing pairs of entries to lists of LEDs. The LEDs
+        in these pairs are LEDs that correspond to the physical coordinates of
+        the pair's entry.
+
+        Throws an exception if multiple entries with the specified direction
+        and the same LED number are present in the csv_reader, in which case
+        a log message is written with more details.
+
+        Throws an exception if there are no entries with the specified direction.
+
+        Throws an exception if allow_missing is false and LED numbers with the
+        specified direction are not present in the csv_reader, in which case a
+        log message is written with more details.
+
+        Throws an exception if arguments are unexpected.
+    """
+    if csv_reader is None:
+        raise TypeError("csv_reader argument is None")
+    if direction is Direction.UNKNOWN:
+        raise ValueError("direction argument is UNKNOWN")
+    
+    # the list of entry to LED pairings to be returned
+    ret: list[tuple[dict[Any, str | Any], list[int]]] = []
+    # a dictionary of LED nums to a list of LED nums that reference them
+    ref_to_leds: dict[int, list[int]] = {}
+    # a list of LEDs that have entries that have been iterated over
+    seen_leds: set[int] = set([])
+    # this is true if something funky is happening with the entries
+    bad_entries: bool = False
+
+    # populate ret and ref_to_leds with entries with no reference and with
+    # a reference, respectively
+    for entry in csv_reader:
+        if entry['Direction'] == "North" and direction == Direction.SOUTH:
+            continue
+        if entry['Direction'] == "South" and direction == Direction.NORTH:
+            continue
+        led_num = int(entry['LED Number'])
+        if led_num in seen_leds:
+            log(f"Duplicate LED Number encountered: {led_num}")
+            bad_entries = True
+            continue
+        seen_leds.add(led_num)
+        reference = getReference(entry)
+        if reference is None:
+            ret.append((entry, [led_num]))
+            continue
+        # deal with reference if present
+        if ref_to_leds.get(reference) is None:
+            ref_to_leds[reference] = [led_num]
+        else:
+            ref_to_leds[reference].append(led_num)
+    
+    # runtime checks on entries
+    if bad_entries:
+        raise RuntimeError(f"Duplicate {direction} entries found in csv file")
+    if not allow_missing:
+        prev_led: int | None = None
+        for num in sorted(seen_leds):
+            if prev_led is None:
+                prev_led = num
+                continue
+            if num != prev_led + 1:
+                bad_entries = True
+                prev_led += 1
+                while prev_led != num:
+                    log(f"missing {direction} LED {prev_led} in csv file")
+                    prev_led += 1
+            prev_led = num
+    if bad_entries:
+        raise RuntimeError(f"Missing {direction} entries in csv file")
+    
+    # add referenced LEDs to ret list
+    # note that all entries in ret are no-reference entries
+    for entry, leds in ret:
+        ref_num = int(entry['LED Number'])
+        if not ref_num in ref_to_leds:
+            continue
+        referencing_leds = ref_to_leds[ref_num]
+        leds.extend(referencing_leds)
+        del ref_to_leds[ref_num]
+    
+    # check for bad entries, which are the only remaining in ref_to_leds
+    for ref_num, leds in ref_to_leds.items():
+        bad_entries = True
+        log(f"Entries {direction} LEDs {leds} reference {ref_num} invalidly")
+    if bad_entries:
+        raise RuntimeError(f"Bad {direction} references in csv file")
+    
+    return ret
+
+def requestSpeeds(csv_reader: csv.DictReader, direction: Direction, speed_type: SpeedType, key: str, allow_missing: bool=False) -> list[list[int]]:
+    """Performs TomTom API requests for each LED of the specified direction in 
+    the csv_reader.
+    
+    Parameters:
+        csv_reader: Entries in the reader correspond to
+            LEDs, with necessary fields being 'LED Number', 'Direction',
+            'Latitude', and 'Longitude'.
+        direction: Specifies which LEDs in the csv_reader
+            requests will be made for; those with field 'Direction' not equal
+            to this direction are skipped.
+        speed_type: The type of data to be returned by the 
+            function.
+        key: The TomTom API key to be used when making requests.
+        allow_missing: True if the function should not throw an error when
+            the entries in csv_reader for the given direction do not form a
+            set of sequential LED numbers from 1 to the maximum LED number
+            in the entries.
+            
+    Returns:
+        If successful, A list of lists where the inner lists contain 
+        [LED Number: int, Retrieved Speed: int] corresponding to one entry
+        of the csv_reader. Throws an error otherwise."""
+
     led_to_entry = {}
     max_led_num = 0
     bad_locations = False
