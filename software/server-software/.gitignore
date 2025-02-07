@@ -2,3 +2,4 @@
 *.dat
 *.json
 *.log
+data_*

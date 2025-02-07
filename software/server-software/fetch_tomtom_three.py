@@ -4,21 +4,23 @@ import sys
 import requests
 import csv
 import tile_schema_pb2
+import random
 from enum import Enum
 import os
 from datetime import datetime
 
 # ================================
 # Configuration Options
-# ================================s
+# ================================
 
 INPUT_CSV = "led_locations_V1_0_5.csv"
-OUTPUT_NORTH = "data_north_V1_0_0.json"
-OUTPUT_SOUTH = "data_south_V1_0_0.json"
+V2_0_0_ADD_INPUT_CSV = "led_loc_addendum_V2_0_0.csv"
+OUTPUT_NORTH = "data_northV1_0_5.csv"
+OUTPUT_SOUTH = "data_southV1_0_5.csv"
 OUTPUT_NORTH_2 = "data_north_V1_0_3.dat"
 OUTPUT_SOUTH_2 = "data_north_V1_0_3.dat"
-OUTPUT_NORTH_TYPICAL = "typical_north_V1_0_3.dat"
-OUTPUT_SOUTH_TYPICAL = "typical_south_V1_0_3.dat"
+OUTPUT_NORTH_TYPICAL = "typical_data_north.csv"
+OUTPUT_SOUTH_TYPICAL = "typical_data_south.csv"
 LOG_FILE = "fetch_tomtom_data.log"
 
 class Direction(Enum):
@@ -34,6 +36,17 @@ class SpeedType(Enum):
 # ================================
 # Ensure necessary files exist
 # ================================
+
+def ensure_folder_exists(folder_path, log_path):
+    """Create the folder if it doesn't exist. If log_file
+    is not None, then an error creating the file will be
+    written to the log."""
+    if not os.path.exists(folder_path):
+        try:
+            os.mkdir(folder_path)
+        except Exception as e:
+            if log_path != None:
+                log(e)
 
 def ensure_file_exists(file_path, log_path, default_content=""):
     """Create the file with default content if it doesn't exist.
@@ -54,8 +67,6 @@ ensure_file_exists(LOG_FILE, "") # script will fail silently if
 # Ensure output files exist
 ensure_file_exists(OUTPUT_NORTH, LOG_FILE, "")
 ensure_file_exists(OUTPUT_SOUTH, LOG_FILE, "")
-ensure_file_exists(OUTPUT_NORTH_2, LOG_FILE, "")
-ensure_file_exists(OUTPUT_SOUTH_2, LOG_FILE, "")
 
 # ================================
 # Logging Function
@@ -118,6 +129,7 @@ def requestData(entry, speed_type, key):
         log(f"Encountered invalid entry.")
         return -1
     longitude, latitude, tile = entry["Longitude"], entry["Latitude"], entry["Tile"]
+
     if tile == "NULL" or speed_type == SpeedType.TYPICAL:
         return requestSegmentData(entry, speed_type, key)
 
@@ -182,6 +194,41 @@ def requestData(entry, speed_type, key):
 # General Functions
 # ================================
 
+def createAddendum(addendum_folder, version, prev_addendum, addendum_data_file, direction, speed_type, api_key):
+    '''Creates a new file in the addendum_folder that
+    specifies changes or additions to an original file,
+    prev_addendum. prev_addendum can either point to another
+    addendum file, .add, or the original file. addendum_data_file
+    is the led location data that will be used in creating the addendum.
+
+    The addendum_key is a key used to generate the addendum verification
+    string, which is then used by the device requesting data to verify
+    that interpretation of the decoded data is correct. This key is specific
+    to the device version specified and must be agreed upon between device
+    firmware and the server; this ensures that only this version of device and
+    firmware is using this addendum file. This key is generated based on the
+    mapping of openLR numbers to LED numbers used in the addendum. This means
+    that the device will only accept the data if the openLR numbers are what
+    it expects and the key is the same.
+    
+    Addendum metadata is the first thing in the file, marked by
+    {metadata}'\n\n' '''
+    try:
+        with open(addendum_data_file, 'r') as input_file:
+            csv_reader = csv.DictReader(input_file, dialect='excel')
+            speeds = requestSpeeds(csv_reader, direction, speed_type, api_key, allow_missing=True)
+
+        addendum_filename = addendum_folder + "/" + version + ".add"
+        ensure_folder_exists(addendum_folder, LOG_FILE)
+        ensure_file_exists(addendum_filename, LOG_FILE, "")
+        with open(addendum_filename, 'w', newline='') as output_file:
+            output_file.write(f"{{{prev_addendum}}}\n\n")
+            csv_writer = csv.writer(output_file, dialect='excel')
+            csv_writer.writerows(speeds)
+    except Exception as e:
+        log(e)
+        return
+
 def decodeReferences(led_to_entry, max_led_num):
     '''Iterates through led_to_entry dictionary and converts
     its data to entry_to_leds. That is, it compiles all leds
@@ -204,22 +251,23 @@ def decodeReferences(led_to_entry, max_led_num):
                 double_ref = int(led_to_entry.get(reference, {}).get("Reference", -1))
             except:
                 double_ref = -1
-            if reference <= 0 or reference > max_led_num or double_ref != -1:
+            if reference < 0 or reference > max_led_num or double_ref != -1:
                 log(f"Invalid reference at LED Number: {led_num}")
                 bad_references = True
                 continue
-            entry = led_to_entry[reference]
-            if entry == None or not validEntry(entry):
-                log(f"Entry is invalid or missing from led_to_entry for reference at LED Number: {led_num}")
-                bad_references = True
-                continue
+            if reference != 0: # reference to 0 means special led, supply 0
+                entry = led_to_entry[reference]
+                if entry == None or not validEntry(entry): 
+                    log(f"Entry is invalid or missing from led_to_entry for reference at LED Number: {led_num}")
+                    bad_references = True
+                    continue
         if entry_to_leds.get(entry["internal_row_num"], None) == None:
             entry_to_leds[entry["internal_row_num"]] = []
         entry_to_leds[entry["internal_row_num"]].append(led_num)
     
     return entry_to_leds if not bad_references else None
 
-def requestSpeeds(csv_reader, direction, speed_type, key):
+def requestSpeeds(csv_reader, direction, speed_type, key, allow_missing=False):
     led_to_entry = {}
     max_led_num = 0
     bad_locations = False
@@ -241,10 +289,11 @@ def requestSpeeds(csv_reader, direction, speed_type, key):
         max_led_num = max(max_led_num, int(entry['LED Number']))
 
     # Search for missing LED numbers
-    for led_num in range(1, max_led_num + 1):
-        if led_num not in led_to_entry:
-            log(f"Missing LED Number: {led_num}")
-            bad_locations = True
+    if not allow_missing:
+        for led_num in range(1, max_led_num + 1):
+            if led_num not in led_to_entry:
+                log(f"Missing LED Number: {led_num}")
+                bad_locations = True
 
     if bad_locations:
         log("Aborting due to bad location entries in input file.")
@@ -257,57 +306,72 @@ def requestSpeeds(csv_reader, direction, speed_type, key):
         return False                
 
     # Iterate through LED entries and retrieve data
-    speeds = [-1] * (max_led_num + 1)
+    speeds = [[]] * (max_led_num)
+    currSpeedNdx = 0
     for entry_row_num, leds in entry_to_leds.items():
         entry = row_to_entry[entry_row_num]
-        speed = requestData(entry, speed_type, key)
+        try:
+            reference = int(entry.get("Reference", -1))
+        except:
+            reference = -1
+        if reference == 0:
+            speed = 0
+        else:
+            speed = requestData(entry, speed_type, key)
+
         if speed == -1:
             log(f"No speed data found for LEDs {leds}")
-            continue
+            speed = 0
 
         for led_num in leds:
-            speeds[led_num] = speed
+            speeds[currSpeedNdx] = [led_num, speed]
+            currSpeedNdx += 1
         log(f"Retrieved speed {speed} for LEDs {leds}")
-
-    # Replace negative values with 0
-    speeds = [0 if speed < 0 else speed for speed in speeds]
     return speeds
 
 # ================================
 # Main Function
 # ================================
 
-def main(speed_type, direction, key, csv_filename, output_filename, output_filename_2):
+def main(speed_type, direction, key, csv_filename, output_filename, output_filename_2=None):
     if direction == Direction.UNKNOWN:
         log("Invalid direction provided. Try North or South.")
         return False
-
+    # Update main file
     try:
         with open(csv_filename, 'r') as input_file:
             csv_reader = csv.DictReader(input_file, dialect='excel')
             speeds = requestSpeeds(csv_reader, direction, speed_type, key)
 
-            # Debug log to check the contents of current_speeds
-            log(f"Final current_speeds: {speeds}")
+        # Debug log to check the contents of current_speeds
+        log(f"Final current_speeds: {speeds}")
 
-            # Save the results to the output file in binary format
-            byte_array = bytearray(speeds)
-            log(f"Writing byte array of length {len(byte_array)} to {output_filename}")
-            with open(output_filename, 'wb') as out_file:
-                out_file.write(byte_array)
-            
-            # Save the results to second output file if present (for backwards compatability)
-            if output_filename_2 is not None:
-                log(f"Writing byte array of length {len(byte_array)} to {output_filename_2}")
-                with open(output_filename_2, 'wb') as out_file:
-                    out_file.write(byte_array)
+        # Save the results to the output file in CSV format
+        log(f"Writing csv file of length {len(speeds)} to {output_filename}")
+        with open(output_filename, 'w', newline='') as out_file:
+            csv_writer = csv.writer(out_file, dialect='excel')
+            csv_writer.writerows(speeds)
 
-            log(f"Successfully completed request for {direction.name}")
-            return True
+        # Save the results to the output file in binary format (for backwards compatability)
+        raw_speeds = [speed[1] for speed in sorted(speeds, key=lambda ele: ele[0])]
+        raw_speeds.insert(0, 0) # backwards compatibility
+        byte_array = bytearray(raw_speeds)
+        log(f"Writing byte array of length {len(byte_array)} to {output_filename_2}")
+        with open(output_filename_2, 'wb') as out_file:
+            out_file.write(byte_array)
 
+        # Update version addendums
+        log("Updating addendum V2_0_0")
+        addendum_folder_name = output_filename + "_add"
+        createAddendum(addendum_folder_name, "V2_0_0", output_filename, V2_0_0_ADD_INPUT_CSV, direction, speed_type, key)
+
+        log(f"Successfully completed request for {direction.name}")
+        return True
     except Exception as e:
         log(f"Error processing {direction.name} direction: {e}")
         return False
+    
+    
 
 # ================================
 # Run Requests for Both Directions
@@ -316,11 +380,12 @@ def main(speed_type, direction, key, csv_filename, output_filename, output_filen
 if __name__ == "__main__":
     if len(sys.argv) < 1:
         print("Incorret usage: script api_key [typical]")
+        exit()
     api_key = sys.argv[1]
     if len(sys.argv) > 2 and sys.argv[2] == "typical":
         log("retrieving typical speeds")
-        main(SpeedType.TYPICAL, Direction.NORTH, api_key, INPUT_CSV, OUTPUT_NORTH_TYPICAL, None)
-        main(SpeedType.TYPICAL, Direction.SOUTH, api_key, INPUT_CSV, OUTPUT_SOUTH_TYPICAL, None)
+        main(SpeedType.TYPICAL, Direction.NORTH, api_key, INPUT_CSV, OUTPUT_NORTH_TYPICAL)
+        main(SpeedType.TYPICAL, Direction.SOUTH, api_key, INPUT_CSV, OUTPUT_SOUTH_TYPICAL)
     else:
         log("retrieving current speeds")
         main(SpeedType.CURRENT, Direction.NORTH, api_key, INPUT_CSV, OUTPUT_NORTH, OUTPUT_NORTH_2)
