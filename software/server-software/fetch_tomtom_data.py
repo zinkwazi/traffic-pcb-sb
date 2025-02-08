@@ -99,7 +99,7 @@ def requestSegmentData(entry, speed_type, api_key):
     if speed_type == SpeedType.CURRENT:
         speed = int(json_response.get("flowSegmentData", {}).get("currentSpeed", -1))
     elif speed_type == SpeedType.TYPICAL:
-        speed = int(json_response.get("flowSegmentData", {}).get("freeFlowSpeed", -1))
+        speed = int(json_response.get("flowSegmentData", {}).get("freeFlowSpeed", -1)) 
     else:
         log(f"Requested data for unknown speed type")
         speed = -1

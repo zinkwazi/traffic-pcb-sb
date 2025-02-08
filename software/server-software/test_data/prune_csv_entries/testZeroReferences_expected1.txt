@@ -1,0 +1,5 @@
+[({'LED Number': '325', 'Freeway': 'Special', 'Direction': 'North', 'Longitude': '0', 'Latitude': '0', 'Tile': '0', 'openLr Code': '0', 'Free Flow Speed': '0', 'Reference': '0'}, [325]), 
+({'LED Number': '326', 'Freeway': 'Special', 'Direction': 'North', 'Longitude': '0', 'Latitude': '0', 'Tile': '0', 'openLr Code': '0', 'Free Flow Speed': '0', 'Reference': '0'}, [326]), 
+({'LED Number': '327', 'Freeway': 'Special', 'Direction': 'North', 'Longitude': '0', 'Latitude': '0', 'Tile': '0', 'openLr Code': '0', 'Free Flow Speed': '0', 'Reference': '0'}, [327]), 
+({'LED Number': '329', 'Freeway': 'CA-1', 'Direction': 'North', 'Longitude': '33.687824', 'Latitude': '-118.039699', 'Tile': '22/721889/1679871', 'openLr Code': 'C6wQ5RfzSRp8TPQjDCEaDA==', 'Free Flow Speed': '56', 'Reference': ''}, [329, 328, 330]), 
+({'LED Number': '331', 'Freeway': 'CA-126', 'Direction': 'North', 'Longitude': '34.270433', 'Latitude': '-119.219984', 'Tile': '22/708138/1671685', 'openLr Code': 'C6s1qBhdzRJFKgnoAnMSFw==', 'Free Flow Speed': '67', 'Reference': ''}, [331])]

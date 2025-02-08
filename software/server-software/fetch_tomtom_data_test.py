@@ -7,9 +7,21 @@ from fetch_tomtom_three import *
 
 TEST_DATA_DIR = "test_data"
 TEST_TEMP_DIR_NAME = "test_temp"
+
+# An input CSV file containing a sample of typical data
 TYPICAL_SMALL_FILENAME = "typical_small.csv"
+
+# An input CSV file containing entries with
+# sequential led numbers except for 13
 MISSING_NUM_FILENAME = "missing_num.csv"
+
+# An input CSV file containing many entries that
+# all reference the same led number
 MANY_REFERENCES_FILENAME = "many_references.csv"
+
+# An input CSV file containing references to zero,
+# which should be interpreted as non-reference elements
+ZERO_REFERENCES_FILENAME = "zero_references.csv"
 
 # ================================
 # Tests
@@ -100,6 +112,29 @@ class TestPruneCSVEntries(unittest.TestCase):
             csv_reader = csv.DictReader(input_file, dialect='excel')
             self.assertRaises(ValueError, pruneCSVEntries, csv_reader, Direction.UNKNOWN, False)
             self.assertRaises(ValueError, pruneCSVEntries, csv_reader, Direction.UNKNOWN, True)
+
+    def testZeroReference(self):
+        test_input_file = TEST_DATA_DIR + "/" + ZERO_REFERENCES_FILENAME
+        test_expected_dir = TEST_DATA_DIR + "/prune_csv_entries"
+
+        # test north
+        with open(test_expected_dir + "/testZeroReferences_expected1.txt", 'r') as file:
+            expected_ret = eval(file.read())
+
+        with open(test_input_file, 'r') as input_file:
+            csv_reader = csv.DictReader(input_file, dialect='excel')
+            ret = pruneCSVEntries(csv_reader, Direction.NORTH, False)
+        self.assertEqual(ret, expected_ret, "Unexpected result for NORTH direction")
+
+        # test south
+        with open(test_expected_dir + "/testZeroReferences_expected2.txt", 'r') as file:
+            expected_ret = eval(file.read())
+
+        with open(test_input_file, 'r') as input_file:
+            csv_reader = csv.DictReader(input_file, dialect='excel')
+            ret = pruneCSVEntries(csv_reader, Direction.SOUTH, False)
+        self.assertEqual(ret, expected_ret, "Unexpected result for SOUTH direction")
+        
 
 # ================================
 # Test Setup

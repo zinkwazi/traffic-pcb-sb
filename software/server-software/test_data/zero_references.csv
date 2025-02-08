@@ -1,0 +1,14 @@
+LED Number,Freeway,Direction,Longitude,Latitude,Tile,openLr Code,Free Flow Speed,Reference
+325,Special,North,0,0,0,0,0,0
+325,Special,South,0,0,0,0,0,0
+326,Special,North,0,0,0,0,0,0
+326,Special,South,0,0,0,0,0,0
+327,Special,North,0,0,0,0,0,0
+327,Special,South,0,0,0,0,0,0
+328,Special,North,0,0,0,0,0,329
+328,Special,South,0,0,0,0,0,329
+329,CA-1,North,33.687824,-118.039699,22/721889/1679871,C6wQ5RfzSRp8TPQjDCEaDA==,56,
+329,CA-1,South,33.698618,-118.050083,22/721768/1679720,C6wLQxf5AhpsTQwY86caHA==,56,
+330,CA-1,North,0,0,0,0,0,329
+330,CA-1,South,0,0,0,0,0,329
+331,CA-126,North,34.270433,-119.219984,22/708138/1671685,C6s1qBhdzRJFKgnoAnMSFw==,67,
