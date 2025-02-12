@@ -1,7 +1,7 @@
 /**
- * led_registers.h
+ * V1_0_led_registers.h
  * 
- * 
+ * Cointains LED number to matrix register mappings for V1_0 of the hardware.
  */
 
 #ifndef LED_REGISTERS_H_

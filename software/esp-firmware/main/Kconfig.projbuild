@@ -1,21 +1,28 @@
 menu "Main Application"
 
     config HARDWARE_VERSION
-        string "PCB Hardware Version"
-        default "V1_0"
+        int "PCB Hardware Version"
+        default 1
         help
             The version of the PCB that this build is running on, which
             lets the firmware know the capabilities of the board.
 
+    config HARDWARE_REVISION
+        int "PCB Hardware Revision"
+        default 0
+        help
+            The revision of the PCB that this build is running on, which lets
+            the firmware know the capabilities of the board.
+
     config FIRMWARE_VERSION
-        string "Traffic Firmware Version"
-        default "_0"
+        int "Traffic Firmware Version"
+        default 0
         help
             The version of firmware this build corresponds to.
     
     config SERVER_FIRMWARE_VERSION
-        string "Server Firmware Version"
-        default "_0"
+        int "Server Firmware Version"
+        default 0
         help
             The version of firmware this build tells the server it is. That is,
             it accesses the data file corresponding to this firmware version.

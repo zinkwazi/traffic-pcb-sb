@@ -14,6 +14,10 @@ enum MatrixLocation {
     MAT2_PAGE1,
     MAT3_PAGE0,
     MAT3_PAGE1,
+#if CONFIG_HARDWARE_VERSION == 2
+    MAT4_PAGE0,
+    MAT4_PAGE1,
+#endif
     MAT_NONE,
 };
 

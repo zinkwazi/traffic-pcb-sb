@@ -43,7 +43,12 @@
 
 /* Component includes */
 #include "dots_commands.h"
-#include "led_registers.h"
+
+#if CONFIG_HARDWARE_VERISON == 1
+    #include "V1_0_led_registers.h"
+#else
+    #include "V2_0_led_registers.h"
+#endif
 
 /**
  * @brief Sends a command to the worker task to quickly clear all LEDs.

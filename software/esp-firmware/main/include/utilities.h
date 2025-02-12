@@ -50,7 +50,19 @@
 
 /* Component includes */
 #include "dots_commands.h"
-#include "led_registers.h"
+
+#if CONFIG_HARDWARE_VERISON == 1
+    #include "V1_0_led_registers.h"
+#else
+    #include "V2_0_led_registers.h"
+#endif
+
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
+#define VERSION_STR "V" STR(CONFIG_HARDWARE_VERSION) "_" STR(CONFIG_HARDWARE_REVISION) "_" STR(CONFIG_FIRMWARE_VERSION) CONFIG_FIRMWARE_CONF
+#define SERVER_VERSION_STR "V" STR(CONFIG_HARDWARE_VERSION) "_" STR(CONFIG_HARDWARE_REVISION) "_" STR(CONFIG_FIRMWARE_VERSION) CONFIG_FIRMWARE_CONF
+#define HARDWARE_VERSION_STR "V" STR(CONFIG_HARDWARE_VERSION) "_" STR(CONFIG_HARDWARE_REVISION)
 
 /**
  * @brief Calls spinForever if x is not ESP_OK.

@@ -16,9 +16,14 @@
 #include "dots_commands.h"
 #include "pinout.h"
 #include "tasks.h"
-#include "led_registers.h"
 #include "wifi.h"
 #include "main_types.h"
+
+#if CONFIG_HARDWARE_VERISON == 1
+    #include "V1_0_led_registers.h"
+#else
+    #include "V2_0_led_registers.h"
+#endif
 
 /* LED color configuration */
 
@@ -203,7 +208,7 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, uint8_t typicalSpeeds[], Q
     /* connect to API and query speeds */
     char *baseURL = (dir == NORTH) ? URL_DATA_SERVER_NORTH : URL_DATA_SERVER_SOUTH; 
     if (tomtomGetServerSpeeds(speeds, client, baseURL, 
-                              CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 
+                              VERSION_STR, 
                               API_RETRY_CONN_NUM) != ESP_OK)
     {
         /* failed to get typical north speeds from server, search nvs */
@@ -389,7 +394,7 @@ void vWorkerTask(void *pvParameters) {
         typicalSpeedsSouth[i] = 70;
     }
     if (tomtomGetServerSpeeds(typicalSpeedsNorth, client, URL_DATA_TYPICAL_NORTH, 
-                              CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 
+                              SERVER_VERSION_STR, 
                               API_RETRY_CONN_NUM) != ESP_OK) 
     {
         /* failed to get typical north speeds from server, search nvs */
@@ -407,7 +412,7 @@ void vWorkerTask(void *pvParameters) {
         }
     }
     if (tomtomGetServerSpeeds(typicalSpeedsSouth, client, URL_DATA_TYPICAL_SOUTH, 
-                              CONFIG_HARDWARE_VERSION CONFIG_SERVER_FIRMWARE_VERSION, 
+                              SERVER_VERSION_STR, 
                               API_RETRY_CONN_NUM) != ESP_OK) 
     {
         /* failed to get typical north speeds from server, search nvs */
@@ -565,7 +570,7 @@ void vOTATask(void* pvParameters) {
         gpio_set_level(LED_SOUTH_PIN, 1);
         gpio_set_level(LED_WEST_PIN, 1);
         esp_http_client_config_t https_config = {
-            .url = CONFIG_FIRMWARE_UPGRADE_SERVER "/firmware/firmware" CONFIG_HARDWARE_VERSION ".bin",
+            .url = CONFIG_FIRMWARE_UPGRADE_SERVER "/firmware/firmware" HARDWARE_VERSION_STR ".bin",
             .crt_bundle_attach = esp_crt_bundle_attach,
         };
         esp_https_ota_config_t ota_config = {

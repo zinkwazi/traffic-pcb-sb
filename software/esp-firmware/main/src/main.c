@@ -43,9 +43,15 @@
 
 /* Component includes */
 #include "dots_commands.h"
-#include "led_registers.h"
+
+#if CONFIG_HARDWARE_VERISON == 1
+    #include "V1_0_led_registers.h"
+#else
+    #include "V2_0_led_registers.h"
+#endif
 
 #define TAG "app_main"
+
 
 /** @brief The queue size in elements of the I2C command queue. */
 #define I2C_QUEUE_SIZE 20
@@ -261,8 +267,8 @@ void app_main(void)
     /* set task priority */
     vTaskPrioritySet(NULL, CONFIG_MAIN_PRIO);
     /* print firmware information */
-    ESP_LOGE(TAG, "Traffic Firmware " CONFIG_HARDWARE_VERSION CONFIG_FIRMWARE_VERSION CONFIG_FIRMWARE_CONF);
-    ESP_LOGE(TAG, "OTA binary: " CONFIG_FIRMWARE_UPGRADE_SERVER "/firmware/firmware" CONFIG_HARDWARE_VERSION ".bin");
+    ESP_LOGE(TAG, "Traffic Firmware " VERSION_STR);
+    ESP_LOGE(TAG, "OTA binary: " CONFIG_FIRMWARE_UPGRADE_SERVER "/firmware/firmware" HARDWARE_VERSION_STR ".bin");
     /* initialize main task state */
     state.toggle = false;
     state.first = true;

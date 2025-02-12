@@ -21,7 +21,13 @@
 
 /* Component includes */
 #include "dots_types.h"
-#include "led_registers.h"
+
+#if CONFIG_HARDWARE_VERISON == 1
+    #include "V1_0_led_registers.h"
+#else
+    #include "V2_0_led_registers.h"
+#endif
+
 
 #define TAG "dots_matrix"
 
