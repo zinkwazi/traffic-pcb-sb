@@ -58,11 +58,11 @@ void connectHandler(void *arg, esp_event_base_t eventBase,
 {
     if (eventBase == WIFI_EVENT && eventId == WIFI_EVENT_STA_DISCONNECTED) {
         sWifiConnected = false;
-        ESP_LOGI(TAG, "disconnect event!");
+        ESP_LOGD(TAG, "disconnect event!");
         gpio_set_level(sWifiLED, 0);
         xEventGroupSetBits(sWifiEvents, WIFI_DISCONNECTED_BIT);
     } else if (eventBase == IP_EVENT && eventId == IP_EVENT_STA_GOT_IP) {
-        ESP_LOGI(TAG, "wifi connected event!");
+        ESP_LOGD(TAG, "wifi connected event!");
         sWifiConnected = true;
         gpio_set_level(sWifiLED, 1);
         xEventGroupSetBits(sWifiEvents, WIFI_CONNECTED_BIT);
@@ -77,12 +77,12 @@ void wifiEventHandler(void *arg, esp_event_base_t eventBase,
 {
     if (eventBase == WIFI_EVENT && eventId == WIFI_EVENT_STA_DISCONNECTED) {
         sWifiConnected = false;
-        ESP_LOGI(TAG, "disconnect event! AP connected");
+        ESP_LOGD(TAG, "disconnect event! AP connected");
         gpio_set_level(sWifiLED, 0);
         esp_wifi_connect();
         vTaskDelay(CONFIG_RETRY_RECONNECT_PERIOD);
     } else if (eventBase == IP_EVENT && eventId == IP_EVENT_STA_GOT_IP) {
-        ESP_LOGI(TAG, "wifi connected event! AP connected");
+        ESP_LOGD(TAG, "wifi connected event! AP connected");
         sWifiConnected = true;
         gpio_set_level(sWifiLED, 1);
     }
@@ -146,7 +146,7 @@ esp_err_t unregisterWifiHandler(void) {
     ret = esp_event_handler_instance_unregister(IP_EVENT,
                                             IP_EVENT_STA_GOT_IP,
                                             sInstanceAnyID);
-    ESP_LOGI(TAG, "unregistered wifi handler");
+    ESP_LOGD(TAG, "unregistered wifi handler");
     return ret;
 }
 
@@ -172,7 +172,7 @@ esp_err_t establishWifiConnection(void)
         },
     };
     /* copy STA information */
-    ESP_LOGI(TAG, "copying wifi information");
+    ESP_LOGD(TAG, "copying wifi information");
     const unsigned int staSSIDLen = sizeof(wifi_cfg.sta.ssid) / sizeof(wifi_cfg.sta.ssid[0]);
     const unsigned int staPassLen = sizeof(wifi_cfg.sta.password) / sizeof(wifi_cfg.sta.password[0]);
     for (unsigned int i = 0; i < staSSIDLen && i < WIFI_SSID_LEN; i++) {
@@ -181,54 +181,54 @@ esp_err_t establishWifiConnection(void)
     for (unsigned int i = 0; i < staPassLen && i < WIFI_PASS_LEN; i++) {
         wifi_cfg.sta.password[i] = ((uint8_t *) sWifiPass)[i];
     }
-    ESP_LOGI(TAG, "wifi ssid: %s", wifi_cfg.sta.ssid);
-    ESP_LOGI(TAG, "wifi pass: %s", wifi_cfg.sta.password);
+    ESP_LOGD(TAG, "wifi ssid: %s", wifi_cfg.sta.ssid);
+    ESP_LOGD(TAG, "wifi pass: %s", wifi_cfg.sta.password);
     /* register wifi handler */
-    ESP_LOGI(TAG, "registering handler");
+    ESP_LOGD(TAG, "registering handler");
     ret = registerWifiHandler(connectHandler, NULL);
     if (ret != ESP_OK) {
         return ret;
     }
     /* attempt to connect to AP */
-    ESP_LOGI(TAG, "connecting to AP");
+    ESP_LOGD(TAG, "connecting to AP");
     ret = esp_wifi_set_mode(WIFI_MODE_STA);
     if (ret != ESP_OK) {
         unregisterWifiHandler();
         return ret;
     }
-    ESP_LOGI(TAG, "setting config");
+    ESP_LOGD(TAG, "setting config");
     ret = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
     if (ret != ESP_OK) {
         unregisterWifiHandler();
         return ret;
     }
-    ESP_LOGI(TAG, "starting wifi");
+    ESP_LOGD(TAG, "starting wifi");
     ret = esp_wifi_start();
     if (ret != ESP_OK) {
         unregisterWifiHandler();
         return ret;
     }
-    ESP_LOGI(TAG, "connecting to wifi");
+    ESP_LOGD(TAG, "connecting to wifi");
     ret = esp_wifi_connect();
     if (ret != ESP_OK) {
         unregisterWifiHandler();
         return ret;
     }
-    ESP_LOGI(TAG, "waiting for connection");
+    ESP_LOGD(TAG, "waiting for connection");
     bits = xEventGroupWaitBits(sWifiEvents,
                                WIFI_CONNECTED_BIT | WIFI_DISCONNECTED_BIT,
                                pdFALSE,
                                pdFALSE,
                                portMAX_DELAY);
     if (bits & ~WIFI_CONNECTED_BIT) {
-        ESP_LOGI(TAG, "did not connect to wifi AP");
+        ESP_LOGD(TAG, "did not connect to wifi AP");
         unregisterWifiHandler();
         xEventGroupClearBits(sWifiEvents, WIFI_CONNECTED_BIT | WIFI_DISCONNECTED_BIT);
         registerWifiHandler(wifiEventHandler, NULL);
         esp_wifi_connect(); // start handler loop
         return ESP_FAIL;
     }
-    ESP_LOGI(TAG, "connected to wifi AP");
+    ESP_LOGD(TAG, "connected to wifi AP");
     unregisterWifiHandler();
     xEventGroupClearBits(sWifiEvents, WIFI_CONNECTED_BIT | WIFI_DISCONNECTED_BIT);
     ret = registerWifiHandler(wifiEventHandler, NULL);

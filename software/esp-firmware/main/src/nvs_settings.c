@@ -73,7 +73,7 @@ esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle) {
       ret = nvs_entry_next(&nvs_iter);
       continue;
     }
-    ESP_LOGI(TAG, "removing nvs entry: %s", info.key);
+    ESP_LOGD(TAG, "removing nvs entry: %s", info.key);
     if (nvs_erase_key(nvsHandle, info.key) != ESP_OK) {
       return ESP_FAIL;
     }
@@ -102,7 +102,7 @@ esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
   const unsigned short bufLen = CONFIG_NVS_ENTRY_BUFFER_LENGTH;
   char c;
   char buf[bufLen];
-  ESP_LOGI(TAG, "Querying settings from user...");
+  ESP_LOGD(TAG, "Querying settings from user...");
   printf("\nWifi SSID: ");
   fflush(stdout);
   for (int i = 0; i < bufLen; i++) {

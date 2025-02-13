@@ -79,7 +79,7 @@ void throwHandleableError(ErrorResources *errRes, bool callerHasErrMutex) {
   }
 
   if (!callerHasErrMutex) {
-    ESP_LOGI(TAG, "releasing error semaphore");
+    ESP_LOGD(TAG, "releasing error semaphore");
     xSemaphoreGive(errRes->errMutex);
   }
 }
@@ -102,7 +102,13 @@ void throwFatalError(ErrorResources *errRes, bool callerHasErrMutex) {
   }
   gpio_set_level(ERR_LED_PIN, 1);
   errRes->err = FATAL_ERR;
-  
+
+#ifdef CONFIG_FATAL_CAUSES_REBOOT
+  vTaskDelay(pdMS_TO_TICKS(CONFIG_ERROR_PERIOD)); // let the error LED shine for a short time
+  gpio_set_level(ERR_LED_PIN, 0);
+  esp_restart();
+#endif /* CONFIG_FATAL_CAUSES_REBOOT == true */  
+
   xSemaphoreGive(errRes->errMutex); // give up mutex in caller's name
   for (;;) {
     vTaskDelay(INT_MAX);

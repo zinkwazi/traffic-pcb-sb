@@ -118,7 +118,7 @@ esp_err_t setSpeedsToNvs(uint8_t *speeds, Direction dir, bool currentSpeeds) {
 
 esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], esp_http_client_handle_t client, char *URL, int retryNum) {
     char *responseStr;
-    ESP_LOGI(TAG, "retrieving: %s", URL);
+    ESP_LOGD(TAG, "retrieving: %s", URL);
     /* request data */
     if (esp_http_client_set_url(client, URL) != ESP_OK) {
         return ESP_FAIL;
@@ -189,7 +189,7 @@ bool mustAbort(QueueHandle_t I2CQueue, QueueHandle_t dotQueue) {
     WorkerCommand command;
     if (xQueuePeek(dotQueue, &command, 0) == pdTRUE) {
         /* A new command has been issued, quick clear and abort command */
-        ESP_LOGI(TAG, "Quick Clearing...");
+        ESP_LOGD(TAG, "Quick Clearing...");
         if (dotsReset(I2CQueue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
             dotsSetGlobalCurrentControl(I2CQueue, CONFIG_GLOBAL_LED_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK ||
             dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) 
@@ -224,7 +224,7 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, uint8_t typicalSpeeds[], Q
         if (prevConnError) {
             resolveNoConnError(errRes, false, false);
         }
-        ESP_LOGI(TAG, "updating segment speeds in non-volatile storage");
+        ESP_LOGD(TAG, "updating segment speeds in non-volatile storage");
         if (setSpeedsToNvs(speeds, dir, true) != ESP_OK) {
             ESP_LOGW(TAG, "failed to update segment speeds in non-volatile storage");
         }
@@ -329,7 +329,7 @@ esp_err_t removeExtraWorkerNvsEntries(void) {
       ret = nvs_entry_next(&nvs_iter);
       continue;
     }
-    ESP_LOGI(TAG, "removing nvs entry: %s", info.key);
+    ESP_LOGD(TAG, "removing nvs entry: %s", info.key);
     if (nvs_erase_key(nvsHandle, info.key) != ESP_OK) {
       return ESP_FAIL;
     }
@@ -368,7 +368,7 @@ void vWorkerTask(void *pvParameters) {
         .user_data = NULL,
     };
 
-    ESP_LOGI(TAG, "worker task created");
+    ESP_LOGD(TAG, "worker task created");
 
     WorkerTaskResources *res = (WorkerTaskResources *) pvParameters;
     esp_http_client_handle_t client;
@@ -404,7 +404,7 @@ void vWorkerTask(void *pvParameters) {
         }
         getSpeedsFromNvs(typicalSpeedsNorth, NORTH, false); // don't care if this fails
     } else {
-        ESP_LOGI(TAG, "setting typical north speeds in non-volatile storage");
+        ESP_LOGD(TAG, "setting typical north speeds in non-volatile storage");
         if (setSpeedsToNvs(typicalSpeedsNorth, NORTH, false) != ESP_OK) {
             ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
         }
@@ -422,7 +422,7 @@ void vWorkerTask(void *pvParameters) {
         }
         getSpeedsFromNvs(typicalSpeedsSouth, SOUTH, false); // don't care if this fails
     } else {
-        ESP_LOGI(TAG, "setting typical south speeds in non-volatile storage");
+        ESP_LOGD(TAG, "setting typical south speeds in non-volatile storage");
         if (setSpeedsToNvs(typicalSpeedsNorth, SOUTH, false) != ESP_OK) {
             ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
         }
@@ -441,7 +441,7 @@ void vWorkerTask(void *pvParameters) {
         /* update led colors */
         switch (dot.type) {
             case REFRESH_NORTH:
-                ESP_LOGI(TAG, "Refreshing North...");
+                ESP_LOGD(TAG, "Refreshing North...");
                 if (handleRefresh(&prevCommandAborted, NORTH, typicalSpeedsNorth, res->I2CQueue, res->dotQueue, client, res->errRes, connError) != ESP_OK) {
                     esp_http_client_cleanup(client);
                     connError = true;
@@ -451,7 +451,7 @@ void vWorkerTask(void *pvParameters) {
                 }
                 break;
             case REFRESH_SOUTH:
-                ESP_LOGI(TAG, "Refreshing South...");
+                ESP_LOGD(TAG, "Refreshing South...");
                 if (handleRefresh(&prevCommandAborted, SOUTH, typicalSpeedsSouth, res->I2CQueue, res->dotQueue, client, res->errRes, connError) != ESP_OK) {
                     esp_http_client_cleanup(client);
                     connError = true;
@@ -464,7 +464,7 @@ void vWorkerTask(void *pvParameters) {
                 if (prevCommandAborted) {
                     break;
                 }
-                ESP_LOGI(TAG, "Clearing North...");
+                ESP_LOGD(TAG, "Clearing North...");
                 for (int ndx = MAX_NUM_LEDS; ndx > 0; ndx--) {
                     if (dotsSetColor(res->I2CQueue, ndx, 0x00, 0x00, 0x00, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK) {
                         ESP_LOGE(TAG, "failed to change led %d color", ndx);
@@ -477,7 +477,7 @@ void vWorkerTask(void *pvParameters) {
                 if (prevCommandAborted) {
                     break;
                 }
-                ESP_LOGI(TAG, "Clearing South...");
+                ESP_LOGD(TAG, "Clearing South...");
                 for (int ndx = 1; ndx < MAX_NUM_LEDS + 1; ndx++) {
                     if (dotsSetColor(res->I2CQueue, ndx, 0x00, 0x00, 0x00, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK) {
                         ESP_LOGE(TAG, "failed to change led %d color", ndx);
@@ -487,7 +487,7 @@ void vWorkerTask(void *pvParameters) {
                 prevCommandAborted = false;
                 break;
             case QUICK_CLEAR:
-                ESP_LOGI(TAG, "Quick Clearing...");
+                ESP_LOGD(TAG, "Quick Clearing...");
                 if (dotsReset(res->I2CQueue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
                     dotsSetGlobalCurrentControl(res->I2CQueue, CONFIG_GLOBAL_LED_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK ||
                     dotsSetOperatingMode(res->I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) 
@@ -558,7 +558,7 @@ void vOTATask(void* pvParameters) {
             continue; // block on notification timed out
         }
         // received a task notification indicating update firmware
-        ESP_LOGI(TAG, "OTA update in progress...");
+        ESP_LOGD(TAG, "OTA update in progress...");
         gpio_set_direction(LED_NORTH_PIN, GPIO_MODE_OUTPUT);
         gpio_set_direction(LED_EAST_PIN, GPIO_MODE_OUTPUT);
         gpio_set_direction(LED_SOUTH_PIN, GPIO_MODE_OUTPUT);
@@ -576,12 +576,12 @@ void vOTATask(void* pvParameters) {
         };
         esp_err_t ret = esp_https_ota(&ota_config);
         if (ret == ESP_OK) {
-            ESP_LOGI(TAG, "completed OTA update successfully!");
+            ESP_LOGD(TAG, "completed OTA update successfully!");
             unregisterWifiHandler();
             esp_restart();
         }
         
-        ESP_LOGI(TAG, "did not complete OTA update successfully!");
+        ESP_LOGD(TAG, "did not complete OTA update successfully!");
         throwHandleableError(errRes, false);
         vTaskDelay(pdMS_TO_TICKS(CONFIG_OTA_LEFT_ON_MS)); // leave LEDs on for a bit
         gpio_set_level(LED_NORTH_PIN, 0);

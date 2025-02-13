@@ -1,5 +1,14 @@
 menu "App Errors"
 
+    config FATAL_CAUSES_REBOOT
+        bool "Fatal Error Causes Reboot"
+        default true
+        help
+            Whether a fatal error causes a system reboot or not. It is useful
+            to turn this off during development, however there will typically
+            not be a way to retrieve logs in the field and the system should
+            just restart as quickly as possible.
+
     config ERROR_PERIOD
         int "Error Flash Period"
         default 500
