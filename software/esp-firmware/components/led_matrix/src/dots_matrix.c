@@ -21,13 +21,7 @@
 
 /* Component includes */
 #include "dots_types.h"
-
-#if CONFIG_HARDWARE_VERISON == 1
-    #include "V1_0_led_registers.h"
-#else
-    #include "V2_0_led_registers.h"
-#endif
-
+#include "led_registers.h"
 
 #define TAG "dots_matrix"
 
@@ -418,7 +412,6 @@ esp_err_t dGetRegister(uint8_t *result, PageState *state, MatrixHandles matrices
     esp_err_t err = i2c_master_transmit_receive(device, &addr, 1, result, 1, I2C_TIMEOUT_MS);
     if (err != ESP_OK)
     {
-        ESP_LOGI(TAG, "z: %d", err);
         return ESP_FAIL;
     }
     return ESP_OK;
@@ -593,7 +586,6 @@ esp_err_t dSetOperatingMode(PageState *state, MatrixHandles matrices, enum Opera
     /* Read current configuration states */
     if (dGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, state, matrices, CONFIG_PAGE, CONFIG_REG_ADDR) != ESP_OK)
     {
-        ESP_LOGI(TAG, "3");
         return ESP_FAIL;
     }
     /* Generate and set new configuration states */
@@ -601,11 +593,6 @@ esp_err_t dSetOperatingMode(PageState *state, MatrixHandles matrices, enum Opera
     dSetBits(&mat2Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t)setting);
     dSetBits(&mat3Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t)setting);
     err = dSetRegistersSeparate(state, matrices, CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
-    if (err == ESP_OK) {
-        ESP_LOGI(TAG, "1");
-    } else if (err == ESP_FAIL) {
-        ESP_LOGI(TAG, "2");
-    }
     return err;
 }
 
@@ -866,15 +853,11 @@ esp_err_t dReleaseBus(MatrixHandles *matrices) {
     ret = i2c_del_master_bus(matrices->I2CBus);
     if (ret == ESP_OK) {
         /* remove dangling pointer */
-        ESP_LOGI(TAG, "RET IS ESP_OK");
         matrices->I2CBus = NULL;
         matrices->mat1Handle = NULL;
         matrices->mat2Handle = NULL;
         matrices->mat3Handle = NULL;
-    } else {
-        ESP_LOGI(TAG, "RET IS ESP_FAIL");
     }
-    
     return ret;
 }
 #endif /* CONFIG_DISABLE_TESTING_FEATURES == false */

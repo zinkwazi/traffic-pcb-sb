@@ -34,6 +34,13 @@ menu "Main Application"
             An indication of this build's build specific config values.
             Syntax: [A/F/U: api data/fake data/undef][slow color][med color][fast color].
 
+    config FIRST_DIR_NORTH
+        bool "Initial Direction is North"
+        default true
+        help
+            Whether the initial direction of traffic flow displayed on the board
+            is North or South. If this is true, then North is displayed.
+
     config LED_REFRESH_PERIOD
         int "LED Refresh Period"
         default 60
@@ -61,6 +68,13 @@ menu "Main Application"
             The amount of time in milliseconds (1/1000th of a second) that
             additional button interrupts will not be registered after an initial interrupt.
 
+    config RETRY_RECONNECT_PERIOD
+        int "Retry WIFI Reconnect Period"
+        default 500
+        help
+            The amount of time in milliseconds (1/1000th of a second) between
+            attempts to reconnect to the wifi network if disconnected.
+
     config OTA_LEFT_ON_MS
         int "OTA Left On Time"
         default 1000
@@ -76,6 +90,7 @@ menu "Main Application"
 
     config FIRMWARE_UPGRADE_SERVER
         string "Firmware Upgrade Server"
+        default "https://bearanvil.com"
         help
             The server to query for the latest firmware binary file for this device.
 
@@ -92,6 +107,14 @@ menu "Main Application"
             The maximum length that the URL of the current data from
             the data server can be, not including null terminator. 
             ex: "https://bearanvil.com/current_data/data_north_V1_0_0.json" -> 57
+        
+    config NVS_ENTRY_BUFFER_LENGTH
+        int "NVS Query Buffer Length"
+        default 256
+        help
+            The length of the buffer used when querying NVS entries from the user.
+            Therefore this is also the maximum length of NVS entries for this firmware
+            image, however old NVS entries from other images may be a different length.
 
     config USE_FAKE_DATA
         bool "Use Fake API Data"

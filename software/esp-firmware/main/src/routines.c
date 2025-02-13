@@ -39,12 +39,7 @@
 
 /* Component includes */
 #include "dots_commands.h"
-
-#if CONFIG_HARDWARE_VERISON == 1
-    #include "V1_0_led_registers.h"
-#else
-    #include "V2_0_led_registers.h"
-#endif
+#include "led_registers.h"
 
 /**
  * @brief Initializes the direction button and attaches dirButtonISR to a 

@@ -36,6 +36,11 @@
 #define WIFI_CONNECTED_BIT (BIT0) /* wifi event group bit */
 #define WIFI_DISCONNECTED_BIT (BIT1) /* wifi event group bit */
 
+/* The internal buffer space for the wifi ssid in wifi_config_t */
+#define WIFI_SSID_LEN 32
+/* The internal buffer space for the wifi password in wifi_config_t */
+#define WIFI_PASS_LEN 64
+
 /* Indicator that the app is connected to the AP */
 static bool sWifiConnected;
 static EventGroupHandle_t sWifiEvents;
@@ -75,7 +80,7 @@ void wifiEventHandler(void *arg, esp_event_base_t eventBase,
         ESP_LOGI(TAG, "disconnect event! AP connected");
         gpio_set_level(sWifiLED, 0);
         esp_wifi_connect();
-        vTaskDelay(500);
+        vTaskDelay(CONFIG_RETRY_RECONNECT_PERIOD);
     } else if (eventBase == IP_EVENT && eventId == IP_EVENT_STA_GOT_IP) {
         ESP_LOGI(TAG, "wifi connected event! AP connected");
         sWifiConnected = true;
@@ -170,10 +175,10 @@ esp_err_t establishWifiConnection(void)
     ESP_LOGI(TAG, "copying wifi information");
     const unsigned int staSSIDLen = sizeof(wifi_cfg.sta.ssid) / sizeof(wifi_cfg.sta.ssid[0]);
     const unsigned int staPassLen = sizeof(wifi_cfg.sta.password) / sizeof(wifi_cfg.sta.password[0]);
-    for (unsigned int i = 0; i < staSSIDLen && i < 32; i++) {
+    for (unsigned int i = 0; i < staSSIDLen && i < WIFI_SSID_LEN; i++) {
         wifi_cfg.sta.ssid[i] = ((uint8_t *) sWifiSSID)[i];
     }
-    for (unsigned int i = 0; i < staPassLen && i < 64; i++) {
+    for (unsigned int i = 0; i < staPassLen && i < WIFI_PASS_LEN; i++) {
         wifi_cfg.sta.password[i] = ((uint8_t *) sWifiPass)[i];
     }
     ESP_LOGI(TAG, "wifi ssid: %s", wifi_cfg.sta.ssid);

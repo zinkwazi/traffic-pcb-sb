@@ -4,8 +4,10 @@
  * Cointains LED number to matrix register mappings for V1_0 of the hardware.
  */
 
-#ifndef LED_REGISTERS_H_
-#define LED_REGISTERS_H_
+#ifndef V_LED_REGISTERS_H_
+#define V_LED_REGISTERS_H_
+
+#if CONFIG_HARDWARE_VERSION == 1
 
 #include <stdint.h>
 #include "dots_types.h"
@@ -342,4 +344,6 @@ static const LEDReg LEDNumToReg[] = {
     {0x92, 0x91, 0x90, MAT3_PAGE0}, // 330 mapped to 326, end matrix 3
 };
 
-#endif /* LED_REGISTERS_H_ */
+#endif /* CONFIG_HARDWARE_VERSION == 1 */
+
+#endif /* V_LED_REGISTERS_H_ */

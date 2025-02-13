@@ -43,15 +43,9 @@
 
 /* Component includes */
 #include "dots_commands.h"
-
-#if CONFIG_HARDWARE_VERISON == 1
-    #include "V1_0_led_registers.h"
-#else
-    #include "V2_0_led_registers.h"
-#endif
+#include "led_registers.h"
 
 #define TAG "app_main"
-
 
 /** @brief The queue size in elements of the I2C command queue. */
 #define I2C_QUEUE_SIZE 20
@@ -93,10 +87,10 @@ void initializeApplication(MainTaskResources *res, MainTaskState *state) {
   ESP_LOGI(TAG, "Installing UART driver...");
   SPIN_IF_ERR(
     uart_driver_install(UART_NUM_0,
-                        UART_HW_FIFO_LEN(UART_NUM_0) + 16, 
-                        UART_HW_FIFO_LEN(UART_NUM_0) + 16, 
-                        32, 
-                        NULL, 
+                        UART_HW_FIFO_LEN(UART_NUM_0) + 16,
+                        UART_HW_FIFO_LEN(UART_NUM_0) + 16,
+                        32,
+                        NULL,
                         0),
     NULL
   );
@@ -267,12 +261,13 @@ void app_main(void)
     /* set task priority */
     vTaskPrioritySet(NULL, CONFIG_MAIN_PRIO);
     /* print firmware information */
-    ESP_LOGE(TAG, "Traffic Firmware " VERSION_STR);
-    ESP_LOGE(TAG, "OTA binary: " CONFIG_FIRMWARE_UPGRADE_SERVER "/firmware/firmware" HARDWARE_VERSION_STR ".bin");
+    ESP_LOGE(TAG, "Traffic Firmware " VERBOSE_VERSION_STR);
+    ESP_LOGE(TAG, "OTA binary: " FIRMWARE_UPGRADE_URL);
+    ESP_LOGE(TAG, "Max LED number: %d", MAX_NUM_LEDS - 1); // 0 is not an LED
     /* initialize main task state */
     state.toggle = false;
     state.first = true;
-    state.dir = SOUTH;
+    state.dir = (CONFIG_FIRST_DIR_NORTH) ? NORTH : SOUTH;
     /* initialize application */
     initializeApplication(&res, &state);
     /* quick clear LEDs (potentially leftover from restart) */

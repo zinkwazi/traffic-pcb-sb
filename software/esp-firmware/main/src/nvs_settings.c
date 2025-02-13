@@ -99,7 +99,7 @@ esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle) {
  * @returns ESP_OK if successful, otherwise ESP_FAIL.
  */
 esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
-  const unsigned short bufLen = 256;
+  const unsigned short bufLen = CONFIG_NVS_ENTRY_BUFFER_LENGTH;
   char c;
   char buf[bufLen];
   ESP_LOGI(TAG, "Querying settings from user...");

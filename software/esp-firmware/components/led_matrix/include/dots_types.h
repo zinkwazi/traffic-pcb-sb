@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+#if CONFIG_HARDWARE_VERSION == 1
 enum MatrixLocation {
     MAT1_PAGE0,
     MAT1_PAGE1,
@@ -14,12 +15,25 @@ enum MatrixLocation {
     MAT2_PAGE1,
     MAT3_PAGE0,
     MAT3_PAGE1,
-#if CONFIG_HARDWARE_VERSION == 2
-    MAT4_PAGE0,
-    MAT4_PAGE1,
-#endif
     MAT_NONE,
 };
+#endif
+
+#if CONFIG_HARDWARE_VERSION == 2
+enum MatrixLocation {
+    MAT1_PAGE0,
+    MAT1_PAGE1,
+    MAT2_PAGE0,
+    MAT2_PAGE1,
+    MAT3_PAGE0,
+    MAT3_PAGE1,
+    MAT4_PAGE0,
+    MAT4_PAGE1,
+    MAT_NONE,
+};
+#endif
+
+/* new versions should explicitly specify the correct MatrixLocation enum */
 
 /**
  * @brief Contains the matrix registers that correspond to an LED.

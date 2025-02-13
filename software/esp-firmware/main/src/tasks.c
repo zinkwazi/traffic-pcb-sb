@@ -18,15 +18,9 @@
 #include "tasks.h"
 #include "wifi.h"
 #include "main_types.h"
-
-#if CONFIG_HARDWARE_VERISON == 1
-    #include "V1_0_led_registers.h"
-#else
-    #include "V2_0_led_registers.h"
-#endif
+#include "led_registers.h"
 
 /* LED color configuration */
-
 #define SLOW_RED (0xFF)
 #define SLOW_GREEN (0x00)
 #define SLOW_BLUE (0x00)
@@ -39,16 +33,27 @@
 #define FAST_GREEN (0x00)
 #define FAST_BLUE (0x10)
 
-/* The URL of server data (to be appended with version) */
-#define URL_DATA_SERVER_NORTH (CONFIG_DATA_SERVER "/current_data/data_north_")
-#define URL_DATA_SERVER_SOUTH (CONFIG_DATA_SERVER "/current_data/data_south_")
-#define URL_DATA_TYPICAL_NORTH (CONFIG_DATA_SERVER "/current_data/typical_north_")
-#define URL_DATA_TYPICAL_SOUTH (CONFIG_DATA_SERVER "/current_data/typical_south_")
-#define URL_DATA_FILE_TYPE (".dat")
+/* The URL of server data */
+#define URL_DATA_FILE_TYPE ".dat"
+#define URL_DATA_CURRENT_NORTH CONFIG_DATA_SERVER "/current_data/data_north_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
+#define URL_DATA_CURRENT_SOUTH CONFIG_DATA_SERVER "/current_data/data_south_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
+#define URL_DATA_TYPICAL_NORTH CONFIG_DATA_SERVER "/current_data/typical_north_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
+#define URL_DATA_TYPICAL_SOUTH CONFIG_DATA_SERVER "/current_data/typical_south_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
 
+/* NVS namespace and keys */
+#define WORKER_NVS_NAMESPACE "worker"
+#define CURRENT_NORTH_NVS_KEY "current_north"
+#define CURRENT_SOUTH_NVS_KEY "current_south"
+#define TYPICAL_NORTH_NVS_KEY "typical_north"
+#define TYPICAL_SOUTH_NVS_KEY "typical_south"
+
+/* TomTom HTTPS configuration */
 #define API_METHOD HTTP_METHOD_GET
 #define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
 #define API_RETRY_CONN_NUM 5
+
+/* If typical speed cannot be retrieved, default to this for all segments */
+#define DEFAULT_TYPICAL_SPEED 70
 
 void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t percentFlow) {
     if (percentFlow < CONFIG_SLOW_CUTOFF_PERCENT) {
@@ -69,14 +74,14 @@ void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t percentFlow) 
 esp_err_t getSpeedsFromNvs(uint8_t *speeds, Direction dir, bool currentSpeeds) {
     nvs_handle_t nvsHandle;
     size_t size = MAX_NUM_LEDS;
-    if (nvs_open("worker", NVS_READONLY, &nvsHandle) != ESP_OK) {
+    if (nvs_open(WORKER_NVS_NAMESPACE, NVS_READONLY, &nvsHandle) != ESP_OK) {
         return ESP_FAIL;
     }
     char *key = NULL;
     if (currentSpeeds) {
-        key = (dir == NORTH) ? "current_north" : "current_south";
+        key = (dir == NORTH) ? CURRENT_NORTH_NVS_KEY : CURRENT_SOUTH_NVS_KEY;
     } else {
-        key = (dir == NORTH) ? "typical_north" : "typical_south";
+        key = (dir == NORTH) ? TYPICAL_NORTH_NVS_KEY : TYPICAL_SOUTH_NVS_KEY;
     }
     if (nvs_get_blob(nvsHandle, key, speeds, &size) != ESP_OK) {
         return ESP_FAIL;
@@ -92,14 +97,14 @@ esp_err_t setSpeedsToNvs(uint8_t *speeds, Direction dir, bool currentSpeeds) {
     nvs_handle_t nvsHandle;
     size_t size = MAX_NUM_LEDS * sizeof(uint8_t);
     esp_err_t err = ESP_OK;
-    if ((err = nvs_open("worker", NVS_READWRITE, &nvsHandle)) != ESP_OK) {
+    if ((err = nvs_open(WORKER_NVS_NAMESPACE, NVS_READWRITE, &nvsHandle)) != ESP_OK) {
         return ESP_FAIL;
     }
     char *key = NULL;
     if (currentSpeeds) {
-        key = (dir == NORTH) ? "current_north" : "current_south";
+        key = (dir == NORTH) ? CURRENT_NORTH_NVS_KEY : CURRENT_SOUTH_NVS_KEY;
     } else {
-        key = (dir == NORTH) ? "typical_north" : "typical_south";
+        key = (dir == NORTH) ? TYPICAL_NORTH_NVS_KEY : TYPICAL_SOUTH_NVS_KEY;
     }
     if (nvs_set_blob(nvsHandle, key, speeds, size) != ESP_OK) {
         return ESP_FAIL;
@@ -111,16 +116,11 @@ esp_err_t setSpeedsToNvs(uint8_t *speeds, Direction dir, bool currentSpeeds) {
     return ESP_OK;
 }
 
-esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], esp_http_client_handle_t client, char *baseURL, char *version, int retryNum) {
-    char urlStr[CONFIG_MAX_DATA_URL_LEN + 1];
+esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], esp_http_client_handle_t client, char *URL, int retryNum) {
     char *responseStr;
-    /* construct url string */
-    strcpy(urlStr, baseURL);
-    strcat(urlStr, version);
-    strcat(urlStr, URL_DATA_FILE_TYPE);
-    ESP_LOGI(TAG, "%s", urlStr);
+    ESP_LOGI(TAG, "retrieving: %s", URL);
     /* request data */
-    if (esp_http_client_set_url(client, urlStr) != ESP_OK) {
+    if (esp_http_client_set_url(client, URL) != ESP_OK) {
         return ESP_FAIL;
     }
     if (esp_http_client_open(client, 0) != ESP_OK) {
@@ -206,10 +206,8 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, uint8_t typicalSpeeds[], Q
     esp_err_t ret = ESP_OK;
     *aborted = false;
     /* connect to API and query speeds */
-    char *baseURL = (dir == NORTH) ? URL_DATA_SERVER_NORTH : URL_DATA_SERVER_SOUTH; 
-    if (tomtomGetServerSpeeds(speeds, client, baseURL, 
-                              VERSION_STR, 
-                              API_RETRY_CONN_NUM) != ESP_OK)
+    char *URL = (dir == NORTH) ? URL_DATA_CURRENT_NORTH : URL_DATA_CURRENT_SOUTH; 
+    if (tomtomGetServerSpeeds(speeds, client, URL, API_RETRY_CONN_NUM) != ESP_OK)
     {
         /* failed to get typical north speeds from server, search nvs */
         ESP_LOGW(TAG, "failed to retrieve segment speeds from server");
@@ -307,7 +305,7 @@ esp_err_t removeExtraWorkerNvsEntries(void) {
   esp_err_t ret;
   nvs_iterator_t nvs_iter;
   nvs_handle_t nvsHandle;
-  if (nvs_open("worker", NVS_READWRITE, &nvsHandle) != ESP_OK) {
+  if (nvs_open(WORKER_NVS_NAMESPACE, NVS_READWRITE, &nvsHandle) != ESP_OK) {
     return ESP_FAIL;
   }
   esp_err_t err = nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter);
@@ -322,11 +320,11 @@ esp_err_t removeExtraWorkerNvsEntries(void) {
     if (nvs_entry_info(nvs_iter, &info) != ESP_OK) {
       return ESP_FAIL;
     }
-    if (strcmp(info.namespace_name, "worker") == 0 &&
-            (strcmp(info.key, "current_north") == 0 ||
-             strcmp(info.key, "current_south") == 0 ||
-             strcmp(info.key, "typical_north") == 0 ||
-             strcmp(info.key, "typical_south") == 0))
+    if (strcmp(info.namespace_name, WORKER_NVS_NAMESPACE) == 0 &&
+            (strcmp(info.key, CURRENT_NORTH_NVS_KEY) == 0 ||
+             strcmp(info.key, CURRENT_SOUTH_NVS_KEY) == 0 ||
+             strcmp(info.key, TYPICAL_NORTH_NVS_KEY) == 0 ||
+             strcmp(info.key, TYPICAL_SOUTH_NVS_KEY) == 0))
     {
       ret = nvs_entry_next(&nvs_iter);
       continue;
@@ -390,11 +388,11 @@ void vWorkerTask(void *pvParameters) {
     static uint8_t typicalSpeedsNorth[MAX_NUM_LEDS];
     static uint8_t typicalSpeedsSouth[MAX_NUM_LEDS];
     for (int i = 0; i < MAX_NUM_LEDS; i++) {
-        typicalSpeedsNorth[i] = 70;
-        typicalSpeedsSouth[i] = 70;
+        typicalSpeedsNorth[i] = DEFAULT_TYPICAL_SPEED;
+        typicalSpeedsSouth[i] = DEFAULT_TYPICAL_SPEED;
     }
-    if (tomtomGetServerSpeeds(typicalSpeedsNorth, client, URL_DATA_TYPICAL_NORTH, 
-                              SERVER_VERSION_STR, 
+    if (tomtomGetServerSpeeds(typicalSpeedsNorth, client, 
+                              URL_DATA_TYPICAL_NORTH, 
                               API_RETRY_CONN_NUM) != ESP_OK) 
     {
         /* failed to get typical north speeds from server, search nvs */
@@ -411,8 +409,8 @@ void vWorkerTask(void *pvParameters) {
             ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
         }
     }
-    if (tomtomGetServerSpeeds(typicalSpeedsSouth, client, URL_DATA_TYPICAL_SOUTH, 
-                              SERVER_VERSION_STR, 
+    if (tomtomGetServerSpeeds(typicalSpeedsSouth, client,
+                              URL_DATA_TYPICAL_SOUTH,
                               API_RETRY_CONN_NUM) != ESP_OK) 
     {
         /* failed to get typical north speeds from server, search nvs */
@@ -570,7 +568,7 @@ void vOTATask(void* pvParameters) {
         gpio_set_level(LED_SOUTH_PIN, 1);
         gpio_set_level(LED_WEST_PIN, 1);
         esp_http_client_config_t https_config = {
-            .url = CONFIG_FIRMWARE_UPGRADE_SERVER "/firmware/firmware" HARDWARE_VERSION_STR ".bin",
+            .url = FIRMWARE_UPGRADE_URL,
             .crt_bundle_attach = esp_crt_bundle_attach,
         };
         esp_https_ota_config_t ota_config = {
