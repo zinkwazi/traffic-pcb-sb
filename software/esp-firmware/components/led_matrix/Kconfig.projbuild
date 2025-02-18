@@ -8,12 +8,4 @@ menu "Led Matrix"
         int "Priority of the I2C Gatekeeper task"
         default 2
 
-    config DISABLE_TESTING_FEATURES
-        bool "Disable Testing Features"
-        default true
-        help
-            The esp-idf vscode extension likes to, by default, set this false
-            when testing. I have no idea why, nor how to change it, but it is
-            actually quite useful here.
-
 endmenu

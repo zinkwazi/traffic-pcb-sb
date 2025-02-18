@@ -174,5 +174,14 @@ menu "Main Application"
     config OTA_PRIO
         int "Priority of the OTA task"
         default 4
+
+    config DISABLE_TESTING_FEATURES
+        bool "Disable Testing Features"
+        default true
+        help
+            The esp-idf vscode extension likes to, by default, set this false
+            when testing. I have no idea why, nor how to change it, but it is
+            actually quite useful here because it is on by default for regular
+            builds and off for testing!
         
 endmenu
