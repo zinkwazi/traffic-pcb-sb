@@ -8,6 +8,8 @@
 #include "esp_err.h"
 #include <stdbool.h>
 
+#define TAG "circBuffer"
+
 /**
  * @brief Initializes the circular buffer to use backing (of length len) as the
  *        datastructure's underlying array.
@@ -69,11 +71,12 @@ esp_err_t circularBufferStore(CircularBuffer *buf, char *str, uint32_t len) {
 
 /**
  * @brief Retrieves the most recent len elements in the buffer and stores them 
- *        in strOut.
+ *        in strOut. Appends a null-terminator at strOut[len].
  * 
  * @param[in] buffer The circular buffer to retrieve elements from.
- * @param[out] strOut The location to write elements to.
- * @param[in] len The number of elements to read from the buffer.
+ * @param[out] strOut The location to write elements to, null-terminated.
+ * @param[in] len The number of elements to read from the buffer, not including
+ *                the null-terminator.
  * 
  * @returns ESP_OK if successful. ESP_FAIL if len is larger than the size of
  *          the buffer or an unexpected error occurred.
@@ -94,14 +97,20 @@ esp_err_t circularBufferRead(const CircularBuffer *buf, char *strOut, uint32_t l
     }
 
     /* calculate starting position of data */
-    start64 = ((int64_t) buf->end) - ((int64_t) buf->len); // careful with uint32_t
+    start64 = ((int64_t) buf->end) - ((int64_t) len); // careful with uint32_t
     start64 = start64 % ((int64_t) buf->backingSize); // will be negative if start < 0
-    start64 = (start64 < 0) ? -start64 : start64; 
+    if (start64 < 0) {
+        // negative operand in % does not follow expected mod result
+        start64 = buf->backingSize + start64;
+    }
     uStart = (uint32_t) start64; // start64 fits in uint32_t by % backingSize
     /* read data */
     for (curr = 0; curr < len; curr++) {
         ndxBeforeMod = ((uint64_t) uStart) + ((uint64_t) curr); // uStart + curr fits in uint64_t
+        
         strOut[curr] = buf->backing[ndxBeforeMod % ((uint64_t) buf->backingSize)];
     }
+    /* append null-terminator */
+    strOut[len] = '\0';
     return ESP_OK;
 }
