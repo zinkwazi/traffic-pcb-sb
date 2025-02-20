@@ -8,6 +8,7 @@ idf_component_register(SRCS "src/main.c"
                     REQUIRES common
                              app_errors  
                              led_matrix
+                             api_connect
                              esp_timer
                              esp_wifi
                              esp_http_client

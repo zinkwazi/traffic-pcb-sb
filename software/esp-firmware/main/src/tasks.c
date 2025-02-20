@@ -19,6 +19,7 @@
 #include "wifi.h"
 #include "main_types.h"
 #include "led_registers.h"
+#include "api_connect.h"
 
 /* LED color configuration */
 #define SLOW_RED (0xFF)
@@ -116,65 +117,6 @@ esp_err_t setSpeedsToNvs(uint8_t *speeds, Direction dir, bool currentSpeeds) {
     return ESP_OK;
 }
 
-esp_err_t tomtomGetServerSpeeds(uint8_t speeds[], esp_http_client_handle_t client, char *URL, int retryNum) {
-    char *responseStr;
-    ESP_LOGD(TAG, "retrieving: %s", URL);
-    /* request data */
-    if (esp_http_client_set_url(client, URL) != ESP_OK) {
-        return ESP_FAIL;
-    }
-    if (esp_http_client_open(client, 0) != ESP_OK) {
-        ESP_LOGE(TAG, "failed to open connection");
-        return ESP_FAIL;
-    }
-    int64_t contentLength = esp_http_client_fetch_headers(client);
-    while (contentLength == -ESP_ERR_HTTP_EAGAIN) {
-        contentLength = esp_http_client_fetch_headers(client);
-    }
-    if (contentLength <= 0) {
-        ESP_LOGW(TAG, "contentLength <= 0");
-        if (esp_http_client_close(client) != ESP_OK) {
-            ESP_LOGE(TAG, "failed to close client");
-        }
-        return ESP_FAIL;
-    }
-    int status = esp_http_client_get_status_code(client);
-    if (esp_http_client_get_status_code(client) != 200) {
-        ESP_LOGE(TAG, "status code is %d", status);
-        if (esp_http_client_close(client) != ESP_OK) {
-            ESP_LOGE(TAG, "failed to close client");
-        }
-        return ESP_FAIL;
-    }
-    responseStr = malloc(sizeof(char) * contentLength);
-    if (responseStr == NULL) {
-        ESP_LOGE(TAG, "failed to allocate %lld bytes for http response", contentLength);
-        if (esp_http_client_close(client) != ESP_OK) {
-            ESP_LOGE(TAG, "failed to close client");
-        }
-        return ESP_FAIL;
-    }
-    int len = esp_http_client_read(client, responseStr, contentLength);
-    while (len == -ESP_ERR_HTTP_EAGAIN) {
-        len = esp_http_client_read(client, responseStr, contentLength);
-    }
-    if (esp_http_client_close(client) != ESP_OK) {
-        ESP_LOGE(TAG, "failed to close client");
-        free(responseStr);
-        return ESP_FAIL;
-    }
-    if (len == -1) {
-        ESP_LOGE(TAG, "esp_http_client_read returned -1");
-        free(responseStr);
-        return ESP_FAIL;
-    }
-    for (int i = 0; i < contentLength && i < MAX_NUM_LEDS; i++) {
-        speeds[i] = (uint8_t) responseStr[i];
-    }
-    free(responseStr);
-    return ESP_OK;
-}
-
 void updateLED(QueueHandle_t I2CQueue, uint16_t ledNum, uint8_t percentFlow) {
     uint8_t red, green, blue;
     setColor(&red, &green, &blue, percentFlow);
@@ -207,7 +149,7 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, uint8_t typicalSpeeds[], Q
     *aborted = false;
     /* connect to API and query speeds */
     char *URL = (dir == NORTH) ? URL_DATA_CURRENT_NORTH : URL_DATA_CURRENT_SOUTH; 
-    if (tomtomGetServerSpeeds(speeds, client, URL, API_RETRY_CONN_NUM) != ESP_OK)
+    if (tomtomGetServerSpeeds(speeds, MAX_NUM_LEDS, client, URL, API_RETRY_CONN_NUM) != ESP_OK)
     {
         /* failed to get typical north speeds from server, search nvs */
         ESP_LOGW(TAG, "failed to retrieve segment speeds from server");
@@ -391,7 +333,7 @@ void vWorkerTask(void *pvParameters) {
         typicalSpeedsNorth[i] = DEFAULT_TYPICAL_SPEED;
         typicalSpeedsSouth[i] = DEFAULT_TYPICAL_SPEED;
     }
-    if (tomtomGetServerSpeeds(typicalSpeedsNorth, client, 
+    if (tomtomGetServerSpeeds(typicalSpeedsNorth, MAX_NUM_LEDS, client, 
                               URL_DATA_TYPICAL_NORTH, 
                               API_RETRY_CONN_NUM) != ESP_OK) 
     {
@@ -409,7 +351,7 @@ void vWorkerTask(void *pvParameters) {
             ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
         }
     }
-    if (tomtomGetServerSpeeds(typicalSpeedsSouth, client,
+    if (tomtomGetServerSpeeds(typicalSpeedsSouth, MAX_NUM_LEDS, client,
                               URL_DATA_TYPICAL_SOUTH,
                               API_RETRY_CONN_NUM) != ESP_OK) 
     {
