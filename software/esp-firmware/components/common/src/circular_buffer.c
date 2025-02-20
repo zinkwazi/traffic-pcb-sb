@@ -186,8 +186,7 @@ circ_err_t circularBufferStore(CircularBuffer *buf, char *str, uint32_t len) {
 circ_err_t circularBufferMark(CircularBuffer *buf, uint32_t dist, enum CircDistanceSetting setting) {
     uint32_t ndx, prevMarkDist;
     /* input guards */
-    if (buf == NULL ||
-        dist == 0)
+    if (buf == NULL)
     {
         return CIRC_INVALID_ARG;
     }
@@ -197,14 +196,6 @@ circ_err_t circularBufferMark(CircularBuffer *buf, uint32_t dist, enum CircDista
     /* calculate bookmark position */
     ndx = UINT32_MAX;
     switch (setting) {
-        case FROM_RECENT_CHAR:
-            if (dist >= buf->len) {
-                return CIRC_INVALID_SIZE;
-            }
-            /* (buf->end - dist - 1) (mod buf->backingSize) */
-            ndx = modularSubtraction(buf->end, dist, buf->backingSize);
-            ndx = modularSubtraction(ndx, 1, buf->backingSize);
-            break;
         case FROM_PREV_MARK:
             if (buf->mark == UINT32_MAX) {
                 return CIRC_LOST_MARK;
@@ -216,6 +207,22 @@ circ_err_t circularBufferMark(CircularBuffer *buf, uint32_t dist, enum CircDista
             }
             /* (buf->mark + dist) (mod buf->backingSize) */
             ndx = modularAddition(buf->mark, dist, buf->backingSize);
+            break;
+        case FROM_RECENT_CHAR:
+            if (dist >= buf->len) {
+                return CIRC_INVALID_SIZE;
+            }
+            /* (buf->end - dist - 1) (mod buf->backingSize) */
+            ndx = modularSubtraction(buf->end, dist, buf->backingSize);
+            ndx = modularSubtraction(ndx, 1, buf->backingSize);
+            break;
+        case FROM_OLDEST_CHAR:
+            if (dist >= buf->len) {
+                return CIRC_INVALID_SIZE;
+            }
+            /* (buf->end - buf->len + dist) (mod buf->backingSize) */
+            ndx = modularSubtraction(buf->end, buf->len, buf->backingSize);
+            ndx = modularAddition(ndx, dist, buf->backingSize);
             break;
         case DIST_SETTING_UNKNOWN:
             return CIRC_INVALID_ARG;

@@ -44,8 +44,11 @@ enum CircDistanceSetting {
     /* dist is from the most recently added char 
     to the new mark in the negative direction. */
     FROM_RECENT_CHAR = 2,
+    /* dist is from the oldest char to the new
+    mark in the positive direction. */
+    FROM_OLDEST_CHAR = 3,
     /* unknown setting, ie. invalid argument */
-    DIST_SETTING_UNKNOWN = 3,
+    DIST_SETTING_UNKNOWN = 4,
 };
 
 circ_err_t circularBufferInit(CircularBuffer *buffer, char* backing, uint32_t len);

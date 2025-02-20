@@ -242,12 +242,27 @@ TEST_CASE("circularBufferMark", "[circular_buffer]")
     err = circularBufferReadFromMark(&buffer, strOut, backingLen);
     TEST_ASSERT_EQUAL_STRING(expected, strOut);
 
-    /* mark beyond most recent char */
+    /* mark beyond most recent char from prev mark */
     expected = "llo, World!";
     err = circularBufferMark(&buffer, 11, FROM_PREV_MARK);
     TEST_ASSERT_EQUAL(CIRC_INVALID_SIZE, err);
     err = circularBufferReadFromMark(&buffer, strOut, backingLen);
+    TEST_ASSERT_EQUAL(CIRC_OK, err);
     TEST_ASSERT_EQUAL_STRING(expected, strOut);
+
+    /* mark oldest char */
+    expected = "o, World!";
+    err = circularBufferMark(&buffer, 4, FROM_OLDEST_CHAR);
+    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(4, buffer.mark);
+    err = circularBufferReadFromMark(&buffer, strOut, backingLen);
+    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL_STRING(expected, strOut);
+
+    /* mark beyond most recent char from oldest char */
+    err = circularBufferMark(&buffer, 13, FROM_OLDEST_CHAR);
+    TEST_ASSERT_EQUAL(CIRC_INVALID_SIZE, err);
+    TEST_ASSERT_EQUAL(4, buffer.mark);
 
     /* mark from previous mark with no previous mark */
     buffer.mark = UINT32_MAX;
@@ -274,7 +289,16 @@ TEST_CASE("circularBufferMark", "[circular_buffer]")
     err = circularBufferReadFromMark(&buffer, strOut, backingLen);
     TEST_ASSERT_EQUAL(CIRC_OK, err);
     TEST_ASSERT_EQUAL_STRING("g", strOut);
-}
+
+    /* test input guards */
+    err = circularBufferMark(NULL, 4, FROM_RECENT_CHAR);
+    TEST_ASSERT_EQUAL(CIRC_INVALID_ARG, err);
+    err = circularBufferMark(&buffer, 0, FROM_RECENT_CHAR);
+    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    buffer.backing = NULL;
+    err = circularBufferMark(&buffer, 4, FROM_RECENT_CHAR);
+    TEST_ASSERT_EQUAL(CIRC_UNINITIALIZED, err);
+}  
 
 /**
  * Tests the validity of the assumption that all non-zero
