@@ -7,6 +7,7 @@
 #include "circular_buffer.h"
 #include "esp_err.h"
 #include <stdbool.h>
+#include <stdint.h>
 
 #define TAG "circBuffer"
 
@@ -81,7 +82,10 @@ uint32_t modularAddition(uint32_t a, uint32_t b, uint32_t N) {
  * @returns CIRC_OK if successful, otherwise CIRC_INVALID_ARG.
  */
 circ_err_t circularBufferInit(CircularBuffer *buf, char* backing, uint32_t len) {
-    if (buf == NULL || backing == NULL || len == 0) {
+    if (buf == NULL || 
+        backing == NULL || 
+        len == 0) 
+    {
         return CIRC_INVALID_ARG;
     }
 
@@ -152,7 +156,7 @@ circ_err_t circularBufferStore(CircularBuffer *buf, char *str, uint32_t len) {
     }
     /* remove bookmark if it is destroyed */
     if (lostMark) {
-        buf->mark == UINT32_MAX; // denotes no bookmark
+        buf->mark = UINT32_MAX; // denotes no bookmark
         return CIRC_LOST_MARK;
     }
     return CIRC_OK;
@@ -191,6 +195,7 @@ circ_err_t circularBufferMark(CircularBuffer *buf, uint32_t dist, enum CircDista
         return CIRC_UNINITIALIZED;
     }
     /* calculate bookmark position */
+    ndx = UINT32_MAX;
     switch (setting) {
         case FROM_RECENT_CHAR:
             if (dist >= buf->len) {
@@ -198,13 +203,7 @@ circ_err_t circularBufferMark(CircularBuffer *buf, uint32_t dist, enum CircDista
             }
             /* (buf->end - dist - 1) (mod buf->backingSize) */
             ndx = modularSubtraction(buf->end, dist, buf->backingSize);
-            if (ndx == UINT32_MAX) {
-                return CIRC_UNINITIALIZED;
-            }
             ndx = modularSubtraction(ndx, 1, buf->backingSize);
-            if (ndx == UINT32_MAX) {
-                return CIRC_UNINITIALIZED;
-            }
             break;
         case FROM_PREV_MARK:
             if (buf->mark == UINT32_MAX) {
@@ -217,14 +216,14 @@ circ_err_t circularBufferMark(CircularBuffer *buf, uint32_t dist, enum CircDista
             }
             /* (buf->mark + dist) (mod buf->backingSize) */
             ndx = modularAddition(buf->mark, dist, buf->backingSize);
-            if (ndx == UINT32_MAX) {
-                return CIRC_UNINITIALIZED;
-            }
             break;
         case DIST_SETTING_UNKNOWN:
             return CIRC_INVALID_ARG;
     }
     /* create bookmark */
+    if (ndx == UINT32_MAX) {
+        return CIRC_UNINITIALIZED;
+    }
     buf->mark = ndx;
     return CIRC_OK;
 }

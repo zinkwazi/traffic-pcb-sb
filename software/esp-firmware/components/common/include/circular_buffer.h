@@ -8,6 +8,7 @@
 #define CIRCULAR_BUFFER_H_
 
 #include "esp_err.h"
+#include <stdint.h>
 
 #define CIRC_OK             0
 #define CIRC_FAIL           -1
@@ -51,7 +52,7 @@ circ_err_t circularBufferInit(CircularBuffer *buffer, char* backing, uint32_t le
 
 circ_err_t circularBufferStore(CircularBuffer *buffer, char *str, uint32_t len);
 
-circ_err_t circularBufferMark(const CircularBuffer *buffer, uint32_t dist);
+circ_err_t circularBufferMark(CircularBuffer *buffer, uint32_t dist, enum CircDistanceSetting setting);
 
 circ_err_t circularBufferRead(const CircularBuffer *buffer, char *strOut, uint32_t len);
 
