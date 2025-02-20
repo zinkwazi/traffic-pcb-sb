@@ -224,7 +224,7 @@ circ_err_t circularBufferMark(CircularBuffer *buf, uint32_t dist, enum CircDista
             ndx = modularSubtraction(buf->end, buf->len, buf->backingSize);
             ndx = modularAddition(ndx, dist, buf->backingSize);
             break;
-        case DIST_SETTING_UNKNOWN:
+        default:
             return CIRC_INVALID_ARG;
     }
     /* create bookmark */
@@ -244,12 +244,12 @@ circ_err_t circularBufferMark(CircularBuffer *buf, uint32_t dist, enum CircDista
  * @param[in] len The number of elements to read from the buffer, not including
  *        the null-terminator.
  * 
- * @returns CIRC_OK if successful. 
+ * @returns number of chars read if successful. 
  *          CIRC_INVALID_ARG if invalid argument.
  *          CIRC_INVALID_SIZE if len is larger than the length of data in the buffer.
  *          CIRC_UNINITIALIZED if buf is uninitialized or was illegally modified.
  */
-circ_err_t circularBufferRead(const CircularBuffer *buf, char *strOut, uint32_t len) {
+int circularBufferRead(const CircularBuffer *buf, char *strOut, uint32_t len) {
     uint32_t curr, start, ndx;
     /* input guards */
     if (buf == NULL ||
@@ -280,7 +280,7 @@ circ_err_t circularBufferRead(const CircularBuffer *buf, char *strOut, uint32_t 
     }
     /* append null-terminator */
     strOut[len] = '\0';
-    return CIRC_OK;
+    return len;
 }
 
 /**
@@ -292,12 +292,12 @@ circ_err_t circularBufferRead(const CircularBuffer *buf, char *strOut, uint32_t 
  * @param[in] maxLen The maximum number of elements to retrieve from the buffer,
  *        not including the appended null-terminator.
  * 
- * @returns CIRC_OK if successful.
+ * @returns number of chars read if successful.
  *          CIRC_INVALID_ARG if invalid argument.
  *          CIRC_UNINITIALIZED if buf is uninitialized or was illegally modified.
  *          CIRC_LOST_MARK if the buffer contains no mark.
  */
-circ_err_t circularBufferReadFromMark(const CircularBuffer *buf, char *strOut, uint32_t maxLen) {
+int circularBufferReadFromMark(const CircularBuffer *buf, char *strOut, uint32_t maxLen) {
     uint32_t strOutNdx = 0;
     uint32_t bufNdx;
     /* input guards */
@@ -328,5 +328,5 @@ circ_err_t circularBufferReadFromMark(const CircularBuffer *buf, char *strOut, u
     }
     /* append null-terminator */
     strOut[strOutNdx] = '\0';
-    return CIRC_OK;
+    return strOutNdx;
 }
