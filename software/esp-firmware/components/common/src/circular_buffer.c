@@ -93,7 +93,7 @@ circ_err_t circularBufferInit(CircularBuffer *buf, char* backing, uint32_t len) 
     buf->backingSize = len;
     buf->end = 0;
     buf->len = 0;
-    buf->mark = 0;
+    buf->mark = UINT32_MAX;
     return CIRC_OK;
 }
 
