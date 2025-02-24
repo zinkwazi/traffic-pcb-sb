@@ -11,7 +11,10 @@
 /* Include the public interface */
 #include "circular_buffer.h"
 
-/* Private interface */
+/*******************************************/
+/*            INTERNAL FUNCTIONS           */
+/*******************************************/
+
 uint32_t modularSubtraction(uint32_t a, uint32_t b, uint32_t N);
 uint32_t modularAddition(uint32_t a, uint32_t b, uint32_t N);
 

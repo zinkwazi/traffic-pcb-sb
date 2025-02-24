@@ -1,5 +1,5 @@
 #include "unity.h"
-#include "dots_commands.h"
+#include "dots_commands_pi.h"
 #include "pinout.h"
 #include <stdbool.h>
 #include "esp_log.h"

@@ -52,13 +52,9 @@ enum CircDistanceSetting {
 };
 
 circ_err_t circularBufferInit(CircularBuffer *buffer, char* backing, uint32_t len);
-
 circ_err_t circularBufferStore(CircularBuffer *buffer, char *str, uint32_t len);
-
 circ_err_t circularBufferMark(CircularBuffer *buffer, uint32_t dist, enum CircDistanceSetting setting);
-
-circ_err_t circularBufferRead(const CircularBuffer *buffer, char *strOut, uint32_t len);
-
-circ_err_t circularBufferReadFromMark(const CircularBuffer *buffer, char *strOut, uint32_t len);
+int circularBufferRead(const CircularBuffer *buffer, char *strOut, uint32_t len);
+int circularBufferReadFromMark(const CircularBuffer *buffer, char *strOut, uint32_t len);
 
 #endif /* CIRCULAR_BUFFER_H_ */

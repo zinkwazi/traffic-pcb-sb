@@ -7,12 +7,15 @@
 #ifndef API_CONNECT_H_
 #define API_CONNECT_H_
 
+#include "circular_buffer.h"
+
 #include "esp_http_client.h"
 #include "esp_err.h"
 
 #include <stdint.h>
 
-// TODO: use this struct for LED speeds instead of uint8_t
+#define API_ERR_REMOVE_DATA 0x52713
+
 struct LEDData {
     uint32_t ledNum;
     uint32_t speed;
@@ -20,6 +23,6 @@ struct LEDData {
 
 typedef struct LEDData LEDData;
 
-esp_err_t tomtomGetServerSpeeds(uint8_t ledSpeeds[], int ledSpeedsLen, esp_http_client_handle_t client, char *URL, int retryNum);
+esp_err_t tomtomGetServerSpeeds(LEDData ledSpeeds[], int ledSpeedsLen, esp_http_client_handle_t client, char *URL, int retryNum);
 
 #endif /* API_CONNECT_H_ */

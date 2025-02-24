@@ -527,6 +527,7 @@ def main(speed_type, direction, api_key, csv_filename, output_filename, output_f
             csv_reader = csv.DictReader(input_file, dialect='excel')
             entry_leds_pairs = pruneCSVEntries(csv_reader, direction, allow_missing=False)
         speeds = requestSpeeds(entry_leds_pairs, speed_type, api_key, fail_with_zero=False)
+        speeds = sorted(speeds, key=lambda ele: ele[0])
 
         # Debug log to check the contents of current_speeds
         log(f"Speeds: {speeds}")
@@ -538,7 +539,7 @@ def main(speed_type, direction, api_key, csv_filename, output_filename, output_f
             csv_writer.writerows(speeds)
 
         # Save the results to the secondary output file in binary format
-        raw_speeds = [speed[1] for speed in sorted(speeds, key=lambda ele: ele[0])]
+        raw_speeds = [speed[1] for speed in sorted(speeds, key=lambda ele: ele[0])] # keep sort to be extra sure
         raw_speeds = [speed if speed != -1 else 0 for speed in raw_speeds] # backwards compatibility
         raw_speeds.insert(0, 0) # backwards compatibility
         byte_array = bytearray(raw_speeds)
@@ -557,8 +558,6 @@ def main(speed_type, direction, api_key, csv_filename, output_filename, output_f
         log(f"Error processing {direction.name} direction: {e}")
         return False
     
-    
-
 # ================================
 # Run Requests for Both Directions
 # ================================

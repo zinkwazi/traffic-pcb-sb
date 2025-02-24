@@ -5,7 +5,10 @@
  */
 
 #include "circular_buffer.h"
+
 #include "esp_err.h"
+#include "esp_log.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -285,7 +288,8 @@ int circularBufferRead(const CircularBuffer *buf, char *strOut, uint32_t len) {
 
 /**
  * @brief Retrieves at most maxLen elements starting from the bookmark in the 
- *        buffer and stores them in strOut. Appends a null-terminator at strOut[len].
+ *        buffer and stores them in strOut. Appends a null-terminator at
+ *        strOut[len]. Does not modify the circular buffer.
  * 
  * @param[in] buf The circular buffer to retrieve elements from.
  * @param[out] strOut The location to write elements to, null-terminated.
