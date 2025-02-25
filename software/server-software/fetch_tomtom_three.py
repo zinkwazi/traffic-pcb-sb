@@ -19,8 +19,8 @@ USE_FAKE_KEY = False
 
 INPUT_CSV = "input/led_locations_V1_0_5.csv"
 V2_0_0_ADD_INPUT_CSV = "input/led_loc_addendum_V2_0_0.csv"
-OUTPUT_NORTH = "output/data_northV1_0_5.csv"
-OUTPUT_SOUTH = "output/data_southV1_0_5.csv"
+OUTPUT_NORTH = "output/data_north_V1_0_5.csv"
+OUTPUT_SOUTH = "output/data_south_V1_0_5.csv"
 OUTPUT_NORTH_2 = "output/data_north_V1_0_3.dat"
 OUTPUT_SOUTH_2 = "output/data_south_V1_0_3.dat"
 OUTPUT_NORTH_TYPICAL = "output/typical_data_north.csv"
