@@ -17,6 +17,7 @@
 
 #include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #define TAG "test"
 
@@ -66,11 +67,11 @@ TEST_CASE("nextCSVEntryFromMark_skipsNewline", "[api_connect]")
  */
 TEST_CASE("nextCSVEntryFromMark_fullFile", "[api_connect]")
 {
-    extern const uint8_t test_data_start[] asm("_binary_data_northV1_0_5_csv_start");
-    extern const uint8_t test_data_end[] asm("_binary_data_northV1_0_5_csv_end");
+    extern const uint8_t test_data_start[] asm("_binary_data_north_V1_0_5_csv_start");
+    extern const uint8_t test_data_end[] asm("_binary_data_north_V1_0_5_csv_end");
 
-    extern const uint8_t test_expected_start[] asm("_binary_data_northV1_0_3_dat_start");
-    extern const uint8_t test_expected_end[] asm("_binary_data_northV1_0_3_dat_end");
+    extern const uint8_t test_expected_start[] asm("_binary_data_north_V1_0_3_dat_start");
+    extern const uint8_t test_expected_end[] asm("_binary_data_north_V1_0_3_dat_end");
 
     /* The length of the buffer to send messages to the tester */
     const int TEST_MSG_LEN = 50;

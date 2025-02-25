@@ -114,15 +114,100 @@ esp_err_t nextCSVEntryFromMark(LEDData *data, CircularBuffer *circBuf, char *buf
 }
 
 /**
+ * requires client to have data to read
+ */
+esp_err_t readServerSpeedData(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client) {
+    CircularBuffer circBuf;
+    circ_err_t circ_err;
+    esp_err_t err;
+    char circBufBacking[CIRC_BUF_SIZE];
+    char buffer[RESPONSE_BLOCK_SIZE];
+    int64_t bytesRead;
+    LEDData result;
+    /* input guards */
+    if (ledSpeeds == NULL ||
+        ledSpeedsLen == 0 ||
+        client == NULL)
+    {
+        ESP_LOGE(TAG, "invalid arg");
+        return ESP_ERR_INVALID_ARG;
+    }
+    /* initialize circular buffer */
+    circ_err = circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
+    if (circ_err != CIRC_OK) {
+        ESP_LOGE(TAG, "failed to initialize circular buffer");
+        return ESP_FAIL;
+    }
+    /* load initial data and mark beginning */
+    do {
+        bytesRead = esp_http_client_read(client, buffer, RESPONSE_BLOCK_SIZE - 1);
+        if (bytesRead == -1) {
+            ESP_LOGE(TAG, "esp_http_client_read returned -1");
+            return ESP_FAIL;
+        }
+    } while (bytesRead == -ESP_ERR_HTTP_EAGAIN);
+    circ_err = circularBufferStore(&circBuf, buffer, bytesRead);
+    if (circ_err != CIRC_OK) {
+        ESP_LOGE(TAG, "failed to write data to circ buffer. got err: %d", circ_err);
+        return ESP_FAIL;
+    }
+    circ_err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
+    if (circ_err != CIRC_OK) {
+        ESP_LOGE(TAG, "failed to mark circular buffer");
+        return ESP_FAIL;
+    }
+    while (bytesRead > 0) {
+        /* parse rows while available */
+        do {
+            err = nextCSVEntryFromMark(&result, &circBuf, buffer, RESPONSE_BLOCK_SIZE);
+            if (err == ESP_FAIL) {
+                ESP_LOGE(TAG, "nextCSVEntryFromMark failed");
+                return ESP_FAIL;
+            }
+            switch (err) {
+                case ESP_OK:
+                    /* set data point */
+                    ledSpeeds[result.ledNum - 1].ledNum = result.ledNum;
+                    ledSpeeds[result.ledNum - 1].speed = result.speed;
+                    break;
+                case API_ERR_REMOVE_DATA:
+                    /* remove data point */
+                    ledSpeeds[result.ledNum - 1].ledNum = 0;
+                    ledSpeeds[result.ledNum - 1].speed = 0;
+                    break;
+                default:
+                    break;
+            }
+        } while (err != ESP_ERR_NOT_FOUND);
+        /* read new data from response */
+        do {
+            bytesRead = esp_http_client_read(client, buffer, RESPONSE_BLOCK_SIZE - 1);
+            if (bytesRead == -1) {
+                ESP_LOGE(TAG, "esp_http_client_read returned -1");
+                return ESP_FAIL;
+            }
+        } while (bytesRead == -ESP_ERR_HTTP_EAGAIN);
+        if (bytesRead == 0) {
+            break;
+        }
+        circ_err = circularBufferStore(&circBuf, buffer, (uint32_t) bytesRead);
+        if (circ_err != CIRC_OK) {
+            ESP_LOGE(TAG, "failed to write data to circ buffer, err: %d", circ_err);
+            return ESP_FAIL;
+        }
+    }
+    ESP_LOGW(TAG, "returned normally");
+    return ESP_OK;
+}
+
+/**
  * Retrieves the current speeds from the server.
  * 
  * Parameters:
  *     speeds: Where the current speed data will be stored
  */
-esp_err_t tomtomGetServerSpeeds(LEDData ledSpeeds[], int ledSpeedsLen, esp_http_client_handle_t client, char *URL, int retryNum) {
-    CircularBuffer circBuf;
-    char circBufBacking[RESPONSE_BLOCK_SIZE * 2];
-    char responseBuf[RESPONSE_BLOCK_SIZE];
+esp_err_t getServerSpeeds(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client, char *URL, int retryNum) {
+    esp_err_t err;
     /* input guards */
     ESP_STATIC_ASSERT(CIRC_BUF_SIZE >= (2 * RESPONSE_BLOCK_SIZE));
     if (ledSpeeds == NULL ||
@@ -161,53 +246,22 @@ esp_err_t tomtomGetServerSpeeds(LEDData ledSpeeds[], int ledSpeedsLen, esp_http_
         }
         return ESP_FAIL;
     }
-    /* initialize circular buffer */
-    (void) circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
-    /* read and process data blocks from https stream */
-    int64_t currResponsePos = 0;
-    int64_t currSpeedsPos = 0;
-    while (currResponsePos < contentLength && currSpeedsPos < ledSpeedsLen) {
-        /* read block and store in circular buffer */
-        int64_t bytesRead = esp_http_client_read(client, responseBuf, RESPONSE_BLOCK_SIZE - 1);
-        if (bytesRead == -1) {
-            ESP_LOGE(TAG, "esp_http_client_read returned -1");
-            return ESP_FAIL;
-        } else if (bytesRead == -ESP_ERR_HTTP_EAGAIN) {
-            continue; // data was not ready
+    err = readServerSpeedData(ledSpeeds, ledSpeedsLen, client);
+    if (err != ESP_OK) {
+        if (esp_http_client_close(client) != ESP_OK) {
+            ESP_LOGE(TAG, "failed to close client");
         }
-        currResponsePos += bytesRead;
-        circ_err_t circ_err = circularBufferStore(&circBuf, responseBuf, bytesRead);
-        if (circ_err != CIRC_OK) {
-            return ESP_FAIL;
-        }
-        /* move previous mark or add mark at ndx 0 */
-        circ_err = circularBufferMark(&circBuf, 1, FROM_PREV_MARK); // moves to start of new data
-        if (circ_err == CIRC_LOST_MARK) {
-            circ_err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
-        }
-        if (circ_err != CIRC_OK) {
-            return ESP_FAIL;
-        }
-        /* process block starting from recent mark */
-        bytesRead = circularBufferReadFromMark(&circBuf, responseBuf, RESPONSE_BLOCK_SIZE - 1); // reuse responsebuf & bytesRead
-        if (bytesRead < 0) {
-            return ESP_FAIL;
-        }
-        
-        for (int64_t i = 0; i < bytesRead && currSpeedsPos + i < ledSpeedsLen; i++) {
-            ledSpeeds[currSpeedsPos + i].ledNum = (uint8_t) currSpeedsPos + i;
-            ledSpeeds[currSpeedsPos + i].speed = (uint8_t) responseBuf[i];
-        }
-        currSpeedsPos += bytesRead;
-        /* mark end position in circular buffer */
-        circ_err = circularBufferMark(&circBuf, 0, FROM_RECENT_CHAR);
-        if (circ_err != CIRC_OK) {
-            return ESP_FAIL;
-        }
+        ESP_LOGE(TAG, "failed to read speed data");
+        ESP_LOGW(TAG, "err: %d", err);
+        return err;
     }
     if (esp_http_client_close(client) != ESP_OK) {
         ESP_LOGE(TAG, "failed to close client");
         return ESP_FAIL;
+    }
+
+    for (int i = 0; i < ledSpeedsLen; i++) {
+        ESP_LOGI(TAG, "ndx: %d, num: %lu, speed: %lu", i, ledSpeeds[i].ledNum, ledSpeeds[i].speed);
     }
     return ESP_OK;
 }

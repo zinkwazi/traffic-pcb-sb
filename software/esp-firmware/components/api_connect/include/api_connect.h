@@ -23,6 +23,6 @@ struct LEDData {
 
 typedef struct LEDData LEDData;
 
-esp_err_t tomtomGetServerSpeeds(LEDData ledSpeeds[], int ledSpeedsLen, esp_http_client_handle_t client, char *URL, int retryNum);
+esp_err_t getServerSpeeds(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client, char *URL, int retryNum);
 
 #endif /* API_CONNECT_H_ */

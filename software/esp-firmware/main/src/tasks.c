@@ -12,6 +12,7 @@
 #include "freertos/queue.h"
 #include "esp_timer.h"
 #include "esp_https_ota.h"
+#include "esp_http_client.h"
 #include "utilities.h"
 #include "dots_commands.h"
 #include "pinout.h"
@@ -35,7 +36,7 @@
 #define FAST_BLUE (0x10)
 
 /* The URL of server data */
-#define URL_DATA_FILE_TYPE ".dat"
+#define URL_DATA_FILE_TYPE ".csv"
 #define URL_DATA_CURRENT_NORTH CONFIG_DATA_SERVER "/current_data/data_north_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
 #define URL_DATA_CURRENT_SOUTH CONFIG_DATA_SERVER "/current_data/data_south_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
 #define URL_DATA_TYPICAL_NORTH CONFIG_DATA_SERVER "/current_data/typical_north_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
@@ -72,7 +73,7 @@ void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t percentFlow) 
     }
 }
 
-esp_err_t getSpeedsFromNvs(uint8_t *speeds, Direction dir, bool currentSpeeds) {
+esp_err_t getSpeedsFromNvs(LEDData *speeds, uint32_t speedsLen, Direction dir, bool currentSpeeds) {
     nvs_handle_t nvsHandle;
     size_t size = MAX_NUM_LEDS;
     if (nvs_open(WORKER_NVS_NAMESPACE, NVS_READONLY, &nvsHandle) != ESP_OK) {
@@ -87,16 +88,16 @@ esp_err_t getSpeedsFromNvs(uint8_t *speeds, Direction dir, bool currentSpeeds) {
     if (nvs_get_blob(nvsHandle, key, speeds, &size) != ESP_OK) {
         return ESP_FAIL;
     }
-    if (size == 0 || size / sizeof(uint8_t) != MAX_NUM_LEDS) {
+    if (size == 0 || size / sizeof(uint8_t) != speedsLen * sizeof(LEDData)) {
         return ESP_FAIL;
     }
     nvs_close(nvsHandle);
     return ESP_OK;
 }
 
-esp_err_t setSpeedsToNvs(uint8_t *speeds, Direction dir, bool currentSpeeds) {
+esp_err_t setSpeedsToNvs(LEDData *speeds, uint32_t speedsLen, Direction dir, bool currentSpeeds) {
     nvs_handle_t nvsHandle;
-    size_t size = MAX_NUM_LEDS * sizeof(uint8_t);
+    size_t size = speedsLen * sizeof(LEDData);
     esp_err_t err = ESP_OK;
     if ((err = nvs_open(WORKER_NVS_NAMESPACE, NVS_READWRITE, &nvsHandle)) != ESP_OK) {
         return ESP_FAIL;
@@ -107,9 +108,17 @@ esp_err_t setSpeedsToNvs(uint8_t *speeds, Direction dir, bool currentSpeeds) {
     } else {
         key = (dir == NORTH) ? TYPICAL_NORTH_NVS_KEY : TYPICAL_SOUTH_NVS_KEY;
     }
-    if (nvs_set_blob(nvsHandle, key, speeds, size) != ESP_OK) {
-        return ESP_FAIL;
-    }
+    err = nvs_set_blob(nvsHandle, key, speeds, size);
+    if (err != ESP_OK) {
+        err = nvs_erase_key(nvsHandle, key);
+        if (err != ESP_OK) {
+            return ESP_FAIL;
+        }
+        err = nvs_set_blob(nvsHandle, key, speeds, size);
+        if (err != ESP_OK) {
+            return ESP_FAIL;
+        }
+    }    
     if (nvs_commit(nvsHandle) != ESP_OK) {
         return ESP_FAIL;
     }
@@ -131,7 +140,7 @@ bool mustAbort(QueueHandle_t I2CQueue, QueueHandle_t dotQueue) {
     WorkerCommand command;
     if (xQueuePeek(dotQueue, &command, 0) == pdTRUE) {
         /* A new command has been issued, quick clear and abort command */
-        ESP_LOGD(TAG, "Quick Clearing...");
+        ESP_LOGI(TAG, "Quick Clearing...");
         if (dotsReset(I2CQueue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
             dotsSetGlobalCurrentControl(I2CQueue, CONFIG_GLOBAL_LED_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK ||
             dotsSetOperatingMode(I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) 
@@ -143,17 +152,17 @@ bool mustAbort(QueueHandle_t I2CQueue, QueueHandle_t dotQueue) {
     return false;
 }
 
-esp_err_t handleRefresh(bool *aborted, Direction dir, uint8_t typicalSpeeds[], QueueHandle_t I2CQueue, QueueHandle_t dotQueue, esp_http_client_handle_t client, ErrorResources *errRes, bool prevConnError) {
-    static uint8_t speeds[MAX_NUM_LEDS];
+esp_err_t handleRefresh(bool *aborted, Direction dir, LEDData typicalSpeeds[], uint32_t typicalSpeedsLen, QueueHandle_t I2CQueue, QueueHandle_t dotQueue, esp_http_client_handle_t client, ErrorResources *errRes, bool prevConnError) {
+    static LEDData speeds[MAX_NUM_LEDS];
     esp_err_t ret = ESP_OK;
     *aborted = false;
     /* connect to API and query speeds */
     char *URL = (dir == NORTH) ? URL_DATA_CURRENT_NORTH : URL_DATA_CURRENT_SOUTH; 
-    if (tomtomGetServerSpeeds(speeds, MAX_NUM_LEDS, client, URL, API_RETRY_CONN_NUM) != ESP_OK)
+    if (getServerSpeeds(speeds, MAX_NUM_LEDS, client, URL, API_RETRY_CONN_NUM) != ESP_OK)
     {
         /* failed to get typical north speeds from server, search nvs */
         ESP_LOGW(TAG, "failed to retrieve segment speeds from server");
-        if (getSpeedsFromNvs(speeds, dir, true) != ESP_OK)
+        if (getSpeedsFromNvs(speeds, MAX_NUM_LEDS, dir, true) != ESP_OK)
         {
             throwFatalError(errRes, false);
         }
@@ -166,8 +175,8 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, uint8_t typicalSpeeds[], Q
         if (prevConnError) {
             resolveNoConnError(errRes, false, false);
         }
-        ESP_LOGD(TAG, "updating segment speeds in non-volatile storage");
-        if (setSpeedsToNvs(speeds, dir, true) != ESP_OK) {
+        ESP_LOGI(TAG, "updating segment speeds in non-volatile storage");
+        if (setSpeedsToNvs(speeds, MAX_NUM_LEDS, dir, true) != ESP_OK) {
             ESP_LOGW(TAG, "failed to update segment speeds in non-volatile storage");
         }
     }
@@ -175,12 +184,24 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, uint8_t typicalSpeeds[], Q
     switch (dir) {
         case NORTH:
             for (int ndx = MAX_NUM_LEDS - 1; ndx > 0; ndx--) {
-                if (ndx > MAX_NUM_LEDS || typicalSpeeds[ndx] == 0) {
+                if (ndx >= MAX_NUM_LEDS) {
+                    ESP_LOGW(TAG, "retrieving invalid index %d", ndx);
+                    continue;
+                }
+                if (ndx >= typicalSpeedsLen || typicalSpeeds[ndx].speed == 0) {
                     ESP_LOGW(TAG, "skipping LED %d update due to lack of typical speed", ndx);
                     continue;
                 }
-                uint8_t percentFlow = (100 * speeds[ndx]) / typicalSpeeds[ndx];
-                updateLED(I2CQueue, ndx, percentFlow);
+                if (ndx + 1 != speeds[ndx].ledNum) {
+                    ESP_LOGW(TAG, "skipping bad index %d, with LED num %lu", ndx, speeds[ndx].ledNum);
+                    continue;
+                }
+                if (ndx + 1 != typicalSpeeds[ndx].ledNum) {
+                    ESP_LOGW(TAG, "skipping bad index %d, with typical LED num %lu", ndx, typicalSpeeds[ndx].ledNum);
+                    continue;
+                }
+                uint32_t percentFlow = (100 * speeds[ndx].speed) / typicalSpeeds[ndx].speed;
+                updateLED(I2CQueue, speeds[ndx].ledNum, percentFlow);
                 if (mustAbort(I2CQueue, dotQueue)) {
                     *aborted = true;
                     return ret;
@@ -190,12 +211,25 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, uint8_t typicalSpeeds[], Q
             break;
         case SOUTH:
             for (int ndx = 1; ndx < MAX_NUM_LEDS; ndx++) {
-                if (ndx > MAX_NUM_LEDS || typicalSpeeds[ndx] == 0) {
+                if (ndx >= MAX_NUM_LEDS) {
+                    ESP_LOGW(TAG, "retrieving invalid index %d", ndx);
+                    continue;
+                }
+                if (ndx >= typicalSpeedsLen || typicalSpeeds[ndx].speed == 0) {
                     ESP_LOGW(TAG, "skipping LED %d update due to lack of typical speed", ndx);
                     continue;
                 }
-                uint8_t percentFlow = (100 * speeds[ndx]) / typicalSpeeds[ndx];
-                updateLED(I2CQueue, ndx, percentFlow);
+                if (ndx + 1 != speeds[ndx].ledNum) {
+                    ESP_LOGW(TAG, "skipping bad index %d, with LED num %lu", ndx, speeds[ndx].ledNum);
+                    continue;
+                }
+                if (ndx + 1 != typicalSpeeds[ndx].ledNum) {
+                    ESP_LOGW(TAG, "skipping bad index %d, with typical LED num %lu", ndx, typicalSpeeds[ndx].ledNum);
+                    continue;
+                }
+
+                uint32_t percentFlow = (100 * speeds[ndx].speed) / typicalSpeeds[ndx].speed;
+                updateLED(I2CQueue, speeds[ndx].ledNum, percentFlow);
                 if (mustAbort(I2CQueue, dotQueue)) {
                     *aborted = true;
                     return ret;
@@ -247,19 +281,28 @@ esp_err_t removeExtraWorkerNvsEntries(void) {
   esp_err_t ret;
   nvs_iterator_t nvs_iter;
   nvs_handle_t nvsHandle;
-  if (nvs_open(WORKER_NVS_NAMESPACE, NVS_READWRITE, &nvsHandle) != ESP_OK) {
+  esp_err_t err;
+  err = nvs_open(WORKER_NVS_NAMESPACE, NVS_READWRITE, &nvsHandle);
+  if (err != ESP_OK) {
     return ESP_FAIL;
   }
-  esp_err_t err = nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter);
+  err = nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter);
   if (err == ESP_ERR_NVS_NOT_FOUND) {
     return ESP_OK; // no entries to remove
   } else if (err != ESP_OK) {
     return ESP_FAIL;
   }
+  if (nvs_iter == NULL) {
+    return ESP_OK;
+  }
   ret = nvs_entry_next(&nvs_iter);
   while (ret != ESP_OK) {
     nvs_entry_info_t info;
-    if (nvs_entry_info(nvs_iter, &info) != ESP_OK) {
+    if (nvs_iter == NULL) {
+        return ESP_OK;
+    }
+    err = nvs_entry_info(nvs_iter, &info);
+    if (err != ESP_OK) {
       return ESP_FAIL;
     }
     if (strcmp(info.namespace_name, WORKER_NVS_NAMESPACE) == 0 &&
@@ -271,8 +314,8 @@ esp_err_t removeExtraWorkerNvsEntries(void) {
       ret = nvs_entry_next(&nvs_iter);
       continue;
     }
-    ESP_LOGD(TAG, "removing nvs entry: %s", info.key);
-    if (nvs_erase_key(nvsHandle, info.key) != ESP_OK) {
+    err = nvs_erase_key(nvsHandle, info.key);
+    if (err != ESP_OK) {
       return ESP_FAIL;
     }
     ret = nvs_entry_next(&nvs_iter);
@@ -281,6 +324,7 @@ esp_err_t removeExtraWorkerNvsEntries(void) {
     return ESP_FAIL;
   }
   if (ret == ESP_ERR_INVALID_ARG) {
+    ESP_LOGI(TAG, "ret is invalid arg");
     return ESP_FAIL;
   }
   return ESP_OK;
@@ -310,7 +354,7 @@ void vWorkerTask(void *pvParameters) {
         .user_data = NULL,
     };
 
-    ESP_LOGD(TAG, "worker task created");
+    ESP_LOGI(TAG, "worker task created");
 
     WorkerTaskResources *res = (WorkerTaskResources *) pvParameters;
     esp_http_client_handle_t client;
@@ -322,18 +366,23 @@ void vWorkerTask(void *pvParameters) {
     }
 
     /* remove extra non-volatile storage entries from partition */
+    ESP_LOGI(TAG, "removing extra worker nvs entries");
     if (removeExtraWorkerNvsEntries() != ESP_OK) {
+        ESP_LOGI(TAG, "failed to remove extra nvs entries");
         throwFatalError(res->errRes, false);
     }
 
     /* retrieve typical speeds from the server */
-    static uint8_t typicalSpeedsNorth[MAX_NUM_LEDS];
-    static uint8_t typicalSpeedsSouth[MAX_NUM_LEDS];
+    ESP_LOGI(TAG, "retrieving typical speeds from server");
+    static LEDData typicalSpeedsNorth[MAX_NUM_LEDS];
+    static LEDData typicalSpeedsSouth[MAX_NUM_LEDS];
     for (int i = 0; i < MAX_NUM_LEDS; i++) {
-        typicalSpeedsNorth[i] = DEFAULT_TYPICAL_SPEED;
-        typicalSpeedsSouth[i] = DEFAULT_TYPICAL_SPEED;
+        typicalSpeedsNorth[i].ledNum = i + 1;
+        typicalSpeedsNorth[i].speed = DEFAULT_TYPICAL_SPEED;
+        typicalSpeedsSouth[i].ledNum = i + 1;
+        typicalSpeedsSouth[i].speed = DEFAULT_TYPICAL_SPEED;
     }
-    if (tomtomGetServerSpeeds(typicalSpeedsNorth, MAX_NUM_LEDS, client, 
+    if (getServerSpeeds(typicalSpeedsNorth, MAX_NUM_LEDS, client, 
                               URL_DATA_TYPICAL_NORTH, 
                               API_RETRY_CONN_NUM) != ESP_OK) 
     {
@@ -344,14 +393,14 @@ void vWorkerTask(void *pvParameters) {
         {
             throwFatalError(res->errRes, false);
         }
-        getSpeedsFromNvs(typicalSpeedsNorth, NORTH, false); // don't care if this fails
+        getSpeedsFromNvs(typicalSpeedsNorth, MAX_NUM_LEDS, NORTH, false); // don't care if this fails
     } else {
-        ESP_LOGD(TAG, "setting typical north speeds in non-volatile storage");
-        if (setSpeedsToNvs(typicalSpeedsNorth, NORTH, false) != ESP_OK) {
+        ESP_LOGI(TAG, "setting typical north speeds in non-volatile storage");
+        if (setSpeedsToNvs(typicalSpeedsNorth, MAX_NUM_LEDS, NORTH, false) != ESP_OK) {
             ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
         }
     }
-    if (tomtomGetServerSpeeds(typicalSpeedsSouth, MAX_NUM_LEDS, client,
+    if (getServerSpeeds(typicalSpeedsSouth, MAX_NUM_LEDS, client,
                               URL_DATA_TYPICAL_SOUTH,
                               API_RETRY_CONN_NUM) != ESP_OK) 
     {
@@ -362,15 +411,16 @@ void vWorkerTask(void *pvParameters) {
         {
             throwFatalError(res->errRes, false);
         }
-        getSpeedsFromNvs(typicalSpeedsSouth, SOUTH, false); // don't care if this fails
+        getSpeedsFromNvs(typicalSpeedsSouth, MAX_NUM_LEDS, SOUTH, false); // don't care if this fails
     } else {
-        ESP_LOGD(TAG, "setting typical south speeds in non-volatile storage");
-        if (setSpeedsToNvs(typicalSpeedsNorth, SOUTH, false) != ESP_OK) {
+        ESP_LOGI(TAG, "setting typical south speeds in non-volatile storage");
+        if (setSpeedsToNvs(typicalSpeedsNorth, MAX_NUM_LEDS, SOUTH, false) != ESP_OK) {
             ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
         }
     }
 
     /* Wait for commands and execute them forever */
+    ESP_LOGI(TAG, "worker waiting for commands");
     bool prevCommandAborted = false;
     bool connError = false;
     for (;;) {  // This task should never end
@@ -383,8 +433,8 @@ void vWorkerTask(void *pvParameters) {
         /* update led colors */
         switch (dot.type) {
             case REFRESH_NORTH:
-                ESP_LOGD(TAG, "Refreshing North...");
-                if (handleRefresh(&prevCommandAborted, NORTH, typicalSpeedsNorth, res->I2CQueue, res->dotQueue, client, res->errRes, connError) != ESP_OK) {
+                ESP_LOGI(TAG, "Refreshing North...");
+                if (handleRefresh(&prevCommandAborted, NORTH, typicalSpeedsNorth, MAX_NUM_LEDS, res->I2CQueue, res->dotQueue, client, res->errRes, connError) != ESP_OK) {
                     esp_http_client_cleanup(client);
                     connError = true;
                     client = esp_http_client_init(&httpConfig);
@@ -393,8 +443,8 @@ void vWorkerTask(void *pvParameters) {
                 }
                 break;
             case REFRESH_SOUTH:
-                ESP_LOGD(TAG, "Refreshing South...");
-                if (handleRefresh(&prevCommandAborted, SOUTH, typicalSpeedsSouth, res->I2CQueue, res->dotQueue, client, res->errRes, connError) != ESP_OK) {
+                ESP_LOGI(TAG, "Refreshing South...");
+                if (handleRefresh(&prevCommandAborted, SOUTH, typicalSpeedsSouth, MAX_NUM_LEDS, res->I2CQueue, res->dotQueue, client, res->errRes, connError) != ESP_OK) {
                     esp_http_client_cleanup(client);
                     connError = true;
                     client = esp_http_client_init(&httpConfig);
@@ -406,7 +456,7 @@ void vWorkerTask(void *pvParameters) {
                 if (prevCommandAborted) {
                     break;
                 }
-                ESP_LOGD(TAG, "Clearing North...");
+                ESP_LOGI(TAG, "Clearing North...");
                 for (int ndx = MAX_NUM_LEDS; ndx > 0; ndx--) {
                     if (dotsSetColor(res->I2CQueue, ndx, 0x00, 0x00, 0x00, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK) {
                         ESP_LOGE(TAG, "failed to change led %d color", ndx);
@@ -419,7 +469,7 @@ void vWorkerTask(void *pvParameters) {
                 if (prevCommandAborted) {
                     break;
                 }
-                ESP_LOGD(TAG, "Clearing South...");
+                ESP_LOGI(TAG, "Clearing South...");
                 for (int ndx = 1; ndx < MAX_NUM_LEDS + 1; ndx++) {
                     if (dotsSetColor(res->I2CQueue, ndx, 0x00, 0x00, 0x00, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK) {
                         ESP_LOGE(TAG, "failed to change led %d color", ndx);
@@ -429,7 +479,7 @@ void vWorkerTask(void *pvParameters) {
                 prevCommandAborted = false;
                 break;
             case QUICK_CLEAR:
-                ESP_LOGD(TAG, "Quick Clearing...");
+                ESP_LOGI(TAG, "Quick Clearing...");
                 if (dotsReset(res->I2CQueue, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK ||
                     dotsSetGlobalCurrentControl(res->I2CQueue, CONFIG_GLOBAL_LED_CURRENT, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK ||
                     dotsSetOperatingMode(res->I2CQueue, NORMAL_OPERATION, DOTS_NOTIFY, DOTS_BLOCKING) != ESP_OK) 
@@ -500,7 +550,7 @@ void vOTATask(void* pvParameters) {
             continue; // block on notification timed out
         }
         // received a task notification indicating update firmware
-        ESP_LOGD(TAG, "OTA update in progress...");
+        ESP_LOGI(TAG, "OTA update in progress...");
         gpio_set_direction(LED_NORTH_PIN, GPIO_MODE_OUTPUT);
         gpio_set_direction(LED_EAST_PIN, GPIO_MODE_OUTPUT);
         gpio_set_direction(LED_SOUTH_PIN, GPIO_MODE_OUTPUT);
@@ -518,12 +568,12 @@ void vOTATask(void* pvParameters) {
         };
         esp_err_t ret = esp_https_ota(&ota_config);
         if (ret == ESP_OK) {
-            ESP_LOGD(TAG, "completed OTA update successfully!");
+            ESP_LOGI(TAG, "completed OTA update successfully!");
             unregisterWifiHandler();
             esp_restart();
         }
         
-        ESP_LOGD(TAG, "did not complete OTA update successfully!");
+        ESP_LOGI(TAG, "did not complete OTA update successfully!");
         throwHandleableError(errRes, false);
         vTaskDelay(pdMS_TO_TICKS(CONFIG_OTA_LEFT_ON_MS)); // leave LEDs on for a bit
         gpio_set_level(LED_NORTH_PIN, 0);
