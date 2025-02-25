@@ -430,7 +430,7 @@ def requestSpeeds(entry_led_pairs: list[tuple[dict[Any, str | Any], list[int]]],
     endpoint if it fails. Creates a list of tuples containing an LED number and
     speed pair.
 
-    Note that if an entry freeway is \"Special\", then 0 is returned for the
+    Note that if an entry freeway is \"Special\", then -2 is returned for the
     speed.
 
     If an API request fails, it is logged. Then, pairs with the corresponding
@@ -462,10 +462,10 @@ def requestSpeeds(entry_led_pairs: list[tuple[dict[Any, str | Any], list[int]]],
     for entry, leds in entry_led_pairs:
         if entry[FREEWAY_KEY] == "Special":
             log(f"Found special entry for LEDs {leds} from LED number {entry[LED_NUM_KEY]} entry")
-            speed = 0
+            speed = -2 # indicates special entry
         else:
             speed = requestTileData(entry, api_key)
-            if speed == -1:
+            if speed == -1: # indicates error
                 speed = requestSegmentData(entry, speed_type, api_key)
             if speed == -1 and fail_with_zero:
                 log(f"failed to retrieve speed for LED {entry[LED_NUM_KEY]}, setting to 0")
@@ -544,8 +544,11 @@ def main(speed_type, direction, api_key, csv_filename, output_filename, output_f
         raw_speeds.insert(0, 0) # backwards compatibility
         byte_array = bytearray(raw_speeds)
         log(f"Writing byte array of length {len(byte_array)} to {output_filename_2}")
-        with open(output_filename_2, 'wb') as out_file:
-            out_file.write(byte_array)
+        try:
+            with open(output_filename_2, 'wb') as out_file:
+                out_file.write(byte_array)
+        except Exception as e:
+            log(f"Error writing byte array: {e}")
 
         # Update version addendums
         log("Updating addendum V2_0_0")
