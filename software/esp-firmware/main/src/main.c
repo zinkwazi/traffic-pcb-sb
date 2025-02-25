@@ -84,7 +84,7 @@ void initializeApplication(MainTaskResources *res, MainTaskState *state) {
     NULL
   );
   /* install UART driver */
-  ESP_LOGD(TAG, "Installing UART driver...");
+  ESP_LOGI(TAG, "Installing UART driver...");
   SPIN_IF_ERR(
     uart_driver_install(UART_NUM_0,
                         UART_HW_FIFO_LEN(UART_NUM_0) + 16,
@@ -96,7 +96,7 @@ void initializeApplication(MainTaskResources *res, MainTaskState *state) {
   );
   uart_vfs_dev_use_driver(UART_NUM_0); // enable interrupt driven IO
   /* initialize error handling resources */
-  ESP_LOGD(TAG, "Initializing error handling resources...");
+  ESP_LOGI(TAG, "Initializing error handling resources...");
   errRes.err = NO_ERR;
   errRes.errTimer = NULL;
   errRes.errMutex = xSemaphoreCreateMutex();
@@ -106,7 +106,7 @@ void initializeApplication(MainTaskResources *res, MainTaskState *state) {
   );
   res->errRes = &errRes;
   /* initialize global resources */
-  ESP_LOGD(TAG, "Initializing global resources...");
+  ESP_LOGI(TAG, "Initializing global resources...");
   I2CQueue = xQueueCreate(I2C_QUEUE_SIZE, sizeof(I2CCommand));
   workerQueue = xQueueCreate(WORKER_QUEUE_SIZE, sizeof(WorkerCommand));
   SPIN_IF_FALSE(
@@ -121,7 +121,7 @@ void initializeApplication(MainTaskResources *res, MainTaskState *state) {
   settings.wifiPassLen = 0;
   res->settings = &settings;
   /* initialize status and direction LEDs */
-  ESP_LOGD(TAG, "Initializing status LEDs...");
+  ESP_LOGI(TAG, "Initializing status LEDs...");
   SPIN_IF_FALSE(
     ( gpio_set_level(WIFI_LED_PIN, 0) == ESP_OK &&
       gpio_set_level(ERR_LED_PIN, 0) == ESP_OK &&
@@ -143,7 +143,7 @@ void initializeApplication(MainTaskResources *res, MainTaskState *state) {
     res->errRes
   );
   /* initialize NVS */
-  ESP_LOGD(TAG, "Initializing non-volatile storage...");
+  ESP_LOGI(TAG, "Initializing non-volatile storage...");
   SPIN_IF_ERR(
     nvs_flash_init(),
     res->errRes
@@ -153,19 +153,19 @@ void initializeApplication(MainTaskResources *res, MainTaskState *state) {
     res->errRes
   );
   /* Remove unnecessary NVS entries */
-  ESP_LOGD(TAG, "Removing unnecessary nvs entries...");
+  ESP_LOGI(TAG, "Removing unnecessary nvs entries...");
   SPIN_IF_ERR(
     removeExtraMainNvsEntries(res->nvsHandle),
     res->errRes
   );
   /* Ensure NVS entries exist */
-  ESP_LOGD(TAG, "Checking whether nvs entries exist...");
+  ESP_LOGI(TAG, "Checking whether nvs entries exist...");
   UPDATE_SETTINGS_IF_ERR(
     nvsEntriesExist(res->nvsHandle),
     res->nvsHandle, res->errRes
   );
   /* Check settings update button (dir button held on startup) */
-  ESP_LOGD(TAG, "Checking change settings button...");
+  ESP_LOGI(TAG, "Checking change settings button...");
   SPIN_IF_ERR(
     gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT), // pin has external pullup
     res->errRes
@@ -174,13 +174,13 @@ void initializeApplication(MainTaskResources *res, MainTaskState *state) {
     updateNvsSettings(res->nvsHandle, res->errRes);
   }
   /* retrieve nvs settings */
-  ESP_LOGD(TAG, "Retrieving NVS entries...");
+  ESP_LOGI(TAG, "Retrieving NVS entries...");
   UPDATE_SETTINGS_IF_ERR(
     retrieveNvsEntries(res->nvsHandle, res->settings),
     res->nvsHandle, res->errRes
   );
   /* initialize tcp/ip stack */
-  ESP_LOGD(TAG, "Initializing TCP/IP stack...");
+  ESP_LOGI(TAG, "Initializing TCP/IP stack...");
   SPIN_IF_ERR(
     esp_netif_init(),
     res->errRes
@@ -191,7 +191,7 @@ void initializeApplication(MainTaskResources *res, MainTaskState *state) {
   );
   esp_netif_create_default_wifi_sta();
   /* Establish wifi connection & tls */
-  ESP_LOGD(TAG, "Establishing wifi connection...");
+  ESP_LOGI(TAG, "Establishing wifi connection...");
   wifi_init_config_t default_wifi_cfg = WIFI_INIT_CONFIG_DEFAULT();
   SPIN_IF_ERR(
     esp_wifi_init(&default_wifi_cfg),
@@ -212,7 +212,7 @@ void initializeApplication(MainTaskResources *res, MainTaskState *state) {
     res->errRes
   );
   /* create tasks */
-  ESP_LOGD(TAG, "Creating tasks...");
+  ESP_LOGI(TAG, "Creating tasks...");
   SPIN_IF_ERR(
     createI2CGatekeeperTask(NULL, I2CQueue),
     res->errRes
@@ -268,15 +268,20 @@ void app_main(void)
     /* initialize main task state */
     state.toggle = false;
     state.first = true;
-    state.dir = (CONFIG_FIRST_DIR_NORTH) ? NORTH : SOUTH;
+#ifdef CONFIG_FIRST_DIR_NORTH
+    state.dir = NORTH;
+#else
+    state.dir = SOUTH;
+#endif
     /* initialize application */
+    ESP_LOGI(TAG, "1");
     initializeApplication(&res, &state);
     /* quick clear LEDs (potentially leftover from restart) */
     SPIN_IF_ERR(
       quickClearLEDs(res.workerQueue),
       res.errRes
     );
-    ESP_LOGD(TAG, "initialization complete, handling toggle button presses...");
+    ESP_LOGI(TAG, "initialization complete, handling toggle button presses...");
     /* handle requests to update all LEDs */
     do {
       /* update leds */
