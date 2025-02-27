@@ -17,14 +17,23 @@ from datetime import datetime
 USE_RANDOM_DATA = False
 USE_FAKE_KEY = False
 
+DOMAIN_NAME = "https://bearanvil.com"
+DOMAIN_PATH = ""
+
+# output folder path relative to domain path
+OUTPUT_FOLDER_RELPATH = "output"
+
+# output file paths relative to output folder
+OUTPUT_NORTH_RELPATH = "data_north_V1_0_5.csv"
+OUTPUT_SOUTH_RELPATH = "data_south_V1_0_5.csv"
+OUTPUT_NORTH_2_RELPATH = "data_north_V1_0_3.dat"
+OUTPUT_SOUTH_2_RELPATH = "data_south_V1_0_3.dat"
+OUTPUT_NORTH_TYPICAL_RELPATH = "typical_data_north.csv"
+OUTPUT_SOUTH_TYPICAL_RELPATH = "typical_data_south.csv"
+
 INPUT_CSV = "input/led_locations_V1_0_5.csv"
 V2_0_0_ADD_INPUT_CSV = "input/led_loc_addendum_V2_0_0.csv"
-OUTPUT_NORTH = "output/data_north_V1_0_5.csv"
-OUTPUT_SOUTH = "output/data_south_V1_0_5.csv"
-OUTPUT_NORTH_2 = "output/data_north_V1_0_3.dat"
-OUTPUT_SOUTH_2 = "output/data_south_V1_0_3.dat"
-OUTPUT_NORTH_TYPICAL = "output/typical_data_north.csv"
-OUTPUT_SOUTH_TYPICAL = "output/typical_data_south.csv"
+
 LOG_FILE = "output/fetch_tomtom_data.log"
 
 class Direction(Enum):
@@ -475,7 +484,7 @@ def requestSpeeds(entry_led_pairs: list[tuple[dict[Any, str | Any], list[int]]],
             ret.append((led_num, speed))
     return ret
 
-def createAddendum(addendum_folder, version, prev_addendum, addendum_data_file, direction, speed_type, api_key):
+def createAddendum(addendum_folder, version, prev_addendum_url, addendum_data_file, direction, speed_type, api_key):
     '''Creates a new file in the addendum_folder that
     specifies changes or additions to an original file,
     prev_addendum. prev_addendum can either point to another
@@ -506,7 +515,7 @@ def createAddendum(addendum_folder, version, prev_addendum, addendum_data_file, 
         ensure_folder_exists(addendum_folder, LOG_FILE)
         ensure_file_exists(addendum_filename, LOG_FILE, "")
         with open(addendum_filename, 'w', newline='') as output_file:
-            output_file.write(f"{{{prev_addendum}}}\n\n")
+            output_file.write(f"{{{prev_addendum_url}}}\n\n")
             csv_writer = csv.writer(output_file, dialect='excel')
             csv_writer.writerows(speeds)
     except Exception as e:
@@ -517,10 +526,23 @@ def createAddendum(addendum_folder, version, prev_addendum, addendum_data_file, 
 # Main Function
 # ================================
 
-def main(speed_type, direction, api_key, csv_filename, output_filename, output_filename_2=None):
+def main(speed_type, direction, api_key, csv_filename, output_relpath, output_2_relpath=None):
     if direction == Direction.UNKNOWN:
         log("Invalid direction provided. Try North or South.")
         return False
+    
+    # build filepaths
+    output_folder_filepath = DOMAIN_PATH + "/" + OUTPUT_FOLDER_RELPATH
+    output_filepath = output_folder_filepath + "/" + output_relpath
+    output_2_filepath = output_folder_filepath + "/" + output_2_relpath
+    output_addendum_folder = output_folder_filepath + "/" + output_relpath + "_add"
+    addendum_V2_0_0_prevURL = DOMAIN_NAME + "/" + OUTPUT_FOLDER_RELPATH + "/" + output_relpath
+
+    # Ensure output files exist
+    ensure_folder_exists(output_folder_filepath, LOG_FILE)
+    ensure_file_exists(output_filepath, LOG_FILE, "")
+    ensure_file_exists(output_2_filepath, LOG_FILE, "")
+
     # Update main file
     try:
         with open(csv_filename, 'r') as input_file:
@@ -533,8 +555,8 @@ def main(speed_type, direction, api_key, csv_filename, output_filename, output_f
         log(f"Speeds: {speeds}")
 
         # Save the results to the output file in CSV format
-        log(f"Writing csv file of length {len(speeds)} to {output_filename}")
-        with open(output_filename, 'w', newline='') as out_file:
+        log(f"Writing csv file of length {len(speeds)} to {output_filepath}")
+        with open(output_filepath, 'w', newline='') as out_file:
             csv_writer = csv.writer(out_file, dialect='excel')
             csv_writer.writerows(speeds)
 
@@ -543,17 +565,16 @@ def main(speed_type, direction, api_key, csv_filename, output_filename, output_f
         raw_speeds = [speed if speed != -1 else 0 for speed in raw_speeds] # backwards compatibility
         raw_speeds.insert(0, 0) # backwards compatibility
         byte_array = bytearray(raw_speeds)
-        log(f"Writing byte array of length {len(byte_array)} to {output_filename_2}")
+        log(f"Writing byte array of length {len(byte_array)} to {output_2_filepath}")
         try:
-            with open(output_filename_2, 'wb') as out_file:
+            with open(output_2_filepath, 'wb') as out_file:
                 out_file.write(byte_array)
         except Exception as e:
             log(f"Error writing byte array: {e}")
 
         # Update version addendums
         log("Updating addendum V2_0_0")
-        addendum_folder_name = output_filename + "_add"
-        createAddendum(addendum_folder_name, "V2_0_0", output_filename, V2_0_0_ADD_INPUT_CSV, direction, speed_type, api_key)
+        createAddendum(output_addendum_folder, "V2_0_0", addendum_V2_0_0_prevURL, V2_0_0_ADD_INPUT_CSV, direction, speed_type, api_key)
 
         log(f"Successfully completed request for {direction.name}")
         return True
@@ -577,27 +598,21 @@ if __name__ == "__main__":
     # Ensure the log file exists
     ensure_file_exists(LOG_FILE, LOG_FILE, "")
 
-    # Ensure output files exist
-    ensure_file_exists(OUTPUT_NORTH, LOG_FILE, "")
-    ensure_file_exists(OUTPUT_NORTH_2, LOG_FILE, "")
-    ensure_file_exists(OUTPUT_SOUTH, LOG_FILE, "")
-    ensure_file_exists(OUTPUT_SOUTH_2, LOG_FILE, "")
-
     if len(sys.argv) > 2 and sys.argv[2] == "typical":
         log("")
         log("Retrieving typical Northbound speeds")
         log("")
-        main(SpeedType.TYPICAL, Direction.NORTH, api_key, INPUT_CSV, OUTPUT_NORTH_TYPICAL)
+        main(SpeedType.TYPICAL, Direction.NORTH, api_key, INPUT_CSV, OUTPUT_NORTH_TYPICAL_RELPATH)
         log("")
         log("Retrieving typical Northbound speeds")
         log("")
-        main(SpeedType.TYPICAL, Direction.SOUTH, api_key, INPUT_CSV, OUTPUT_SOUTH_TYPICAL)
+        main(SpeedType.TYPICAL, Direction.SOUTH, api_key, INPUT_CSV, OUTPUT_SOUTH_TYPICAL_RELPATH)
     else:
         log("")
         log("Retrieving current Northbound speeds")
         log("")
-        main(SpeedType.CURRENT, Direction.NORTH, api_key, INPUT_CSV, OUTPUT_NORTH, OUTPUT_NORTH_2)
+        main(SpeedType.CURRENT, Direction.NORTH, api_key, INPUT_CSV, OUTPUT_NORTH_RELPATH, OUTPUT_NORTH_2_RELPATH)
         log("")
         log("Retrieving current Southbound speeds")
         log("")
-        main(SpeedType.CURRENT, Direction.SOUTH, api_key, INPUT_CSV, OUTPUT_SOUTH, OUTPUT_SOUTH_2)
+        main(SpeedType.CURRENT, Direction.SOUTH, api_key, INPUT_CSV, OUTPUT_SOUTH_RELPATH, OUTPUT_SOUTH_2_RELPATH)
