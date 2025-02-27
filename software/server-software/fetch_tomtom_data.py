@@ -104,7 +104,7 @@ def log(message):
 # API Functions
 # ================================
 
-def validEntrySegmentData(entry: dict[Any, str | Any]) -> bool:
+def validEntrySegmentData(entry) -> bool:
     """
     Returns true if the entry contains information valid for use with the
     TomTom Flow Segment Data API endpoint, otherwise false.
@@ -195,7 +195,7 @@ def requestSegmentData(entry, speed_type, api_key):
         return -1
     return speed
 
-def validEntryTileData(entry: dict[Any, str | Any]) -> bool:
+def validEntryTileData(entry) -> bool:
     """
     Returns true if the entry contains information valid for use with the
     TomTom Vector Flow Tiles API endpoint, otherwise false.
@@ -210,7 +210,7 @@ def validEntryTileData(entry: dict[Any, str | Any]) -> bool:
         return False
     return True
     
-def requestTileData(entry: dict[Any, str | Any],
+def requestTileData(entry,
                     api_key: str
                     ) -> int:
     """
@@ -302,7 +302,7 @@ def requestTileData(entry: dict[Any, str | Any],
 # General Functions
 # ================================
 
-def getReference(entry: dict[Any, str | Any]) -> int | None:
+def getReference(entry):
     """
     Returns the entry's reference if an LED number, otherwise returns None.
     """
@@ -315,7 +315,7 @@ def getReference(entry: dict[Any, str | Any]) -> int | None:
 def pruneCSVEntries(csv_reader: csv.DictReader, 
                     direction: Direction, 
                     allow_missing: bool=False
-                    ) -> list[tuple[dict[Any, str | Any], list[int]]]:
+                    ):
     """
     Searches through entries in csv_reader and compiles a list of pairs of
     entries and lists of LED numbers. This function disregards any entries whose 
@@ -359,9 +359,9 @@ def pruneCSVEntries(csv_reader: csv.DictReader,
         raise ValueError("direction argument is UNKNOWN")
     
     # the list of entry to LED pairings to be returned
-    ret: list[tuple[dict[Any, str | Any], list[int]]] = []
+    ret = []
     # a dictionary of LED nums to a list of LED nums that reference them
-    ref_to_leds: dict[int, list[int]] = {}
+    ref_to_leds = {}
     # a list of LEDs that have entries that have been iterated over
     seen_leds: set[int] = set([])
     # this is true if something funky is happening with the entries
@@ -428,11 +428,11 @@ def pruneCSVEntries(csv_reader: csv.DictReader,
     
     return ret
 
-def requestSpeeds(entry_led_pairs: list[tuple[dict[Any, str | Any], list[int]]],
+def requestSpeeds(entry_led_pairs,
                   speed_type: SpeedType,
                   api_key: str,
                   fail_with_zero: bool=True
-                  ) -> list[tuple[int, int]]:
+                  ):
     """
     Performs TomTom API requests for each provided entry, first attempting to 
     use the Vector Flow Tiles endpoint then defaulting to the Flow Segment Data
@@ -467,7 +467,7 @@ def requestSpeeds(entry_led_pairs: list[tuple[dict[Any, str | Any], list[int]]],
     if api_key == "":
         raise(ValueError, "api_key argument is an empty string")
 
-    ret: list[tuple[int, int]] = []
+    ret = []
     for entry, leds in entry_led_pairs:
         if entry[FREEWAY_KEY] == "Special":
             log(f"Found special entry for LEDs {leds} from LED number {entry[LED_NUM_KEY]} entry")
