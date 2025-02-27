@@ -4,7 +4,9 @@ import sys
 import requests
 import csv
 import tile_schema_pb2
+import random
 from enum import Enum
+from typing import Any
 import os
 from datetime import datetime
 
@@ -12,14 +14,18 @@ from datetime import datetime
 # Configuration Options
 # ================================
 
-INPUT_CSV = "led_locations_V1_0_5.csv"
-OUTPUT_NORTH = "data_north_V1_0_0.json"
-OUTPUT_SOUTH = "data_south_V1_0_0.json"
-OUTPUT_NORTH_2 = "data_north_V1_0_3.dat"
-OUTPUT_SOUTH_2 = "data_north_V1_0_3.dat"
-OUTPUT_NORTH_TYPICAL = "typical_north_V1_0_3.dat"
-OUTPUT_SOUTH_TYPICAL = "typical_south_V1_0_3.dat"
-LOG_FILE = "fetch_tomtom_data.log"
+USE_RANDOM_DATA = False
+USE_FAKE_KEY = False
+
+INPUT_CSV = "input/led_locations_V1_0_5.csv"
+V2_0_0_ADD_INPUT_CSV = "input/led_loc_addendum_V2_0_0.csv"
+OUTPUT_NORTH = "output/data_north_V1_0_5.csv"
+OUTPUT_SOUTH = "output/data_south_V1_0_5.csv"
+OUTPUT_NORTH_2 = "output/data_north_V1_0_3.dat"
+OUTPUT_SOUTH_2 = "output/data_south_V1_0_3.dat"
+OUTPUT_NORTH_TYPICAL = "output/typical_data_north.csv"
+OUTPUT_SOUTH_TYPICAL = "output/typical_data_south.csv"
+LOG_FILE = "output/fetch_tomtom_data.log"
 
 class Direction(Enum):
     NORTH = 1
@@ -32,8 +38,36 @@ class SpeedType(Enum):
     UNKNOWN = 3
 
 # ================================
+# Definitions
+# ================================
+
+LED_NUM_KEY = "LED Number"
+FREEWAY_KEY = "Freeway"
+DIRECTION_KEY = "Direction"
+LONGITUDE_KEY = "Longitude"
+LATITUDE_KEY = "Latitude"
+TILE_KEY = "Tile"
+OPENLR_CODE_KEY = "openLr Code"
+FREE_FLOW_SPEED_KEY = "Free Flow Speed"
+REFERENCE_KEY = "Reference"
+
+JSON_TRUE_STRING = "true"
+JSON_FALSE_STRING = "false"
+
+# ================================
 # Ensure necessary files exist
 # ================================
+
+def ensure_folder_exists(folder_path, log_path):
+    """Create the folder if it doesn't exist. If log_file
+    is not None, then an error creating the file will be
+    written to the log."""
+    if not os.path.exists(folder_path):
+        try:
+            os.mkdir(folder_path)
+        except Exception as e:
+            if log_path != None:
+                log(e)
 
 def ensure_file_exists(file_path, log_path, default_content=""):
     """Create the file with default content if it doesn't exist.
@@ -44,18 +78,10 @@ def ensure_file_exists(file_path, log_path, default_content=""):
             with open(file_path, 'wb') as f:
                 f.write(bytearray(default_content, 'utf-8'))
         except Exception as e:
-            if log_path != None:
+            if file_path == log_path:
+                print(e)
+            if log_path != None and log_path != file_path:
                 log(e)
-
-# Ensure the log file exists
-ensure_file_exists(LOG_FILE, "") # script will fail silently if
-                                 # log file cannot be opened
-
-# Ensure output files exist
-ensure_file_exists(OUTPUT_NORTH, LOG_FILE, "")
-ensure_file_exists(OUTPUT_SOUTH, LOG_FILE, "")
-ensure_file_exists(OUTPUT_NORTH_2, LOG_FILE, "")
-ensure_file_exists(OUTPUT_SOUTH_2, LOG_FILE, "")
 
 # ================================
 # Logging Function
@@ -69,21 +95,59 @@ def log(message):
 # API Functions
 # ================================
 
-
-def validEntry(entry):
-    '''Determines whether the given entry 
-    is a valid entry to use in requestData.'''
-
-    return entry["Latitude"] != None and entry["Longitude"] != None
+def validEntrySegmentData(entry: dict[Any, str | Any]) -> bool:
+    """
+    Returns true if the entry contains information valid for use with the
+    TomTom Flow Segment Data API endpoint, otherwise false.
+    
+    Requires:
+        entry is not None
+    """
+    if entry[LATITUDE_KEY] is None:
+        return False
+    if entry[LONGITUDE_KEY] is None:
+        return False
+    if entry[OPENLR_CODE_KEY] is None:
+        return False
+    return True
 
 def requestSegmentData(entry, speed_type, api_key):
-    '''Requests speed data from the TomTom flowSegmentData endpoint.
-    Fails if entry is invalid, which is checked with validEntry.
-    Returns found speed if successful, -1 otherwise.'''
+    """
+    Requests speed data from the TomTom Flow Segment Data endpoint. 
 
-    longitude, latitude = entry["Longitude"], entry["Latitude"]
+    Parameters:
+        entry: The CSV entry holding information about the physical location
+            to query.
+        api_key: The API key to use when making requests.
 
-    log(f"Requesting data for coordinates ({longitude}, {latitude})")
+    Returns:
+        The speed retrieved from the endpoint if successful, otherwise -1.
+        
+        If there is a road closure, 0 is returned when speed_type is CURRENT 
+        and -1 is returned when speed_type is TYPICAL.
+
+        If the endpoint returns an openLR code that differs from that of the
+        entry, then -1 is returned.
+
+        Throws an exception if arguments are unexpected.
+    """
+    if entry is None:
+        raise(ValueError, "entry is None")
+    if speed_type == SpeedType.UNKNOWN:
+        raise(ValueError, "speed_type is UNKNOWN")
+    if api_key == "":
+        raise(ValueError, "api_key is empty string")
+    if not validEntrySegmentData(entry):
+        log(f"LED {entry[LED_NUM_KEY]} contains invalid segment data.")
+        return -1
+    
+    # random data check
+    if USE_RANDOM_DATA:
+        return random.randint(20, 75)
+
+    # perform API request
+    longitude, latitude = entry[LONGITUDE_KEY], entry[LATITUDE_KEY]
+    log(f"Requesting segment data for coordinates ({longitude}, {latitude})...")
     try:
         response = requests.get(
             f"https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json?key={api_key}&point={longitude},{latitude}&unit=mph&openLr=true"
@@ -94,53 +158,100 @@ def requestSegmentData(entry, speed_type, api_key):
     if response.status_code != 200:
         log(f"Failed to retrieve data: {response.status_code} - {response.text}")
         return -1
+    json_segment_data = response.json().get("flowSegmentData", {})
+    
+    # check for road closure
+    closure_str = json_segment_data.get("roadClosure", "false")
+    if closure_str == JSON_TRUE_STRING and speed_type == SpeedType.CURRENT:
+        return 0
+    elif closure_str == JSON_TRUE_STRING:
+        return -1 # implicitly handles all other cases of speed_type
 
-    json_response = response.json()
+    # parse speed from JSON response
     if speed_type == SpeedType.CURRENT:
-        speed = int(json_response.get("flowSegmentData", {}).get("currentSpeed", -1))
+        speed = int(json_segment_data.get("currentSpeed", -1))
     elif speed_type == SpeedType.TYPICAL:
-        speed = int(json_response.get("flowSegmentData", {}).get("freeFlowSpeed", -1)) 
+        speed = int(json_segment_data.get("freeFlowSpeed", -1))
     else:
         log(f"Requested data for unknown speed type")
         speed = -1
-
     if speed == -1:
-        log(f"No speed data found in response: {json_response}")
+        log(f"No speed data found in response: {response.text}")
+        return -1
+    
+    # verify openLR codes match
+    returned_openLR_code = json_segment_data.get("openlr", "")
+    if returned_openLR_code != entry[OPENLR_CODE_KEY]:
+        log(f"Query openLR code {returned_openLR_code} is not the expected code: {entry[OPENLR_CODE_KEY]}")
         return -1
     return speed
 
-def requestData(entry, speed_type, key):
-    '''Requests speed data from the TomTom API. Fails 
-    if entry is invalid, which is checked with validEntry.
-    Returns found speed if successful, -1 otherwise.'''
+def validEntryTileData(entry: dict[Any, str | Any]) -> bool:
+    """
+    Returns true if the entry contains information valid for use with the
+    TomTom Vector Flow Tiles API endpoint, otherwise false.
 
-    if not validEntry(entry):
-        log(f"Encountered invalid entry.")
+    Requires:
+        entry is not None.
+    """
+    if entry[TILE_KEY] is None:
+        return False
+    value: str = entry[TILE_KEY]
+    if value.count('/') != 2:
+        return False
+    return True
+    
+def requestTileData(entry: dict[Any, str | Any],
+                    api_key: str
+                    ) -> int:
+    """
+    Requests speed data from the TomTom Vector Flow Tiles endpoint.
+
+    Parameters:
+        entry: The CSV entry holding information about the physical location
+            to query.
+        api_key: The API key to use when making requests.
+    
+    Returns:
+        The speed retrieved from the endpoint if successful, otherwise -1.
+
+        Throws an exception if arguments are unexpected.
+    """
+    if entry is None:
+        raise(ValueError, "entry is None")
+    if api_key == "":
+        raise(ValueError, "api_key is empty string")
+    if not validEntryTileData(entry):
+        log(f"LED {entry[LED_NUM_KEY]} contains invalid tile data (potentially by design).")
         return -1
-    longitude, latitude, tile = entry["Longitude"], entry["Latitude"], entry["Tile"]
-    if tile == "NULL" or speed_type == SpeedType.TYPICAL:
-        return requestSegmentData(entry, speed_type, key)
-
-    log(f"Requesting data for coordinates ({longitude}, {latitude}) with corresponding tile {tile}")
+    
+    # random data check
+    if USE_RANDOM_DATA:
+        return random.randint(20, 75)
+    
+    # perform API request
+    tile = entry[TILE_KEY]
+    log(f"Requesting tile endpoint data for tile {tile}...")
     try:
         response = requests.get(
-            f"https://api.tomtom.com/traffic/map/4/tile/flow/absolute/{tile}.pbf?key={key}&roadTypes=[0,1,2,3,4]"
+            f"https://api.tomtom.com/traffic/map/4/tile/flow/absolute/{tile}.pbf?key={api_key}&roadTypes=[0,1,2,3,4]"
         )
     except:
-        log(f"request failed.")
+        log(f"Tile endpoint request failed.")
         return -1
     if response.status_code != 200:
         log(f"Failed to retrieve data: {response.status_code} - {response.text}")
         return -1
 
+    # parse speed from Google Protobuf response
     response_tile = tile_schema_pb2.Tile()
     response_tile.ParseFromString(response.content)
     if len(response_tile.layers) != 1:
-        log(f"Response contains {len(response_tile.layers)} layers when only 1 is expected: {response_tile}")
+        log(f"Response contains {len(response_tile.layers)} layers when 1 is expected: {response_tile}")
         return -1
     response_layer = response_tile.layers[0]
     if len(response_layer.features) != 1:
-        log(f"Response contains {len(response_layer.features)} features when only 1 is expected: {response_tile}")
+        log(f"Response contains {len(response_layer.features)} features when 1 is expected: {response_tile}")
         return -1
     response_feature = response_layer.features[0]
 
@@ -182,146 +293,311 @@ def requestData(entry, speed_type, key):
 # General Functions
 # ================================
 
-def decodeReferences(led_to_entry, max_led_num):
-    '''Iterates through led_to_entry dictionary and converts
-    its data to entry_to_leds. That is, it compiles all leds
-    that reference a particular entry under one key. max_led_num
-    is the maximum led number that exists, not one past it. Returns
-    entry_to_leds if successful, otherwise None.'''
+def getReference(entry: dict[Any, str | Any]) -> int | None:
+    """
+    Returns the entry's reference if an LED number, otherwise returns None.
+    """
+    try:
+        reference = int(entry.get("Reference", None))
+    except:
+        reference = None
+    return reference
 
-    entry_to_leds = {}
-    bad_references = False # do not return straight away if successful,
-                           # rather log all issues with the references
+def pruneCSVEntries(csv_reader: csv.DictReader, 
+                    direction: Direction, 
+                    allow_missing: bool=False
+                    ) -> list[tuple[dict[Any, str | Any], list[int]]]:
+    """
+    Searches through entries in csv_reader and compiles a list of pairs of
+    entries and lists of LED numbers. This function disregards any entries whose 
+    'Direction' field does not match the specified direction function argument.
+
+    Note that entries with references to 0 are treated as non-reference entries.
+
+    Parameters:
+        csv_reader: Entries in the reader correspond to LEDs, with necessary
+            fields being 'LED Number', 'Direction', 'Latitude', and 'Longitude'.
+            An optional field is 'Reference', which can an entry can specify to 
+            be one of another entry's 'LED Number' in order to tie multiple LED 
+            numbers to the same physical coordinates.
+        direction: Specifies which entries in the csv_reader the function should
+            focus on; those with field 'Direction' not equal to this direction
+            are skipped.
+        allow_missing: False if the function should throw an error when the
+            compiled entries do not form a set of strictly sequential LED
+            numbers with no missing numbers. True if this should not be checked.
+
+    Returns:
+        A list of tuples containing pairs of entries to lists of LEDs. The LEDs
+        in these pairs are LEDs that correspond to the physical coordinates of
+        the pair's entry.
+
+        Throws an exception if multiple entries with the specified direction
+        and the same LED number are present in the csv_reader, in which case
+        a log message is written with more details.
+
+        Throws an exception if there are no entries with the specified direction.
+
+        Throws an exception if allow_missing is false and LED numbers with the
+        specified direction are not present in the csv_reader, in which case a
+        log message is written with more details.
+
+        Throws an exception if arguments are unexpected.
+    """
+    if csv_reader is None:
+        raise TypeError("csv_reader argument is None")
+    if direction is Direction.UNKNOWN:
+        raise ValueError("direction argument is UNKNOWN")
     
-    for led_num, entry in led_to_entry.items():
-        try:
-            reference = int(entry.get("Reference", -1))
-        except:
-            reference = -1
-        if reference != -1:
-            # check reference validity and update entry
-            try:
-                double_ref = int(led_to_entry.get(reference, {}).get("Reference", -1))
-            except:
-                double_ref = -1
-            if reference <= 0 or reference > max_led_num or double_ref != -1:
-                log(f"Invalid reference at LED Number: {led_num}")
-                bad_references = True
-                continue
-            entry = led_to_entry[reference]
-            if entry == None or not validEntry(entry):
-                log(f"Entry is invalid or missing from led_to_entry for reference at LED Number: {led_num}")
-                bad_references = True
-                continue
-        if entry_to_leds.get(entry["internal_row_num"], None) == None:
-            entry_to_leds[entry["internal_row_num"]] = []
-        entry_to_leds[entry["internal_row_num"]].append(led_num)
-    
-    return entry_to_leds if not bad_references else None
+    # the list of entry to LED pairings to be returned
+    ret: list[tuple[dict[Any, str | Any], list[int]]] = []
+    # a dictionary of LED nums to a list of LED nums that reference them
+    ref_to_leds: dict[int, list[int]] = {}
+    # a list of LEDs that have entries that have been iterated over
+    seen_leds: set[int] = set([])
+    # this is true if something funky is happening with the entries
+    bad_entries: bool = False
 
-def requestSpeeds(csv_reader, direction, speed_type, key):
-    led_to_entry = {}
-    max_led_num = 0
-    bad_locations = False
-
-    # Retrieve appropriate entries from csv file
-    row_to_entry = {} # allows entry to be used as key in dictionary. See entry["internal_row_num"]
-    for row_num, entry in enumerate(csv_reader):
+    # populate ret and ref_to_leds with entries with no reference and with
+    # a reference, respectively
+    for entry in csv_reader:
         if entry['Direction'] == "North" and direction == Direction.SOUTH:
             continue
         if entry['Direction'] == "South" and direction == Direction.NORTH:
             continue
-        if int(entry['LED Number']) in led_to_entry:
-            log(f"Duplicate LED Number encountered: {int(entry['LED Number'])}")
-            bad_locations = True
-        else:
-            led_to_entry[int(entry['LED Number'])] = entry
-            row_to_entry[row_num] = entry
-            entry["internal_row_num"] = row_num # allows entry to be used as key in dictionary
-        max_led_num = max(max_led_num, int(entry['LED Number']))
-
-    # Search for missing LED numbers
-    for led_num in range(1, max_led_num + 1):
-        if led_num not in led_to_entry:
-            log(f"Missing LED Number: {led_num}")
-            bad_locations = True
-
-    if bad_locations:
-        log("Aborting due to bad location entries in input file.")
-        return False
-
-    # Decode entries that reference other LED numbers
-    entry_to_leds = decodeReferences(led_to_entry, max_led_num)
-    if entry_to_leds == None:
-        log("Aborting due to bad references in input file.")
-        return False                
-
-    # Iterate through LED entries and retrieve data
-    speeds = [-1] * (max_led_num + 1)
-    for entry_row_num, leds in entry_to_leds.items():
-        entry = row_to_entry[entry_row_num]
-        speed = requestData(entry, speed_type, key)
-        if speed == -1:
-            log(f"No speed data found for LEDs {leds}")
+        led_num = int(entry['LED Number'])
+        if led_num in seen_leds:
+            log(f"Duplicate LED Number encountered: {led_num}")
+            bad_entries = True
             continue
+        seen_leds.add(led_num)
+        reference = getReference(entry)
+        if reference is None or reference == 0:
+            ret.append((entry, [led_num]))
+            continue
+        # deal with reference if present
+        if ref_to_leds.get(reference) is None:
+            ref_to_leds[reference] = [led_num]
+        else:
+            ref_to_leds[reference].append(led_num)
+    
+    # runtime checks on entries
+    if bad_entries:
+        raise RuntimeError(f"Duplicate {direction} entries found in csv file")
+    if not allow_missing:
+        prev_led: int | None = None
+        for num in sorted(seen_leds):
+            if prev_led is None:
+                prev_led = num
+                continue
+            if num != prev_led + 1:
+                bad_entries = True
+                prev_led += 1
+                while prev_led != num:
+                    log(f"missing {direction} LED {prev_led} in csv file")
+                    prev_led += 1
+            prev_led = num
+    if bad_entries:
+        raise RuntimeError(f"Missing {direction} entries in csv file")
+    
+    # add referenced LEDs to ret list
+    # note that all entries in ret are no-reference entries
+    for entry, leds in ret:
+        ref_num = int(entry['LED Number'])
+        if not ref_num in ref_to_leds:
+            continue
+        referencing_leds = ref_to_leds[ref_num]
+        leds.extend(referencing_leds)
+        del ref_to_leds[ref_num]
+    
+    # check for bad entries, which are the only remaining in ref_to_leds
+    for ref_num, leds in ref_to_leds.items():
+        bad_entries = True
+        log(f"Entries {direction} LEDs {leds} reference {ref_num} invalidly")
+    if bad_entries:
+        raise RuntimeError(f"Bad {direction} references in csv file")
+    
+    return ret
 
+def requestSpeeds(entry_led_pairs: list[tuple[dict[Any, str | Any], list[int]]],
+                  speed_type: SpeedType,
+                  api_key: str,
+                  fail_with_zero: bool=True
+                  ) -> list[tuple[int, int]]:
+    """
+    Performs TomTom API requests for each provided entry, first attempting to 
+    use the Vector Flow Tiles endpoint then defaulting to the Flow Segment Data
+    endpoint if it fails. Creates a list of tuples containing an LED number and
+    speed pair.
+
+    Note that if an entry freeway is \"Special\", then -2 is returned for the
+    speed.
+
+    If an API request fails, it is logged. Then, pairs with the corresponding
+    LED numbers are created with -1 speed if fail_with_zero is true. If
+    fail_with_zero is false, then pairs are created with -1 speed. A 0 speed
+    is necessary for pre-V1_0_5 firmware versions, which require binary arrays
+    of unsigned integers.
+
+    Parameters:
+        entry_led_pairs: A list returned from pruneCSVEntries containing tuples
+            of entry, led list pairs. Each pair defines an API request that must
+            be made and the LEDs to update based on the result.
+        speed_type: The type of data to retrieve from TomTom.
+        api_key: The API key to use when making API requests.
+        fail_with_zero: Whether to create a pair with a speed of 0 or -1 when an 
+            API request fails. If true, 0 is added to the pair, otherwise -1.
+
+    Returns:
+        A list of tuples containing an LED number and speed pair.
+    """
+    if entry_led_pairs is None:
+        raise(TypeError, "entry_led_pairs argument is None")
+    if speed_type is SpeedType.UNKNOWN:
+        raise(ValueError, "speed_type argument is UNKNOWN")
+    if api_key == "":
+        raise(ValueError, "api_key argument is an empty string")
+
+    ret: list[tuple[int, int]] = []
+    for entry, leds in entry_led_pairs:
+        if entry[FREEWAY_KEY] == "Special":
+            log(f"Found special entry for LEDs {leds} from LED number {entry[LED_NUM_KEY]} entry")
+            speed = -2 # indicates special entry
+        else:
+            speed = requestTileData(entry, api_key)
+            if speed == -1: # indicates error
+                speed = requestSegmentData(entry, speed_type, api_key)
+            if speed == -1 and fail_with_zero:
+                log(f"failed to retrieve speed for LED {entry[LED_NUM_KEY]}, setting to 0")
+                speed = 0
+            log(f"Retrieved speed {speed} for LEDs {leds} from LED number {entry[LED_NUM_KEY]} entry")
         for led_num in leds:
-            speeds[led_num] = speed
-        log(f"Retrieved speed {speed} for LEDs {leds}")
+            ret.append((led_num, speed))
+    return ret
 
-    # Replace negative values with 0
-    speeds = [0 if speed < 0 else speed for speed in speeds]
-    return speeds
+def createAddendum(addendum_folder, version, prev_addendum, addendum_data_file, direction, speed_type, api_key):
+    '''Creates a new file in the addendum_folder that
+    specifies changes or additions to an original file,
+    prev_addendum. prev_addendum can either point to another
+    addendum file, .add, or the original file. addendum_data_file
+    is the led location data that will be used in creating the addendum.
+
+    The addendum_key is a key used to generate the addendum verification
+    string, which is then used by the device requesting data to verify
+    that interpretation of the decoded data is correct. This key is specific
+    to the device version specified and must be agreed upon between device
+    firmware and the server; this ensures that only this version of device and
+    firmware is using this addendum file. This key is generated based on the
+    mapping of openLR numbers to LED numbers used in the addendum. This means
+    that the device will only accept the data if the openLR numbers are what
+    it expects and the key is the same.
+    
+    Addendum metadata is the first thing in the file, marked by
+    {metadata}'\n\n' '''
+    try:
+        with open(addendum_data_file, 'r') as input_file:
+            csv_reader = csv.DictReader(input_file, dialect='excel')
+            entry_leds_pairs = pruneCSVEntries(csv_reader, direction, allow_missing=True)
+        speeds = requestSpeeds(entry_leds_pairs, speed_type, api_key, fail_with_zero=False)
+
+        log(f"Addendum Speeds: {speeds}")
+
+        addendum_filename = addendum_folder + "/" + version + ".add"
+        ensure_folder_exists(addendum_folder, LOG_FILE)
+        ensure_file_exists(addendum_filename, LOG_FILE, "")
+        with open(addendum_filename, 'w', newline='') as output_file:
+            output_file.write(f"{{{prev_addendum}}}\n\n")
+            csv_writer = csv.writer(output_file, dialect='excel')
+            csv_writer.writerows(speeds)
+    except Exception as e:
+        log(e)
+        return
 
 # ================================
 # Main Function
 # ================================
 
-def main(speed_type, direction, key, csv_filename, output_filename, output_filename_2):
+def main(speed_type, direction, api_key, csv_filename, output_filename, output_filename_2=None):
     if direction == Direction.UNKNOWN:
         log("Invalid direction provided. Try North or South.")
         return False
-
+    # Update main file
     try:
         with open(csv_filename, 'r') as input_file:
             csv_reader = csv.DictReader(input_file, dialect='excel')
-            speeds = requestSpeeds(csv_reader, direction, speed_type, key)
+            entry_leds_pairs = pruneCSVEntries(csv_reader, direction, allow_missing=False)
+        speeds = requestSpeeds(entry_leds_pairs, speed_type, api_key, fail_with_zero=False)
+        speeds = sorted(speeds, key=lambda ele: ele[0])
 
-            # Debug log to check the contents of current_speeds
-            log(f"Final current_speeds: {speeds}")
+        # Debug log to check the contents of current_speeds
+        log(f"Speeds: {speeds}")
 
-            # Save the results to the output file in binary format
-            byte_array = bytearray(speeds)
-            log(f"Writing byte array of length {len(byte_array)} to {output_filename}")
-            with open(output_filename, 'wb') as out_file:
+        # Save the results to the output file in CSV format
+        log(f"Writing csv file of length {len(speeds)} to {output_filename}")
+        with open(output_filename, 'w', newline='') as out_file:
+            csv_writer = csv.writer(out_file, dialect='excel')
+            csv_writer.writerows(speeds)
+
+        # Save the results to the secondary output file in binary format
+        raw_speeds = [speed[1] for speed in sorted(speeds, key=lambda ele: ele[0])] # keep sort to be extra sure
+        raw_speeds = [speed if speed != -1 else 0 for speed in raw_speeds] # backwards compatibility
+        raw_speeds.insert(0, 0) # backwards compatibility
+        byte_array = bytearray(raw_speeds)
+        log(f"Writing byte array of length {len(byte_array)} to {output_filename_2}")
+        try:
+            with open(output_filename_2, 'wb') as out_file:
                 out_file.write(byte_array)
-            
-            # Save the results to second output file if present (for backwards compatability)
-            if output_filename_2 is not None:
-                log(f"Writing byte array of length {len(byte_array)} to {output_filename_2}")
-                with open(output_filename_2, 'wb') as out_file:
-                    out_file.write(byte_array)
+        except Exception as e:
+            log(f"Error writing byte array: {e}")
 
-            log(f"Successfully completed request for {direction.name}")
-            return True
+        # Update version addendums
+        log("Updating addendum V2_0_0")
+        addendum_folder_name = output_filename + "_add"
+        createAddendum(addendum_folder_name, "V2_0_0", output_filename, V2_0_0_ADD_INPUT_CSV, direction, speed_type, api_key)
 
+        log(f"Successfully completed request for {direction.name}")
+        return True
     except Exception as e:
         log(f"Error processing {direction.name} direction: {e}")
         return False
-
+    
 # ================================
 # Run Requests for Both Directions
 # ================================
 
 if __name__ == "__main__":
-    if len(sys.argv) < 1:
+    if len(sys.argv) < 1 and not USE_FAKE_KEY:
         print("Incorret usage: script api_key [typical]")
-    api_key = sys.argv[1]
-    if len(sys.argv) > 2 and sys.argv[2] == "typical":
-        log("retrieving typical speeds")
-        main(SpeedType.TYPICAL, Direction.NORTH, api_key, INPUT_CSV, OUTPUT_NORTH_TYPICAL, None)
-        main(SpeedType.TYPICAL, Direction.SOUTH, api_key, INPUT_CSV, OUTPUT_SOUTH_TYPICAL, None)
+        exit()
+    if USE_FAKE_KEY:
+        api_key = "fakekey"
     else:
-        log("retrieving current speeds")
+        api_key = sys.argv[1]
+
+    # Ensure the log file exists
+    ensure_file_exists(LOG_FILE, LOG_FILE, "")
+
+    # Ensure output files exist
+    ensure_file_exists(OUTPUT_NORTH, LOG_FILE, "")
+    ensure_file_exists(OUTPUT_NORTH_2, LOG_FILE, "")
+    ensure_file_exists(OUTPUT_SOUTH, LOG_FILE, "")
+    ensure_file_exists(OUTPUT_SOUTH_2, LOG_FILE, "")
+
+    if len(sys.argv) > 2 and sys.argv[2] == "typical":
+        log("")
+        log("Retrieving typical Northbound speeds")
+        log("")
+        main(SpeedType.TYPICAL, Direction.NORTH, api_key, INPUT_CSV, OUTPUT_NORTH_TYPICAL)
+        log("")
+        log("Retrieving typical Northbound speeds")
+        log("")
+        main(SpeedType.TYPICAL, Direction.SOUTH, api_key, INPUT_CSV, OUTPUT_SOUTH_TYPICAL)
+    else:
+        log("")
+        log("Retrieving current Northbound speeds")
+        log("")
         main(SpeedType.CURRENT, Direction.NORTH, api_key, INPUT_CSV, OUTPUT_NORTH, OUTPUT_NORTH_2)
+        log("")
+        log("Retrieving current Southbound speeds")
+        log("")
         main(SpeedType.CURRENT, Direction.SOUTH, api_key, INPUT_CSV, OUTPUT_SOUTH, OUTPUT_SOUTH_2)
