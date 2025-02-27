@@ -534,14 +534,20 @@ def main(speed_type, direction, api_key, csv_filename, output_relpath, output_2_
     # build filepaths
     output_folder_filepath = DOMAIN_PATH + "/" + OUTPUT_FOLDER_RELPATH
     output_filepath = output_folder_filepath + "/" + output_relpath
-    output_2_filepath = output_folder_filepath + "/" + output_2_relpath
     output_addendum_folder = output_folder_filepath + "/" + output_relpath + "_add"
     addendum_V2_0_0_prevURL = DOMAIN_NAME + "/" + OUTPUT_FOLDER_RELPATH + "/" + output_relpath
+
+    if output_2_relpath == None:
+        output_2_filepath = None
+    else:
+        output_2_filepath = output_folder_filepath + "/" + output_2_relpath
 
     # Ensure output files exist
     ensure_folder_exists(output_folder_filepath, LOG_FILE)
     ensure_file_exists(output_filepath, LOG_FILE, "")
-    ensure_file_exists(output_2_filepath, LOG_FILE, "")
+
+    if output_2_filepath != None:
+        ensure_file_exists(output_2_filepath, LOG_FILE, "")
 
     # Update main file
     try:
@@ -561,16 +567,17 @@ def main(speed_type, direction, api_key, csv_filename, output_relpath, output_2_
             csv_writer.writerows(speeds)
 
         # Save the results to the secondary output file in binary format
-        raw_speeds = [speed[1] for speed in sorted(speeds, key=lambda ele: ele[0])] # keep sort to be extra sure
-        raw_speeds = [speed if speed != -1 else 0 for speed in raw_speeds] # backwards compatibility
-        raw_speeds.insert(0, 0) # backwards compatibility
-        byte_array = bytearray(raw_speeds)
-        log(f"Writing byte array of length {len(byte_array)} to {output_2_filepath}")
-        try:
-            with open(output_2_filepath, 'wb') as out_file:
-                out_file.write(byte_array)
-        except Exception as e:
-            log(f"Error writing byte array: {e}")
+        if output_2_filepath != None:
+            raw_speeds = [speed[1] for speed in sorted(speeds, key=lambda ele: ele[0])] # keep sort to be extra sure
+            raw_speeds = [speed if speed != -1 else 0 for speed in raw_speeds] # backwards compatibility
+            raw_speeds.insert(0, 0) # backwards compatibility
+            byte_array = bytearray(raw_speeds)
+            log(f"Writing byte array of length {len(byte_array)} to {output_2_filepath}")
+            try:
+                with open(output_2_filepath, 'wb') as out_file:
+                    out_file.write(byte_array)
+            except Exception as e:
+                log(f"Error writing byte array: {e}")
 
         # Update version addendums
         log("Updating addendum V2_0_0")
