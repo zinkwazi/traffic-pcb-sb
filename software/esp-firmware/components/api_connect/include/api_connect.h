@@ -17,12 +17,14 @@
 #define API_ERR_REMOVE_DATA 0x52713
 
 struct LEDData {
-    uint32_t ledNum;
-    uint32_t speed;
+    uint16_t ledNum;
+    /* The speed of the LED, with negative values specifying special LED types.*/
+    int8_t speed;
 };
 
 typedef struct LEDData LEDData;
 
 esp_err_t getServerSpeeds(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client, char *URL, int retryNum);
+esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client, char *fileURL, int retryNum);
 
 #endif /* API_CONNECT_H_ */

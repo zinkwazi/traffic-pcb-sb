@@ -158,7 +158,7 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, LEDData typicalSpeeds[], u
     *aborted = false;
     /* connect to API and query speeds */
     char *URL = (dir == NORTH) ? URL_DATA_CURRENT_NORTH : URL_DATA_CURRENT_SOUTH; 
-    if (getServerSpeeds(speeds, MAX_NUM_LEDS, client, URL, API_RETRY_CONN_NUM) != ESP_OK)
+    if (getServerSpeedsWithAddendums(speeds, MAX_NUM_LEDS, client, URL, API_RETRY_CONN_NUM) != ESP_OK)
     {
         /* failed to get typical north speeds from server, search nvs */
         ESP_LOGW(TAG, "failed to retrieve segment speeds from server");
@@ -183,21 +183,21 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, LEDData typicalSpeeds[], u
 
     switch (dir) {
         case NORTH:
-            for (int ndx = MAX_NUM_LEDS - 1; ndx > 0; ndx--) {
-                if (ndx >= MAX_NUM_LEDS) {
-                    ESP_LOGW(TAG, "retrieving invalid index %d", ndx);
-                    continue;
-                }
-                if (ndx >= typicalSpeedsLen || typicalSpeeds[ndx].speed == 0) {
-                    ESP_LOGW(TAG, "skipping LED %d update due to lack of typical speed", ndx);
+            for (int ndx = MAX_NUM_LEDS - 1; ndx >= 0; ndx--) {
+                if (ndx >= typicalSpeedsLen || typicalSpeeds[ndx].speed <= 0) {
+                    ESP_LOGW(TAG, "skipping LED %d update due to lack of typical speed", speeds[ndx].ledNum);
                     continue;
                 }
                 if (ndx + 1 != speeds[ndx].ledNum) {
-                    ESP_LOGW(TAG, "skipping bad index %d, with LED num %lu", ndx, speeds[ndx].ledNum);
+                    ESP_LOGW(TAG, "skipping bad index %d, with LED num %u", ndx, speeds[ndx].ledNum);
                     continue;
                 }
                 if (ndx + 1 != typicalSpeeds[ndx].ledNum) {
-                    ESP_LOGW(TAG, "skipping bad index %d, with typical LED num %lu", ndx, typicalSpeeds[ndx].ledNum);
+                    ESP_LOGW(TAG, "skipping bad index %d, with typical LED num %u", ndx, typicalSpeeds[ndx].ledNum);
+                    continue;
+                }
+                if (speeds[ndx].speed < 0) {
+                    ESP_LOGW(TAG, "skipping led %u for led speed %d", speeds[ndx].ledNum, speeds[ndx].speed);
                     continue;
                 }
                 uint32_t percentFlow = (100 * speeds[ndx].speed) / typicalSpeeds[ndx].speed;
@@ -210,24 +210,23 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, LEDData typicalSpeeds[], u
             }
             break;
         case SOUTH:
-            for (int ndx = 1; ndx < MAX_NUM_LEDS; ndx++) {
-                if (ndx >= MAX_NUM_LEDS) {
-                    ESP_LOGW(TAG, "retrieving invalid index %d", ndx);
-                    continue;
-                }
-                if (ndx >= typicalSpeedsLen || typicalSpeeds[ndx].speed == 0) {
-                    ESP_LOGW(TAG, "skipping LED %d update due to lack of typical speed", ndx);
+            for (int ndx = 0; ndx < MAX_NUM_LEDS; ndx++) {
+                if (ndx >= typicalSpeedsLen || typicalSpeeds[ndx].speed <= 0) {
+                    ESP_LOGW(TAG, "skipping LED %d update due to lack of typical speed", speeds[ndx].ledNum);
                     continue;
                 }
                 if (ndx + 1 != speeds[ndx].ledNum) {
-                    ESP_LOGW(TAG, "skipping bad index %d, with LED num %lu", ndx, speeds[ndx].ledNum);
+                    ESP_LOGW(TAG, "skipping bad index %d, with LED num %u", ndx, speeds[ndx].ledNum);
                     continue;
                 }
                 if (ndx + 1 != typicalSpeeds[ndx].ledNum) {
-                    ESP_LOGW(TAG, "skipping bad index %d, with typical LED num %lu", ndx, typicalSpeeds[ndx].ledNum);
+                    ESP_LOGW(TAG, "skipping bad index %d, with typical LED num %u", ndx, typicalSpeeds[ndx].ledNum);
                     continue;
                 }
-
+                if (speeds[ndx].speed < 0) {
+                    ESP_LOGW(TAG, "skipping led %u for led speed %d", speeds[ndx].ledNum, speeds[ndx].speed);
+                    continue;
+                }
                 uint32_t percentFlow = (100 * speeds[ndx].speed) / typicalSpeeds[ndx].speed;
                 updateLED(I2CQueue, speeds[ndx].ledNum, percentFlow);
                 if (mustAbort(I2CQueue, dotQueue)) {
@@ -382,7 +381,7 @@ void vWorkerTask(void *pvParameters) {
         typicalSpeedsSouth[i].ledNum = i + 1;
         typicalSpeedsSouth[i].speed = DEFAULT_TYPICAL_SPEED;
     }
-    if (getServerSpeeds(typicalSpeedsNorth, MAX_NUM_LEDS, client, 
+    if (getServerSpeedsWithAddendums(typicalSpeedsNorth, MAX_NUM_LEDS, client, 
                               URL_DATA_TYPICAL_NORTH, 
                               API_RETRY_CONN_NUM) != ESP_OK) 
     {
@@ -400,7 +399,7 @@ void vWorkerTask(void *pvParameters) {
             ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
         }
     }
-    if (getServerSpeeds(typicalSpeedsSouth, MAX_NUM_LEDS, client,
+    if (getServerSpeedsWithAddendums(typicalSpeedsSouth, MAX_NUM_LEDS, client,
                               URL_DATA_TYPICAL_SOUTH,
                               API_RETRY_CONN_NUM) != ESP_OK) 
     {
