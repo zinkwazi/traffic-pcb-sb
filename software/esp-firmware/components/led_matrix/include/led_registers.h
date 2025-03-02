@@ -2,7 +2,7 @@
  * led_registers.h
  * 
  * This is a layer of indirection to particular led_register version
- * header files which includes the correct header for the version of
+ * header files, which includes the correct header for the version of
  * hardware the build is targeting.
  */
 
@@ -19,7 +19,9 @@
 
 /* new versions should explicitly specify which header file they need */
 
-/** @brief The maximum number of LEDs that can be present on the device. */
-#define MAX_NUM_LEDS sizeof(LEDNumToReg) / sizeof(LEDNumToReg[0])
+/** @brief The maximum number of LEDs that can be present on the device.
+ *         This should be equal to MAX_NUM_LEDS_COORD.
+ */
+#define MAX_NUM_LEDS_REG sizeof(LEDNumToReg) / sizeof(LEDNumToReg[0])
 
 #endif /* LED_REGISTERS_H_ */

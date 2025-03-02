@@ -118,7 +118,7 @@ TEST_CASE("nextCSVEntryFromMark_fullFile", "[api_connect]")
         /* load next response block into circular buffer */
         circ_err = circularBufferStore(&circBuf, (char *) &test_data_start[currDataNdx], TEST_BUF_LEN);
         if (circ_err == CIRC_LOST_MARK) {
-            snprintf(message, TEST_MSG_LEN, "lost mark after ledNum: %lu", expectedLED.ledNum);
+            snprintf(message, TEST_MSG_LEN, "lost mark after ledNum: %u", expectedLED.ledNum);
             TEST_MESSAGE(message);
         }
         TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
@@ -139,19 +139,19 @@ TEST_CASE("nextCSVEntryFromMark_fullFile", "[api_connect]")
                     expectedLED.ledNum != result.ledNum ||
                     expectedLED.speed != result.speed))
             {
-                snprintf(message, TEST_MSG_LEN, "expected ledNum: %lu", expectedLED.ledNum);
+                snprintf(message, TEST_MSG_LEN, "expected ledNum: %u", expectedLED.ledNum);
                 TEST_MESSAGE(message);
-                snprintf(message, TEST_MSG_LEN, "expected speed: %lu", expectedLED.speed);
+                snprintf(message, TEST_MSG_LEN, "expected speed: %d", expectedLED.speed);
                 TEST_MESSAGE(message);
             }
             if (err == API_ERR_REMOVE_DATA) {
                 snprintf(message, TEST_MSG_LEN, "found remove data command");
                 TEST_MESSAGE(message);
-                snprintf(message, TEST_MSG_LEN, "expected ledNum: %lu", expectedLED.ledNum);
+                snprintf(message, TEST_MSG_LEN, "expected ledNum: %u", expectedLED.ledNum);
                 TEST_MESSAGE(message);
-                snprintf(message, TEST_MSG_LEN, "result ledNum: %lu", result.ledNum);
+                snprintf(message, TEST_MSG_LEN, "result ledNum: %u", result.ledNum);
                 TEST_MESSAGE(message);
-                snprintf(message, TEST_MSG_LEN, "result speed: %lu", result.speed);
+                snprintf(message, TEST_MSG_LEN, "result speed: %d", result.speed);
                 TEST_MESSAGE(message);
             }
             TEST_ASSERT_EQUAL(expectedLED.ledNum, result.ledNum);

@@ -21,6 +21,7 @@
 #include "main_types.h"
 #include "led_registers.h"
 #include "api_connect.h"
+#include "animations.h"
 
 /* LED color configuration */
 #define SLOW_RED (0xFF)
@@ -75,7 +76,7 @@ void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t percentFlow) 
 
 esp_err_t getSpeedsFromNvs(LEDData *speeds, uint32_t speedsLen, Direction dir, bool currentSpeeds) {
     nvs_handle_t nvsHandle;
-    size_t size = MAX_NUM_LEDS;
+    size_t size = MAX_NUM_LEDS_REG;
     if (nvs_open(WORKER_NVS_NAMESPACE, NVS_READONLY, &nvsHandle) != ESP_OK) {
         return ESP_FAIL;
     }
@@ -153,16 +154,16 @@ bool mustAbort(QueueHandle_t I2CQueue, QueueHandle_t dotQueue) {
 }
 
 esp_err_t handleRefresh(bool *aborted, Direction dir, LEDData typicalSpeeds[], uint32_t typicalSpeedsLen, QueueHandle_t I2CQueue, QueueHandle_t dotQueue, esp_http_client_handle_t client, ErrorResources *errRes, bool prevConnError) {
-    static LEDData speeds[MAX_NUM_LEDS];
+    static LEDData speeds[MAX_NUM_LEDS_REG];
     esp_err_t ret = ESP_OK;
     *aborted = false;
     /* connect to API and query speeds */
     char *URL = (dir == NORTH) ? URL_DATA_CURRENT_NORTH : URL_DATA_CURRENT_SOUTH; 
-    if (getServerSpeedsWithAddendums(speeds, MAX_NUM_LEDS, client, URL, API_RETRY_CONN_NUM) != ESP_OK)
+    if (getServerSpeedsWithAddendums(speeds, MAX_NUM_LEDS_REG, client, URL, API_RETRY_CONN_NUM) != ESP_OK)
     {
         /* failed to get typical north speeds from server, search nvs */
         ESP_LOGW(TAG, "failed to retrieve segment speeds from server");
-        if (getSpeedsFromNvs(speeds, MAX_NUM_LEDS, dir, true) != ESP_OK)
+        if (getSpeedsFromNvs(speeds, MAX_NUM_LEDS_REG, dir, true) != ESP_OK)
         {
             throwFatalError(errRes, false);
         }
@@ -176,32 +177,41 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, LEDData typicalSpeeds[], u
             resolveNoConnError(errRes, false, false);
         }
         ESP_LOGI(TAG, "updating segment speeds in non-volatile storage");
-        if (setSpeedsToNvs(speeds, MAX_NUM_LEDS, dir, true) != ESP_OK) {
+        if (setSpeedsToNvs(speeds, MAX_NUM_LEDS_REG, dir, true) != ESP_OK) {
             ESP_LOGW(TAG, "failed to update segment speeds in non-volatile storage");
         }
     }
-
+    int32_t ledArr[MAX_NUM_LEDS_REG];
+    ret = sortLEDsByDistanceFromDiagLine(ledArr, MAX_NUM_LEDS_REG);
+    if (ret != ESP_OK) {
+        return ESP_FAIL;
+    }
+    
     switch (dir) {
         case NORTH:
-            for (int ndx = MAX_NUM_LEDS - 1; ndx >= 0; ndx--) {
-                if (ndx >= typicalSpeedsLen || typicalSpeeds[ndx].speed <= 0) {
-                    ESP_LOGW(TAG, "skipping LED %d update due to lack of typical speed", speeds[ndx].ledNum);
+            for (int ndx = MAX_NUM_LEDS_REG - 1; ndx >= 0; ndx--) {
+                int ledNum = ledArr[ndx];
+                if (ledNum == 0) {
+                    continue; // 0 num is out of bounds
+                }
+                if (ledNum >= typicalSpeedsLen || typicalSpeeds[ledNum - 1].speed <= 0) {
+                    ESP_LOGW(TAG, "skipping LED %d update due to lack of typical speed", speeds[ledNum - 1].ledNum);
                     continue;
                 }
-                if (ndx + 1 != speeds[ndx].ledNum) {
-                    ESP_LOGW(TAG, "skipping bad index %d, with LED num %u", ndx, speeds[ndx].ledNum);
+                if (ledNum != speeds[ledNum - 1].ledNum) {
+                    ESP_LOGW(TAG, "skipping bad index %d, with LED num %u", ledNum, speeds[ledNum - 1].ledNum);
                     continue;
                 }
-                if (ndx + 1 != typicalSpeeds[ndx].ledNum) {
-                    ESP_LOGW(TAG, "skipping bad index %d, with typical LED num %u", ndx, typicalSpeeds[ndx].ledNum);
+                if (ledNum != typicalSpeeds[ledNum - 1].ledNum) {
+                    ESP_LOGW(TAG, "skipping bad index %d, with typical LED num %u", ledNum, typicalSpeeds[ledNum - 1].ledNum);
                     continue;
                 }
-                if (speeds[ndx].speed < 0) {
-                    ESP_LOGW(TAG, "skipping led %u for led speed %d", speeds[ndx].ledNum, speeds[ndx].speed);
+                if (speeds[ledNum - 1].speed < 0) {
+                    ESP_LOGW(TAG, "skipping led %u for led speed %d", speeds[ledNum - 1].ledNum, speeds[ledNum - 1].speed);
                     continue;
                 }
-                uint32_t percentFlow = (100 * speeds[ndx].speed) / typicalSpeeds[ndx].speed;
-                updateLED(I2CQueue, speeds[ndx].ledNum, percentFlow);
+                uint32_t percentFlow = (100 * speeds[ledNum - 1].speed) / typicalSpeeds[ledNum - 1].speed;
+                updateLED(I2CQueue, speeds[ledNum - 1].ledNum, percentFlow);
                 if (mustAbort(I2CQueue, dotQueue)) {
                     *aborted = true;
                     return ret;
@@ -210,25 +220,29 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, LEDData typicalSpeeds[], u
             }
             break;
         case SOUTH:
-            for (int ndx = 0; ndx < MAX_NUM_LEDS; ndx++) {
-                if (ndx >= typicalSpeedsLen || typicalSpeeds[ndx].speed <= 0) {
-                    ESP_LOGW(TAG, "skipping LED %d update due to lack of typical speed", speeds[ndx].ledNum);
+            for (int ndx = 0; ndx < MAX_NUM_LEDS_REG; ndx++) {
+                int ledNum = ledArr[ndx];
+                if (ledNum == 0) {
+                    continue; // 0 num is out of bounds
+                }
+                if (ledNum >= typicalSpeedsLen || typicalSpeeds[ledNum - 1].speed <= 0) {
+                    ESP_LOGW(TAG, "skipping LED %d update due to lack of typical speed", speeds[ledNum - 1].ledNum);
                     continue;
                 }
-                if (ndx + 1 != speeds[ndx].ledNum) {
-                    ESP_LOGW(TAG, "skipping bad index %d, with LED num %u", ndx, speeds[ndx].ledNum);
+                if (ledNum != speeds[ledNum - 1].ledNum) {
+                    ESP_LOGW(TAG, "skipping bad index %d, with LED num %u", ledNum, speeds[ledNum - 1].ledNum);
                     continue;
                 }
-                if (ndx + 1 != typicalSpeeds[ndx].ledNum) {
-                    ESP_LOGW(TAG, "skipping bad index %d, with typical LED num %u", ndx, typicalSpeeds[ndx].ledNum);
+                if (ledNum != typicalSpeeds[ledNum - 1].ledNum) {
+                    ESP_LOGW(TAG, "skipping bad index %d, with typical LED num %u", ledNum, typicalSpeeds[ledNum - 1].ledNum);
                     continue;
                 }
-                if (speeds[ndx].speed < 0) {
-                    ESP_LOGW(TAG, "skipping led %u for led speed %d", speeds[ndx].ledNum, speeds[ndx].speed);
+                if (speeds[ledNum - 1].speed < 0) {
+                    ESP_LOGW(TAG, "skipping led %u for led speed %d", speeds[ledNum].ledNum, speeds[ledNum - 1].speed);
                     continue;
                 }
-                uint32_t percentFlow = (100 * speeds[ndx].speed) / typicalSpeeds[ndx].speed;
-                updateLED(I2CQueue, speeds[ndx].ledNum, percentFlow);
+                uint32_t percentFlow = (100 * speeds[ledNum - 1].speed) / typicalSpeeds[ledNum - 1].speed;
+                updateLED(I2CQueue, speeds[ledNum - 1].ledNum, percentFlow);
                 if (mustAbort(I2CQueue, dotQueue)) {
                     *aborted = true;
                     return ret;
@@ -373,15 +387,15 @@ void vWorkerTask(void *pvParameters) {
 
     /* retrieve typical speeds from the server */
     ESP_LOGI(TAG, "retrieving typical speeds from server");
-    static LEDData typicalSpeedsNorth[MAX_NUM_LEDS];
-    static LEDData typicalSpeedsSouth[MAX_NUM_LEDS];
-    for (int i = 0; i < MAX_NUM_LEDS; i++) {
+    static LEDData typicalSpeedsNorth[MAX_NUM_LEDS_REG];
+    static LEDData typicalSpeedsSouth[MAX_NUM_LEDS_REG];
+    for (int i = 0; i < MAX_NUM_LEDS_REG; i++) {
         typicalSpeedsNorth[i].ledNum = i + 1;
         typicalSpeedsNorth[i].speed = DEFAULT_TYPICAL_SPEED;
         typicalSpeedsSouth[i].ledNum = i + 1;
         typicalSpeedsSouth[i].speed = DEFAULT_TYPICAL_SPEED;
     }
-    if (getServerSpeedsWithAddendums(typicalSpeedsNorth, MAX_NUM_LEDS, client, 
+    if (getServerSpeedsWithAddendums(typicalSpeedsNorth, MAX_NUM_LEDS_REG, client, 
                               URL_DATA_TYPICAL_NORTH, 
                               API_RETRY_CONN_NUM) != ESP_OK) 
     {
@@ -392,14 +406,14 @@ void vWorkerTask(void *pvParameters) {
         {
             throwFatalError(res->errRes, false);
         }
-        getSpeedsFromNvs(typicalSpeedsNorth, MAX_NUM_LEDS, NORTH, false); // don't care if this fails
+        getSpeedsFromNvs(typicalSpeedsNorth, MAX_NUM_LEDS_REG, NORTH, false); // don't care if this fails
     } else {
         ESP_LOGI(TAG, "setting typical north speeds in non-volatile storage");
-        if (setSpeedsToNvs(typicalSpeedsNorth, MAX_NUM_LEDS, NORTH, false) != ESP_OK) {
+        if (setSpeedsToNvs(typicalSpeedsNorth, MAX_NUM_LEDS_REG, NORTH, false) != ESP_OK) {
             ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
         }
     }
-    if (getServerSpeedsWithAddendums(typicalSpeedsSouth, MAX_NUM_LEDS, client,
+    if (getServerSpeedsWithAddendums(typicalSpeedsSouth, MAX_NUM_LEDS_REG, client,
                               URL_DATA_TYPICAL_SOUTH,
                               API_RETRY_CONN_NUM) != ESP_OK) 
     {
@@ -410,10 +424,10 @@ void vWorkerTask(void *pvParameters) {
         {
             throwFatalError(res->errRes, false);
         }
-        getSpeedsFromNvs(typicalSpeedsSouth, MAX_NUM_LEDS, SOUTH, false); // don't care if this fails
+        getSpeedsFromNvs(typicalSpeedsSouth, MAX_NUM_LEDS_REG, SOUTH, false); // don't care if this fails
     } else {
         ESP_LOGI(TAG, "setting typical south speeds in non-volatile storage");
-        if (setSpeedsToNvs(typicalSpeedsNorth, MAX_NUM_LEDS, SOUTH, false) != ESP_OK) {
+        if (setSpeedsToNvs(typicalSpeedsNorth, MAX_NUM_LEDS_REG, SOUTH, false) != ESP_OK) {
             ESP_LOGW(TAG, "failed to set typical speeds in non-volatile storage");
         }
     }
@@ -433,7 +447,7 @@ void vWorkerTask(void *pvParameters) {
         switch (dot.type) {
             case REFRESH_NORTH:
                 ESP_LOGI(TAG, "Refreshing North...");
-                if (handleRefresh(&prevCommandAborted, NORTH, typicalSpeedsNorth, MAX_NUM_LEDS, res->I2CQueue, res->dotQueue, client, res->errRes, connError) != ESP_OK) {
+                if (handleRefresh(&prevCommandAborted, NORTH, typicalSpeedsNorth, MAX_NUM_LEDS_REG, res->I2CQueue, res->dotQueue, client, res->errRes, connError) != ESP_OK) {
                     esp_http_client_cleanup(client);
                     connError = true;
                     client = esp_http_client_init(&httpConfig);
@@ -443,7 +457,7 @@ void vWorkerTask(void *pvParameters) {
                 break;
             case REFRESH_SOUTH:
                 ESP_LOGI(TAG, "Refreshing South...");
-                if (handleRefresh(&prevCommandAborted, SOUTH, typicalSpeedsSouth, MAX_NUM_LEDS, res->I2CQueue, res->dotQueue, client, res->errRes, connError) != ESP_OK) {
+                if (handleRefresh(&prevCommandAborted, SOUTH, typicalSpeedsSouth, MAX_NUM_LEDS_REG, res->I2CQueue, res->dotQueue, client, res->errRes, connError) != ESP_OK) {
                     esp_http_client_cleanup(client);
                     connError = true;
                     client = esp_http_client_init(&httpConfig);
@@ -456,7 +470,7 @@ void vWorkerTask(void *pvParameters) {
                     break;
                 }
                 ESP_LOGI(TAG, "Clearing North...");
-                for (int ndx = MAX_NUM_LEDS; ndx > 0; ndx--) {
+                for (int ndx = MAX_NUM_LEDS_REG; ndx > 0; ndx--) {
                     if (dotsSetColor(res->I2CQueue, ndx, 0x00, 0x00, 0x00, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK) {
                         ESP_LOGE(TAG, "failed to change led %d color", ndx);
                     }
@@ -469,7 +483,7 @@ void vWorkerTask(void *pvParameters) {
                     break;
                 }
                 ESP_LOGI(TAG, "Clearing South...");
-                for (int ndx = 1; ndx < MAX_NUM_LEDS + 1; ndx++) {
+                for (int ndx = 1; ndx < MAX_NUM_LEDS_REG + 1; ndx++) {
                     if (dotsSetColor(res->I2CQueue, ndx, 0x00, 0x00, 0x00, DOTS_NOTIFY, DOTS_ASYNC) != ESP_OK) {
                         ESP_LOGE(TAG, "failed to change led %d color", ndx);
                     }

@@ -264,7 +264,7 @@ void app_main(void)
     /* print firmware information */
     ESP_LOGE(TAG, "Traffic Firmware " VERBOSE_VERSION_STR);
     ESP_LOGE(TAG, "OTA binary: " FIRMWARE_UPGRADE_URL);
-    ESP_LOGE(TAG, "Max LED number: %d", MAX_NUM_LEDS - 1); // 0 is not an LED
+    ESP_LOGE(TAG, "Max LED number: %d", MAX_NUM_LEDS_REG - 1); // 0 is not an LED
     /* initialize main task state */
     state.toggle = false;
     state.first = true;

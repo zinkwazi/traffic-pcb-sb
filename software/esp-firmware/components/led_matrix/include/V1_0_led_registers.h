@@ -4,8 +4,8 @@
  * Cointains LED number to matrix register mappings for V1_0 of the hardware.
  */
 
-#ifndef V_LED_REGISTERS_H_
-#define V_LED_REGISTERS_H_
+#ifndef V_LED_REGISTERS_H_ /* shares guard with other versions */
+#define V_LED_REGISTERS_H_ /* to avoid duplicate definitions.  */
 
 #if CONFIG_HARDWARE_VERSION == 1
 
