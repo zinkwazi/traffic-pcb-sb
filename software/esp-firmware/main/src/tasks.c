@@ -182,7 +182,7 @@ esp_err_t handleRefresh(bool *aborted, Direction dir, LEDData typicalSpeeds[], u
         }
     }
     int32_t ledArr[MAX_NUM_LEDS_REG];
-    ret = sortLEDsByDistanceFromDiagLine(ledArr, MAX_NUM_LEDS_REG);
+    ret = sortLEDsByDistParabolicMap(ledArr, MAX_NUM_LEDS_REG);
     if (ret != ESP_OK) {
         return ESP_FAIL;
     }

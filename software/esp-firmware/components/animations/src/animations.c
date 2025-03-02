@@ -31,11 +31,27 @@ double signedDistanceFromDiagLine(LEDCoord coords) {
     return sin(M_PI_4) * coords.x - (cos(M_PI_4) * coords.y);
 }
 
+double signedDistanceFromDiagLineLifted(LEDCoord coords, double z) {
+    return sin(M_PI_4) * coords.x - (cos(M_PI_4) * coords.y) + z;
+}
+
 int compDistFromDiagLine(const void *c1, const void *c2) {
     LEDCoord coord1 = ((struct LEDCoordPair *) c1)->coord;
     LEDCoord coord2 = ((struct LEDCoordPair *) c2)->coord;
     double dist1 = signedDistanceFromDiagLine(coord1);
     double dist2 = signedDistanceFromDiagLine(coord2);
+    return (dist1 > dist2) - (dist1 < dist2);
+}
+
+int compDistFromParabolicMapLine(const void *c1, const void *c2) {
+    LEDCoord coord1 = ((struct LEDCoordPair *) c1)->coord;
+    LEDCoord coord2 = ((struct LEDCoordPair *) c2)->coord;
+    double z1 = sin(-M_PI_4) * coord1.x - (cos(-M_PI_4) * coord1.y);
+    z1 = z1 * z1;
+    double z2 = sin(-M_PI_4) * coord2.x - (cos(-M_PI_4) * coord2.y);    
+    z2 = z2 * z2;
+    double dist1 = signedDistanceFromDiagLineLifted(coord1, z1);
+    double dist2 = signedDistanceFromDiagLineLifted(coord2, z2);
     return (dist1 > dist2) - (dist1 < dist2);
 }
 
@@ -62,6 +78,26 @@ esp_err_t sortLEDsByDistanceFromDiagLine(int32_t ledArr[], int32_t ledArrLen) {
     }
     /* sort based on distances */
     qsort(sortedCoords, MAX_NUM_LEDS_COORDS, sizeof(struct LEDCoordPair), compDistFromDiagLine);
+    /* copy results */
+    for (int32_t i = 0 ; i < MAX_NUM_LEDS_COORDS; i++) {
+        ledArr[i] = sortedCoords[i].ledNum;
+    }
+    return ESP_OK;
+}
+
+esp_err_t sortLEDsByDistParabolicMap(int32_t ledArr[], int32_t ledArrLen) {
+    struct LEDCoordPair sortedCoords[MAX_NUM_LEDS_COORDS];
+    /* input guards */
+    if (ledArr == NULL || ledArrLen != MAX_NUM_LEDS_COORDS) {
+        return ESP_FAIL;
+    }
+    /* copy coordinates */
+    for (int32_t i = 0; i < MAX_NUM_LEDS_COORDS; i++) {
+        sortedCoords[i].ledNum = i;
+        sortedCoords[i].coord = LEDNumToCoord[i];
+    }
+    /* sort based on distances */
+    qsort(sortedCoords, MAX_NUM_LEDS_COORDS, sizeof(struct LEDCoordPair), compDistFromParabolicMapLine);
     /* copy results */
     for (int32_t i = 0 ; i < MAX_NUM_LEDS_COORDS; i++) {
         ledArr[i] = sortedCoords[i].ledNum;

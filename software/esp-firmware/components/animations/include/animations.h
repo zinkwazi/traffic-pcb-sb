@@ -13,5 +13,6 @@
 #include <stdint.h>
 
 esp_err_t sortLEDsByDistanceFromDiagLine(int32_t ledArr[], int32_t ledArrLen);
+esp_err_t sortLEDsByDistParabolicMap(int32_t ledArr[], int32_t ledArrLen);
 
 #endif /* ANIMATIONS_H_ */
