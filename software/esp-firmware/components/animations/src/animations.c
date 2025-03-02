@@ -14,6 +14,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define DIAG_LINE_ANGLE (M_PI / 3)
+#define PARABOLIC_MAP_FACTOR (0.12)
+#define MAP_OFFSET_X (-0)
+#define MAP_OFFSET_Y (-30)
+
 struct LEDCoordPair {
     int32_t ledNum;
     LEDCoord coord;
@@ -28,11 +33,15 @@ struct LEDCoordPair {
  *          to the left of the line.
  */
 double signedDistanceFromDiagLine(LEDCoord coords) {
-    return sin(M_PI_4) * coords.x - (cos(M_PI_4) * coords.y);
+    return sin(DIAG_LINE_ANGLE) * coords.x - (cos(DIAG_LINE_ANGLE) * coords.y);
 }
 
-double signedDistanceFromDiagLineLifted(LEDCoord coords, double z) {
-    return sin(M_PI_4) * coords.x - (cos(M_PI_4) * coords.y) + z;
+double signedDistanceFromDiagLineLifted(LEDCoord coords) {
+    double x1 = coords.x + MAP_OFFSET_X;
+    double y1 = coords.y + MAP_OFFSET_Y;
+    double x2 = cos(-DIAG_LINE_ANGLE) * x1 - sin(-DIAG_LINE_ANGLE) * y1;
+    double y2 = sin(-DIAG_LINE_ANGLE) * x1 + cos(-DIAG_LINE_ANGLE) * y1;
+    return (PARABOLIC_MAP_FACTOR * x2) * (PARABOLIC_MAP_FACTOR * x2) - y2;
 }
 
 int compDistFromDiagLine(const void *c1, const void *c2) {
@@ -46,12 +55,8 @@ int compDistFromDiagLine(const void *c1, const void *c2) {
 int compDistFromParabolicMapLine(const void *c1, const void *c2) {
     LEDCoord coord1 = ((struct LEDCoordPair *) c1)->coord;
     LEDCoord coord2 = ((struct LEDCoordPair *) c2)->coord;
-    double z1 = sin(-M_PI_4) * coord1.x - (cos(-M_PI_4) * coord1.y);
-    z1 = z1 * z1;
-    double z2 = sin(-M_PI_4) * coord2.x - (cos(-M_PI_4) * coord2.y);    
-    z2 = z2 * z2;
-    double dist1 = signedDistanceFromDiagLineLifted(coord1, z1);
-    double dist2 = signedDistanceFromDiagLineLifted(coord2, z2);
+    double dist1 = signedDistanceFromDiagLineLifted(coord1);
+    double dist2 = signedDistanceFromDiagLineLifted(coord2);
     return (dist1 > dist2) - (dist1 < dist2);
 }
 
