@@ -252,7 +252,7 @@ void updateNvsSettings(nvs_handle_t nvsHandle, ErrorResources *errRes) {
 
 esp_err_t getSpeedsFromNvs(LEDData *speeds, uint32_t speedsLen, Direction dir, bool currentSpeeds) {
   nvs_handle_t nvsHandle;
-  size_t size = MAX_NUM_LEDS_REG;
+  size_t size = speedsLen * sizeof(LEDData);
   if (nvs_open(WORKER_NVS_NAMESPACE, NVS_READONLY, &nvsHandle) != ESP_OK) {
       return ESP_FAIL;
   }
@@ -350,7 +350,6 @@ esp_err_t removeExtraWorkerNvsEntries(void) {
     return ESP_FAIL;
   }
   if (ret == ESP_ERR_INVALID_ARG) {
-    ESP_LOGI(TAG, "ret is invalid arg");
     return ESP_FAIL;
   }
   return ESP_OK;
