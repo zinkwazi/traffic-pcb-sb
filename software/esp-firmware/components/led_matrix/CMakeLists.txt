@@ -1,5 +1,6 @@
-idf_component_register(SRCS "src/dots_commands.c" 
-                            "src/dots_matrix.c"
+idf_component_register(SRCS "src/led_matrix.c" 
+                            "src/V1_0_led_registers.c"
+                            "src/V2_0_led_registers.c"
                        INCLUDE_DIRS "include"
                        REQUIRES common
                                 esp_event

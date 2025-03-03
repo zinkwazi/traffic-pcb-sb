@@ -1,5 +1,16 @@
 
 #include "nvs_settings.h"
+
+#include <stdint.h>
+#include <stdbool.h>
+
+#include "esp_err.h"
+#include "esp_check.h"
+
+#include "app_errors.h"
+#include "api_connect.h"
+#include "led_registers.h"
+
 #include "main_types.h"
 #include "routines.h"
 
@@ -12,6 +23,13 @@
 #define WIFI_PASS_NVS_NAME "wifi_pass"
 
 #define NVS_MAIN_NAMESPACE "main"
+
+/* NVS namespace and keys */
+#define WORKER_NVS_NAMESPACE "worker"
+#define CURRENT_NORTH_NVS_KEY "current_north"
+#define CURRENT_SOUTH_NVS_KEY "current_south"
+#define TYPICAL_NORTH_NVS_KEY "typical_north"
+#define TYPICAL_SOUTH_NVS_KEY "typical_south"
 
 /**
  * @brief Determines whether user settings currently exist in non-volatile
@@ -230,4 +248,110 @@ void updateNvsSettings(nvs_handle_t nvsHandle, ErrorResources *errRes) {
   }
 
   resolveHandleableError(errRes, false, false); // returns error LED to previous state
+}
+
+esp_err_t getSpeedsFromNvs(LEDData *speeds, uint32_t speedsLen, Direction dir, bool currentSpeeds) {
+  nvs_handle_t nvsHandle;
+  size_t size = MAX_NUM_LEDS_REG;
+  if (nvs_open(WORKER_NVS_NAMESPACE, NVS_READONLY, &nvsHandle) != ESP_OK) {
+      return ESP_FAIL;
+  }
+  char *key = NULL;
+  if (currentSpeeds) {
+      key = (dir == NORTH) ? CURRENT_NORTH_NVS_KEY : CURRENT_SOUTH_NVS_KEY;
+  } else {
+      key = (dir == NORTH) ? TYPICAL_NORTH_NVS_KEY : TYPICAL_SOUTH_NVS_KEY;
+  }
+  if (nvs_get_blob(nvsHandle, key, speeds, &size) != ESP_OK) {
+      return ESP_FAIL;
+  }
+  if (size == 0 || size / sizeof(uint8_t) != speedsLen * sizeof(LEDData)) {
+      return ESP_FAIL;
+  }
+  nvs_close(nvsHandle);
+  return ESP_OK;
+}
+
+esp_err_t setSpeedsToNvs(LEDData *speeds, uint32_t speedsLen, Direction dir, bool currentSpeeds) {
+  nvs_handle_t nvsHandle;
+  size_t size = speedsLen * sizeof(LEDData);
+  esp_err_t err = ESP_OK;
+  if ((err = nvs_open(WORKER_NVS_NAMESPACE, NVS_READWRITE, &nvsHandle)) != ESP_OK) {
+      return ESP_FAIL;
+  }
+  char *key = NULL;
+  if (currentSpeeds) {
+      key = (dir == NORTH) ? CURRENT_NORTH_NVS_KEY : CURRENT_SOUTH_NVS_KEY;
+  } else {
+      key = (dir == NORTH) ? TYPICAL_NORTH_NVS_KEY : TYPICAL_SOUTH_NVS_KEY;
+  }
+  err = nvs_set_blob(nvsHandle, key, speeds, size);
+  if (err != ESP_OK) {
+      err = nvs_erase_key(nvsHandle, key);
+      if (err != ESP_OK) {
+          return ESP_FAIL;
+      }
+      err = nvs_set_blob(nvsHandle, key, speeds, size);
+      if (err != ESP_OK) {
+          return ESP_FAIL;
+      }
+  }    
+  if (nvs_commit(nvsHandle) != ESP_OK) {
+      return ESP_FAIL;
+  }
+  nvs_close(nvsHandle);
+  return ESP_OK;
+}
+
+esp_err_t removeExtraWorkerNvsEntries(void) {
+  esp_err_t ret;
+  nvs_iterator_t nvs_iter;
+  nvs_handle_t nvsHandle;
+  esp_err_t err;
+  err = nvs_open(WORKER_NVS_NAMESPACE, NVS_READWRITE, &nvsHandle);
+  if (err != ESP_OK) {
+    return ESP_FAIL;
+  }
+  err = nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter);
+  if (err == ESP_ERR_NVS_NOT_FOUND) {
+    return ESP_OK; // no entries to remove
+  } else if (err != ESP_OK) {
+    return ESP_FAIL;
+  }
+  if (nvs_iter == NULL) {
+    return ESP_OK;
+  }
+  ret = nvs_entry_next(&nvs_iter);
+  while (ret != ESP_OK) {
+    nvs_entry_info_t info;
+    if (nvs_iter == NULL) {
+        return ESP_OK;
+    }
+    err = nvs_entry_info(nvs_iter, &info);
+    if (err != ESP_OK) {
+      return ESP_FAIL;
+    }
+    if (strcmp(info.namespace_name, WORKER_NVS_NAMESPACE) == 0 &&
+            (strcmp(info.key, CURRENT_NORTH_NVS_KEY) == 0 ||
+             strcmp(info.key, CURRENT_SOUTH_NVS_KEY) == 0 ||
+             strcmp(info.key, TYPICAL_NORTH_NVS_KEY) == 0 ||
+             strcmp(info.key, TYPICAL_SOUTH_NVS_KEY) == 0))
+    {
+      ret = nvs_entry_next(&nvs_iter);
+      continue;
+    }
+    err = nvs_erase_key(nvsHandle, info.key);
+    if (err != ESP_OK) {
+      return ESP_FAIL;
+    }
+    ret = nvs_entry_next(&nvs_iter);
+  }
+  if (nvs_commit(nvsHandle) != ESP_OK) {
+    return ESP_FAIL;
+  }
+  if (ret == ESP_ERR_INVALID_ARG) {
+    ESP_LOGI(TAG, "ret is invalid arg");
+    return ESP_FAIL;
+  }
+  return ESP_OK;
 }

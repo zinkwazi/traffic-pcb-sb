@@ -4,11 +4,11 @@
 
 #include "routines.h"
 
-/* IDF component includes */
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdbool.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -31,15 +31,11 @@
 #include "nvs.h"
 #include "esp_https_ota.h"
 
-/* Main component includes */
+#include "led_registers.h"
+
 #include "pinout.h"
 #include "tasks.h"
-#include "utilities.h"
 #include "wifi.h"
-
-/* Component includes */
-#include "dots_commands.h"
-#include "led_registers.h"
 
 /**
  * @brief Initializes the direction button and attaches dirButtonISR to a 

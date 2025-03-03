@@ -1,27 +1,28 @@
 /**
  * led_registers.h
- * 
- * This is a layer of indirection to particular led_register version
- * header files, which includes the correct header for the version of
- * hardware the build is targeting.
  */
 
 #ifndef LED_REGISTERS_H_
 #define LED_REGISTERS_H_
 
+#include "sdkconfig.h"
+
+#include "led_types.h"
+
 #if CONFIG_HARDWARE_VERSION == 1
-#include "V1_0_led_registers.h"
-#endif
-
-#if CONFIG_HARDWARE_VERSION == 2
-#include "V2_0_led_registers.h"
-#endif
-
-/* new versions should explicitly specify which header file they need */
-
 /** @brief The maximum number of LEDs that can be present on the device.
- *         This should be equal to MAX_NUM_LEDS_COORD.
- */
-#define MAX_NUM_LEDS_REG sizeof(LEDNumToReg) / sizeof(LEDNumToReg[0])
+*         This should be equal to MAX_NUM_LEDS_COORD.
+*/
+#define MAX_NUM_LEDS_REG 326
+#elif CONFIG_HARDWARE_VERISON == 2
+/** @brief The maximum number of LEDs that can be present on the device.
+*         This should be equal to MAX_NUM_LEDS_COORD.
+*/
+#define MAX_NUM_LEDS_REG 414
+#else
+#error "Unsupported Hardware Version"
+#endif
+
+extern const LEDReg LEDNumToReg[MAX_NUM_LEDS_REG + 1];
 
 #endif /* LED_REGISTERS_H_ */

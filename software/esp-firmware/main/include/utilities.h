@@ -9,15 +9,9 @@
 #define UTILITIES_H_
 
 #include <stdbool.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-
-/* IDF component includes */
 #include <stdio.h>
-#include <stdbool.h>
 #include <string.h>
-#include <stdbool.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -40,17 +34,15 @@
 #include "nvs.h"
 #include "esp_https_ota.h"
 
-/* Main component includes */
 #include "pinout.h"
+#include "app_errors.h"
+#include "led_matrix.h"
+#include "led_registers.h"
+
 #include "tasks.h"
-#include "utilities.h"
 #include "wifi.h"
 #include "main_types.h"
-#include "app_errors.h"
-
-/* Component includes */
-#include "dots_commands.h"
-#include "led_registers.h"
+#include "nvs_settings.h"
 
 #define STR_HELPER(x) #x      /* STR(x) adds "" around any text expression */
 #define STR(x) STR_HELPER(x)
@@ -61,7 +53,6 @@
 #define SERVER_VERSION_STR HARDWARE_VERSION_STR "_" STR(CONFIG_SERVER_FIRMWARE_VERSION)
 
 #define FIRMWARE_UPGRADE_URL CONFIG_FIRMWARE_UPGRADE_SERVER "/firmware/firmware" HARDWARE_VERSION_STR ".bin"
-
 
 /**
  * @brief Calls spinForever if x is not ESP_OK.
@@ -109,14 +100,5 @@
 #define UPDATE_SETTINGS_IF_FALSE(x, handle, errResources) \
       if (!x) { updateNvsSettings(handle, errResources); }
 
-esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle);
-esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle);
-esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle);
-esp_err_t initDotMatrices(QueueHandle_t I2CQueue);
-esp_err_t updateLEDs(QueueHandle_t dotQueue, Direction dir);
-esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, struct UserSettings *settings);
-esp_err_t quickClearLEDs(QueueHandle_t dotQueue);
-esp_err_t clearLEDs(QueueHandle_t dotQueue, Direction currDir);
-void updateNvsSettings(nvs_handle_t nvsHandle, ErrorResources *errResources);
 
 #endif /* UTILITIES_H_ */

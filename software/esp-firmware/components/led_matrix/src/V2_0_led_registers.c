@@ -1,20 +1,22 @@
 /**
- * V2_0_led_registers.h
+ * V2_0_led_registers.c
  * 
  * Cointains LED number to matrix register mappings for V2_0 of the hardware.
  */
 
-#ifndef V_LED_REGISTERS_H_ /* reused for other versions to avoid duplication */
-#define V_LED_REGISTERS_H_
+#include "led_registers.h"
+
+#include <stdint.h>
+
+#include "sdkconfig.h"
+
+#include "led_types.h"
 
 #if CONFIG_HARDWARE_VERSION == 2
 
-#include <stdint.h>
-#include "dots_types.h"
-
 /* A mapping from LED number to corresponding 
 matrix registers for each color (red, green, blue). */
-static const LEDReg LEDNumToReg[] = {
+const LEDReg LEDNumToReg[MAX_NUM_LEDS_REG + 1] = {
     {0xFF, 0xFF, 0xFF, MAT_NONE}, // there is no LED with number 0
     {0x8D, 0x8F, 0x8E, MAT1_PAGE1}, // 1
     {0x96, 0x98, 0x97, MAT1_PAGE1}, // 2
@@ -433,5 +435,4 @@ static const LEDReg LEDNumToReg[] = {
 };
 
 #endif /* CONFIG_HARDWARE_VERISON == 2 */
-
-#endif /* V_LED_REGISTERS_H_ */
+ 

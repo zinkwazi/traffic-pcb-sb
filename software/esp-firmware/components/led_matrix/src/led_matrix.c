@@ -1,5 +1,5 @@
 /**
- * d_matrix.c
+ * led_matrix.c
  *
  * This file contains a hardware abstraction layer
  * for the d matrix led driver ICs. The esp32
@@ -8,9 +8,11 @@
  * See: https://www.lumissil.com/assets/pdf/core/IS31FL3741A_DS.pdf.
  */
 
-#include "dots_matrix.h"
+#include "led_matrix.h"
 
-/* IDF component includes */
+#include "led_types.h"
+#include "led_registers.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -18,14 +20,11 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_err.h"
 
-/* Component includes */
-#include "dots_types.h"
-#include "led_registers.h"
+#define TAG "led_matrix"
 
-#define TAG "dots_matrix"
-
-#define I2C_TIMEOUT_MS (100)
+#define I2C_TIMEOUT_MS 100
 
 #define MAT1_ADDR 0b0110000
 #define MAT2_ADDR 0b0110011
@@ -77,6 +76,75 @@
     buffer[0] = reg;           \
     buffer[1] = data;
 
+static i2c_master_bus_handle_t sI2CBus;
+static i2c_master_dev_handle_t sMat1Handle;
+static i2c_master_dev_handle_t sMat2Handle;
+static i2c_master_dev_handle_t sMat3Handle;
+
+static uint8_t sMat1State;
+static uint8_t sMat2State;
+static uint8_t sMat3State;
+
+esp_err_t matAssertConnected(void);
+esp_err_t matSetPage(i2c_master_dev_handle_t device, uint8_t page);
+esp_err_t matGetRegister(uint8_t *result, i2c_master_dev_handle_t device, uint8_t page, uint8_t addr);
+
+esp_err_t matInitialize(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin)
+{
+    i2c_master_bus_config_t master_bus_config = {
+        .i2c_port = port,
+        .sda_io_num = sdaPin,
+        .scl_io_num = sclPin,
+        .clk_source = I2C_CLK_SRC_DEFAULT, // not sure about this
+        .glitch_ignore_cnt = 7,            // typical value
+        .intr_priority = 0,                // may be one of level 1, 2, or 3 when set to 0
+        .flags.enable_internal_pullup = false,
+    };
+    i2c_device_config_t matrix_config = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = MAT1_ADDR,
+        .scl_speed_hz = BUS_SPEED_HZ,
+        .scl_wait_us = SCL_WAIT_US, // use default value
+    };
+    /* Initialize I2C bus */
+    if (i2c_new_master_bus(&master_bus_config, &sI2CBus) != ESP_OK)
+    {
+        return ESP_FAIL;
+    }
+    if (i2c_master_bus_add_device(sI2CBus, &matrix_config, &sMat1Handle) != ESP_OK)
+    {
+        return ESP_FAIL;
+    }
+    matrix_config.device_address = MAT2_ADDR;
+    if (i2c_master_bus_add_device(sI2CBus, &matrix_config, &sMat2Handle) != ESP_OK)
+    {
+        return ESP_FAIL;
+    }
+    matrix_config.device_address = MAT3_ADDR;
+    if (i2c_master_bus_add_device(sI2CBus, &matrix_config, &sMat3Handle) != ESP_OK)
+    {
+        return ESP_FAIL;
+    }
+    if (i2c_master_bus_reset(sI2CBus) != ESP_OK) {
+        return ESP_FAIL;
+    }
+    /* Assert matrices are connected */
+    if (matAssertConnected() != ESP_OK)
+    {
+        return ESP_FAIL;
+    }
+    sMat1State = PWM0_PAGE; // force setPage to actually set the page
+    sMat2State = PWM0_PAGE; // so that pages are in a known state
+    sMat3State = PWM0_PAGE;
+    if (matSetPage(sMat1Handle, CONFIG_PAGE) != ESP_OK ||
+        matSetPage(sMat2Handle, CONFIG_PAGE) != ESP_OK ||
+        matSetPage(sMat3Handle, CONFIG_PAGE) != ESP_OK)
+    {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
 /**
  * @brief Converts the matrix information in ledReg to an I2C device handle and
  *        page number.
@@ -99,13 +167,10 @@
  * @returns ESP_OK if successfully populated matrixHandle and page, otherwise
  *          ESP_FAIL.
  */
-esp_err_t dParseLEDRegisterInfo(i2c_master_dev_handle_t *matrixHandle, uint8_t *pwmPage, uint8_t *scalingPage, LEDReg ledReg, MatrixHandles matrices)
+esp_err_t matParseLEDRegisterInfo(i2c_master_dev_handle_t *matrixHandle, uint8_t *pwmPage, uint8_t *scalingPage, LEDReg ledReg)
 {
     /* input guards */
-    if (matrixHandle == NULL ||
-        matrices.mat1Handle == NULL ||
-        matrices.mat2Handle == NULL ||
-        matrices.mat3Handle == NULL)
+    if (matrixHandle == NULL)
     {
         return ESP_FAIL;
     }
@@ -118,7 +183,7 @@ esp_err_t dParseLEDRegisterInfo(i2c_master_dev_handle_t *matrixHandle, uint8_t *
     switch (ledReg.matrix)
     {
     case MAT1_PAGE0:
-        *matrixHandle = matrices.mat1Handle;
+        *matrixHandle = sMat1Handle;
         if (pwmPage != NULL)
         {
             *pwmPage = PWM0_PAGE;
@@ -129,7 +194,7 @@ esp_err_t dParseLEDRegisterInfo(i2c_master_dev_handle_t *matrixHandle, uint8_t *
         }
         break;
     case MAT1_PAGE1:
-        *matrixHandle = matrices.mat1Handle;
+        *matrixHandle = sMat1Handle;
         if (pwmPage != NULL)
         {
             *pwmPage = PWM1_PAGE;
@@ -140,7 +205,7 @@ esp_err_t dParseLEDRegisterInfo(i2c_master_dev_handle_t *matrixHandle, uint8_t *
         }
         break;
     case MAT2_PAGE0:
-        *matrixHandle = matrices.mat2Handle;
+        *matrixHandle = sMat2Handle;
         if (pwmPage != NULL)
         {
             *pwmPage = PWM0_PAGE;
@@ -151,7 +216,7 @@ esp_err_t dParseLEDRegisterInfo(i2c_master_dev_handle_t *matrixHandle, uint8_t *
         }
         break;
     case MAT2_PAGE1:
-        *matrixHandle = matrices.mat2Handle;
+        *matrixHandle = sMat2Handle;
         if (pwmPage != NULL)
         {
             *pwmPage = PWM1_PAGE;
@@ -162,7 +227,7 @@ esp_err_t dParseLEDRegisterInfo(i2c_master_dev_handle_t *matrixHandle, uint8_t *
         }
         break;
     case MAT3_PAGE0:
-        *matrixHandle = matrices.mat3Handle;
+        *matrixHandle = sMat3Handle;
         if (pwmPage != NULL)
         {
             *pwmPage = PWM0_PAGE;
@@ -173,7 +238,7 @@ esp_err_t dParseLEDRegisterInfo(i2c_master_dev_handle_t *matrixHandle, uint8_t *
         }
         break;
     case MAT3_PAGE1:
-        *matrixHandle = matrices.mat3Handle;
+        *matrixHandle = sMat3Handle;
         if (pwmPage != NULL)
         {
             *pwmPage = PWM1_PAGE;
@@ -189,78 +254,22 @@ esp_err_t dParseLEDRegisterInfo(i2c_master_dev_handle_t *matrixHandle, uint8_t *
     return ESP_OK;
 }
 
-esp_err_t dInitializeBus(PageState *state, MatrixHandles *matrices, i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin)
-{
-    i2c_master_bus_config_t master_bus_config = {
-        .i2c_port = port,
-        .sda_io_num = sdaPin,
-        .scl_io_num = sclPin,
-        .clk_source = I2C_CLK_SRC_DEFAULT, // not sure about this
-        .glitch_ignore_cnt = 7,            // typical value
-        .intr_priority = 0,                // may be one of level 1, 2, or 3 when set to 0
-        .flags.enable_internal_pullup = false,
-    };
-    i2c_device_config_t matrix_config = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = MAT1_ADDR,
-        .scl_speed_hz = BUS_SPEED_HZ,
-        .scl_wait_us = SCL_WAIT_US, // use default value
-    };
-    /* Initialize I2C bus */
-    if (i2c_new_master_bus(&master_bus_config, &(matrices->I2CBus)) != ESP_OK)
-    {
-        return ESP_FAIL;
-    }
-    if (i2c_master_bus_add_device(matrices->I2CBus, &matrix_config, &(matrices->mat1Handle)) != ESP_OK)
-    {
-        return ESP_FAIL;
-    }
-    matrix_config.device_address = MAT2_ADDR;
-    if (i2c_master_bus_add_device(matrices->I2CBus, &matrix_config, &(matrices->mat2Handle)) != ESP_OK)
-    {
-        return ESP_FAIL;
-    }
-    matrix_config.device_address = MAT3_ADDR;
-    if (i2c_master_bus_add_device(matrices->I2CBus, &matrix_config, &(matrices->mat3Handle)) != ESP_OK)
-    {
-        return ESP_FAIL;
-    }
-    if (i2c_master_bus_reset(matrices->I2CBus) != ESP_OK) {
-        return ESP_FAIL;
-    }
-    /* Assert matrices are connected */
-    if (dAssertConnected(state, *matrices) != ESP_OK)
-    {
-        return ESP_FAIL;
-    }
-    state->mat1 = PWM0_PAGE; // force setPage to actually set the page
-    state->mat2 = PWM0_PAGE; // so that pages are in a known state
-    state->mat3 = PWM0_PAGE;
-    if (dSetPage(state, *matrices, matrices->mat1Handle, CONFIG_PAGE) != ESP_OK ||
-        dSetPage(state, *matrices, matrices->mat2Handle, CONFIG_PAGE) != ESP_OK ||
-        dSetPage(state, *matrices, matrices->mat3Handle, CONFIG_PAGE) != ESP_OK)
-    {
-        return ESP_FAIL;
-    }
-    return ESP_OK;
-}
-
-esp_err_t dAssertConnected(PageState *state, MatrixHandles matrices)
+esp_err_t matAssertConnected(void)
 {
     uint8_t id = 0;
     /* input guards */
-    if (matrices.mat1Handle == NULL ||
-        matrices.mat2Handle == NULL ||
-        matrices.mat3Handle == NULL)
+    if (sMat1Handle == NULL ||
+        sMat2Handle == NULL ||
+        sMat3Handle == NULL)
     {
         return ESP_FAIL;
     }
     /* probe matrix 1 */
-    if (i2c_master_probe(matrices.I2CBus, MAT1_ADDR, PROBE_WAIT_MS) != ESP_OK)
+    if (i2c_master_probe(sI2CBus, MAT1_ADDR, PROBE_WAIT_MS) != ESP_OK)
     {
         return ESP_FAIL;
     }
-    if (dGetRegister(&id, state, matrices, matrices.mat1Handle, 1, ID_REG_ADDR) != ESP_OK)
+    if (matGetRegister(&id, sMat1Handle, 1, ID_REG_ADDR) != ESP_OK)
     {
         return ESP_FAIL;
     }
@@ -269,11 +278,11 @@ esp_err_t dAssertConnected(PageState *state, MatrixHandles matrices)
         return ESP_FAIL;
     }
     /* probe matrix 2 */
-    if (i2c_master_probe(matrices.I2CBus, MAT2_ADDR, PROBE_WAIT_MS) != ESP_OK)
+    if (i2c_master_probe(sI2CBus, MAT2_ADDR, PROBE_WAIT_MS) != ESP_OK)
     {
         return ESP_FAIL;
     }
-    if (dGetRegister(&id, state, matrices, matrices.mat2Handle, 1, ID_REG_ADDR) != ESP_OK)
+    if (matGetRegister(&id, sMat2Handle, 1, ID_REG_ADDR) != ESP_OK)
     {
         return ESP_FAIL;
     }
@@ -282,11 +291,11 @@ esp_err_t dAssertConnected(PageState *state, MatrixHandles matrices)
         return ESP_FAIL;
     }
     /* probe matrix 3 */
-    if (i2c_master_probe(matrices.I2CBus, MAT3_ADDR, PROBE_WAIT_MS) != ESP_OK)
+    if (i2c_master_probe(sI2CBus, MAT3_ADDR, PROBE_WAIT_MS) != ESP_OK)
     {
         return ESP_FAIL;
     }
-    if (dGetRegister(&id, state, matrices, matrices.mat3Handle, 1, ID_REG_ADDR) != ESP_OK)
+    if (matGetRegister(&id, sMat3Handle, 1, ID_REG_ADDR) != ESP_OK)
     {
         return ESP_FAIL;
     }
@@ -308,7 +317,7 @@ esp_err_t dAssertConnected(PageState *state, MatrixHandles matrices)
  *           greater than what bitMask can contain, this value
  *           will silently be shortened.
  */
-void dSetBits(uint8_t *reg, uint8_t bitMask, uint8_t value)
+void matSetBits(uint8_t *reg, uint8_t bitMask, uint8_t value)
 {
     /* Align value to bitMask */
     for (uint8_t currShift = 0; currShift < 8; currShift++)
@@ -332,24 +341,24 @@ void dSetBits(uint8_t *reg, uint8_t bitMask, uint8_t value)
  * the device is already in the requested page, the function
  * will return ESP_OK without performing any I2C transactions.
  */
-esp_err_t dSetPage(PageState *state, MatrixHandles matrices, i2c_master_dev_handle_t device, uint8_t page)
+esp_err_t matSetPage(i2c_master_dev_handle_t device, uint8_t page)
 {
     uint8_t buffer[2];
     /* input guards */
-    if (page > 4 || device == NULL || state == NULL)
+    if (page > 4 || device == NULL)
     {
         return ESP_FAIL;
     }
     /* check current page setting */
-    if (device == matrices.mat1Handle && page == state->mat1)
+    if (device == sMat1Handle && page == sMat1State)
     {
         return ESP_OK;
     }
-    if (device == matrices.mat2Handle && page == state->mat2)
+    if (device == sMat2Handle && page == sMat2State)
     {
         return ESP_OK;
     }
-    if (device == matrices.mat1Handle && page == state->mat3)
+    if (device == sMat3Handle && page == sMat3State)
     {
         return ESP_OK;
     }
@@ -375,17 +384,17 @@ esp_err_t dSetPage(PageState *state, MatrixHandles matrices, i2c_master_dev_hand
     {
         return ESP_FAIL;
     }
-    if (device == matrices.mat1Handle)
+    if (device == sMat1Handle)
     {
-        state->mat1 = page;
+        sMat1State = page;
     }
-    if (device == matrices.mat2Handle)
+    if (device == sMat2Handle)
     {
-        state->mat2 = page;
+        sMat2State = page;
     }
-    if (device == matrices.mat1Handle)
+    if (device == sMat3Handle)
     {
-        state->mat3 = page;
+        sMat3State = page;
     }
     return ESP_OK;
 }
@@ -400,15 +409,15 @@ esp_err_t dSetPage(PageState *state, MatrixHandles matrices, i2c_master_dev_hand
  *  - page: The page the target register exists in.
  *  - addr: The address of the target register.
  */
-esp_err_t dGetRegister(uint8_t *result, PageState *state, MatrixHandles matrices, i2c_master_dev_handle_t device, uint8_t page, uint8_t addr)
+esp_err_t matGetRegister(uint8_t *result, i2c_master_dev_handle_t device, uint8_t page, uint8_t addr)
 {
     /* input guards */
-    if (result == NULL || state == NULL)
+    if (result == NULL)
     {
         return ESP_FAIL;
     }
     /* Set page and read config registers */
-    dSetPage(state, matrices, device, page);
+    matSetPage(device, page);
     esp_err_t err = i2c_master_transmit_receive(device, &addr, 1, result, 1, I2C_TIMEOUT_MS);
     if (err != ESP_OK)
     {
@@ -436,7 +445,7 @@ esp_err_t dGetRegister(uint8_t *result, PageState *state, MatrixHandles matrices
  *          by the results are unmodified, however pages may
  *          have been modified.
  */
-esp_err_t dGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3, PageState *state, MatrixHandles matrices, uint8_t page, uint8_t addr)
+esp_err_t matGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3, uint8_t page, uint8_t addr)
 {
     uint8_t localRes1, localRes2, localRes3; // if something fails, do not modify results
     /* guard input */
@@ -445,15 +454,15 @@ esp_err_t dGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3, Pa
         return ESP_FAIL;
     }
     /* get registers */
-    if (result1 != NULL && dGetRegister(&localRes1, state, matrices, matrices.mat1Handle, page, addr) != ESP_OK)
+    if (result1 != NULL && matGetRegister(&localRes1, sMat1Handle, page, addr) != ESP_OK)
     {
         return ESP_FAIL;
     }
-    if (result2 != NULL && dGetRegister(&localRes2, state, matrices, matrices.mat2Handle, page, addr) != ESP_OK)
+    if (result2 != NULL && matGetRegister(&localRes2, sMat2Handle, page, addr) != ESP_OK)
     {
         return ESP_FAIL;
     }
-    if (result3 != NULL && dGetRegister(&localRes3, state, matrices, matrices.mat3Handle, page, addr) != ESP_OK)
+    if (result3 != NULL && matGetRegister(&localRes3, sMat3Handle, page, addr) != ESP_OK)
     {
         return ESP_FAIL;
     }
@@ -486,7 +495,7 @@ esp_err_t dGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3, Pa
  * Returns: ESP_OK if successful. Otherwise, the page of the current
  *          device may have been changed.
  */
-esp_err_t dSetRegister(PageState *state, MatrixHandles matrices, i2c_master_dev_handle_t device, uint8_t page, uint8_t addr, uint8_t data)
+esp_err_t matSetRegister(i2c_master_dev_handle_t device, uint8_t page, uint8_t addr, uint8_t data)
 {
     uint8_t buffer[2];
     /* gaurd input */
@@ -495,7 +504,7 @@ esp_err_t dSetRegister(PageState *state, MatrixHandles matrices, i2c_master_dev_
         return ESP_FAIL;
     }
     /* move to the correct page */
-    if (dSetPage(state, matrices, device, page) != ESP_OK)
+    if (matSetPage(device, page) != ESP_OK)
     {
         return ESP_FAIL;
     }
@@ -517,7 +526,7 @@ esp_err_t dSetRegister(PageState *state, MatrixHandles matrices, i2c_master_dev_
  *          multiple matrices, but not all. Additionally,
  *          the page of each matrix may have been changed.
  */
-esp_err_t dSetRegisters(PageState *state, MatrixHandles matrices, uint8_t page, uint8_t addr, uint8_t data)
+esp_err_t matSetRegisters(uint8_t page, uint8_t addr, uint8_t data)
 {
     /* guard input */
     if (page > 4)
@@ -525,15 +534,15 @@ esp_err_t dSetRegisters(PageState *state, MatrixHandles matrices, uint8_t page, 
         return ESP_FAIL;
     }
     /* set registers */
-    if (dSetRegister(state, matrices, matrices.mat1Handle, page, addr, data) != ESP_OK)
+    if (matSetRegister(sMat1Handle, page, addr, data) != ESP_OK)
     {
         return ESP_FAIL;
     }
-    if (dSetRegister(state, matrices, matrices.mat2Handle, page, addr, data) != ESP_OK)
+    if (matSetRegister(sMat2Handle, page, addr, data) != ESP_OK)
     {
         return ESP_FAIL;
     }
-    if (dSetRegister(state, matrices, matrices.mat3Handle, page, addr, data) != ESP_OK)
+    if (matSetRegister(sMat3Handle, page, addr, data) != ESP_OK)
     {
         return ESP_FAIL;
     }
@@ -554,18 +563,18 @@ esp_err_t dSetRegisters(PageState *state, MatrixHandles matrices, uint8_t page, 
  *          configuration of each matrix may have
  *          been changed, but not all.
  */
-esp_err_t dSetRegistersSeparate(PageState *state, MatrixHandles matrices, uint8_t page, uint8_t addr, uint8_t mat1val, uint8_t mat2val, uint8_t mat3val)
+esp_err_t matSetRegistersSeparate(uint8_t page, uint8_t addr, uint8_t mat1val, uint8_t mat2val, uint8_t mat3val)
 {
     /* change register values */
-    if (dSetRegister(state, matrices, matrices.mat1Handle, page, addr, mat1val) != ESP_OK)
+    if (matSetRegister(sMat1Handle, page, addr, mat1val) != ESP_OK)
     {
         return ESP_FAIL;
     }
-    if (dSetRegister(state, matrices, matrices.mat2Handle, page, addr, mat2val) != ESP_OK)
+    if (matSetRegister(sMat2Handle, page, addr, mat2val) != ESP_OK)
     {
         return ESP_FAIL;
     }
-    if (dSetRegister(state, matrices, matrices.mat3Handle, page, addr, mat3val) != ESP_OK)
+    if (matSetRegister(sMat3Handle, page, addr, mat3val) != ESP_OK)
     {
         return ESP_FAIL;
     }
@@ -579,20 +588,20 @@ esp_err_t dSetRegistersSeparate(PageState *state, MatrixHandles matrices, uint8_
  * Returns: ESP_OK if successful. Otherwise, the configuration
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dSetOperatingMode(PageState *state, MatrixHandles matrices, enum Operation setting)
+esp_err_t matSetOperatingMode(enum Operation setting)
 {
     esp_err_t err;
     uint8_t mat1Cfg, mat2Cfg, mat3Cfg;
     /* Read current configuration states */
-    if (dGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, state, matrices, CONFIG_PAGE, CONFIG_REG_ADDR) != ESP_OK)
+    if (matGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR) != ESP_OK)
     {
         return ESP_FAIL;
     }
     /* Generate and set new configuration states */
-    dSetBits(&mat1Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t)setting);
-    dSetBits(&mat2Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t)setting);
-    dSetBits(&mat3Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t)setting);
-    err = dSetRegistersSeparate(state, matrices, CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
+    matSetBits(&mat1Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t)setting);
+    matSetBits(&mat2Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t)setting);
+    matSetBits(&mat3Cfg, SOFTWARE_SHUTDOWN_BITS, (uint8_t)setting);
+    err = matSetRegistersSeparate(CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
     return err;
 }
 
@@ -603,19 +612,19 @@ esp_err_t dSetOperatingMode(PageState *state, MatrixHandles matrices, enum Opera
  * Returns: ESP_OK if successful. Otherwise, the configuration
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dSetOpenShortDetection(PageState *state, MatrixHandles matrices, enum ShortDetectionEnable setting)
+esp_err_t matSetOpenShortDetection(enum ShortDetectionEnable setting)
 {
     uint8_t mat1Cfg, mat2Cfg, mat3Cfg;
     /* Read current configuration states */
-    if (dGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, state, matrices, CONFIG_PAGE, CONFIG_REG_ADDR) != ESP_OK)
+    if (matGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR) != ESP_OK)
     {
         return ESP_FAIL;
     }
     /* Generate and set new configuration states */
-    dSetBits(&mat1Cfg, OPEN_SHORT_DETECT_EN_BITS, (uint8_t)setting);
-    dSetBits(&mat2Cfg, OPEN_SHORT_DETECT_EN_BITS, (uint8_t)setting);
-    dSetBits(&mat3Cfg, OPEN_SHORT_DETECT_EN_BITS, (uint8_t)setting);
-    return dSetRegistersSeparate(state, matrices, CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
+    matSetBits(&mat1Cfg, OPEN_SHORT_DETECT_EN_BITS, (uint8_t)setting);
+    matSetBits(&mat2Cfg, OPEN_SHORT_DETECT_EN_BITS, (uint8_t)setting);
+    matSetBits(&mat3Cfg, OPEN_SHORT_DETECT_EN_BITS, (uint8_t)setting);
+    return matSetRegistersSeparate(CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
 }
 
 /**
@@ -625,19 +634,19 @@ esp_err_t dSetOpenShortDetection(PageState *state, MatrixHandles matrices, enum 
  * Returns: ESP_OK if successful. Otherwise, the configuration
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dSetLogicLevel(PageState *state, MatrixHandles matrices, enum LogicLevel setting)
+esp_err_t matSetLogicLevel(enum LogicLevel setting)
 {
     uint8_t mat1Cfg, mat2Cfg, mat3Cfg;
     /* Read current configuration states */
-    if (dGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, state, matrices, CONFIG_PAGE, CONFIG_REG_ADDR) != ESP_OK)
+    if (matGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR) != ESP_OK)
     {
         return ESP_FAIL;
     }
     /* Generate and set new configuration states */
-    dSetBits(&mat1Cfg, LOGIC_LEVEL_CNTRL_BITS, (uint8_t)setting);
-    dSetBits(&mat2Cfg, LOGIC_LEVEL_CNTRL_BITS, (uint8_t)setting);
-    dSetBits(&mat3Cfg, LOGIC_LEVEL_CNTRL_BITS, (uint8_t)setting);
-    return dSetRegistersSeparate(state, matrices, CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
+    matSetBits(&mat1Cfg, LOGIC_LEVEL_CNTRL_BITS, (uint8_t)setting);
+    matSetBits(&mat2Cfg, LOGIC_LEVEL_CNTRL_BITS, (uint8_t)setting);
+    matSetBits(&mat3Cfg, LOGIC_LEVEL_CNTRL_BITS, (uint8_t)setting);
+    return matSetRegistersSeparate(CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
 }
 
 /**
@@ -647,19 +656,19 @@ esp_err_t dSetLogicLevel(PageState *state, MatrixHandles matrices, enum LogicLev
  * Returns: ESP_OK if successful. Otherwise, the configuration
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dSetSWxSetting(PageState *state, MatrixHandles matrices, enum SWXSetting setting)
+esp_err_t matSetSWxSetting(enum SWXSetting setting)
 {
     uint8_t mat1Cfg, mat2Cfg, mat3Cfg;
     /* Read current configuration states */
-    if (dGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, state, matrices, CONFIG_PAGE, CONFIG_REG_ADDR) != ESP_OK)
+    if (matGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR) != ESP_OK)
     {
         return ESP_FAIL;
     }
     /* Generate and set new configuration states */
-    dSetBits(&mat1Cfg, SWX_SETTING_BITS, (uint8_t)setting);
-    dSetBits(&mat2Cfg, SWX_SETTING_BITS, (uint8_t)setting);
-    dSetBits(&mat3Cfg, SWX_SETTING_BITS, (uint8_t)setting);
-    return dSetRegistersSeparate(state, matrices, CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
+    matSetBits(&mat1Cfg, SWX_SETTING_BITS, (uint8_t)setting);
+    matSetBits(&mat2Cfg, SWX_SETTING_BITS, (uint8_t)setting);
+    matSetBits(&mat3Cfg, SWX_SETTING_BITS, (uint8_t)setting);
+    return matSetRegistersSeparate(CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
 }
 
 /**
@@ -669,9 +678,9 @@ esp_err_t dSetSWxSetting(PageState *state, MatrixHandles matrices, enum SWXSetti
  * Returns: ESP_OK if successful. Otherwise, the register value
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dSetGlobalCurrentControl(PageState *state, MatrixHandles matrices, uint8_t value)
+esp_err_t matSetGlobalCurrentControl(uint8_t value)
 {
-    return dSetRegisters(state, matrices, CONFIG_PAGE, CURRENT_CNTRL_REG_ADDR, (uint8_t)value);
+    return matSetRegisters(CONFIG_PAGE, CURRENT_CNTRL_REG_ADDR, (uint8_t)value);
 }
 
 /**
@@ -681,19 +690,19 @@ esp_err_t dSetGlobalCurrentControl(PageState *state, MatrixHandles matrices, uin
  * Returns: ESP_OK if successful. Otherwise, the register value
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dSetResistorPullupSetting(PageState *state, MatrixHandles matrices, enum ResistorSetting setting)
+esp_err_t matSetResistorPullupSetting(enum ResistorSetting setting)
 {
     uint8_t mat1Reg, mat2Reg, mat3Reg;
     /* Read current resistor states */
-    if (dGetRegisters(&mat1Reg, &mat2Reg, &mat3Reg, state, matrices, CONFIG_PAGE, PULL_SEL_REG_ADDR) != ESP_OK)
+    if (matGetRegisters(&mat1Reg, &mat2Reg, &mat3Reg, CONFIG_PAGE, PULL_SEL_REG_ADDR) != ESP_OK)
     {
         return ESP_FAIL;
     }
     /* Generate and set new resistor states */
-    dSetBits(&mat1Reg, PUR_BITS, (uint8_t)setting);
-    dSetBits(&mat2Reg, PUR_BITS, (uint8_t)setting);
-    dSetBits(&mat3Reg, PUR_BITS, (uint8_t)setting);
-    return dSetRegistersSeparate(state, matrices, CONFIG_PAGE, PULL_SEL_REG_ADDR, mat1Reg, mat2Reg, mat3Reg);
+    matSetBits(&mat1Reg, PUR_BITS, (uint8_t)setting);
+    matSetBits(&mat2Reg, PUR_BITS, (uint8_t)setting);
+    matSetBits(&mat3Reg, PUR_BITS, (uint8_t)setting);
+    return matSetRegistersSeparate(CONFIG_PAGE, PULL_SEL_REG_ADDR, mat1Reg, mat2Reg, mat3Reg);
 }
 
 /**
@@ -703,27 +712,27 @@ esp_err_t dSetResistorPullupSetting(PageState *state, MatrixHandles matrices, en
  * Returns: ESP_OK if successful. Otherwise, the register value
  *          of each matrix may have been changed, but not all.
  */
-esp_err_t dSetResistorPulldownSetting(PageState *state, MatrixHandles matrices, enum ResistorSetting setting)
+esp_err_t matSetResistorPulldownSetting(enum ResistorSetting setting)
 {
     uint8_t mat1Reg, mat2Reg, mat3Reg;
     /* Read current resistor states */
-    if (dGetRegisters(&mat1Reg, &mat2Reg, &mat3Reg, state, matrices, CONFIG_PAGE, PULL_SEL_REG_ADDR) != ESP_OK)
+    if (matGetRegisters(&mat1Reg, &mat2Reg, &mat3Reg, CONFIG_PAGE, PULL_SEL_REG_ADDR) != ESP_OK)
     {
         return ESP_FAIL;
     }
     /* Generate and set new resistor states */
-    dSetBits(&mat1Reg, PDR_BITS, (uint8_t)setting);
-    dSetBits(&mat2Reg, PDR_BITS, (uint8_t)setting);
-    dSetBits(&mat3Reg, PDR_BITS, (uint8_t)setting);
-    return dSetRegistersSeparate(state, matrices, CONFIG_PAGE, PULL_SEL_REG_ADDR, mat1Reg, mat2Reg, mat3Reg);
+    matSetBits(&mat1Reg, PDR_BITS, (uint8_t)setting);
+    matSetBits(&mat2Reg, PDR_BITS, (uint8_t)setting);
+    matSetBits(&mat3Reg, PDR_BITS, (uint8_t)setting);
+    return matSetRegistersSeparate(CONFIG_PAGE, PULL_SEL_REG_ADDR, mat1Reg, mat2Reg, mat3Reg);
 }
 
 /**
  * Sets the PWM frequency of all matrix ICs.
  */
-esp_err_t dSetPWMFrequency(PageState *state, MatrixHandles matrices, enum PWMFrequency freq)
+esp_err_t matSetPWMFrequency(enum PWMFrequency freq)
 {
-    return dSetRegisters(state, matrices, CONFIG_PAGE, PWM_FREQ_REG_ADDR, (uint8_t)freq);
+    return matSetRegisters(CONFIG_PAGE, PWM_FREQ_REG_ADDR, (uint8_t)freq);
 }
 
 /**
@@ -732,9 +741,9 @@ esp_err_t dSetPWMFrequency(PageState *state, MatrixHandles matrices, enum PWMFre
  * Returns: ESP_OK if successful. Otherwise, some of
  *          the matrices may have been reset, but not all.
  */
-esp_err_t dReset(PageState *state, MatrixHandles matrices)
+esp_err_t matReset(void)
 {
-    return dSetRegisters(state, matrices, CONFIG_PAGE, RESET_REG_ADDR, RESET_KEY);
+    return matSetRegisters(CONFIG_PAGE, RESET_REG_ADDR, RESET_KEY);
 }
 
 /**
@@ -742,7 +751,7 @@ esp_err_t dReset(PageState *state, MatrixHandles matrices)
  * number ledNum. Internally, this changes the PWM duty in
  * 256 steps.
  */
-esp_err_t dSetColor(PageState *state, MatrixHandles matrices, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue)
+esp_err_t matSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue)
 {
     esp_err_t err;
     LEDReg ledReg;
@@ -758,23 +767,23 @@ esp_err_t dSetColor(PageState *state, MatrixHandles matrices, uint16_t ledNum, u
     }
     /* determine the correct PWM registers */
     ledReg = LEDNumToReg[ledNum];
-    err = dParseLEDRegisterInfo(&matrixHandle, &page, NULL, ledReg, matrices);
+    err = matParseLEDRegisterInfo(&matrixHandle, &page, NULL, ledReg);
     if (err != ESP_OK)
     {
         return err;
     }
     /* set PWM registers to provided values */
-    err = dSetRegister(state, matrices, matrixHandle, page, ledReg.red, red);
+    err = matSetRegister(matrixHandle, page, ledReg.red, red);
     if (err != ESP_OK)
     {
         return err;
     }
-    err = dSetRegister(state, matrices, matrixHandle, page, ledReg.green, green);
+    err = matSetRegister( matrixHandle, page, ledReg.green, green);
     if (err != ESP_OK)
     {
         return err;
     }
-    err = dSetRegister(state, matrices, matrixHandle, page, ledReg.blue, blue);
+    err = matSetRegister(matrixHandle, page, ledReg.blue, blue);
     if (err != ESP_OK)
     {
         return err;
@@ -788,7 +797,7 @@ esp_err_t dSetColor(PageState *state, MatrixHandles matrices, uint16_t ledNum, u
  * for exact calculations. This can be considered a dimming
  * function.
  */
-esp_err_t dSetScaling(PageState *state, MatrixHandles matrices, uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue)
+esp_err_t matSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue)
 {
     esp_err_t err;
     LEDReg ledReg;
@@ -804,23 +813,23 @@ esp_err_t dSetScaling(PageState *state, MatrixHandles matrices, uint16_t ledNum,
     }
     /* determine the correct PWM registers */
     ledReg = LEDNumToReg[ledNum];
-    err = dParseLEDRegisterInfo(&matrixHandle, NULL, &page, ledReg, matrices);
+    err = matParseLEDRegisterInfo(&matrixHandle, NULL, &page, ledReg);
     if (err != ESP_OK)
     {
         return err;
     }
     /* set PWM registers to provided values */
-    err = dSetRegister(state, matrices, matrixHandle, page, ledReg.red, red);
+    err = matSetRegister(matrixHandle, page, ledReg.red, red);
     if (err != ESP_OK)
     {
         return err;
     }
-    err = dSetRegister(state, matrices, matrixHandle, page, ledReg.green, green);
+    err = matSetRegister(matrixHandle, page, ledReg.green, green);
     if (err != ESP_OK)
     {
         return err;
     }
-    err = dSetRegister(state, matrices, matrixHandle, page, ledReg.blue, blue);
+    err = matSetRegister(matrixHandle, page, ledReg.blue, blue);
     if (err != ESP_OK)
     {
         return err;
@@ -832,31 +841,31 @@ esp_err_t dSetScaling(PageState *state, MatrixHandles matrices, uint16_t ledNum,
 /*******************************************/
 /*            TESTING FEATURES             */
 /*******************************************/
-esp_err_t dReleaseBus(MatrixHandles *matrices) {
+esp_err_t matReleaseBus(void) {
     esp_err_t ret;
     /* input guards */
-    if (matrices->I2CBus == NULL) {
+    if (sI2CBus == NULL) {
         return ESP_OK;
     }
-    ret = i2c_master_bus_rm_device(matrices->mat1Handle);
+    ret = i2c_master_bus_rm_device(sMat1Handle);
     if (ret != ESP_OK) {
         return ESP_FAIL;
     }
-    ret = i2c_master_bus_rm_device(matrices->mat2Handle);
+    ret = i2c_master_bus_rm_device(sMat2Handle);
     if (ret != ESP_OK) {
         return ESP_FAIL;
     }
-    ret = i2c_master_bus_rm_device(matrices->mat3Handle);
+    ret = i2c_master_bus_rm_device(sMat3Handle);
     if (ret != ESP_OK) {
         return ESP_FAIL;
     }
-    ret = i2c_del_master_bus(matrices->I2CBus);
+    ret = i2c_del_master_bus(sI2CBus);
     if (ret == ESP_OK) {
         /* remove dangling pointer */
-        matrices->I2CBus = NULL;
-        matrices->mat1Handle = NULL;
-        matrices->mat2Handle = NULL;
-        matrices->mat3Handle = NULL;
+        sI2CBus = NULL;
+        sMat1Handle = NULL;
+        sMat2Handle = NULL;
+        sMat3Handle = NULL;
     }
     return ret;
 }

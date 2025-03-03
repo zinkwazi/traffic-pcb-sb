@@ -5,6 +5,8 @@
 #ifndef MAIN_TYPES_H_
 #define MAIN_TYPES_H_
 
+#include <stddef.h>
+
 #include "freertos/event_groups.h"
 #include "freertos/semphr.h"
 

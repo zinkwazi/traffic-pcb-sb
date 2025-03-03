@@ -6,10 +6,11 @@
  * configuration including function hooks.
  */
 
-/* IDF component includes */
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -31,30 +32,29 @@
 #include "esp_timer.h"
 #include "nvs.h"
 #include "esp_https_ota.h"
+#include "esp_check.h"
 
-/* Main component includes */
+#include "app_errors.h"
+#include "led_matrix.h"
+#include "led_registers.h"
 #include "pinout.h"
-#include "tasks.h"
+
 #include "utilities.h"
+#include "tasks.h"
 #include "wifi.h"
 #include "routines.h"
 #include "main_types.h"
-#include "app_errors.h"
-
-/* Component includes */
-#include "dots_commands.h"
-#include "led_registers.h"
+#include "refresh.h"
 
 #define TAG "app_main"
 
-/** @brief The queue size in elements of the I2C command queue. */
-#define I2C_QUEUE_SIZE 20
+/* TomTom HTTPS configuration */
+#define API_METHOD HTTP_METHOD_GET
+#define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
 
-/** @brief The queue size in elements of the worker command queue. */
-#define WORKER_QUEUE_SIZE 1
 
 struct MainTaskResources {
-  QueueHandle_t workerQueue;
+  esp_http_client_handle_t client;
   nvs_handle_t nvsHandle;
   UserSettings *settings;
   esp_timer_handle_t refreshTimer;
@@ -71,12 +71,21 @@ struct MainTaskState {
 
 typedef struct MainTaskState MainTaskState;
 
-void initializeApplication(MainTaskResources *res, MainTaskState *state) {
+void initializeMainState(MainTaskState *state) {
+  state->toggle = false;
+  state->first = true;
+
+#ifdef CONFIG_FIRST_DIR_NORTH
+  state->dir = NORTH;
+#else
+  state->dir = SOUTH;
+#endif
+}
+
+void initializeApplication(MainTaskState *state, MainTaskResources *res) {
   /* global resources */
   static ErrorResources errRes;
   static UserSettings settings;
-  QueueHandle_t I2CQueue;
-  QueueHandle_t workerQueue;
   /* input guards */
   SPIN_IF_FALSE(
     (res != NULL &&
@@ -107,14 +116,6 @@ void initializeApplication(MainTaskResources *res, MainTaskState *state) {
   res->errRes = &errRes;
   /* initialize global resources */
   ESP_LOGI(TAG, "Initializing global resources...");
-  I2CQueue = xQueueCreate(I2C_QUEUE_SIZE, sizeof(I2CCommand));
-  workerQueue = xQueueCreate(WORKER_QUEUE_SIZE, sizeof(WorkerCommand));
-  SPIN_IF_FALSE(
-    (I2CQueue != NULL &&
-     workerQueue != NULL),
-    res->errRes
-  );
-  res->workerQueue = workerQueue;
   settings.wifiSSID = NULL;
   settings.wifiSSIDLen = 0;
   settings.wifiPass = NULL;
@@ -142,6 +143,11 @@ void initializeApplication(MainTaskResources *res, MainTaskState *state) {
     ),
     res->errRes
   );
+  /* Initialize I2C bus and matrices */
+  SPIN_IF_ERR(
+    matInitialize(I2C_PORT, SDA_PIN, SCL_PIN),
+    res->errRes
+  );
   /* initialize NVS */
   ESP_LOGI(TAG, "Initializing non-volatile storage...");
   SPIN_IF_ERR(
@@ -158,6 +164,10 @@ void initializeApplication(MainTaskResources *res, MainTaskState *state) {
     removeExtraMainNvsEntries(res->nvsHandle),
     res->errRes
   );
+  SPIN_IF_ERR(
+    removeExtraWorkerNvsEntries(),
+    res->errRes
+  )
   /* Ensure NVS entries exist */
   ESP_LOGI(TAG, "Checking whether nvs entries exist...");
   UPDATE_SETTINGS_IF_ERR(
@@ -213,14 +223,6 @@ void initializeApplication(MainTaskResources *res, MainTaskState *state) {
   );
   /* create tasks */
   ESP_LOGI(TAG, "Creating tasks...");
-  SPIN_IF_ERR(
-    createI2CGatekeeperTask(NULL, I2CQueue),
-    res->errRes
-  );
-  SPIN_IF_ERR(
-    createWorkerTask(NULL, workerQueue, I2CQueue, res->errRes),
-    res->errRes
-  );
   TaskHandle_t otaTask;
   SPIN_IF_ERR(
     createOTATask(&otaTask, res->errRes),
@@ -248,6 +250,135 @@ void initializeApplication(MainTaskResources *res, MainTaskState *state) {
   );
 }
 
+esp_http_client_handle_t initHttpClient(void) {
+  esp_http_client_config_t httpConfig = {
+    .host = CONFIG_DATA_SERVER,
+    .path = "/",
+    .auth_type = API_AUTH_TYPE,
+    .method = API_METHOD,
+    .crt_bundle_attach = esp_crt_bundle_attach,
+    .event_handler = NULL,
+    .user_data = NULL,
+  };
+
+  return esp_http_client_init(&httpConfig);
+}
+
+esp_err_t updateStatus(Direction dir) {
+  esp_err_t ret = ESP_OK;
+  int northLvl, southLvl, eastLvl, westLvl;
+  /* update direction LEDs */
+  switch (dir) {
+    case NORTH:
+      northLvl = 1;
+      eastLvl = 0;
+      southLvl = 0;
+      westLvl = 1;
+      break;
+    case SOUTH:
+      northLvl = 0;
+      eastLvl = 1;
+      southLvl = 1;
+      westLvl = 0;
+      break;
+    default:
+      goto error_with_dir_leds_off;
+      break;
+  }
+  if (gpio_set_level(LED_NORTH_PIN, northLvl) != ESP_OK) {
+    goto error_with_dir_leds_off;
+  }
+  if (gpio_set_level(LED_EAST_PIN, eastLvl) != ESP_OK) {
+    goto error_with_dir_leds_off;
+  }
+  if (gpio_set_level(LED_SOUTH_PIN, southLvl) != ESP_OK) {
+    goto error_with_dir_leds_off;
+  }
+  if (gpio_set_level(LED_WEST_PIN, westLvl) != ESP_OK) {
+    goto error_with_dir_leds_off;
+  }
+  return ret;
+error_with_dir_leds_off:
+  ESP_ERROR_CHECK(gpio_set_level(LED_NORTH_PIN, 0));
+  ESP_ERROR_CHECK(gpio_set_level(LED_EAST_PIN, 0));
+  ESP_ERROR_CHECK(gpio_set_level(LED_SOUTH_PIN, 0));
+  ESP_ERROR_CHECK(gpio_set_level(LED_WEST_PIN, 0));
+  return ret;
+}
+
+void mainRefresh(MainTaskState *state, MainTaskResources *res, LEDData typicalNorth[static MAX_NUM_LEDS_REG], LEDData typicalSouth[static MAX_NUM_LEDS_REG]) {
+  esp_err_t err;
+  LEDData *typicalData;
+  /* input guards */
+  SPIN_IF_FALSE(
+    state != NULL &&
+    res != NULL &&
+    typicalNorth != NULL &&
+    typicalSouth != NULL,
+    res->errRes
+  );
+  /* handle toggle button press */
+  if (!state->first && state->toggle) {
+    state->toggle = false;
+    switch (state->dir) {
+      case NORTH:
+        state->dir = SOUTH;
+        break;
+      case SOUTH:
+        state->dir = NORTH;
+        break;
+      default:
+        state->dir = NORTH;
+        break;
+    }
+  }
+  /* determine correct typical LED array */
+  switch (state->dir) {
+    case NORTH:
+      typicalData = typicalNorth;
+      break;
+    case SOUTH:
+      typicalData = typicalSouth;
+      break;
+    default:
+      state->dir = NORTH;
+      typicalData = typicalNorth;
+      break;
+  }
+  /* clear previous LEDs */
+  if (!state->first) {
+    clearLEDs(state->dir);
+  } else {
+    state->first = false;
+  }
+  /* refresh LEDs */
+  if (updateStatus(state->dir) != ESP_OK) {
+    ESP_LOGE(TAG, "failed to update LEDs");
+    return;
+  }
+  err = handleRefresh(state->dir, typicalData, res->client, res->errRes);
+}
+
+void waitForTaskNotification(MainTaskResources *res) {
+  esp_err_t err = esp_timer_restart(res->refreshTimer, ((uint64_t) CONFIG_LED_REFRESH_PERIOD) * 60 * 1000000); // restart timer if toggle is pressed
+  if (err == ESP_ERR_INVALID_STATE) { // meaning: timer has not yet started
+    err = esp_timer_start_periodic(res->refreshTimer, ((uint64_t) CONFIG_LED_REFRESH_PERIOD) * 60 * 1000000);
+  }
+  SPIN_IF_ERR(
+    err,
+    res->errRes
+  );
+  /* wait for button press or timer reset */
+  uint32_t notificationValue;
+  do {
+    notificationValue = ulTaskNotifyTake(pdTRUE, INT_MAX);
+  } while (notificationValue != 1); // a timeout occurred while waiting for button press
+  SPIN_IF_ERR(
+    esp_timer_stop(res->refreshTimer),
+    res->errRes
+  );
+}
+
 /**
  * @brief The entrypoint task of the application.
  * 
@@ -259,92 +390,36 @@ void app_main(void)
 {
     MainTaskResources res;
     MainTaskState state;
+    esp_err_t err;
+    LEDData typicalNorthSpeeds[MAX_NUM_LEDS_REG];
+    LEDData typicalSouthSpeeds[MAX_NUM_LEDS_REG];
     /* set task priority */
     vTaskPrioritySet(NULL, CONFIG_MAIN_PRIO);
     /* print firmware information */
     ESP_LOGE(TAG, "Traffic Firmware " VERBOSE_VERSION_STR);
     ESP_LOGE(TAG, "OTA binary: " FIRMWARE_UPGRADE_URL);
     ESP_LOGE(TAG, "Max LED number: %d", MAX_NUM_LEDS_REG - 1); // 0 is not an LED
-    /* initialize main task state */
-    state.toggle = false;
-    state.first = true;
-#ifdef CONFIG_FIRST_DIR_NORTH
-    state.dir = NORTH;
-#else
-    state.dir = SOUTH;
-#endif
     /* initialize application */
-    ESP_LOGI(TAG, "1");
-    initializeApplication(&res, &state);
-    /* quick clear LEDs (potentially leftover from restart) */
-    SPIN_IF_ERR(
-      quickClearLEDs(res.workerQueue),
-      res.errRes
-    );
+    initializeMainState(&state);
+    initializeApplication(&state, &res);
+    if (matReset() != ESP_OK ||
+        matSetGlobalCurrentControl(CONFIG_GLOBAL_LED_CURRENT) != ESP_OK ||
+        matSetOperatingMode(NORMAL_OPERATION) != ESP_OK) 
+    {
+        ESP_LOGE(TAG, "failed to quick clear matrices");
+    }
+    res.client = initHttpClient();
+    err = refreshTypicalSpeeds(res.client, typicalNorthSpeeds, typicalSouthSpeeds);
+    SPIN_IF_ERR(err, res.errRes);
     ESP_LOGI(TAG, "initialization complete, handling toggle button presses...");
     /* handle requests to update all LEDs */
+    SPIN_IF_ERR(
+      enableDirectionButtonIntr(),
+      res.errRes
+    );
     do {
-      /* update leds */
-      if (!state.first) {
-        if (clearLEDs(res.workerQueue, state.dir) != ESP_OK) {
-          ESP_LOGE(TAG, "failed to clear LEDs");
-          continue;
-        }
-      } else {
-        state.first = false;
-      }
-      if (updateLEDs(res.workerQueue, state.dir) != ESP_OK) {
-        ESP_LOGE(TAG, "failed to update LEDs");
-        continue;
-      }
-      SPIN_IF_ERR(
-        clearLEDs(res.workerQueue, state.dir),
-        res.errRes
-      );
-      SPIN_IF_ERR(
-        updateLEDs(res.workerQueue, state.dir),
-        res.errRes
-      );
-      /* set or restart timer */
-      esp_err_t err = esp_timer_restart(res.refreshTimer, ((uint64_t) CONFIG_LED_REFRESH_PERIOD) * 60 * 1000000); // restart timer if toggle is pressed
-      if (err == ESP_ERR_INVALID_STATE) { // meaning: timer has not yet started
-        err = esp_timer_start_periodic(res.refreshTimer, ((uint64_t) CONFIG_LED_REFRESH_PERIOD) * 60 * 1000000);
-      }
-      SPIN_IF_ERR(
-        err,
-        res.errRes
-      );
-      /* wait for button press or timer reset */
-      SPIN_IF_ERR(
-        enableDirectionButtonIntr(),
-        res.errRes
-      );
-      uint32_t notificationValue;
-      do {
-        notificationValue = ulTaskNotifyTake(pdTRUE, INT_MAX);
-      } while (notificationValue != 1); // a timeout occurred while waiting for button press
-      SPIN_IF_ERR(
-        disableDirectionButtonIntr(),
-        res.errRes
-      );
-      SPIN_IF_ERR(
-        esp_timer_stop(res.refreshTimer),
-        res.errRes
-      );
-      if (state.toggle) {
-        state.toggle = false;
-        switch (state.dir) {
-          case NORTH:
-            state.dir = SOUTH;
-            break;
-          case SOUTH:
-            state.dir = NORTH;
-            break;
-          default:
-            state.dir = NORTH;
-            break;
-        }
-      }
+      mainRefresh(&state, &res, typicalNorthSpeeds, typicalSouthSpeeds);
+      waitForTaskNotification(&res);
     } while (true);
     /* This task has nothing left to do, but should not exit */
     throwFatalError(res.errRes, false);

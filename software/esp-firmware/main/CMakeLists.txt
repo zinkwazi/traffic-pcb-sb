@@ -1,9 +1,9 @@
 idf_component_register(SRCS "src/main.c" 
                             "src/routines.c"
                             "src/tasks.c" 
-                            "src/utilities.c" 
                             "src/wifi.c"
                             "src/nvs_settings.c"
+                            "src/refresh.c"
                     INCLUDE_DIRS "include"
                     REQUIRES common
                              app_errors  

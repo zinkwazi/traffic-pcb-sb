@@ -5,14 +5,18 @@
  * of LEDs during a refresh to display a particular animation.
  */
 
-#include "animations.h"
-#include "led_coordinates.h"
-
-#include "esp_err.h"
-
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
+
+#include "esp_err.h"
+#include "esp_log.h"
+
+#include "animations.h"
+#include "led_coordinates.h"
+
+
+
 
 #define DIAG_LINE_ANGLE (M_PI / 3)
 #define PARABOLIC_MAP_FACTOR (0.12)
@@ -94,6 +98,7 @@ esp_err_t sortLEDsByDistParabolicMap(int32_t ledArr[], int32_t ledArrLen) {
     struct LEDCoordPair sortedCoords[MAX_NUM_LEDS_COORDS];
     /* input guards */
     if (ledArr == NULL || ledArrLen != MAX_NUM_LEDS_COORDS) {
+        ESP_LOGI("sort", "failed. %ld != %d", ledArrLen, MAX_NUM_LEDS_COORDS);
         return ESP_FAIL;
     }
     /* copy coordinates */
