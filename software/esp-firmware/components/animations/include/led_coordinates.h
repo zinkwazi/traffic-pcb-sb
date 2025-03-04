@@ -21,7 +21,7 @@
 #error "Unsupported Hardware Version"
 #endif
 
-extern const LEDCoord LEDNumToCoord[MAX_NUM_LEDS_COORDS];
+extern const LEDCoord LEDNumToCoord[MAX_NUM_LEDS_COORDS + 1];
 
 
 #endif /* LED_COORDINATES_H_ */

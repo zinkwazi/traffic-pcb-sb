@@ -12,7 +12,7 @@
 
 /* A mapping from LED number to corresponding
 x, y PCB coordinates. */
-const LEDCoord LEDNumToCoord[MAX_NUM_LEDS_COORDS] = {
+const LEDCoord LEDNumToCoord[MAX_NUM_LEDS_COORDS + 1] = {
 	{0, 0}, // there is no LED with number 0
 	{-178, 68}, // 1
 	{-175, 66}, // 2

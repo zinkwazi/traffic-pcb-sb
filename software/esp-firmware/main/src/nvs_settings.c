@@ -250,54 +250,155 @@ void updateNvsSettings(nvs_handle_t nvsHandle, ErrorResources *errRes) {
   resolveHandleableError(errRes, false, false); // returns error LED to previous state
 }
 
-esp_err_t getSpeedsFromNvs(LEDData *speeds, uint32_t speedsLen, Direction dir, bool currentSpeeds) {
-  nvs_handle_t nvsHandle;
-  size_t size = speedsLen * sizeof(LEDData);
-  if (nvs_open(WORKER_NVS_NAMESPACE, NVS_READONLY, &nvsHandle) != ESP_OK) {
+/**
+ * @brief Updates the data stored in the provided array by querying it from
+ *        non-volatile storage.
+ * 
+ * @param[out] data The destination of the retrieved data.
+ * @param[in] dir The direction of data to retrieve.
+ * @param[in] category The category of data to retrieve.
+ * 
+ * @returns ESP_OK if successful.
+ *          ESP_ERR_INVALID_ARG if invalid argument.
+ *          ESP_ERR_INVALID_SIZE if retrieved data is incorrect size.
+ *          Various error codes passed from NVS functions.
+ *          ESP_FAIL if something unexpected occurred.
+ */
+esp_err_t refreshSpeedsFromNVS(LEDData data[static MAX_NUM_LEDS_REG + 1], Direction dir, SpeedCategory category)
+{
+    esp_err_t err;
+    nvs_handle_t nvsHandle;
+    size_t size;
+    char *key;
+    /* input guards */
+    if (data == NULL)
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+    /* open nvs */
+    err = nvs_open(WORKER_NVS_NAMESPACE, NVS_READONLY, &nvsHandle);
+    if (err != ESP_OK) {
+      return err;
+    }
+    /* determine proper nvs key */
+    key = NULL;
+    switch (dir)
+    {
+      case NORTH:
+        switch(category)
+        {
+          case LIVE:
+            key = CURRENT_NORTH_NVS_KEY;
+            break;
+          case TYPICAL:
+            key = TYPICAL_NORTH_NVS_KEY;
+            break;
+          default:
+            return ESP_ERR_INVALID_ARG;
+        }
+        break;
+      case SOUTH:
+      switch(category)
+      {
+        case LIVE:
+          key = CURRENT_SOUTH_NVS_KEY;
+          break;
+        case TYPICAL:
+          key = TYPICAL_SOUTH_NVS_KEY;
+          break;
+        default:
+          return ESP_ERR_INVALID_ARG;
+      }
+      break;
+    }
+    if (key == NULL) {
       return ESP_FAIL;
-  }
-  char *key = NULL;
-  if (currentSpeeds) {
-      key = (dir == NORTH) ? CURRENT_NORTH_NVS_KEY : CURRENT_SOUTH_NVS_KEY;
-  } else {
-      key = (dir == NORTH) ? TYPICAL_NORTH_NVS_KEY : TYPICAL_SOUTH_NVS_KEY;
-  }
-  if (nvs_get_blob(nvsHandle, key, speeds, &size) != ESP_OK) {
-      return ESP_FAIL;
-  }
-  if (size == 0 || size / sizeof(uint8_t) != speedsLen * sizeof(LEDData)) {
-      return ESP_FAIL;
-  }
-  nvs_close(nvsHandle);
-  return ESP_OK;
+    }
+    /* retrieve NVS data */
+    size = MAX_NUM_LEDS_REG + 1 * sizeof(LEDData);
+    err = nvs_get_blob(nvsHandle, key, data, &size);
+    if (err != ESP_OK) {
+      return err;
+    }
+    if (size == 0 || size / sizeof(uint8_t) != MAX_NUM_LEDS_REG + 1 * sizeof(LEDData))
+    {
+      return ESP_ERR_INVALID_SIZE;
+    }
+    nvs_close(nvsHandle);
+    return ESP_OK;
 }
 
-esp_err_t setSpeedsToNvs(LEDData *speeds, uint32_t speedsLen, Direction dir, bool currentSpeeds) {
+esp_err_t storeSpeedsToNVS(LEDData data[static MAX_NUM_LEDS_REG + 1], Direction dir, SpeedCategory category)
+{
+  esp_err_t err;
   nvs_handle_t nvsHandle;
-  size_t size = speedsLen * sizeof(LEDData);
-  esp_err_t err = ESP_OK;
-  if ((err = nvs_open(WORKER_NVS_NAMESPACE, NVS_READWRITE, &nvsHandle)) != ESP_OK) {
-      return ESP_FAIL;
+  size_t size;
+  char *key;
+  /* input guards */
+  if (data == NULL)
+  {
+      return ESP_ERR_INVALID_ARG;
   }
-  char *key = NULL;
-  if (currentSpeeds) {
-      key = (dir == NORTH) ? CURRENT_NORTH_NVS_KEY : CURRENT_SOUTH_NVS_KEY;
-  } else {
-      key = (dir == NORTH) ? TYPICAL_NORTH_NVS_KEY : TYPICAL_SOUTH_NVS_KEY;
-  }
-  err = nvs_set_blob(nvsHandle, key, speeds, size);
+  /* open nvs */
+  err = nvs_open(WORKER_NVS_NAMESPACE, NVS_READWRITE, &nvsHandle);
   if (err != ESP_OK) {
+    return err;
+  }
+  /* determine proper nvs key */
+  key = NULL;
+  switch (dir)
+  {
+    case NORTH:
+      switch(category)
+      {
+        case LIVE:
+          key = CURRENT_NORTH_NVS_KEY;
+          break;
+        case TYPICAL:
+          key = TYPICAL_NORTH_NVS_KEY;
+          break;
+        default:
+          return ESP_ERR_INVALID_ARG;
+      }
+      break;
+    case SOUTH:
+    switch(category)
+    {
+      case LIVE:
+        key = CURRENT_SOUTH_NVS_KEY;
+        break;
+      case TYPICAL:
+        key = TYPICAL_SOUTH_NVS_KEY;
+        break;
+      default:
+        return ESP_ERR_INVALID_ARG;
+    }
+    break;
+  }
+  if (key == NULL) {
+    ESP_LOGE(TAG, "nvs key is null");
+    return ESP_FAIL;
+  }
+  /* store data to NVS */
+  size = MAX_NUM_LEDS_REG + 1 * sizeof(LEDData);
+  err = nvs_set_blob(nvsHandle, key, data, size);
+  if (err != ESP_OK) {
+      ESP_LOGE(TAG, "failed to set blob. err: %d", err);
       err = nvs_erase_key(nvsHandle, key);
       if (err != ESP_OK) {
-          return ESP_FAIL;
+        ESP_LOGE(TAG, "failed to erase key");
+        return err;
       }
-      err = nvs_set_blob(nvsHandle, key, speeds, size);
+      err = nvs_set_blob(nvsHandle, key, data, size);
       if (err != ESP_OK) {
-          return ESP_FAIL;
+        ESP_LOGE(TAG, "failed to set blob after erase key");
+        return err;
       }
   }    
-  if (nvs_commit(nvsHandle) != ESP_OK) {
-      return ESP_FAIL;
+  err = nvs_commit(nvsHandle);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "failed to commit nvs changes");
+    return err;
   }
   nvs_close(nvsHandle);
   return ESP_OK;

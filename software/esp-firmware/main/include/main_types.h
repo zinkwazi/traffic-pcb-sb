@@ -23,16 +23,26 @@ enum Direction {
 typedef enum Direction Direction;
 
 /**
+ * @brief Describes the type of LED data of stored.
+ */
+enum SpeedCategory {
+    LIVE,
+    TYPICAL,
+};
+
+typedef enum SpeedCategory SpeedCategory;
+
+/**
  * @brief User non-volatile storage settings.
  * 
  * @note This struct is populated when user non-volatile storage settings
  *       are retrieved with retrieveNvsEntries.
  */
 struct UserSettings {
-  char *wifiSSID; /*!< A string containing the wifi SSID. */
-  size_t wifiSSIDLen; /*!< The length of the wifiSSID string. */
-  char *wifiPass; /*!< A string containing the wifi password. */
-  size_t wifiPassLen; /*!< The length of the wifiPass string. */
+    char *wifiSSID; /*!< A string containing the wifi SSID. */
+    size_t wifiSSIDLen; /*!< The length of the wifiSSID string. */
+    char *wifiPass; /*!< A string containing the wifi password. */
+    size_t wifiPassLen; /*!< The length of the wifiPass string. */
 };
 
 typedef struct UserSettings UserSettings;

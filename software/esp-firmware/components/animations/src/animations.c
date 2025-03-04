@@ -15,8 +15,7 @@
 #include "animations.h"
 #include "led_coordinates.h"
 
-
-
+#define TAG "animations"
 
 #define DIAG_LINE_ANGLE (M_PI / 3)
 #define PARABOLIC_MAP_FACTOR (0.12)
@@ -27,6 +26,66 @@ struct LEDCoordPair {
     int32_t ledNum;
     LEDCoord coord;
 };
+
+double signedDistanceFromDiagLine(LEDCoord coords);
+double signedDistanceFromDiagLineLifted(LEDCoord coords);
+int compDistFromDiagLine(const void *c1, const void *c2);
+int compDistFromParabolicMapLine(const void *c1, const void *c2);
+esp_err_t sortLEDsByDistanceFromDiagLine(int32_t ledArr[], int32_t ledArrLen);
+esp_err_t sortLEDsByDistParabolicMap(int32_t ledArr[], int32_t ledArrLen);
+
+/**
+ * @brief Generates an ordering of LEDs corresponding to the chosen animation.
+ * 
+ * @param[out] ledOrder The location where the order of LEDs will be placed,
+ *        where the first LED in the animation is stored at index 0.
+ * @param[in] anim The animation that will be generated.
+ * 
+ * @returns ESP_OK if successful.
+ *          ESP_ERR_INVALID_ARG if invalid arguments are provided.
+ *          ESP_FAIL if an unexpected error occurred.
+ */
+esp_err_t orderLEDs(int32_t ledOrder[static MAX_NUM_LEDS_COORDS + 1], Animation anim)
+{
+    esp_err_t err;
+    /* input guards */
+    if (ledOrder == NULL)
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+    /* select ordering function */
+    err = ESP_FAIL;
+    switch (anim)
+    {
+        case DIAG_LINE:
+            err = sortLEDsByDistanceFromDiagLine(ledOrder, MAX_NUM_LEDS_COORDS + 1);
+            break;
+        case DIAG_LINE_REVERSE:
+            err = sortLEDsByDistanceFromDiagLine(ledOrder, MAX_NUM_LEDS_COORDS + 1);
+            for (int32_t i = 0; i < (MAX_NUM_LEDS_COORDS + 1) / 2; i++) {
+                int32_t temp = ledOrder[i];
+                ledOrder[i] = ledOrder[MAX_NUM_LEDS_COORDS - i - 1];
+                ledOrder[MAX_NUM_LEDS_COORDS - i - 1] = temp;
+            }
+            break;
+        case CURVED_LINE:
+            err = sortLEDsByDistParabolicMap(ledOrder, MAX_NUM_LEDS_COORDS + 1);
+            break;
+        case CURVED_LINE_REVERSE:
+            err = sortLEDsByDistParabolicMap(ledOrder, MAX_NUM_LEDS_COORDS + 1);
+            for (int32_t i = 0; i < (MAX_NUM_LEDS_COORDS + 1) / 2; i++) {
+                int32_t temp = ledOrder[i];
+                ledOrder[i] = ledOrder[MAX_NUM_LEDS_COORDS - i - 1];
+                ledOrder[MAX_NUM_LEDS_COORDS - i - 1] = temp;
+            }
+            break;
+        default:
+            ESP_LOGE(TAG, "Encountered invalid animation: %d", anim);
+            err = ESP_FAIL;
+            break;
+    }
+    return err;
+}
 
 /**
  * @brief Calculates the distance of point (x, y) to the line y = tan(pi/4) * x.
@@ -75,41 +134,41 @@ int compDistFromParabolicMapLine(const void *c1, const void *c2) {
  * @param[in] theta The angle of the defined line.
  */
 esp_err_t sortLEDsByDistanceFromDiagLine(int32_t ledArr[], int32_t ledArrLen) {
-    struct LEDCoordPair sortedCoords[MAX_NUM_LEDS_COORDS];
+    struct LEDCoordPair sortedCoords[MAX_NUM_LEDS_COORDS + 1];
     /* input guards */
-    if (ledArr == NULL || ledArrLen != MAX_NUM_LEDS_COORDS) {
+    if (ledArr == NULL || ledArrLen != MAX_NUM_LEDS_COORDS + 1) {
         return ESP_FAIL;
     }
     /* copy coordinates */
-    for (int32_t i = 0; i < MAX_NUM_LEDS_COORDS; i++) {
+    for (int32_t i = 0; i < MAX_NUM_LEDS_COORDS + 1; i++) {
         sortedCoords[i].ledNum = i;
         sortedCoords[i].coord = LEDNumToCoord[i];
     }
     /* sort based on distances */
-    qsort(sortedCoords, MAX_NUM_LEDS_COORDS, sizeof(struct LEDCoordPair), compDistFromDiagLine);
+    qsort(sortedCoords, MAX_NUM_LEDS_COORDS + 1, sizeof(struct LEDCoordPair), compDistFromDiagLine);
     /* copy results */
-    for (int32_t i = 0 ; i < MAX_NUM_LEDS_COORDS; i++) {
+    for (int32_t i = 0 ; i < MAX_NUM_LEDS_COORDS + 1; i++) {
         ledArr[i] = sortedCoords[i].ledNum;
     }
     return ESP_OK;
 }
 
 esp_err_t sortLEDsByDistParabolicMap(int32_t ledArr[], int32_t ledArrLen) {
-    struct LEDCoordPair sortedCoords[MAX_NUM_LEDS_COORDS];
+    struct LEDCoordPair sortedCoords[MAX_NUM_LEDS_COORDS + 1];
     /* input guards */
-    if (ledArr == NULL || ledArrLen != MAX_NUM_LEDS_COORDS) {
+    if (ledArr == NULL || ledArrLen != MAX_NUM_LEDS_COORDS + 1) {
         ESP_LOGI("sort", "failed. %ld != %d", ledArrLen, MAX_NUM_LEDS_COORDS);
         return ESP_FAIL;
     }
     /* copy coordinates */
-    for (int32_t i = 0; i < MAX_NUM_LEDS_COORDS; i++) {
+    for (int32_t i = 0; i < MAX_NUM_LEDS_COORDS + 1; i++) {
         sortedCoords[i].ledNum = i;
         sortedCoords[i].coord = LEDNumToCoord[i];
     }
     /* sort based on distances */
-    qsort(sortedCoords, MAX_NUM_LEDS_COORDS, sizeof(struct LEDCoordPair), compDistFromParabolicMapLine);
+    qsort(sortedCoords, MAX_NUM_LEDS_COORDS + 1, sizeof(struct LEDCoordPair), compDistFromParabolicMapLine);
     /* copy results */
-    for (int32_t i = 0 ; i < MAX_NUM_LEDS_COORDS; i++) {
+    for (int32_t i = 0 ; i < MAX_NUM_LEDS_COORDS + 1; i++) {
         ledArr[i] = sortedCoords[i].ledNum;
     }
     return ESP_OK;

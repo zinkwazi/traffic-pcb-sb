@@ -33,6 +33,7 @@
 #include "esp_timer.h"
 #include "nvs.h"
 #include "esp_https_ota.h"
+#include "esp_debug_helpers.h"
 
 #include "pinout.h"
 #include "app_errors.h"
@@ -62,7 +63,7 @@
  *                     handling resources. If NULL, immediately spins.
  */
 #define SPIN_IF_ERR(x, errResources) \
-      if (x != ESP_OK) { throwFatalError(errResources, false); }
+      if (x != ESP_OK) { ESP_LOGE(TAG, "err: %d", x); esp_backtrace_print(5); throwFatalError(errResources, false); }
 
 /**
  * @brief Calls spinForever if x is not true.
@@ -72,7 +73,7 @@
  *                     handling resources. If NULL, immediately spins.
  */
 #define SPIN_IF_FALSE(x, errResources) \
-      if (!x) { throwFatalError(errResources, false); } 
+      if (!x) { esp_backtrace_print(5); throwFatalError(errResources, false); } 
 
 /**
  * @brief Calls updateSettingsAndRestart if x is not ESP_OK.

@@ -38,6 +38,7 @@
 #include "led_matrix.h"
 #include "led_registers.h"
 #include "pinout.h"
+#include "animations.h"
 
 #include "utilities.h"
 #include "tasks.h"
@@ -306,19 +307,20 @@ error_with_dir_leds_off:
   return ret;
 }
 
-void mainRefresh(MainTaskState *state, MainTaskResources *res, LEDData typicalNorth[static MAX_NUM_LEDS_REG], LEDData typicalSouth[static MAX_NUM_LEDS_REG]) {
+esp_err_t mainRefresh(MainTaskState *state, MainTaskResources *res, LEDData typicalNorth[static MAX_NUM_LEDS_REG + 1], LEDData typicalSouth[static MAX_NUM_LEDS_REG + 1]) {
   esp_err_t err;
   LEDData *typicalData;
+  LEDData currentSpeeds[MAX_NUM_LEDS_REG + 1];
   /* input guards */
-  SPIN_IF_FALSE(
-    state != NULL &&
-    res != NULL &&
-    typicalNorth != NULL &&
-    typicalSouth != NULL,
-    res->errRes
-  );
+  SPIN_IF_FALSE(res != NULL, NULL);
+  if (state == NULL ||
+      typicalNorth == NULL ||
+      typicalSouth == NULL)
+  {
+    SPIN_IF_ERR(ESP_FAIL, res->errRes);
+  }
   /* handle toggle button press */
-  if (!state->first && state->toggle) {
+  if (state->toggle) {
     state->toggle = false;
     switch (state->dir) {
       case NORTH:
@@ -345,18 +347,27 @@ void mainRefresh(MainTaskState *state, MainTaskResources *res, LEDData typicalNo
       typicalData = typicalNorth;
       break;
   }
-  /* clear previous LEDs */
-  if (!state->first) {
-    clearLEDs(state->dir);
-  } else {
-    state->first = false;
-  }
+  /* retrieve updated data */
+  err = refreshData(currentSpeeds, res->client, state->dir, LIVE, res->errRes);
+  SPIN_IF_ERR(err, res->errRes);
   /* refresh LEDs */
-  if (updateStatus(state->dir) != ESP_OK) {
-    ESP_LOGE(TAG, "failed to update LEDs");
-    return;
+  err = updateStatus(state->dir);
+  SPIN_IF_ERR(err, res->errRes);
+  switch (state->dir)
+  {
+    case NORTH:
+      err = refreshBoard(currentSpeeds, typicalNorth, DIAG_LINE_REVERSE);
+      break;
+    case SOUTH:
+      err = refreshBoard(currentSpeeds, typicalSouth, DIAG_LINE);
+      break;
+    default:
+      state->dir = NORTH;
+      err = refreshBoard(currentSpeeds, typicalNorth, DIAG_LINE);
+      break;
   }
-  err = handleRefresh(state->dir, typicalData, res->client, res->errRes);
+  SPIN_IF_FALSE((err == ESP_OK || err == REFRESH_ABORT), res->errRes);
+  return err;
 }
 
 void waitForTaskNotification(MainTaskResources *res) {
@@ -391,14 +402,14 @@ void app_main(void)
     MainTaskResources res;
     MainTaskState state;
     esp_err_t err;
-    LEDData typicalNorthSpeeds[MAX_NUM_LEDS_REG];
-    LEDData typicalSouthSpeeds[MAX_NUM_LEDS_REG];
+    LEDData typicalNorthSpeeds[MAX_NUM_LEDS_REG + 1];
+    LEDData typicalSouthSpeeds[MAX_NUM_LEDS_REG + 1];
     /* set task priority */
     vTaskPrioritySet(NULL, CONFIG_MAIN_PRIO);
     /* print firmware information */
     ESP_LOGE(TAG, "Traffic Firmware " VERBOSE_VERSION_STR);
     ESP_LOGE(TAG, "OTA binary: " FIRMWARE_UPGRADE_URL);
-    ESP_LOGE(TAG, "Max LED number: %d", MAX_NUM_LEDS_REG - 1); // 0 is not an LED
+    ESP_LOGE(TAG, "Max LED number: %d", MAX_NUM_LEDS_REG); // 0 is not an LED
     /* initialize application */
     initializeMainState(&state);
     initializeApplication(&state, &res);
@@ -408,23 +419,33 @@ void app_main(void)
     {
         ESP_LOGE(TAG, "failed to quick clear matrices");
     }
+    /* quick clear LEDs, maybe leftover from reboot */
+    err = quickClearBoard();
+    SPIN_IF_ERR(err, res.errRes);
+    /* retrieve speeds */
     res.client = initHttpClient();
-    err = refreshTypicalSpeeds(res.client, typicalNorthSpeeds, typicalSouthSpeeds);
+    err = refreshData(typicalNorthSpeeds, res.client, NORTH, TYPICAL, res.errRes);
+    SPIN_IF_ERR(err, res.errRes);
+    err = refreshData(typicalSouthSpeeds, res.client, SOUTH, TYPICAL, res.errRes);
     SPIN_IF_ERR(err, res.errRes);
     ESP_LOGI(TAG, "initialization complete, handling toggle button presses...");
     /* handle requests to update all LEDs */
-    SPIN_IF_ERR(
-      enableDirectionButtonIntr(),
-      res.errRes
-    );
-    do {
-      mainRefresh(&state, &res, typicalNorthSpeeds, typicalSouthSpeeds);
+    err = enableDirectionButtonIntr();
+    SPIN_IF_ERR(err, res.errRes);
+    while (true) {
+      err = mainRefresh(&state, &res, typicalNorthSpeeds, typicalSouthSpeeds);
       waitForTaskNotification(&res);
-    } while (true);
+      if (err == REFRESH_ABORT)
+      {
+        err = quickClearBoard();
+        SPIN_IF_ERR(err, res.errRes);
+      } else {
+        clearBoard(state.dir);
+      }
+    }
     /* This task has nothing left to do, but should not exit */
     throwFatalError(res.errRes, false);
     for (;;) {
       vTaskDelay(INT_MAX);
     }
 }
-

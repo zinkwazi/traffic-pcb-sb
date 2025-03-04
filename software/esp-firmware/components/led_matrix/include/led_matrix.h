@@ -75,7 +75,7 @@ enum SWXSetting {
     MATRIX_SWXSETTING_MAX = 9, // indicates start of invalid values
 };
 
-esp_err_t matInitialize();
+esp_err_t matInitialize(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
 esp_err_t matSetOperatingMode(enum Operation setting);
 esp_err_t matSetOpenShortDetection(enum ShortDetectionEnable setting);
 esp_err_t matSetLogicLevel(enum LogicLevel setting);

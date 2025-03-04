@@ -8,11 +8,13 @@
 #ifndef ANIMATIONS_H_
 #define ANIMATIONS_H_
 
-#include "esp_err.h"
-
 #include <stdint.h>
 
-esp_err_t sortLEDsByDistanceFromDiagLine(int32_t ledArr[], int32_t ledArrLen);
-esp_err_t sortLEDsByDistParabolicMap(int32_t ledArr[], int32_t ledArrLen);
+#include "esp_err.h"
+
+#include "led_coordinates.h"
+
+esp_err_t orderLEDs(int32_t ledOrder[static MAX_NUM_LEDS_COORDS + 1], Animation anim);
+
 
 #endif /* ANIMATIONS_H_ */

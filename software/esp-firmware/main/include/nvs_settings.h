@@ -13,6 +13,7 @@
 
 #include "app_errors.h"
 #include "api_connect.h"
+#include "led_registers.h"
 
 #include "main_types.h"
 
@@ -21,8 +22,8 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, UserSettings *settings);
 esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle);
 esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle);
 void updateNvsSettings(nvs_handle_t nvsHandle, ErrorResources *errResources);
-esp_err_t getSpeedsFromNvs(LEDData *speeds, uint32_t speedsLen, Direction dir, bool currentSpeeds);
-esp_err_t setSpeedsToNvs(LEDData *speeds, uint32_t speedsLen, Direction dir, bool currentSpeeds);
+esp_err_t refreshSpeedsFromNVS(LEDData data[static MAX_NUM_LEDS_REG + 1], Direction dir, SpeedCategory category);
+esp_err_t storeSpeedsToNVS(LEDData data[static MAX_NUM_LEDS_REG + 1], Direction dir, SpeedCategory category);
 esp_err_t removeExtraWorkerNvsEntries(void);
 
 #endif /* NVS_H_ */
