@@ -1,18 +1,58 @@
-#include "app_errors.h"
-#include "pinout.h"
+/**
+ * app_errors.c
+ * 
+ * Contains functions for raising error states to the user.
+ */
+
+#include <stdbool.h>
+
+#include "sdkconfig.h"
 #include "esp_timer.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
 #include "freertos/projdefs.h"
 #include "freertos/semphr.h"
-#include <stdbool.h>
+
+#include "app_errors.h"
+#include "pinout.h"
+#include "led_matrix.h"
 
 #define TAG "app_error"
 
+#define ERROR_COLOR_RED (0xFF)
+#define ERROR_COLOR_GREEN (0x00)
+#define ERROR_COLOR_BLUE (0x00)
+
+
+#if CONFIG_HARDWARE_VERSION == 1
 static inline void indicateError(void) {
-    gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);
-    gpio_set_level(ERR_LED_PIN, 1);
+  /* intentionally ignoring error codes because 
+     this is a best effort function */
+  (void) gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);
+  (void) gpio_set_level(ERR_LED_PIN, 1);
 }
+
+static inline void indicateNoError(void) {
+  /* intentionally ignoring error codes because 
+     this is a best effort function */
+  (void) gpio_set_level(ERR_LED_PIN, 0);
+}
+#elif CONFIG_HARDWARE_VERSION == 2
+static inline void indicateError(void) {
+  /* intentionally ignoring error codes because 
+     this is a best effort function */
+  (void) matSetColor(ERROR_LED_NUM, ERROR_COLOR_RED, ERROR_COLOR_GREEN, ERROR_COLOR_BLUE);
+}
+
+static inline void indicateNoError(void) {
+  /* intentionally ignoring error codes because 
+     this is a best effort function */
+  (void) matSetColor(ERROR_LED_NUM, 0x00, 0x00, 0x00);
+}
+#else
+#error "Unsupported hardware version!"
+#endif
+
 
 void throwNoConnError(ErrorResources *errRes, bool callerHasErrMutex) {
   if (!callerHasErrMutex) {
@@ -86,9 +126,8 @@ void throwHandleableError(ErrorResources *errRes, bool callerHasErrMutex) {
 
 void throwFatalError(ErrorResources *errRes, bool callerHasErrMutex) {
   ESP_LOGE(TAG, "FATAL_ERR thrown!");
-  gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);
   if (errRes == NULL) {
-    gpio_set_level(ERR_LED_PIN, 1);
+    indicateError();
     for (;;) {
       vTaskDelay(INT_MAX);
     }
@@ -100,7 +139,7 @@ void throwFatalError(ErrorResources *errRes, bool callerHasErrMutex) {
   if (errRes->errTimer != NULL) {
     stopErrorFlashing(errRes, true);
   }
-  gpio_set_level(ERR_LED_PIN, 1);
+  indicateError();
   errRes->err = FATAL_ERR;
 
 #ifdef CONFIG_FATAL_CAUSES_REBOOT
@@ -110,6 +149,7 @@ void throwFatalError(ErrorResources *errRes, bool callerHasErrMutex) {
 #endif /* CONFIG_FATAL_CAUSES_REBOOT == true */  
 
   xSemaphoreGive(errRes->errMutex); // give up mutex in caller's name
+  /* calling task should not return */
   for (;;) {
     vTaskDelay(INT_MAX);
   }
@@ -123,7 +163,7 @@ void resolveNoConnError(ErrorResources *errRes, bool resolveNone, bool callerHas
   ESP_LOGW(TAG, "resolving NO_SERVER_CONNECT_ERR");
   if (errRes->errTimer != NULL) {
     stopErrorFlashing(errRes, true);
-    gpio_set_level(ERR_LED_PIN, 0);
+    indicateNoError();
   }
   switch (errRes->err) {
     case NO_SERVER_CONNECT_ERR:
@@ -161,7 +201,7 @@ void resolveHandleableError(ErrorResources *errRes, bool resolveNone, bool calle
   switch (errRes->err) {
     case HANDLEABLE_ERR:
       errRes->err = NO_ERR;
-      gpio_set_level(ERR_LED_PIN, 0);
+      indicateNoError();
       break;
     case HANDLEABLE_AND_NO_SERVER_CONNECT_ERR:
       errRes->err = NO_SERVER_CONNECT_ERR;
@@ -200,8 +240,6 @@ void startErrorFlashing(ErrorResources *errRes, bool callerHasErrMutex) {
     if (!callerHasErrMutex) {
       while (xSemaphoreTake(errRes->errMutex, INT_MAX) != pdTRUE) {}
     }
-
-    gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);
     if (esp_timer_create(&timerArgs, &(errRes->errTimer)) != ESP_OK) {
       throwFatalError(errRes, true);
     }
@@ -231,7 +269,13 @@ void stopErrorFlashing(ErrorResources *errRes, bool callerHasErrMutex) {
 }
 
 void timerFlashErrCallback(void *params) {
-    static int currentOutput = 0;
-    currentOutput = (currentOutput == 1) ? 0 : 1;
-    gpio_set_level(ERR_LED_PIN, currentOutput);
+    static bool currentOutput = false;
+    currentOutput = (currentOutput) ? false : true;
+    if (currentOutput)
+    {
+      indicateError();
+    } else 
+    {
+      indicateNoError();
+    }
 }

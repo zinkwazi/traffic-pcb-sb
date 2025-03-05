@@ -1,14 +1,17 @@
-
+/**
+ * app_errors.h
+ * 
+ * Contains functions for raising error states to the user.
+ */
 
 #ifndef ERROR_H_
 #define ERROR_H_
 
 #include <stdbool.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_timer.h"
-
-
 
 /**
  * @brief Describes the combination of errors currently being handled.
