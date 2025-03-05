@@ -1,7 +1,7 @@
 /**
  * circular_buffer_pi.h
  * 
- * Contains a private interface of circular_buffer.c for white-box testing.
+ * Contains the private interface of circular_buffer.c for white-box testing.
  */
 
 #ifndef CIRCULAR_BUFFER_PI_H_
