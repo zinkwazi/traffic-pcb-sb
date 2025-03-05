@@ -1,8 +1,8 @@
 /**
  * animations.h
  * 
- * Contains functions that create iterators to determine proper ordering
- * of LEDs during a refresh to display a particular animation.
+ * Contains functionality for determining the proper ordering of LEDs in order
+ * to animate board refreshes in some way.
  */
 
 #ifndef ANIMATIONS_H_
@@ -12,9 +12,18 @@
 
 #include "esp_err.h"
 
-#include "led_coordinates.h"
+#include "animation_types.h"
 
-esp_err_t orderLEDs(int32_t ledOrder[static MAX_NUM_LEDS_COORDS + 1], Animation anim);
+enum Animation {
+    DIAG_LINE = 0,
+    DIAG_LINE_REVERSE = 1,
+    CURVED_LINE = 2,
+    CURVED_LINE_REVERSE = 3,
+    ANIM_MAXIMUM = 4,
+};
 
+typedef enum Animation Animation;
+
+esp_err_t orderLEDs(int32_t ledOrder[], int32_t ledOrderLen, Animation anim, const LEDCoord coords[], int32_t coordsLen);
 
 #endif /* ANIMATIONS_H_ */

@@ -1,18 +1,23 @@
-
-
-#include "led_coordinates.h"
-
+/**
+ * V2_0_led_coordinates.c
+ * 
+ * Contains the Kicad coordinates of each LED on V2_0 of the board, where (0, 0)
+ * is the center of the board, increasing X is to the right, and increasing Y
+ * is to the bottom.
+ */
 #include "sdkconfig.h"
-
-#include "animation_types.h"
-
-#include "stdint.h"
 
 #if CONFIG_HARDWARE_VERSION == 2
 
-/* A mapping from LED number to corresponding
-x, y PCB coordinates. */
-const LEDCoord LEDNumToCoord[MAX_NUM_LEDS_COORDS + 1] = {
+#include "led_coordinates.h"
+
+#include <stdint.h>
+
+#include "animation_types.h"
+
+
+/* A mapping from LED number to x, y PCB coordinates. */
+const LEDCoord LEDNumToCoord[ANIM_STANDARD_ARRAY_SIZE] = {
 	{0, 0}, // there is no LED with number 0
 	{-178, 68}, // 1
 	{-175, 66}, // 2
