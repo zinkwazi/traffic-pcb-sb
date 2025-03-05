@@ -5,6 +5,7 @@
 #ifndef d_MATRIX_H_
 #define d_MATRIX_H_
 
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -75,7 +76,14 @@ enum SWXSetting {
     MATRIX_SWXSETTING_MAX = 9, // indicates start of invalid values
 };
 
+
+#if CONFIG_HARDWARE_VERSION == 1
 esp_err_t matInitialize(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
+#elif CONFIG_HARDWARE_VERSION == 2
+esp_err_t matInitializeBus1(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
+esp_err_t matInitializeBus2(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
+#endif
+
 esp_err_t matSetOperatingMode(enum Operation setting);
 esp_err_t matSetOpenShortDetection(enum ShortDetectionEnable setting);
 esp_err_t matSetLogicLevel(enum LogicLevel setting);

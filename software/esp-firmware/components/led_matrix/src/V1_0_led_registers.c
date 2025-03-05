@@ -3,15 +3,15 @@
  * 
  * Cointains LED number to matrix register mappings for V1_0 of the hardware.
  */
-#include "led_registers.h"
 
 #include "sdkconfig.h"
-
-#include "led_types.h"
-
-#include <stdint.h>
  
 #if CONFIG_HARDWARE_VERSION == 1
+
+#include <stdint.h>
+
+#include "led_registers.h"
+#include "led_types.h"
 
 /* A mapping from LED number to corresponding 
 matrix registers for each color (red, green, blue). */

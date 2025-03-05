@@ -1,12 +1,15 @@
 /**
- * led_matrix.c
- *
- * This file contains a hardware abstraction layer
- * for the d matrix led driver ICs. The esp32
- * interacts with these ICs through I2C.
+ * V1_0_led_matrix.c
+ * 
+ * This file contains a hardware abstraction layer for interaction with 
+ * the LED matrix driver ICs through I2C on V1_0.
  *
  * See: https://www.lumissil.com/assets/pdf/core/IS31FL3741A_DS.pdf.
  */
+
+#include "sdkconfig.h"
+
+#if CONFIG_HARDWARE_VERISON == 1
 
 #include "led_matrix.h"
 
@@ -776,7 +779,7 @@ esp_err_t matSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue)
     err = matSetRegister(matrixHandle, page, ledReg.red, red);
     if (err != ESP_OK)
     {
-        return err;
+        return err; 
     }
     err = matSetRegister( matrixHandle, page, ledReg.green, green);
     if (err != ESP_OK)
@@ -870,3 +873,4 @@ esp_err_t matReleaseBus(void) {
     return ret;
 }
 #endif /* CONFIG_DISABLE_TESTING_FEATURES == false */
+#endif /* CONFIG_HARDWARE_VERISON == 1 */
