@@ -7,8 +7,13 @@
 
 #include <stddef.h>
 
+#include "esp_http_client.h"
+#include "esp_timer.h"
 #include "freertos/event_groups.h"
 #include "freertos/semphr.h"
+#include "nvs.h"
+
+#include "app_errors.h"
 
 #define NO_ERROR_EVENT_BIT 0x01
 
@@ -46,5 +51,23 @@ struct UserSettings {
 };
 
 typedef struct UserSettings UserSettings;
+
+struct MainTaskResources {
+    esp_http_client_handle_t client;
+    nvs_handle_t nvsHandle;
+    UserSettings *settings;
+    esp_timer_handle_t refreshTimer;
+    ErrorResources *errRes;
+  };
+  
+  typedef struct MainTaskResources MainTaskResources;
+  
+  struct MainTaskState {
+    bool toggle; // whether the direction of flow should be switched
+    bool first; // whether this is the first refresh
+    Direction dir; // current LED refresh direction
+  };
+  
+  typedef struct MainTaskState MainTaskState;
 
 #endif /* MAIN_TYPES_H_ */

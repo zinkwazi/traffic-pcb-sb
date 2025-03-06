@@ -10,11 +10,10 @@
 #include "esp_err.h"
 #include "esp_http_client.h"
 
-#include "app_errors.h"
-#include "api_connect.h"
-#include "led_types.h"
-#include "led_registers.h"
 #include "animations.h"
+#include "api_connect.h"
+#include "app_errors.h"
+#include "led_registers.h"
 
 #include "main_types.h"
 

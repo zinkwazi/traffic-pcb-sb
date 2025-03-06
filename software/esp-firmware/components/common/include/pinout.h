@@ -14,6 +14,8 @@
 #include "V1_0_pinout.h"
 #elif CONFIG_HARDWARE_VERSION == 2
 #include "V2_0_pinout.h"
+#else
+#error "Unsupported hardware version!"
 #endif
 
 #endif /* PINOUT_H_ */

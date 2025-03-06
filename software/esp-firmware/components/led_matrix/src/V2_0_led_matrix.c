@@ -13,17 +13,14 @@
 
 #include "led_matrix.h"
 
-#include "led_types.h"
-#include "led_registers.h"
+#include <stdint.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/event_groups.h"
 #include "driver/i2c_master.h"
-#include "esp_system.h"
-#include "esp_log.h"
-#include "esp_check.h"
+#include "driver/i2c_types.h"
 #include "esp_err.h"
+
+#include "led_registers.h"
+#include "led_types.h"
 
 #define TAG "led_matrix"
 
@@ -92,7 +89,8 @@ static uint8_t sMat2State;
 static uint8_t sMat3State;
 static uint8_t sMat4State;
 
-esp_err_t matAssertConnected(void);
+esp_err_t matAssertConnectedBus1(void);
+esp_err_t matAssertConnectedBus2(void);
 esp_err_t matSetPage(i2c_master_dev_handle_t device, uint8_t page);
 esp_err_t matGetRegister(uint8_t *result, i2c_master_dev_handle_t device, uint8_t page, uint8_t addr);
 
@@ -1001,4 +999,5 @@ esp_err_t matReleaseBus2(void) {
     return ret;
 }
 #endif /* CONFIG_DISABLE_TESTING_FEATURES == false */
+
 #endif /* CONFIG_HARDWARE_VERSION == 2 */

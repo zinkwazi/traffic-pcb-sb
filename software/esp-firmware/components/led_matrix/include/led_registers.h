@@ -14,7 +14,7 @@
 *         This should be equal to MAX_NUM_LEDS_COORD.
 */
 #define MAX_NUM_LEDS_REG 326
-#elif CONFIG_HARDWARE_VERISON == 2
+#elif CONFIG_HARDWARE_VERSION == 2
 /** @brief The maximum number of LEDs that can be present on the device.
 *         This should be equal to MAX_NUM_LEDS_COORD.
 */

@@ -203,15 +203,15 @@ esp_err_t sortLEDsByDistanceFromDiagLine(int32_t ledArr[],
     if (coordsLen > ANIM_STANDARD_ARRAY_SIZE) return ESP_ERR_INVALID_SIZE;
     if (ledArrLen != coordsLen) return ESP_ERR_INVALID_SIZE;
     /* copy coordinate pairs */
-    for (int32_t i = 1; i < coordsLen; i++)
+    for (int32_t i = 0; i < coordsLen; i++)
     {
         coordPairs[i].ledNum = i;
-        coordPairs[i].coord = coords[i - 1];
+        coordPairs[i].coord = coords[i];
     }
     /* sort based on distances */
     qsort(coordPairs, coordsLen, sizeof(struct LEDCoordPair), compDistFromDiagLine);
     /* copy results */
-    for (int32_t i = 0 ; i < coordsLen; i++)
+    for (int32_t i = 0; i < coordsLen; i++)
     {
         ledArr[i] = coordPairs[i].ledNum;
     }
@@ -248,15 +248,15 @@ esp_err_t sortLEDsByDistanceFromCurvedLine(int32_t ledArr[],
     if (coordsLen > ANIM_STANDARD_ARRAY_SIZE) return ESP_ERR_INVALID_SIZE;
     if (ledArrLen != coordsLen) return ESP_ERR_INVALID_SIZE;
     /* copy coordinate pairs */
-    for (int32_t i = 1; i < coordsLen; i++)
+    for (int32_t i = 0; i < coordsLen; i++)
     {
         coordPairs[i].ledNum = i;
-        coordPairs[i].coord = coords[i - 1];
+        coordPairs[i].coord = coords[i];
     }
     /* sort based on distances */
     qsort(coordPairs, coordsLen, sizeof(struct LEDCoordPair), compDistFromCurvedLine);
     /* copy results */
-    for (int32_t i = 0 ; i < coordsLen; i++)
+    for (int32_t i = 0; i < coordsLen; i++)
     {
         ledArr[i] = coordPairs[i].ledNum;
     }

@@ -4,38 +4,24 @@
 
 #include "routines.h"
 
-#include <stdio.h>
 #include <stdbool.h>
-#include <string.h>
-#include <stdbool.h>
+#include <stddef.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/event_groups.h"
-#include "freertos/queue.h"
-#include "esp_vfs_dev.h"
-#include "driver/uart_vfs.h"
-#include "driver/uart.h"
-#include "esp_wifi.h"
-#include "esp_http_client.h"
-#include "esp_crt_bundle.h"
-#include "esp_tls.h"
-#include "esp_system.h"
-#include "esp_event.h"
-#include "esp_log.h"
-#include "esp_check.h"
-#include "nvs_flash.h"
-#include "lwip/err.h"
-#include "lwip/sys.h"
+#include "driver/gpio.h"
+#include "esp_err.h"
 #include "esp_timer.h"
-#include "nvs.h"
-#include "esp_https_ota.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
+#include "freertos/projdefs.h"
+#include "freertos/task.h"
 
-#include "led_registers.h"
-
+#include "led_matrix.h"
 #include "pinout.h"
-#include "tasks.h"
-#include "wifi.h"
+
+static void timerFlashDirCallback(void *params);
+static void dirButtonISR(void *params);
+static void otaButtonISR(void *params);
+static void refreshTimerCallback(void *params);
 
 /**
  * @brief Initializes the direction button and attaches dirButtonISR to a 
@@ -90,37 +76,6 @@ esp_err_t disableDirectionButtonIntr(void) {
 }
 
 /**
- * @brief Interrupt service routine that handles direction button presses.
- * 
- * Handles direction button presses once the main task is 
- * ready to refresh LEDs. A button press is only acted upon
- * once the main task has refreshed all LEDs because the ISR
- * sends a task notification to the main task, which the task
- * only checks once it has finished handling a previous press.
- * 
- * @param params A pointer to a struct dirButtonISRParams that
- *               contains references to the main task's objects.
- */
-void dirButtonISR(void *params) {
-  TaskHandle_t mainTask = ((DirButtonISRParams *) params)->mainTask;
-  TickType_t *lastISR = ((DirButtonISRParams *) params)->lastISR;
-  bool *toggle = ((DirButtonISRParams *) params)->toggle;
-
-  /* debounce interrupt */
-  TickType_t currentTick = xTaskGetTickCountFromISR();
-  if (currentTick - *lastISR < pdMS_TO_TICKS(CONFIG_DEBOUNCE_PERIOD)) {
-    return;
-  } else {
-    *lastISR = currentTick;
-  }
-
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  *toggle = true;
-  vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
-
-/**
  * @brief Initializes the OTA button (IO0) and attaches otaButtonISR to a 
  *        negative edge of the GPIO pin.
  * 
@@ -151,22 +106,6 @@ esp_err_t initIOButton(TaskHandle_t otaTask) {
 }
 
 /**
- * @brief Interrupt service routine that handles OTA button presses.
- * 
- * Handles OTA button presses to tell the main task to trigger an over-the-air
- * firmware upgrade.
- * 
- * @param params A TaskHandle_t that is the handle of the main task.
- */
-void otaButtonISR(void *params) {
-  TaskHandle_t otaTask = (TaskHandle_t) params;
-
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(otaTask, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
-
-/**
  * @brief Creates a timer that, when started, periodically sends task
  *        notifications to the main task to refresh the LEDs.
  * 
@@ -193,29 +132,12 @@ esp_timer_handle_t createRefreshTimer(TaskHandle_t mainTask, bool *toggle) {
   /* create timer */
   timerArgs.callback = refreshTimerCallback;
   timerArgs.arg = &params;
-  timerArgs.dispatch_method = ESP_TIMER_ISR;
+  timerArgs.dispatch_method = ESP_TIMER_TASK;
   timerArgs.name = "refreshTimer";
   if (esp_timer_create(&timerArgs, &ret) != ESP_OK) {
     return NULL;
   }
   return ret;
-}
-
-/**
- * @brief Callback that periodically sends a task notification to the main task.
- * 
- * Callback that periodically tells the main task to refresh all LEDs if the 
- * direction button has not been pressed. The timer that calls this function 
- * restarts if the direction button is pressed.
- * 
- * @param params A TaskHandle_t that is the handle of the main task.
- */
-void refreshTimerCallback(void *params) {
-  TaskHandle_t mainTask = (TaskHandle_t) params;
-
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 /**
@@ -234,7 +156,7 @@ esp_timer_handle_t createDirectionFlashTimer(void) {
   outputLevel = 0;
   timerArgs.callback = timerFlashDirCallback;
   timerArgs.arg = &outputLevel;
-  timerArgs.dispatch_method = ESP_TIMER_ISR;
+  timerArgs.dispatch_method = ESP_TIMER_TASK;
   timerArgs.name = "directionTimer";
   if (esp_timer_create(&timerArgs, &ret) != ESP_OK) {
     return NULL;
@@ -242,6 +164,71 @@ esp_timer_handle_t createDirectionFlashTimer(void) {
   return ret;
 }
 
+/**
+ * @brief Callback that periodically sends a task notification to the main task.
+ * 
+ * Callback that periodically tells the main task to refresh all LEDs if the 
+ * direction button has not been pressed. The timer that calls this function 
+ * restarts if the direction button is pressed.
+ * 
+ * @param params A TaskHandle_t that is the handle of the main task.
+ */
+static void refreshTimerCallback(void *params) {
+  TaskHandle_t mainTask = (TaskHandle_t) params;
+
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+/**
+ * @brief Interrupt service routine that handles OTA button presses.
+ * 
+ * Handles OTA button presses to tell the main task to trigger an over-the-air
+ * firmware upgrade.
+ * 
+ * @param params A TaskHandle_t that is the handle of the main task.
+ */
+static void otaButtonISR(void *params) {
+  TaskHandle_t otaTask = (TaskHandle_t) params;
+
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  vTaskNotifyGiveFromISR(otaTask, &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+/**
+ * @brief Interrupt service routine that handles direction button presses.
+ * 
+ * Handles direction button presses once the main task is 
+ * ready to refresh LEDs. A button press is only acted upon
+ * once the main task has refreshed all LEDs because the ISR
+ * sends a task notification to the main task, which the task
+ * only checks once it has finished handling a previous press.
+ * 
+ * @param params A pointer to a struct dirButtonISRParams that
+ *               contains references to the main task's objects.
+ */
+static void dirButtonISR(void *params) {
+  TaskHandle_t mainTask = ((DirButtonISRParams *) params)->mainTask;
+  TickType_t *lastISR = ((DirButtonISRParams *) params)->lastISR;
+  bool *toggle = ((DirButtonISRParams *) params)->toggle;
+
+  /* debounce interrupt */
+  TickType_t currentTick = xTaskGetTickCountFromISR();
+  if (currentTick - *lastISR < pdMS_TO_TICKS(CONFIG_DEBOUNCE_PERIOD)) {
+    return;
+  } else {
+    *lastISR = currentTick;
+  }
+
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  *toggle = true;
+  vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+#if CONFIG_HARDWARE_VERSION == 1
 /**
  * @brief Callback that toggles all the direction LEDs.
  * 
@@ -253,7 +240,7 @@ esp_timer_handle_t createDirectionFlashTimer(void) {
  *        This object should not be destroyed or modified while the timer using 
  *        this callback is active.
  */
-void timerFlashDirCallback(void *params) {
+static void timerFlashDirCallback(void *params) {
   int *currentOutput = (int *) params;
   *currentOutput = (*currentOutput == 1) ? 0 : 1;
   gpio_set_level(LED_NORTH_PIN, *currentOutput);
@@ -261,3 +248,35 @@ void timerFlashDirCallback(void *params) {
   gpio_set_level(LED_WEST_PIN, *currentOutput);
   gpio_set_level(LED_SOUTH_PIN, *currentOutput);
 }
+#elif CONFIG_HARDWARE_VERSION == 2
+/**
+ * @brief Callback that toggles all the direction LEDs.
+ * 
+ * Callback that is called from a timer that is active when the main task
+ * requests a settings update from the user. This periodically toggles all
+ * the direction LEDs, causing them to flash.
+ * 
+ * @param[in] params An int* used to store the current output value of the LEDs.
+ *        This object should not be destroyed or modified while the timer using 
+ *        this callback is active.
+ */
+static void timerFlashDirCallback(void *params) {
+  int *currentOutput = (int *) params;
+  *currentOutput = (*currentOutput == 1) ? 0 : 1;
+  if (currentOutput == 1)
+  {
+    (void) matSetColor(NORTH_LED_NUM, 0xFF, 0xFF, 0xFF);
+    (void) matSetColor(EAST_LED_NUM, 0xFF, 0xFF, 0xFF);
+    (void) matSetColor(WEST_LED_NUM, 0xFF, 0xFF, 0xFF);
+    (void) matSetColor(SOUTH_LED_NUM, 0xFF, 0xFF, 0xFF);
+  } else
+  {
+    (void) matSetColor(NORTH_LED_NUM, 0x00, 0x00, 0x00);
+    (void) matSetColor(EAST_LED_NUM, 0x00, 0x00, 0x00);
+    (void) matSetColor(WEST_LED_NUM, 0x00, 0x00, 0x00);
+    (void) matSetColor(SOUTH_LED_NUM, 0x00, 0x00, 0x00);
+  }
+}
+#else
+#error "Unsupported hardware version!"
+#endif

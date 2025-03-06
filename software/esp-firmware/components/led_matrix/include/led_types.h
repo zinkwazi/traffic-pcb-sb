@@ -2,8 +2,8 @@
  * dots_types.h
  */
 
-#ifndef DOTS_TYPES_H_
-#define DOTS_TYPES_H_
+#ifndef LED_TYPES_H_
+#define LED_TYPES_H_
 
 #include <stdint.h>
 
@@ -17,9 +17,7 @@ enum MatrixLocation {
     MAT3_PAGE1,
     MAT_NONE,
 };
-#endif
-
-#if CONFIG_HARDWARE_VERSION == 2
+#elif CONFIG_HARDWARE_VERSION == 2
 enum MatrixLocation {
     MAT1_PAGE0,
     MAT1_PAGE1,
@@ -31,9 +29,9 @@ enum MatrixLocation {
     MAT4_PAGE1,
     MAT_NONE,
 };
+#else
+#error "Unsupported hardware version!"
 #endif
-
-/* new versions should explicitly specify the correct MatrixLocation enum */
 
 /**
  * @brief Contains the matrix registers that correspond to an LED.
@@ -47,4 +45,4 @@ struct LEDReg {
 
 typedef struct LEDReg LEDReg;
 
-#endif /* DOTS_TYPES_H_ */
+#endif /* LED_TYPES_H_ */

@@ -7,8 +7,9 @@
 #ifndef CIRCULAR_BUFFER_H_
 #define CIRCULAR_BUFFER_H_
 
-#include "esp_err.h"
 #include <stdint.h>
+
+#include "esp_err.h"
 
 #define CIRC_OK             0
 #define CIRC_FAIL           -1

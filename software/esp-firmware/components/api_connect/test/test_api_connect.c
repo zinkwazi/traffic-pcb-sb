@@ -73,12 +73,9 @@ TEST_CASE("nextCSVEntryFromMark_fullFile", "[api_connect]")
     extern const uint8_t test_expected_start[] asm("_binary_data_north_V1_0_3_dat_start");
     extern const uint8_t test_expected_end[] asm("_binary_data_north_V1_0_3_dat_end");
 
-    /* The length of the buffer to send messages to the tester */
-    const int TEST_MSG_LEN = 50;
     /* The maximum size of one test_data entry, including two "\r\n" and one '\0' */
     const int TEST_BUF_LEN = 12;
     const int CIRC_BUF_SIZE = 2 * TEST_BUF_LEN;
-    char message[TEST_MSG_LEN];
     char buffer[TEST_BUF_LEN];
     char circBufBacking[CIRC_BUF_SIZE];
     CircularBuffer circBuf;
@@ -118,8 +115,7 @@ TEST_CASE("nextCSVEntryFromMark_fullFile", "[api_connect]")
         /* load next response block into circular buffer */
         circ_err = circularBufferStore(&circBuf, (char *) &test_data_start[currDataNdx], TEST_BUF_LEN);
         if (circ_err == CIRC_LOST_MARK) {
-            snprintf(message, TEST_MSG_LEN, "lost mark after ledNum: %u", expectedLED.ledNum);
-            TEST_MESSAGE(message);
+            ESP_LOGI(TAG, "lost mark after ledNum: %u", expectedLED.ledNum);
         }
         TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
         /* read next entry from circular buffer */
@@ -129,6 +125,10 @@ TEST_CASE("nextCSVEntryFromMark_fullFile", "[api_connect]")
         /* read LEDData from buffer until there are no more full lines */
         err = nextCSVEntryFromMark(&result, &circBuf, buffer, TEST_BUF_LEN);
         /* allow ESP_OK, ESP_NOT_FOUND, and API_ERR_REMOVE_DATA */
+        if (err == ESP_FAIL)
+        {
+            ESP_LOGI(TAG, "nextCSVEntryFromMark failed. Is there a -1 speed in the test data?");
+        }
         TEST_ASSERT_NOT_EQUAL(ESP_FAIL, err);
         while (err != ESP_ERR_NOT_FOUND) {
             TEST_ASSERT_NOT_EQUAL(test_expected_end, &test_expected_start[currLED]);
@@ -139,20 +139,14 @@ TEST_CASE("nextCSVEntryFromMark_fullFile", "[api_connect]")
                     expectedLED.ledNum != result.ledNum ||
                     expectedLED.speed != result.speed))
             {
-                snprintf(message, TEST_MSG_LEN, "expected ledNum: %u", expectedLED.ledNum);
-                TEST_MESSAGE(message);
-                snprintf(message, TEST_MSG_LEN, "expected speed: %d", expectedLED.speed);
-                TEST_MESSAGE(message);
+                ESP_LOGI(TAG, "expected ledNum: %u", expectedLED.ledNum);
+                ESP_LOGI(TAG, "expected speed: %d", expectedLED.speed);
             }
             if (err == API_ERR_REMOVE_DATA) {
-                snprintf(message, TEST_MSG_LEN, "found remove data command");
-                TEST_MESSAGE(message);
-                snprintf(message, TEST_MSG_LEN, "expected ledNum: %u", expectedLED.ledNum);
-                TEST_MESSAGE(message);
-                snprintf(message, TEST_MSG_LEN, "result ledNum: %u", result.ledNum);
-                TEST_MESSAGE(message);
-                snprintf(message, TEST_MSG_LEN, "result speed: %d", result.speed);
-                TEST_MESSAGE(message);
+                ESP_LOGI(TAG, "found remove data command");
+                ESP_LOGI(TAG, "expected ledNum: %u", expectedLED.ledNum);
+                ESP_LOGI(TAG, "result ledNum: %u", result.ledNum);
+                ESP_LOGI(TAG, "result speed: %d", result.speed);
             }
             TEST_ASSERT_EQUAL(expectedLED.ledNum, result.ledNum);
             if (err == API_ERR_REMOVE_DATA) {

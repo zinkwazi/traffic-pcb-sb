@@ -7,15 +7,17 @@
 // #include "api_connect.h"
 #include "api_connect.h"
 
-#include "circular_buffer.h"
+
+
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "esp_log.h"
 #include "esp_http_client.h"
 #include "esp_err.h"
 #include "esp_assert.h"
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "circular_buffer.h"
 
 /* The size in chars of the block size api http responses will be received in,
    which will be added to a circular buffer of double the size. This allows
@@ -227,7 +229,6 @@ esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf, LEDData ledSpeeds[
         do {
             err = nextCSVEntryFromMark(&result, circBuf, buffer, RESPONSE_BLOCK_SIZE);
             if (err == ESP_FAIL) {
-                ESP_LOGE(TAG, "nextCSVEntryFromMark failed");
                 return ESP_FAIL;
             }
             switch (err) {
@@ -236,8 +237,6 @@ esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf, LEDData ledSpeeds[
                     if (ledSpeeds[result.ledNum - 1].ledNum == 0) {
                         ledSpeeds[result.ledNum - 1].ledNum = result.ledNum;
                         ledSpeeds[result.ledNum - 1].speed = result.speed;
-                    } else {
-                        ESP_LOGW(TAG, "found data point that is already present: %u", result.ledNum);
                     }
                     break;
                 case API_ERR_REMOVE_DATA:
@@ -256,12 +255,10 @@ esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf, LEDData ledSpeeds[
             return ESP_OK; // only success exit case
         }
         if (err != ESP_OK) {
-            ESP_LOGE(TAG, "failed to read next http block");
             return ESP_FAIL;
         }
         circ_err = circularBufferStore(circBuf, buffer, (uint32_t) len);
         if (circ_err != CIRC_OK) {
-            ESP_LOGE(TAG, "failed to write data to circ buffer, err: %d", circ_err);
             return ESP_FAIL;
         }
     } while (len > 0);
@@ -290,36 +287,30 @@ esp_err_t readServerSpeedData(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_ht
     char circBufBacking[CIRC_BUF_SIZE];
     char buffer[RESPONSE_BLOCK_SIZE];
     int len;
-    LEDData result;
     /* input guards */
     if (ledSpeeds == NULL ||
         ledSpeedsLen == 0 ||
         client == NULL)
     {
-        ESP_LOGE(TAG, "invalid arg");
         return ESP_ERR_INVALID_ARG;
     }
     /* initialize circular buffer */
     circ_err = circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
     if (circ_err != CIRC_OK) {
-        ESP_LOGE(TAG, "failed to initialize circular buffer");
         return ESP_FAIL;
     }
     /* load initial data and mark beginning */
     len = RESPONSE_BLOCK_SIZE - 1;
     err = getNextResponseBlock(buffer, &len, client);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "failed to read next http block");
         return ESP_FAIL;
     }
     circ_err = circularBufferStore(&circBuf, buffer, (uint32_t) len);
     if (circ_err != CIRC_OK) {
-        ESP_LOGE(TAG, "failed to write data to circ buffer. got err: %d", circ_err);
         return ESP_FAIL;
     }
     circ_err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
     if (circ_err != CIRC_OK) {
-        ESP_LOGE(TAG, "failed to mark circular buffer");
         return ESP_FAIL;
     }
     return readServerSpeedDataPreinit(&circBuf, ledSpeeds, ledSpeedsLen, client);
@@ -351,13 +342,10 @@ esp_err_t openServerFile(int64_t *contentLength, esp_http_client_handle_t client
     }
 
     ESP_LOGI(TAG, "retrieving: %s", URL);
-    if (esp_http_client_set_url(client, URL) != ESP_OK) {
-        return ESP_FAIL;
-    }
-    if (esp_http_client_open(client, 0) != ESP_OK) {
-        ESP_LOGE(TAG, "failed to open connection");
-        return ESP_FAIL;
-    }
+    err = esp_http_client_set_url(client, URL);
+    if (err != ESP_OK) return err;
+    err = esp_http_client_open(client, 0);
+    if (err != ESP_OK) return err;
     *contentLength = esp_http_client_fetch_headers(client);
     while (*contentLength == -ESP_ERR_HTTP_EAGAIN) {
         *contentLength = esp_http_client_fetch_headers(client);
@@ -420,8 +408,6 @@ esp_err_t getServerSpeeds(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_c
         if (esp_http_client_close(client) != ESP_OK) {
             ESP_LOGE(TAG, "failed to close client");
         }
-        ESP_LOGE(TAG, "spespeed data");
-        ESP_LOGW(TAG, "err: %d", err);
         return err;
     }
     if (esp_http_client_close(client) != ESP_OK) {
@@ -451,7 +437,6 @@ esp_err_t getServerSpeeds(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_c
  */
 esp_err_t parseMetadata(char **dataStart, char *block, int blockLen, char *metadata, int *metadataLen) {
     char *prev, *curr;
-    esp_err_t err;
     /* input guards */
     if (dataStart == NULL ||
         block == NULL ||
@@ -570,13 +555,11 @@ esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[], uint32_t ledSpeedsLe
         }
         err = parseMetadata(&dataStart, block, blockLen, metadata, &metaLen);
         if (err != ESP_OK) {
-            ESP_LOGE(TAG, "failed to parse metadata");
             return ESP_FAIL;
         }
         /* load circular buffer with the rest of the data */
-        circ_err = circularBufferInit(&circBuf, &circBufBacking, CIRC_BUF_SIZE);
+        circ_err = circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
         if (circ_err != CIRC_OK) {
-            ESP_LOGE(TAG, "failed to initialize circular buffer");
             return ESP_FAIL;
         }
         len = blockLen - (dataStart - block);
@@ -587,19 +570,16 @@ esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[], uint32_t ledSpeedsLe
             circ_err = circularBufferStore(&circBuf, "\n", 1);
         }
         if (circ_err != CIRC_OK) {
-            ESP_LOGE(TAG, "failed to write a newline to circular buffer");
             return ESP_FAIL;
         }
         circ_err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
         if (circ_err != CIRC_OK) {
-            ESP_LOGE(TAG, "failed to mark circular buffer");
             return ESP_FAIL;
         }
         
         /* parse CSV data from preinitialized circular buffer */
         err = readServerSpeedDataPreinit(&circBuf, ledSpeeds, ledSpeedsLen, client);
         if (err != ESP_OK) {
-            ESP_LOGE(TAG, "failed to read server speed data");
             return ESP_FAIL;
         }
         /* close connection to allow next connection to work properly */

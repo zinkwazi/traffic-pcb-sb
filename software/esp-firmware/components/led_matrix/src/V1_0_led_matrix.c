@@ -9,21 +9,18 @@
 
 #include "sdkconfig.h"
 
-#if CONFIG_HARDWARE_VERISON == 1
+#if CONFIG_HARDWARE_VERSION == 1
 
 #include "led_matrix.h"
 
-#include "led_types.h"
-#include "led_registers.h"
+#include <stdint.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/event_groups.h"
 #include "driver/i2c_master.h"
-#include "esp_system.h"
-#include "esp_log.h"
-#include "esp_check.h"
+#include "driver/i2c_types.h"
 #include "esp_err.h"
+
+#include "led_registers.h"
+#include "led_types.h"
 
 #define TAG "led_matrix"
 
@@ -844,6 +841,7 @@ esp_err_t matSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blu
 /*******************************************/
 /*            TESTING FEATURES             */
 /*******************************************/
+
 esp_err_t matReleaseBus(void) {
     esp_err_t ret;
     /* input guards */
@@ -873,4 +871,5 @@ esp_err_t matReleaseBus(void) {
     return ret;
 }
 #endif /* CONFIG_DISABLE_TESTING_FEATURES == false */
-#endif /* CONFIG_HARDWARE_VERISON == 1 */
+
+#endif /* CONFIG_HARDWARE_VERSION == 1 */

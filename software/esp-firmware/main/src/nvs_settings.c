@@ -1,11 +1,24 @@
+/**
+ * nvs_settings.c
+ * 
+ * This file contains functions that interact with non-volatile storage,
+ * particularly those that deal with persistent user settings.
+ */
 
 #include "nvs_settings.h"
 
-#include <stdint.h>
+#include <malloc.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
-#include "esp_err.h"
 #include "esp_check.h"
+#include "esp_err.h"
+#include "esp_timer.h"
+#include "nvs.h"
+#include "nvs_flash.h"
 
 #include "app_errors.h"
 #include "api_connect.h"
@@ -91,7 +104,6 @@ esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle) {
       ret = nvs_entry_next(&nvs_iter);
       continue;
     }
-    ESP_LOGD(TAG, "removing nvs entry: %s", info.key);
     if (nvs_erase_key(nvsHandle, info.key) != ESP_OK) {
       return ESP_FAIL;
     }
@@ -120,7 +132,6 @@ esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
   const unsigned short bufLen = CONFIG_NVS_ENTRY_BUFFER_LENGTH;
   char c;
   char buf[bufLen];
-  ESP_LOGD(TAG, "Querying settings from user...");
   printf("\nWifi SSID: ");
   fflush(stdout);
   for (int i = 0; i < bufLen; i++) {
@@ -133,7 +144,7 @@ esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
     fflush(stdout);
   }
   while ((c = getchar()) != '\n') {}
-  buf[bufLen] = '\0'; // in case the user writes too much
+  buf[bufLen - 1] = '\0'; // in case the user writes too much
   fflush(stdout);
   ESP_RETURN_ON_ERROR(
     nvs_set_str(nvsHandle, WIFI_SSID_NVS_NAME, buf),
@@ -376,28 +387,23 @@ esp_err_t storeSpeedsToNVS(LEDData data[static MAX_NUM_LEDS_REG + 1], Direction 
     break;
   }
   if (key == NULL) {
-    ESP_LOGE(TAG, "nvs key is null");
     return ESP_FAIL;
   }
   /* store data to NVS */
   size = MAX_NUM_LEDS_REG + 1 * sizeof(LEDData);
   err = nvs_set_blob(nvsHandle, key, data, size);
   if (err != ESP_OK) {
-      ESP_LOGE(TAG, "failed to set blob. err: %d", err);
       err = nvs_erase_key(nvsHandle, key);
       if (err != ESP_OK) {
-        ESP_LOGE(TAG, "failed to erase key");
         return err;
       }
       err = nvs_set_blob(nvsHandle, key, data, size);
       if (err != ESP_OK) {
-        ESP_LOGE(TAG, "failed to set blob after erase key");
         return err;
       }
   }    
   err = nvs_commit(nvsHandle);
   if (err != ESP_OK) {
-    ESP_LOGE(TAG, "failed to commit nvs changes");
     return err;
   }
   nvs_close(nvsHandle);

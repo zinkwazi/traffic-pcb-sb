@@ -4,26 +4,29 @@
  * This file contains task functions
  * that allow the application to be efficient.
  */
+
 #include "tasks.h"
 
 #include <stdbool.h>
+#include <stddef.h>
 
-#include "esp_log.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-#include "esp_timer.h"
-#include "esp_https_ota.h"
+#include "esp_crt_bundle.h"
+#include "esp_err.h"
 #include "esp_http_client.h"
+#include "esp_https_ota.h"
+#include "esp_log.h"
+#include "esp_system.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
+#include "freertos/projdefs.h"
+#include "freertos/task.h"
+#include "sdkconfig.h"
 
-#include "pinout.h"
-#include "led_registers.h"
-#include "api_connect.h"
-#include "animations.h"
+#include "app_errors.h"
 
-#include "main_types.h"
-#include "wifi.h"
+#include "indicators.h"
 #include "utilities.h"
+#include "wifi.h"
 
 #define TAG "tasks"
 
@@ -74,20 +77,15 @@ esp_err_t createOTATask(TaskHandle_t *handle, const ErrorResources *errorResourc
  */
 void vOTATask(void* pvParameters) {
     ErrorResources *errRes = (ErrorResources *) pvParameters;
+    esp_err_t err;
     while (true) {
-        if (ulTaskNotifyTake(pdTRUE, INT_MAX) == 0) {
+        if (ulTaskNotifyTake(pdTRUE, INT_MAX) == 0) 
+        {
             continue; // block on notification timed out
         }
         // received a task notification indicating update firmware
         ESP_LOGI(TAG, "OTA update in progress...");
-        gpio_set_direction(LED_NORTH_PIN, GPIO_MODE_OUTPUT);
-        gpio_set_direction(LED_EAST_PIN, GPIO_MODE_OUTPUT);
-        gpio_set_direction(LED_SOUTH_PIN, GPIO_MODE_OUTPUT);
-        gpio_set_direction(LED_WEST_PIN, GPIO_MODE_OUTPUT);
-        gpio_set_level(LED_NORTH_PIN, 1);
-        gpio_set_level(LED_EAST_PIN, 1);
-        gpio_set_level(LED_SOUTH_PIN, 1);
-        gpio_set_level(LED_WEST_PIN, 1);
+        (void) indicateOTAUpdate(); // allow update away from bad firmware
         esp_http_client_config_t https_config = {
             .url = FIRMWARE_UPGRADE_URL,
             .crt_bundle_attach = esp_crt_bundle_attach,
@@ -95,20 +93,21 @@ void vOTATask(void* pvParameters) {
         esp_https_ota_config_t ota_config = {
             .http_config = &https_config,
         };
-        esp_err_t ret = esp_https_ota(&ota_config);
-        if (ret == ESP_OK) {
+        err = esp_https_ota(&ota_config);
+        if (err == ESP_OK) 
+        {
             ESP_LOGI(TAG, "completed OTA update successfully!");
+            (void) indicateOTASuccess(CONFIG_OTA_LEFT_ON_MS); // restart imminent anyway
             unregisterWifiHandler();
             esp_restart();
         }
         
         ESP_LOGI(TAG, "did not complete OTA update successfully!");
-        throwHandleableError(errRes, false);
-        vTaskDelay(pdMS_TO_TICKS(CONFIG_OTA_LEFT_ON_MS)); // leave LEDs on for a bit
-        gpio_set_level(LED_NORTH_PIN, 0);
-        gpio_set_level(LED_EAST_PIN, 0);
-        gpio_set_level(LED_SOUTH_PIN, 0);
-        gpio_set_level(LED_WEST_PIN, 0);
-        resolveHandleableError(errRes, false, false);
+        err = indicateOTAFailure(errRes, CONFIG_OTA_LEFT_ON_MS);
+        FATAL_IF_ERR(err, errRes);
+        if (err != ESP_OK)
+        {
+            throwFatalError(errRes, false);
+        }
     }
 }

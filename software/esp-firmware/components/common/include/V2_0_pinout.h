@@ -12,13 +12,17 @@
 
 #if CONFIG_HARDWARE_VERSION == 2
 
-/* IDF component includes */
 #include "driver/gpio.h"
 
 /* Status Indicators */
 #define WIFI_LED_NUM     (414)
 #define ERROR_LED_NUM    (413)
 #define OTA_LED_NUM      (325)
+
+/* LED Color Legend */
+#define HEAVY_LED_NUM    (327)
+#define MEDIUM_LED_NUM   (326)
+#define LIGHT_LED_NUM    (328)
 
 /* Settings Button */
 #define IO_SW_PIN        GPIO_NUM_0 // Strapping pin, needs pullup

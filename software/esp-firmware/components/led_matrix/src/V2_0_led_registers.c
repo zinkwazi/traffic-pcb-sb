@@ -8,9 +8,10 @@
 
 #if CONFIG_HARDWARE_VERSION == 2
 
+#include "led_registers.h"
+
 #include <stdint.h>
 
-#include "led_registers.h"
 #include "led_types.h"
 
 /* A mapping from LED number to corresponding 

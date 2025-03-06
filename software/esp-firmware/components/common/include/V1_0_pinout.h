@@ -12,7 +12,6 @@
 
 #if CONFIG_HARDWARE_VERSION == 1
 
-/* IDF component includes */
 #include "driver/gpio.h"
 
 /* Status Indicators */

@@ -8,11 +8,11 @@
 #ifndef NVS_H_
 #define NVS_H_
 
-#include "nvs.h"
 #include "esp_err.h"
+#include "nvs.h"
 
-#include "app_errors.h"
 #include "api_connect.h"
+#include "app_errors.h"
 #include "led_registers.h"
 
 #include "main_types.h"

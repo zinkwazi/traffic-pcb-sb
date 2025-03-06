@@ -6,11 +6,11 @@
 
 #include "circular_buffer.h"
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #include "esp_err.h"
 #include "esp_log.h"
-
-#include <stdbool.h>
-#include <stdint.h>
 
 #define TAG "circBuffer"
 
@@ -128,7 +128,8 @@ circ_err_t circularBufferStore(CircularBuffer *buf, char *str, uint32_t len) {
     {
         return CIRC_UNINITIALIZED;
     }
-    if (len > buf->backingSize) {
+    if (len > buf->backingSize)
+    {
         return CIRC_INVALID_SIZE;
     }
     /* check for bookmark destruction */
@@ -193,7 +194,8 @@ circ_err_t circularBufferMark(CircularBuffer *buf, uint32_t dist, enum CircDista
     {
         return CIRC_INVALID_ARG;
     }
-    if (buf->backing == NULL) {
+    if (buf->backing == NULL)
+    {
         return CIRC_UNINITIALIZED;
     }
     /* calculate bookmark position */
@@ -265,7 +267,8 @@ int circularBufferRead(const CircularBuffer *buf, char *strOut, uint32_t len) {
     {
         return CIRC_UNINITIALIZED;
     }
-    if (len > buf->len) {
+    if (len > buf->len)
+    {
         return CIRC_INVALID_SIZE;
     }
     /* calculate starting position of data */
@@ -311,10 +314,12 @@ int circularBufferReadFromMark(const CircularBuffer *buf, char *strOut, uint32_t
     {
         return CIRC_INVALID_ARG;
     }
-    if (buf->backing == NULL) {
+    if (buf->backing == NULL)
+    {
         return CIRC_UNINITIALIZED;
     }
-    if (buf->mark == UINT32_MAX) {
+    if (buf->mark == UINT32_MAX)
+    {
         return CIRC_LOST_MARK;
     }
     /* read data */

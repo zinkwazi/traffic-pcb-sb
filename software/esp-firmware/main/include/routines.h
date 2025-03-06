@@ -7,16 +7,11 @@
 
 #include <stdbool.h>
 
-#include "esp_log.h"
 #include "esp_err.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
 #include "freertos/task.h"
-#include "freertos/queue.h"
-
-#include "pinout.h"
-
-#include "main_types.h"
 
 /**
  * @brief The input parameters to dirButtonISR, which gives the routine
@@ -51,15 +46,8 @@ typedef struct RefreshTimerParams RefreshTimerParams;
 esp_err_t initDirectionButton(bool *toggle);
 esp_err_t enableDirectionButtonIntr(void);
 esp_err_t disableDirectionButtonIntr(void);
-void dirButtonISR(void *params);
-
 esp_err_t initIOButton(TaskHandle_t otaTask);
-void otaButtonISR(void *params);
-
 esp_timer_handle_t createRefreshTimer(TaskHandle_t mainTask, bool *toggle);
-void refreshTimerCallback(void *params);
-
 esp_timer_handle_t createDirectionFlashTimer(void);
-void timerFlashDirCallback(void *params);
 
 #endif /* ROUTINES_H_ */

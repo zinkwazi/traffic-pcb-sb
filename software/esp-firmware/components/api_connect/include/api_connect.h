@@ -7,12 +7,12 @@
 #ifndef API_CONNECT_H_
 #define API_CONNECT_H_
 
-#include "circular_buffer.h"
+#include <stdint.h>
 
 #include "esp_http_client.h"
 #include "esp_err.h"
 
-#include <stdint.h>
+#include "circular_buffer.h"
 
 #define API_ERR_REMOVE_DATA 0x52713
 

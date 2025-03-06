@@ -6,11 +6,14 @@
  */
 
 #include "circular_buffer_pi.h"
-#include "unity.h"
-#include "esp_err.h"
-#include "esp_log.h"
+
 #include <string.h>
 #include <stdint.h>
+
+#include "unity.h"
+
+#include "esp_err.h"
+#include "esp_log.h"
 
 #define TAG "test"
 
@@ -70,9 +73,6 @@ TEST_CASE("assumptionsCircularBufferStore", "[circular_buffer]")
  */
 TEST_CASE("circularBufferStore", "[circular_buffer]")
 {
-    const int TEST_MSG_LEN = 50;
-    char message[TEST_MSG_LEN];
-    memset(message, 0, TEST_MSG_LEN);
     uint32_t backingLen = 20;
     CircularBuffer buffer;
     char backing[backingLen];
@@ -97,17 +97,19 @@ TEST_CASE("circularBufferStore", "[circular_buffer]")
     TEST_ASSERT_EQUAL(buffer.backingSize, buffer.len);
     TEST_ASSERT_EQUAL(3, buffer.end);
     char *expectedBacking = "msglo, World!second ";
-    snprintf(message, TEST_MSG_LEN, "expected: \"%s\"", expectedBacking);
-    snprintf(message, TEST_MSG_LEN, " backing: \"%s\"", backing);
-    TEST_MESSAGE(message);
     for (uint32_t i = 0; i < backingLen; i++) {
+        if (expectedBacking[i] != backing[i])
+        {
+            ESP_LOGI(TAG, "expected: \"%s\"", expectedBacking);
+            ESP_LOGI(TAG, "backing: \"%s\"", backing);
+        }
         TEST_ASSERT_EQUAL(expectedBacking[i], backing[i]);
     }
 
     /* test input guards */
     err = circularBufferStore(&buffer, NULL, 10);
     TEST_ASSERT_EQUAL(CIRC_INVALID_ARG, err);
-    err = circularBufferStore(&buffer, message, 50);
+    err = circularBufferStore(&buffer, msg, 50);
     TEST_ASSERT_EQUAL(CIRC_INVALID_SIZE, err); // function assumes this is a logic error
     err = circularBufferStore(NULL, msg, (uint32_t) strlen(msg));
     TEST_ASSERT_EQUAL(CIRC_INVALID_ARG, err);
@@ -117,19 +119,16 @@ TEST_CASE("circularBufferStore", "[circular_buffer]")
 }
 
 /**
- * Test case dependencies: circularBufferInit, circularBufferWrite.
+ * Test case dependencies: circularBufferInit, circularBufferStore.
  */
 TEST_CASE("circularBufferRead", "[circular_buffer]")
 {
     const char CANARY_VAL = 't';
-    const int TEST_MSG_LEN = 50;
-    char message[TEST_MSG_LEN];
-    memset(message, 0, TEST_MSG_LEN);
     uint32_t backingLen = 20;
     CircularBuffer buffer;
     char backing[backingLen];
     char canary1;
-    char strOut[backingLen];
+    char strOut[backingLen + 1];
     char canary2;
     
     circ_err_t err = circularBufferInit(&buffer, backing, backingLen);
@@ -188,12 +187,22 @@ TEST_CASE("circularBufferRead", "[circular_buffer]")
     TEST_ASSERT_EQUAL(prevLen, buffer.len);
     TEST_ASSERT_EQUAL_STRING(expected, strOut);
 
-    /* test strOut buffer overflow */
+    prevEnd = buffer.end;
+    prevLen = buffer.len;
+    err = circularBufferRead(&buffer, strOut, backingLen + 1);
+    TEST_ASSERT_EQUAL(CIRC_INVALID_SIZE, err);
+    TEST_ASSERT_EQUAL(prevEnd, buffer.end);
+    TEST_ASSERT_EQUAL(prevLen, buffer.len);
+    TEST_ASSERT_EQUAL_STRING(expected, strOut);
+
+    /* test read bufferLen and strOut buffer overflow */
     canary1 = CANARY_VAL;
     canary2 = CANARY_VAL;
+    expected = "lo, World!second msg";
     err = circularBufferRead(&buffer, strOut, backingLen);
     TEST_ASSERT_EQUAL(CANARY_VAL, canary1);
     TEST_ASSERT_EQUAL(CANARY_VAL, canary2);
+    TEST_ASSERT_EQUAL_STRING(expected, strOut);
 }
 
 /**
@@ -203,9 +212,6 @@ TEST_CASE("circularBufferRead", "[circular_buffer]")
  */
 TEST_CASE("circularBufferMark", "[circular_buffer]")
 {
-    const int TEST_MSG_LEN = 50;
-    char message[TEST_MSG_LEN];
-    memset(message, 0, TEST_MSG_LEN);
     uint32_t backingLen = 20;
     CircularBuffer buffer;
     circ_err_t err;
