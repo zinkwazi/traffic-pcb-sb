@@ -40,9 +40,9 @@
 #define API_METHOD HTTP_METHOD_GET
 #define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
 
-void initializeMainState(MainTaskState *state);
-esp_http_client_handle_t initHttpClient(void);
-esp_err_t initializeLogChannel(void);
+static void initializeMainState(MainTaskState *state);
+static esp_http_client_handle_t initHttpClient(void);
+static esp_err_t initializeLogChannel(void);
 
 /**
  * @brief Initializes global static resources, software components, and fields
@@ -94,6 +94,10 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res) {
   settings.wifiPass = NULL;
   settings.wifiPassLen = 0;
   res->settings = &settings;
+
+  /* enable logging */
+  err = initializeLogChannel();
+  if (err != ESP_OK) return err;
 
   /* initialize and cleanup non-volatile storage */
   err = nvs_flash_init();
@@ -161,46 +165,6 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res) {
   return ESP_OK;
 }
 
-/**
- * @brief Initializes state to a known state.
- * 
- * @param[out] state A pointer to the state to initialize.
- */
-void initializeMainState(MainTaskState *state)
-{
-    state->toggle = false;
-    state->first = true;
-
-#ifdef CONFIG_FIRST_DIR_NORTH
-    state->dir = NORTH;
-#else
-    state->dir = SOUTH;
-#endif
-}
-
-/**
- * @brief Initializes an http client to the server.
- * 
- * @note Returned client must have a call to esp_http_client_cleanup after use.
- * 
- * @returns A handle to the initialized client if successful,
- *          otherwise NULL.
- */
-esp_http_client_handle_t initHttpClient(void) 
-{
-    esp_http_client_config_t httpConfig = {
-        .host = CONFIG_DATA_SERVER,
-        .path = "/",
-        .auth_type = API_AUTH_TYPE,
-        .method = API_METHOD,
-        .crt_bundle_attach = esp_crt_bundle_attach,
-        .event_handler = NULL,
-        .user_data = NULL,
-    };
-
-    return esp_http_client_init(&httpConfig);
-}
-
 #if CONFIG_HARDWARE_VERSION == 1
 
 /**
@@ -249,27 +213,6 @@ esp_err_t initializeIndicatorLEDs(void)
     if (err != ESP_OK) return err;
     err = gpio_set_level(LED_WEST_PIN, 0);
     return err;
-}
-
-/**
- * @brief Initializes communication through the USB connector.
- * 
- * @note For V1_0, communication is achieved through use of UART 0.
- * 
- * @returns ESP_OK if successful.
- */
-esp_err_t initializeLogChannel(void)
-{
-  esp_err_t err;
-  err = uart_driver_install(UART_NUM_0,
-                            UART_HW_FIFO_LEN(UART_NUM_0) + 16,
-                            UART_HW_FIFO_LEN(UART_NUM_0) + 16,
-                            32,
-                            NULL,
-                            0);
-  if (err != ESP_OK) return err;
-  uart_vfs_dev_use_driver(UART_NUM_0); // enable interrupt driven IO
-  return ESP_OK;
 }
 
 #elif CONFIG_HARDWARE_VERSION == 2
@@ -373,19 +316,6 @@ esp_err_t initLEDLegendMedium(uint8_t red, uint8_t green, uint8_t blue)
 }
 
 /**
- * @brief Initializes communication through the USB connector. Required for
- *        logging with ESP_LOG family functions.
- * 
- * @note For V2_0, communication is achieved through use of the USB peripheral.
- * 
- * @returns ESP_OK if successful.
- */
-esp_err_t initializeLogChannel(void)
-{
-  return ESP_FAIL; // TODO: implement function
-}
-
-/**
  * @brief Initializes the Light LED in the legend to the provided color.
  * 
  * @requires: 
@@ -404,6 +334,88 @@ esp_err_t initLEDLegendLight(uint8_t red, uint8_t green, uint8_t blue)
     if (err != ESP_OK) return err;
     err = matSetColor(HEAVY_LED_NUM, red, green, blue);
     return err;
+}
+
+#else
+#error "Unsupported hardware version!"
+#endif
+
+/**
+ * @brief Initializes an http client to the server.
+ * 
+ * @note Returned client must have a call to esp_http_client_cleanup after use.
+ * 
+ * @returns A handle to the initialized client if successful,
+ *          otherwise NULL.
+ */
+static esp_http_client_handle_t initHttpClient(void) 
+{
+    esp_http_client_config_t httpConfig = {
+        .host = CONFIG_DATA_SERVER,
+        .path = "/",
+        .auth_type = API_AUTH_TYPE,
+        .method = API_METHOD,
+        .crt_bundle_attach = esp_crt_bundle_attach,
+        .event_handler = NULL,
+        .user_data = NULL,
+    };
+
+    return esp_http_client_init(&httpConfig);
+}
+
+/**
+ * @brief Initializes state to a known state.
+ * 
+ * @param[out] state A pointer to the state to initialize.
+ */
+static void initializeMainState(MainTaskState *state)
+{
+    state->toggle = false;
+    state->first = true;
+`
+#ifdef CONFIG_FIRST_DIR_NORTH
+    state->dir = NORTH;
+#else
+    state->dir = SOUTH;
+#endif
+}
+
+#if CONFIG_HARDWARE_VERSION == 1
+
+/**
+ * @brief Initializes communication through the USB connector.
+ * 
+ * @note For V1_0, communication is achieved through use of UART 0.
+ * 
+ * @returns ESP_OK if successful.
+ */
+static esp_err_t initializeLogChannel(void)
+{
+  esp_err_t err;
+  err = uart_driver_install(UART_NUM_0,
+                            UART_HW_FIFO_LEN(UART_NUM_0) + 16,
+                            UART_HW_FIFO_LEN(UART_NUM_0) + 16,
+                            32,
+                            NULL,
+                            0);
+  if (err != ESP_OK) return err;
+  uart_vfs_dev_use_driver(UART_NUM_0); // enable interrupt driven IO
+  return ESP_OK;
+}
+
+#elif CONFIG_HARDWARE_VERSION == 2
+
+/**
+ * @brief Initializes communication through the USB connector. Required for
+ *        logging with ESP_LOG family functions.
+ * 
+ * @note For V2_0, communication is achieved through use of the USB peripheral.
+ * 
+ * @returns ESP_OK if successful.
+ */
+static esp_err_t initializeLogChannel(void)
+{
+  return ESP_FAIL; // TODO: implement function
 }
 
 #else
