@@ -40,13 +40,15 @@
 
 #define API_RETRY_CONN_NUM 5
 
+#define MATRIX_RETRY_NUM 15
+
 #if CONFIG_HARDWARE_VERSION == 1
 
 // no static variables here
 
 #elif CONFIG_HARDWARE_VERSION == 2
 
-#define NUM_NO_REFRESH_LEDS 7
+#define NUM_NO_REFRESH_LEDS 8
 
 static const int32_t noRefreshNums[NUM_NO_REFRESH_LEDS] = {WIFI_LED_NUM,
                                                            ERROR_LED_NUM,
@@ -55,14 +57,14 @@ static const int32_t noRefreshNums[NUM_NO_REFRESH_LEDS] = {WIFI_LED_NUM,
                                                            SOUTH_LED_NUM,
                                                            EAST_LED_NUM,
                                                            WEST_LED_NUM,
-                                                           };
+                                                           46}; // 46 does not exist for V2_0
 
 #else
 #error "Unsupported hardware version!"
 #endif
 
 static void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t percentFlow);
-static void updateLED(uint16_t ledNum, uint8_t percentFlow);
+static esp_err_t updateLED(uint16_t ledNum, uint8_t percentFlow);
 static char *getCorrectURL(Direction dir, SpeedCategory category);
 static bool mustAbort(void);
 
@@ -187,6 +189,7 @@ esp_err_t refreshBoard(LEDData currSpeeds[static MAX_NUM_LEDS_REG + 1], LEDData 
         }
         vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_UPDATE_PERIOD));
     }
+
     return ESP_OK;
 }
 
@@ -198,25 +201,43 @@ esp_err_t refreshBoard(LEDData currSpeeds[static MAX_NUM_LEDS_REG + 1], LEDData 
  * 
  * @param dir The direction that the LEDs will be cleared toward.
  */
-void clearBoard(Direction dir) {
+esp_err_t clearBoard(Direction dir) {
+    esp_err_t err;
+
     switch (dir) {
       case NORTH:
         ESP_LOGI(TAG, "Clearing South...");
         for (int ndx = 1; ndx <= MAX_NUM_LEDS_REG; ndx++) {
-            (void) matSetColor(ndx, 0x00, 0x00, 0x00);
+
+            for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
+            {
+                err = matSetColor(ndx, 0x00, 0x00, 0x00);
+                if (err == ESP_OK) break;
+            }
+            if (err != ESP_OK) return err;
+
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
         }
         break;
       case SOUTH:
         ESP_LOGI(TAG, "Clearing North...");
         for (int ndx = MAX_NUM_LEDS_REG; ndx > 0; ndx--) {
-            (void) matSetColor(ndx, 0x00, 0x00, 0x00);
+
+            for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
+            {
+                err = matSetColor(ndx, 0x00, 0x00, 0x00);
+                if (err == ESP_OK) break;
+            }
+            if (err != ESP_OK) return err;
+
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
         }
         break;
       default:
         break;
     }
+
+    return ESP_OK;
 }
 
 /**
@@ -231,11 +252,28 @@ esp_err_t quickClearBoard(void)
     esp_err_t err;
     /* restart matrices */
     ESP_LOGI(TAG, "Quick clearing matrices");
-    err = matReset();
+
+    for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
+    {
+        err = matReset();
+        if (err == ESP_OK) break;
+    }
     if (err != ESP_OK) return err;
-    err = matSetGlobalCurrentControl(CONFIG_GLOBAL_LED_CURRENT);
+
+    for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
+    {
+        err = matSetGlobalCurrentControl(CONFIG_GLOBAL_LED_CURRENT);
+        if (err == ESP_OK) break;
+    }
     if (err != ESP_OK) return err;
-    err = matSetOperatingMode(NORMAL_OPERATION);
+
+    for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
+    {
+        err = matSetOperatingMode(NORMAL_OPERATION);
+        if (err == ESP_OK) break;
+    }
+    if (err != ESP_OK) return err;
+    
     return err;
 }
 
@@ -246,8 +284,12 @@ esp_err_t quickClearBoard(void)
  *        provided.
  * 
  * @param dir The direction that the LEDs will be cleared toward.
+ * 
+ * @returns ESP_OK if successful, otherwise I2C matrix issue.
  */
-void clearBoard(Direction dir) {
+esp_err_t clearBoard(Direction dir) {
+    esp_err_t err;
+
     switch (dir) {
       case NORTH:
         ESP_LOGI(TAG, "Clearing South...");
@@ -258,7 +300,17 @@ void clearBoard(Direction dir) {
                 ESP_LOGW(TAG, "skipping clear of led %d", ndx);
                 continue;
             }
-            (void) matSetColor(ndx, 0x00, 0x00, 0x00);
+            
+            for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
+            {
+                err = matSetColor(ndx, 0x00, 0x00, 0x00);
+                if (err == ESP_OK) break;
+            }
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "ndx: %d", ndx);
+                return err;
+            }
+
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
         }
         break;
@@ -267,17 +319,29 @@ void clearBoard(Direction dir) {
         for (int ndx = MAX_NUM_LEDS_REG; ndx > 0; ndx--) {
             if (contains(noRefreshNums, NUM_NO_REFRESH_LEDS, ndx)) // only 7 elements (don't fret)
             {
-                /* don't clear indicator LEDs */
+                /* don't clear indicator LEDs or attempt those that don't exist */
                 ESP_LOGW(TAG, "skipping clear of led %d", ndx);
                 continue;
             }
-            (void) matSetColor(ndx, 0x00, 0x00, 0x00);
+
+            for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
+            {
+                err = matSetColor(ndx, 0x00, 0x00, 0x00);
+                if (err == ESP_OK) break;
+            }
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "ndx: %d", ndx);
+                return err;
+            }
+
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
         }
         break;
       default:
         break;
     }
+
+    return ESP_OK;
 }
 
 static struct Color {
@@ -300,11 +364,6 @@ esp_err_t quickClearBoard(void)
     struct Color savedColors[NUM_NO_REFRESH_LEDS];
     struct Color savedScalings[NUM_NO_REFRESH_LEDS];
     uint8_t red, green, blue;
-    // /* save colors of non-refresh LEDs */
-    // for (int32_t ndx = 0; ndx < NUM_NO_REFRESH_LEDS; ndx++)
-    // {
-    //     (void) mat
-    // }
 
     for (int32_t num = 1; num <= MAX_NUM_LEDS_REG; num++)
     {
@@ -314,8 +373,15 @@ esp_err_t quickClearBoard(void)
             ESP_LOGW(TAG, "skipping clear of led %ld", num);
             continue;
         }
-        err = matSetColor(num, 0x00, 0x00, 0x00);
-        if (err != ESP_OK) return err;
+
+        for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
+        {
+            err = matSetColor(num, 0x00, 0x00, 0x00);
+            if (err == ESP_OK) break;
+        }
+        if (err != ESP_OK) {
+            return err;
+        }
     }
     return ESP_OK;
 }
@@ -345,11 +411,26 @@ static void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t percen
     }
 }
 
-static void updateLED(uint16_t ledNum, uint8_t percentFlow) {
+static esp_err_t updateLED(uint16_t ledNum, uint8_t percentFlow) {
+    esp_err_t err;
     uint8_t red, green, blue;
     setColor(&red, &green, &blue, percentFlow);
-    (void) matSetColor(ledNum, red, green, blue);
-    (void) matSetScaling(ledNum, 0xFF, 0xFF, 0xFF);
+
+    for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
+    {
+        err = matSetColor(ledNum, red, green, blue);
+        if (err == ESP_OK) break;
+    }
+    if (err != ESP_OK) return err;
+
+    for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
+    {
+        err = matSetScaling(ledNum, 0xFF, 0xFF, 0xFF);
+        if (err == ESP_OK) break;
+    }
+    if (err != ESP_OK) return err;
+    
+    return ESP_OK;
 }
 
 /**

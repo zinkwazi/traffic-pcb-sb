@@ -167,7 +167,8 @@ void app_main(void)
         err = quickClearBoard();
         FATAL_IF_ERR(err, res.errRes);
       } else {
-        clearBoard(state.dir);
+        err = clearBoard(state.dir);
+        FATAL_IF_ERR(err, res.errRes);
       }
     }
     /* This task has nothing left to do, but should not exit */
