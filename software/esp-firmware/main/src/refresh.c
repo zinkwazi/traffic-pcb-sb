@@ -31,19 +31,6 @@
 
 #define TAG "refresh"
 
-/* LED color configuration */
-#define SLOW_RED (0xFF)
-#define SLOW_GREEN (0x00)
-#define SLOW_BLUE (0x00)
-
-#define MEDIUM_RED (0x15)
-#define MEDIUM_GREEN (0x09)
-#define MEDIUM_BLUE (0x00)
-
-#define FAST_RED (0x00)
-#define FAST_GREEN (0x00)
-#define FAST_BLUE (0x10)
-
 /* The URL of server data */
 #define URL_DATA_FILE_TYPE ".csv"
 #define URL_DATA_CURRENT_NORTH CONFIG_DATA_SERVER "/current_data/data_north_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
@@ -54,8 +41,11 @@
 #define API_RETRY_CONN_NUM 5
 
 #if CONFIG_HARDWARE_VERSION == 1
+
 // no static variables here
+
 #elif CONFIG_HARDWARE_VERSION == 2
+
 #define NUM_NO_REFRESH_LEDS 7
 
 static const int32_t noRefreshNums[NUM_NO_REFRESH_LEDS] = {WIFI_LED_NUM,
@@ -66,6 +56,7 @@ static const int32_t noRefreshNums[NUM_NO_REFRESH_LEDS] = {WIFI_LED_NUM,
                                                            EAST_LED_NUM,
                                                            WEST_LED_NUM,
                                                            };
+
 #else
 #error "Unsupported hardware version!"
 #endif
@@ -86,33 +77,6 @@ static bool contains(const int32_t *arr, int32_t arrLen, int32_t ele);
 #else
 #error "Unsupported hardware version!"
 #endif
-
-/**
- * @brief Clears all LEDs sequentially in the opposite direction of that
- *        provided.
- * 
- * @param dir The direction that the LEDs will be cleared toward.
- */
-void clearBoard(Direction dir) {
-    switch (dir) {
-      case NORTH:
-        ESP_LOGI(TAG, "Clearing South...");
-        for (int ndx = 1; ndx <= MAX_NUM_LEDS_REG; ndx++) {
-            (void) matSetColor(ndx, 0x00, 0x00, 0x00);
-            vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
-        }
-        break;
-      case SOUTH:
-        ESP_LOGI(TAG, "Clearing North...");
-        for (int ndx = MAX_NUM_LEDS_REG; ndx > 0; ndx--) {
-            (void) matSetColor(ndx, 0x00, 0x00, 0x00);
-            vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
-        }
-        break;
-      default:
-        break;
-    }
-}
 
 /**
  * @brief Updates the data stored in the provided array by querying it
@@ -229,6 +193,33 @@ esp_err_t refreshBoard(LEDData currSpeeds[static MAX_NUM_LEDS_REG + 1], LEDData 
 #if CONFIG_HARDWARE_VERSION == 1
 
 /**
+ * @brief Clears all LEDs sequentially in the opposite direction of that
+ *        provided.
+ * 
+ * @param dir The direction that the LEDs will be cleared toward.
+ */
+void clearBoard(Direction dir) {
+    switch (dir) {
+      case NORTH:
+        ESP_LOGI(TAG, "Clearing South...");
+        for (int ndx = 1; ndx <= MAX_NUM_LEDS_REG; ndx++) {
+            (void) matSetColor(ndx, 0x00, 0x00, 0x00);
+            vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
+        }
+        break;
+      case SOUTH:
+        ESP_LOGI(TAG, "Clearing North...");
+        for (int ndx = MAX_NUM_LEDS_REG; ndx > 0; ndx--) {
+            (void) matSetColor(ndx, 0x00, 0x00, 0x00);
+            vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
+        }
+        break;
+      default:
+        break;
+    }
+}
+
+/**
  * @brief Quickly sets all LEDs to off.
  * 
  * @note For V1_0, this function works by resetting each matrix.
@@ -251,25 +242,49 @@ esp_err_t quickClearBoard(void)
 #elif CONFIG_HARDWARE_VERSION == 2
 
 /**
- * @brief Determines whether ele is in arr.
+ * @brief Clears all LEDs sequentially in the opposite direction of that
+ *        provided.
  * 
- * @param[in] arr The array to query.
- * @param[in] arrLen The size of arr.
- * @param[in] ele The element to query for in array.
- * 
- * @returns True if ele is in arr, otherwise false.
+ * @param dir The direction that the LEDs will be cleared toward.
  */
-static bool contains(const int32_t *arr, int32_t arrLen, int32_t ele)
-{
-    for (int32_t i = 0; i < arrLen; i++)
-    {
-        if (arr[i] == ele)
-        {
-            return true;
+void clearBoard(Direction dir) {
+    switch (dir) {
+      case NORTH:
+        ESP_LOGI(TAG, "Clearing South...");
+        for (int ndx = 1; ndx <= MAX_NUM_LEDS_REG; ndx++) {
+            if (contains(noRefreshNums, NUM_NO_REFRESH_LEDS, ndx)) // only 7 elements (don't fret)
+            {
+                /* don't clear indicator LEDs */
+                ESP_LOGW(TAG, "skipping clear of led %d", ndx);
+                continue;
+            }
+            (void) matSetColor(ndx, 0x00, 0x00, 0x00);
+            vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
         }
+        break;
+      case SOUTH:
+        ESP_LOGI(TAG, "Clearing North...");
+        for (int ndx = MAX_NUM_LEDS_REG; ndx > 0; ndx--) {
+            if (contains(noRefreshNums, NUM_NO_REFRESH_LEDS, ndx)) // only 7 elements (don't fret)
+            {
+                /* don't clear indicator LEDs */
+                ESP_LOGW(TAG, "skipping clear of led %d", ndx);
+                continue;
+            }
+            (void) matSetColor(ndx, 0x00, 0x00, 0x00);
+            vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
+        }
+        break;
+      default:
+        break;
     }
-    return false;
 }
+
+static struct Color {
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+};
 
 /**
  * @brief Quickly sets all of the non-indicator LEDs to off.
@@ -282,11 +297,21 @@ static bool contains(const int32_t *arr, int32_t arrLen, int32_t ele)
 esp_err_t quickClearBoard(void)
 {
     esp_err_t err;
-    for (int32_t num = 1; num < MAX_NUM_LEDS_REG; num++)
+    struct Color savedColors[NUM_NO_REFRESH_LEDS];
+    struct Color savedScalings[NUM_NO_REFRESH_LEDS];
+    uint8_t red, green, blue;
+    // /* save colors of non-refresh LEDs */
+    // for (int32_t ndx = 0; ndx < NUM_NO_REFRESH_LEDS; ndx++)
+    // {
+    //     (void) mat
+    // }
+
+    for (int32_t num = 1; num <= MAX_NUM_LEDS_REG; num++)
     {
-        if (contains(noRefreshNums, NUM_NO_REFRESH_LEDS, num))
+        if (contains(noRefreshNums, NUM_NO_REFRESH_LEDS, num)) // only 7 elements (don't fret)
         {
             /* don't clear indicator LEDs */
+            ESP_LOGW(TAG, "skipping clear of led %ld", num);
             continue;
         }
         err = matSetColor(num, 0x00, 0x00, 0x00);
@@ -301,7 +326,7 @@ esp_err_t quickClearBoard(void)
 
 static bool mustAbort(void) {
     uint32_t notificationValue;
-    return xTaskNotifyWait(0, 0, &notificationValue, 0) == pdTRUE;
+    return xTaskNotifyWait(0, 0, &notificationValue, 0) == pdTRUE; // should not consume notification
 }
 
 static void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t percentFlow) {
@@ -365,3 +390,34 @@ static char *getCorrectURL(Direction dir, SpeedCategory category) {
     }
     return url;
 }
+
+#if CONFIG_HARDWARE_VERSION == 1
+
+/* no static functions here */
+
+#elif CONFIG_HARDWARE_VERSION == 2
+
+/**
+ * @brief Determines whether ele is in arr.
+ * 
+ * @param[in] arr The array to query.
+ * @param[in] arrLen The size of arr.
+ * @param[in] ele The element to query for in array.
+ * 
+ * @returns True if ele is in arr, otherwise false.
+ */
+static bool contains(const int32_t *arr, int32_t arrLen, int32_t ele)
+{
+    for (int32_t i = 0; i < arrLen; i++)
+    {
+        if (arr[i] == ele)
+        {   
+            return true;
+        }
+    }
+    return false;
+}
+
+#else
+#error "Unsupported hardware version!"
+#endif

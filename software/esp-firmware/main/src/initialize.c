@@ -317,6 +317,17 @@ esp_err_t initializeIndicatorLEDs(void)
     if (err != ESP_OK)
         return err;
     err = matSetColor(SOUTH_LED_NUM, 0x00, 0x00, 0x00);
+    if (err != ESP_OK)
+        return err;
+    err = initLEDLegendLight(FAST_RED, FAST_GREEN, FAST_BLUE);
+    if (err != ESP_OK)
+        return err;
+    err = initLEDLegendMedium(MEDIUM_RED, MEDIUM_GREEN, MEDIUM_BLUE);
+    if (err != ESP_OK)
+        return err;
+    err = initLEDLegendHeavy(SLOW_RED, SLOW_GREEN, SLOW_BLUE);
+    if (err != ESP_OK)
+        return err;
     return err;
 }
 
@@ -357,10 +368,10 @@ esp_err_t initLEDLegendHeavy(uint8_t red, uint8_t green, uint8_t blue)
 esp_err_t initLEDLegendMedium(uint8_t red, uint8_t green, uint8_t blue)
 {
     esp_err_t err;
-    err = matSetScaling(HEAVY_LED_NUM, 0xFF, 0xFF, 0xFF);
+    err = matSetScaling(MEDIUM_LED_NUM, 0xFF, 0xFF, 0xFF);
     if (err != ESP_OK)
         return err;
-    err = matSetColor(HEAVY_LED_NUM, red, green, blue);
+    err = matSetColor(MEDIUM_LED_NUM, red, green, blue);
     return err;
 }
 
@@ -379,10 +390,10 @@ esp_err_t initLEDLegendMedium(uint8_t red, uint8_t green, uint8_t blue)
 esp_err_t initLEDLegendLight(uint8_t red, uint8_t green, uint8_t blue)
 {
     esp_err_t err;
-    err = matSetScaling(HEAVY_LED_NUM, 0xFF, 0xFF, 0xFF);
+    err = matSetScaling(LIGHT_LED_NUM, 0xFF, 0xFF, 0xFF);
     if (err != ESP_OK)
         return err;
-    err = matSetColor(HEAVY_LED_NUM, red, green, blue);
+    err = matSetColor(LIGHT_LED_NUM, red, green, blue);
     return err;
 }
 

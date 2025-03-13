@@ -82,7 +82,9 @@ esp_err_t matSetResistorPulldownSetting(enum ResistorSetting setting);
 esp_err_t matSetPWMFrequency(enum PWMFrequency freq);
 esp_err_t matReset(void);
 esp_err_t matSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
+esp_err_t matGetColor(uint16_t ledNum, uint8_t *red, uint8_t *green, uint8_t *blue);
 esp_err_t matSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
+esp_err_t matGetScaling(uint16_t ledNum, uint8_t *red, uint8_t *green, uint8_t *blue);
 
 
 #if CONFIG_HARDWARE_VERSION == 1

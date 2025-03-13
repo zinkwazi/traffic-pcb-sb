@@ -912,6 +912,27 @@ esp_err_t matSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue)
 }
 
 /**
+ * @brief Retrieves the values of the registers corresponding to the color of
+ *        the LED number provided, which is internally the PWM duty in 256 steps.
+ * 
+ * @param[in] ledNum The LED number to query the color of.
+ * @param[out] red The location where the LED's red register will be placed.
+ * @param[out] green The location where the LED's green register will be placed.
+ * @param[out] blue The location where the LED's blue register will be placed.
+ * 
+ * @returns ESP_OK if successful.
+ */
+esp_err_t matGetColor(uint16_t ledNum, uint8_t *red, uint8_t *green, uint8_t *blue)
+{
+    esp_err_t err;
+    LEDReg ledReg;
+    i2c_master_dev_handle_t matrixHandle;
+    uint8_t page;
+
+    return ESP_FAIL;
+}
+
+/**
  * Controls the DC output current of the LED corresponding
  * to Kicad hardware number ledNum. See pg. 13 of the datasheet
  * for exact calculations. This can be considered a dimming
@@ -956,6 +977,22 @@ esp_err_t matSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blu
         return err;
     }
     return ESP_OK;
+}
+
+/**
+ * @brief Retrieves the values of the registers corresponding to the scaling of
+ *        the LED number provided, which controls the DC output current.
+ * 
+ * @param[in] ledNum The LED number to query the color of.
+ * @param[out] red The location where the LED's red register will be placed.
+ * @param[out] green The location where the LED's green register will be placed.
+ * @param[out] blue The location where the LED's blue register will be placed.
+ * 
+ * @returns ESP_OK if successful.
+ */
+esp_err_t matGetScaling(uint16_t ledNum, uint8_t *red, uint8_t *green, uint8_t *blue)
+{
+    return ESP_FAIL;
 }
 
 #if CONFIG_DISABLE_TESTING_FEATURES == false // this is inverted for the esp-idf vscode extension
