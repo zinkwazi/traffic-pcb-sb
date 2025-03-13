@@ -3,17 +3,22 @@
 #include <sys/time.h>
 #include "unity.h"
 #include "verifier.h"
+#include "esp_err.h"
+#include "esp_log.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "led_registers.h"
 #include "led_matrix.h"
 #include "pinout.h"
+#include "sdkconfig.h"
 
 #define TAG "test"
 
 #define GLOBAL_TEST_CURRENT 0x30
 #define GLOBAL_POWER_TEST_CURRENT 0x80
+
+#if CONFIG_HARDWARE_VERSION == 1
 
 void pinout_test(void) {
     VerificationResources res;
@@ -111,6 +116,58 @@ void led_color_test(void) {
         }
     }
 }
+
+#elif CONFIG_HARDWARE_VERSION == 2
+
+void pinout_test(void) {
+    VerificationResources res;
+    ESP_LOGI(TAG, "\nPress \"Toggle\" to verify, \"OTA\" to fail:\n");
+    assertHumanVerifies("Power Draw is acceptable?", true, res);
+}
+
+void power_test(void) {
+    VerificationResources res;
+    ESP_LOGI(TAG, "\nPress \"Toggle\" to verify, \"OTA\" to fail:\n");
+    assertHumanVerifies("Power Draw is acceptable?", true, res);
+}
+
+void led_color_test(void) {
+    VerificationResources res;
+    TEST_ASSERT_EQUAL(ESP_OK, initializeVerificationButtons(&res));
+    TEST_ASSERT_EQUAL(ESP_OK, matInitializeBus1(I2C1_PORT, SDA1_PIN, SCL1_PIN));
+    TEST_ASSERT_EQUAL(ESP_OK, matInitializeBus2(I2C2_PORT, SDA2_PIN, SCL2_PIN));
+    TEST_ASSERT_EQUAL(ESP_OK, matReset());
+    TEST_ASSERT_EQUAL(ESP_OK, matSetGlobalCurrentControl(GLOBAL_TEST_CURRENT));
+    TEST_ASSERT_EQUAL(ESP_OK, matSetOperatingMode(NORMAL_OPERATION));
+    ESP_LOGI(TAG, "\nPress \"Toggle\" to verify, \"OTA\" to fail:\n");
+    for (int i = 1; i <= MAX_NUM_LEDS_REG; i++) {
+        LEDReg reg = LEDNumToReg[i];
+        if (reg.matrix == MAT_NONE) {
+            ESP_LOGI(TAG, "LED %d", i);
+            assertHumanVerifies("Verify No LED...", true, res);
+        } else {
+            TEST_ASSERT_EQUAL(ESP_OK, matSetScaling(i, 0xFF, 0xFF, 0xFF));
+
+            TEST_ASSERT_EQUAL(ESP_OK, matSetColor(i, 0xFF, 0x00, 0x00));
+            ESP_LOGI(TAG, "LED %d RED  , 0x%X", i, reg.red);
+            assertHumanVerifies("Verify LED...", true, res);
+            
+            TEST_ASSERT_EQUAL(ESP_OK, matSetColor(i, 0x00, 0xFF, 0x00));
+            ESP_LOGI(TAG, "LED %d GREEN, 0x%X", i, reg.green);
+            assertHumanVerifies("Verify LED...", true, res);
+    
+            TEST_ASSERT_EQUAL(ESP_OK, matSetColor(i, 0x00, 0x00, 0xFF));
+            ESP_LOGI(TAG, "LED %d BLUE , 0x%X", i, reg.blue);
+            assertHumanVerifies("Verify LED...", true, res);
+    
+            TEST_ASSERT_EQUAL(ESP_OK, matSetColor(i, 0x00, 0x00, 0x00));
+        }
+    }
+}
+
+#else
+#error "Unsupported hardware version!"
+#endif
 
 void app_main(void)
 {

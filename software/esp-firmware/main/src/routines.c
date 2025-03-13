@@ -263,7 +263,7 @@ static void timerFlashDirCallback(void *params) {
 static void timerFlashDirCallback(void *params) {
   int *currentOutput = (int *) params;
   *currentOutput = (*currentOutput == 1) ? 0 : 1;
-  if (currentOutput == 1)
+  if (*currentOutput == 1)
   {
     (void) matSetColor(NORTH_LED_NUM, 0xFF, 0xFF, 0xFF);
     (void) matSetColor(EAST_LED_NUM, 0xFF, 0xFF, 0xFF);

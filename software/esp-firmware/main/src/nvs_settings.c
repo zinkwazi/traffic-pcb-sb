@@ -14,11 +14,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "driver/usb_serial_jtag.h"
 #include "esp_check.h"
 #include "esp_err.h"
+#include "esp_log.h"
 #include "esp_timer.h"
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "sdkconfig.h"
 
 #include "app_errors.h"
 #include "api_connect.h"
@@ -88,7 +91,13 @@ esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle) {
 esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle) {
   esp_err_t ret;
   nvs_iterator_t nvs_iter;
-  if (nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter) != ESP_OK) {
+
+  ret = nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter);
+  if (ret == ESP_ERR_NVS_NOT_FOUND)
+  {
+    return ESP_OK;
+  } else if (ret != ESP_OK)
+  {
     return ESP_FAIL;
   }
   ret = nvs_entry_next(&nvs_iter);
@@ -119,63 +128,6 @@ esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle) {
 }
 
 /**
- * @brief Queries the user for settings and writes responses in non-volatile
- *        storage.
- * 
- * @note Uses UART0 to query settings.
- * 
- * @param nvsHandle The non-volatile storage handle to store settings in.
- * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- */
-esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
-  const unsigned short bufLen = CONFIG_NVS_ENTRY_BUFFER_LENGTH;
-  char c;
-  char buf[bufLen];
-  printf("\nWifi SSID: ");
-  fflush(stdout);
-  for (int i = 0; i < bufLen; i++) {
-    buf[i] = getchar();
-    if (buf[i] == '\n') {
-      buf[i] = '\0';
-      break;
-    }
-    printf("%c", buf[i]);
-    fflush(stdout);
-  }
-  while ((c = getchar()) != '\n') {}
-  buf[bufLen - 1] = '\0'; // in case the user writes too much
-  fflush(stdout);
-  ESP_RETURN_ON_ERROR(
-    nvs_set_str(nvsHandle, WIFI_SSID_NVS_NAME, buf),
-    TAG, "failed to write wifi SSID to non-volatile storage"
-  );
-  printf("\nWifi Password: ");
-  fflush(stdout);
-  for (int i = 0; i < bufLen; i++) {
-    buf[i] = getchar();
-    if (buf[i] == '\n') {
-      buf[i] = '\0';
-      break;
-    }
-    printf("%c", buf[i]);
-    fflush(stdout);
-  }
-  while ((c = getchar()) != '\n') {}
-  buf[bufLen] = '\0'; // in case the user writes too much
-  fflush(stdout);
-  ESP_RETURN_ON_ERROR(
-    nvs_set_str(nvsHandle, WIFI_PASS_NVS_NAME, buf),
-    TAG, "failed to write wifi password to non-volatile storage"
-  );
-  ESP_RETURN_ON_ERROR(
-    nvs_commit(nvsHandle),
-    TAG, "failed to commit NVS changes"
-  );
-  return ESP_OK;
-}
-
-/**
  * @brief Retrieves user settings from non-volatile storage.
  * 
  * Retrieves user settings from non-volatile storage and places results in
@@ -194,26 +146,32 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, UserSettings *settings)
 {
   /* retrieve wifi ssid */
   if (nvs_get_str(nvsHandle, WIFI_SSID_NVS_NAME, NULL, &(settings->wifiSSIDLen)) != ESP_OK) {
+    ESP_LOGI(TAG, "failed to retrive wifi ssid length");
     return ESP_FAIL;
   }
   if ((settings->wifiSSID = malloc(settings->wifiSSIDLen)) == NULL) {
+    ESP_LOGI(TAG, "failed to allocate mem1");
     return ESP_FAIL;
   }
   if (nvs_get_str(nvsHandle, WIFI_SSID_NVS_NAME, settings->wifiSSID, &(settings->wifiSSIDLen)) != ESP_OK) {
     free(settings->wifiSSID);
+    ESP_LOGI(TAG, "failed to retrieve wifi ssid");
     return ESP_FAIL;
   }
   /* retrieve wifi password */
   if (nvs_get_str(nvsHandle, WIFI_PASS_NVS_NAME, NULL, &(settings->wifiPassLen)) != ESP_OK) {
+    ESP_LOGI(TAG, "failed to retrieve password length");
     return ESP_FAIL;
   }
   if ((settings->wifiPass = malloc(settings->wifiPassLen)) == NULL) {
     free(settings->wifiSSID);
+    ESP_LOGI(TAG, "failed to allocate mem");
     return ESP_FAIL;
   }
   if (nvs_get_str(nvsHandle, WIFI_PASS_NVS_NAME, settings->wifiPass, &(settings->wifiPassLen)) != ESP_OK) {
     free(settings->wifiSSID);
     free(settings->wifiPass);
+    ESP_LOGI(TAG, "failed to retrieve password");
     return ESP_FAIL;
   }
   /* dynamically allocated SSID and password will exist for the duration of the program */
@@ -461,3 +419,209 @@ esp_err_t removeExtraWorkerNvsEntries(void) {
   }
   return ESP_OK;
 }
+
+
+#if CONFIG_HARDWARE_VERSION == 1
+
+/**
+ * @brief Queries the user for settings and writes responses in non-volatile
+ *        storage.
+ * 
+ * @note Uses UART0 to query settings.
+ * 
+ * @param nvsHandle The non-volatile storage handle to store settings in.
+ * 
+ * @returns ESP_OK if successful, otherwise ESP_FAIL.
+ */
+esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
+  const unsigned short bufLen = CONFIG_NVS_ENTRY_BUFFER_LENGTH;
+  char c;
+  char buf[bufLen];
+  printf("\nWifi SSID: ");
+  fflush(stdout);
+  for (int i = 0; i < bufLen; i++) {
+    buf[i] = getchar();
+    if (buf[i] == '\n') {
+      buf[i] = '\0';
+      break;
+    }
+    printf("%c", buf[i]);
+    fflush(stdout);
+  }
+  while ((c = getchar()) != '\n') {}
+  buf[bufLen - 1] = '\0'; // in case the user writes too much
+  fflush(stdout);
+  ESP_RETURN_ON_ERROR(
+    nvs_set_str(nvsHandle, WIFI_SSID_NVS_NAME, buf),
+    TAG, "failed to write wifi SSID to non-volatile storage"
+  );
+  printf("\nWifi Password: ");
+  fflush(stdout);
+  for (int i = 0; i < bufLen; i++) {
+    buf[i] = getchar();
+    if (buf[i] == '\n') {
+      buf[i] = '\0';
+      break;
+    }
+    printf("%c", buf[i]);
+    fflush(stdout);
+  }
+  while ((c = getchar()) != '\n') {}
+  buf[bufLen] = '\0'; // in case the user writes too much
+  fflush(stdout);
+  ESP_RETURN_ON_ERROR(
+    nvs_set_str(nvsHandle, WIFI_PASS_NVS_NAME, buf),
+    TAG, "failed to write wifi password to non-volatile storage"
+  );
+  ESP_RETURN_ON_ERROR(
+    nvs_commit(nvsHandle),
+    TAG, "failed to commit NVS changes"
+  );
+  return ESP_OK;
+}
+
+#elif CONFIG_HARDWARE_VERSION == 2
+
+/**
+ * @brief Queries the user for settings and writes responses in non-volatile
+ *        storage.
+ * 
+ * @note Uses UART0 to query settings.
+ * 
+ * @param nvsHandle The non-volatile storage handle to store settings in.
+ * 
+ * @returns ESP_OK if successful, otherwise ESP_FAIL.
+ */
+esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
+  const unsigned short bufLen = CONFIG_NVS_ENTRY_BUFFER_LENGTH;
+  char c;
+  char *str;
+  char buf[bufLen];
+  int numBytes;
+  str = "\nWifi SSID: ";
+  do {
+    numBytes = usb_serial_jtag_write_bytes(str, strlen(str), INT_MAX);
+  } while (numBytes == 0);
+  if (numBytes != strlen(str))
+  {
+    return ESP_FAIL;
+  }
+
+  /* read user input into buffer */
+  for (int i = 0; i < bufLen; i++) {
+    
+    do {
+      numBytes = usb_serial_jtag_read_bytes(&buf[i], 1, INT_MAX);
+    } while (numBytes == 0);
+    if (numBytes != 1)
+    {
+      return ESP_FAIL;
+    }
+    
+    if (buf[i] == '\n' || buf[i] == '\r') {
+      c = buf[i];
+      do {
+        numBytes = usb_serial_jtag_write_bytes("\r", 1, INT_MAX);
+      } while (numBytes == 0);
+      if (numBytes != 1)
+      {
+        return ESP_FAIL;
+      }
+      buf[i] = '\0';
+      break;
+    }
+    do {
+      numBytes = usb_serial_jtag_write_bytes(&buf[i], 1, INT_MAX);
+    } while (numBytes == 0);
+    if (numBytes != 1)
+    {
+      return ESP_FAIL;
+    }
+
+    c = buf[i];
+  }
+  /* ignore the rest of what the user is typing */
+  while (c != '\n' && c != '\r')
+  {
+    do {
+      numBytes = usb_serial_jtag_read_bytes(&c, 1, INT_MAX);
+    } while (numBytes == 0);
+    if (numBytes != 1)
+    {
+      return ESP_FAIL;
+    }
+  }
+  buf[bufLen - 1] = '\0'; // in case the user writes too much
+  ESP_RETURN_ON_ERROR(
+    nvs_set_str(nvsHandle, WIFI_SSID_NVS_NAME, buf),
+    TAG, "failed to write wifi SSID to non-volatile storage"
+  );
+
+  str = "\nWifi Password: ";
+  do {
+    numBytes = usb_serial_jtag_write_bytes(str, strlen(str), INT_MAX);
+  } while (numBytes == 0);
+  if (numBytes != strlen(str))
+  {
+    return ESP_FAIL;
+  }
+
+  /* read user input into buffer */
+  for (int i = 0; i < bufLen; i++) {
+    
+    do {
+      numBytes = usb_serial_jtag_read_bytes(&buf[i], 1, INT_MAX);
+    } while (numBytes == 0);
+    if (numBytes != 1)
+    {
+      return ESP_FAIL;
+    }
+    
+    if (buf[i] == '\n'|| buf[i] == '\r') {
+      c = buf[i];
+      do {
+        numBytes = usb_serial_jtag_write_bytes("\r", 1, INT_MAX);
+      } while (numBytes == 0);
+      if (numBytes != 1)
+      {
+        return ESP_FAIL;
+      }
+      buf[i] = '\0';
+      break;
+    }
+    do {
+      numBytes = usb_serial_jtag_write_bytes(&buf[i], 1, INT_MAX);
+    } while (numBytes == 0);
+    if (numBytes != 1)
+    {
+      return ESP_FAIL;
+    }
+    c = buf[i];
+  }
+  /* ignore the rest of what the user is typing */
+  while (c != '\n' && c != '\r')
+  {
+    do {
+      numBytes = usb_serial_jtag_read_bytes(&c, 1, INT_MAX);
+    } while (numBytes == 0);
+    if (numBytes != 1)
+    {
+      return ESP_FAIL;
+    }
+  }
+  buf[bufLen - 1] = '\0'; // in case the user writes too much
+  ESP_RETURN_ON_ERROR(
+    nvs_set_str(nvsHandle, WIFI_PASS_NVS_NAME, buf),
+    TAG, "failed to write wifi password to non-volatile storage"
+  );
+
+  ESP_RETURN_ON_ERROR(
+    nvs_commit(nvsHandle),
+    TAG, "failed to commit NVS changes"
+  );
+  return ESP_OK;
+}
+
+#else
+#error "Unsupported hardware version!"
+#endif
