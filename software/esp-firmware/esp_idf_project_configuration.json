@@ -1,0 +1,48 @@
+{
+  "develop_V2_0": {
+    "build": {
+      "compileArgs": [],
+      "ninjaArgs": [],
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\develop_V2_0",
+      "sdkconfigDefaults": [],
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig_V2_0.defaults"
+    },
+    "env": {},
+    "flashBaudRate": "",
+    "monitorBaudRate": "",
+    "openOCD": {
+      "debugLevel": 0,
+      "configs": [],
+      "args": []
+    },
+    "tasks": {
+      "preBuild": "",
+      "preFlash": "",
+      "postBuild": "",
+      "postFlash": ""
+    }
+  },
+  "develop_V1_0": {
+    "build": {
+      "compileArgs": [],
+      "ninjaArgs": [],
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\develop_V1_0",
+      "sdkconfigDefaults": [],
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig_V1_0.defaults"
+    },
+    "env": {},
+    "flashBaudRate": "",
+    "monitorBaudRate": "",
+    "openOCD": {
+      "debugLevel": 0,
+      "configs": [],
+      "args": []
+    },
+    "tasks": {
+      "preBuild": "",
+      "preFlash": "",
+      "postBuild": "",
+      "postFlash": ""
+    }
+  }
+}

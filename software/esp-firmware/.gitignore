@@ -1,5 +1,7 @@
 .devcontainer/
 .vscode/
 build/
+builds/
 sdkconfig.old
+sdkconfig
 unity-app/
