@@ -342,28 +342,37 @@ esp_err_t openServerFile(int64_t *contentLength, esp_http_client_handle_t client
     }
 
     ESP_LOGI(TAG, "retrieving: %s", URL);
-    err = esp_http_client_set_url(client, URL);
-    if (err != ESP_OK) return err;
-    err = esp_http_client_open(client, 0);
-    if (err != ESP_OK) return err;
-    *contentLength = esp_http_client_fetch_headers(client);
-    while (*contentLength == -ESP_ERR_HTTP_EAGAIN) {
+
+    while (retryNum != 0)
+    {
+        err = esp_http_client_set_url(client, URL);
+        if (err != ESP_OK) return err; // should always be able to do this
+        err = esp_http_client_open(client, 0);
+        if (err != ESP_OK) return err; // should always be able to do this
         *contentLength = esp_http_client_fetch_headers(client);
-    }
-    if (*contentLength <= 0) {
-        ESP_LOGW(TAG, "contentLength <= 0");
-        if (esp_http_client_close(client) != ESP_OK) {
-            ESP_LOGE(TAG, "failed to close client");
+        while (*contentLength == -ESP_ERR_HTTP_EAGAIN) {
+            *contentLength = esp_http_client_fetch_headers(client);
         }
-        return ESP_FAIL;
-    }
-    int status = esp_http_client_get_status_code(client);
-    if (esp_http_client_get_status_code(client) != 200) {
-        ESP_LOGE(TAG, "status code is %d", status);
-        if (esp_http_client_close(client) != ESP_OK) {
-            ESP_LOGE(TAG, "failed to close client");
+        if (*contentLength <= 0) {
+            ESP_LOGW(TAG, "contentLength <= 0");
+            if (esp_http_client_close(client) != ESP_OK) {
+                ESP_LOGE(TAG, "failed to close client");
+                return ESP_FAIL;
+            }
+            retryNum--;
+            continue;
         }
-        return ESP_FAIL;
+        int status = esp_http_client_get_status_code(client);
+        if (esp_http_client_get_status_code(client) != 200) {
+            ESP_LOGE(TAG, "status code is %d", status);
+            if (esp_http_client_close(client) != ESP_OK) {
+                ESP_LOGE(TAG, "failed to close client");
+                return ESP_FAIL;
+            }
+            retryNum--;
+            continue;
+        }
+        return ESP_OK;
     }
     return ESP_OK;
 }

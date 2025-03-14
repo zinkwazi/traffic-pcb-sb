@@ -307,7 +307,6 @@ esp_err_t clearBoard(Direction dir) {
                 if (err == ESP_OK) break;
             }
             if (err != ESP_OK) {
-                ESP_LOGE(TAG, "ndx: %d", ndx);
                 return err;
             }
 
@@ -330,7 +329,6 @@ esp_err_t clearBoard(Direction dir) {
                 if (err == ESP_OK) break;
             }
             if (err != ESP_OK) {
-                ESP_LOGE(TAG, "ndx: %d", ndx);
                 return err;
             }
 
