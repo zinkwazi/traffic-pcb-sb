@@ -28,7 +28,7 @@
 #define IO_SW_PIN        GPIO_NUM_0 // Strapping pin, needs pullup
 
 /* Direction Indicator */
-#define T_SW_PIN         GPIO_NUM_4
+#define T_SW_PIN         GPIO_NUM_48
 #define NORTH_LED_NUM    (411)
 #define SOUTH_LED_NUM    (409)
 #define EAST_LED_NUM     (412)

@@ -20,6 +20,14 @@ menu "Main Application"
         help
             The version of firmware this build corresponds to.
     
+    config SERVER_HARDWARE_VERSION
+        int "Server Hardware Version"
+        default 1
+        help
+            The version of hardware this build tells the server it is, however
+            it will still grab the correct addendums for the true hardware
+            version.
+
     config SERVER_FIRMWARE_VERSION
         int "Server Firmware Version"
         default 0

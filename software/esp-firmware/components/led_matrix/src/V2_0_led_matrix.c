@@ -18,6 +18,7 @@
 #include "driver/i2c_master.h"
 #include "driver/i2c_types.h"
 #include "esp_err.h"
+#include "esp_log.h"
 
 #include "led_registers.h"
 #include "led_types.h"
@@ -33,7 +34,7 @@
 
 #define BUS_SPEED_HZ 400000 // 400kHz maximum
 #define SCL_WAIT_US 0       // use default value
-#define PROBE_WAIT_MS 1000
+#define PROBE_WAIT_MS 10000
 
 /* Matrix Driver IC High Level Registers */
 #define CMD_REG_ADDR 0xFD
@@ -294,6 +295,17 @@ esp_err_t matParseLEDRegisterInfo(i2c_master_dev_handle_t *matrixHandle, uint8_t
         *matrixHandle = sMat4Handle;
         if (pwmPage != NULL)
         {
+            *pwmPage = PWM0_PAGE;
+        }
+        if (scalingPage != NULL)
+        {
+            *scalingPage = SCALING0_PAGE;
+        }
+        break;
+    case MAT4_PAGE1:
+        *matrixHandle = sMat4Handle;
+        if (pwmPage != NULL)
+        {
             *pwmPage = PWM1_PAGE;
         }
         if (scalingPage != NULL)
@@ -317,7 +329,8 @@ esp_err_t matAssertConnectedBus1(void)
         return ESP_FAIL;
     }
     /* probe matrix 1 */
-    if (i2c_master_probe(sI2CBus1, MAT1_ADDR, PROBE_WAIT_MS) != ESP_OK)
+    esp_err_t err = i2c_master_probe(sI2CBus1, MAT1_ADDR, PROBE_WAIT_MS);
+    if (err != ESP_OK)
     {
         return ESP_FAIL;
     }
@@ -601,6 +614,7 @@ esp_err_t matSetRegister(i2c_master_dev_handle_t device, uint8_t page, uint8_t a
     /* move to the correct page */
     if (matSetPage(device, page) != ESP_OK)
     {
+        ESP_LOGE(TAG, "failed to set page");
         return ESP_FAIL;
     }
     /* transmit message */
@@ -866,11 +880,8 @@ esp_err_t matSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue)
     LEDReg ledReg;
     i2c_master_dev_handle_t matrixHandle;
     uint8_t page;
-    /* map led num 329 and 330 to reasonable numbers */
-    ledNum = (ledNum == 329) ? 325 : ledNum;
-    ledNum = (ledNum == 330) ? 326 : ledNum;
     /* guard input */
-    if (ledNum == 0 || ledNum >= 327)
+    if (ledNum == 0 || ledNum > MAX_NUM_LEDS_REG)
     {
         return ESP_FAIL;
     }
@@ -901,6 +912,27 @@ esp_err_t matSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue)
 }
 
 /**
+ * @brief Retrieves the values of the registers corresponding to the color of
+ *        the LED number provided, which is internally the PWM duty in 256 steps.
+ * 
+ * @param[in] ledNum The LED number to query the color of.
+ * @param[out] red The location where the LED's red register will be placed.
+ * @param[out] green The location where the LED's green register will be placed.
+ * @param[out] blue The location where the LED's blue register will be placed.
+ * 
+ * @returns ESP_OK if successful.
+ */
+esp_err_t matGetColor(uint16_t ledNum, uint8_t *red, uint8_t *green, uint8_t *blue)
+{
+    esp_err_t err;
+    LEDReg ledReg;
+    i2c_master_dev_handle_t matrixHandle;
+    uint8_t page;
+
+    return ESP_FAIL;
+}
+
+/**
  * Controls the DC output current of the LED corresponding
  * to Kicad hardware number ledNum. See pg. 13 of the datasheet
  * for exact calculations. This can be considered a dimming
@@ -912,11 +944,8 @@ esp_err_t matSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blu
     LEDReg ledReg;
     i2c_master_dev_handle_t matrixHandle;
     uint8_t page;
-    /* map led num 329 and 330 to reasonable numbers */
-    ledNum = (ledNum == 329) ? 325 : ledNum;
-    ledNum = (ledNum == 330) ? 326 : ledNum;
     /* guard input */
-    if (ledNum == 0 || ledNum >= 327)
+    if (ledNum == 0 || ledNum > MAX_NUM_LEDS_REG)
     {
         return ESP_FAIL;
     }
@@ -925,25 +954,45 @@ esp_err_t matSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blu
     err = matParseLEDRegisterInfo(&matrixHandle, NULL, &page, ledReg);
     if (err != ESP_OK)
     {
+        ESP_LOGE(TAG, "failed to parse register info. ledReg: %d", ledReg.matrix);
         return err;
     }
     /* set PWM registers to provided values */
     err = matSetRegister(matrixHandle, page, ledReg.red, red);
     if (err != ESP_OK)
     {
+        ESP_LOGE(TAG, "failed to set red register");
         return err;
     }
     err = matSetRegister(matrixHandle, page, ledReg.green, green);
     if (err != ESP_OK)
     {
+        ESP_LOGE(TAG, "failed to set green register");
         return err;
     }
     err = matSetRegister(matrixHandle, page, ledReg.blue, blue);
     if (err != ESP_OK)
     {
+        ESP_LOGE(TAG, "failed to set blue register");
         return err;
     }
     return ESP_OK;
+}
+
+/**
+ * @brief Retrieves the values of the registers corresponding to the scaling of
+ *        the LED number provided, which controls the DC output current.
+ * 
+ * @param[in] ledNum The LED number to query the color of.
+ * @param[out] red The location where the LED's red register will be placed.
+ * @param[out] green The location where the LED's green register will be placed.
+ * @param[out] blue The location where the LED's blue register will be placed.
+ * 
+ * @returns ESP_OK if successful.
+ */
+esp_err_t matGetScaling(uint16_t ledNum, uint8_t *red, uint8_t *green, uint8_t *blue)
+{
+    return ESP_FAIL;
 }
 
 #if CONFIG_DISABLE_TESTING_FEATURES == false // this is inverted for the esp-idf vscode extension

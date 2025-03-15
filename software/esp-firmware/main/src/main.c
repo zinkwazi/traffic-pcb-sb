@@ -144,12 +144,13 @@ void app_main(void)
     /* initialize application */
     err = initializeMatrices();
     FATAL_IF_ERR(err, res.errRes);
+    /* quick clear LEDs, maybe leftover from reboot */
+    (void) quickClearBoard(); // let this fail, refresh will occur after
     err = initializeIndicatorLEDs();
     FATAL_IF_ERR(err, res.errRes);
     err = initializeApplication(&state, &res);
     FATAL_IF_ERR(err, res.errRes);
-    /* quick clear LEDs, maybe leftover from reboot */
-    (void) quickClearBoard(); // let this fail, refresh will occur after
+    
     /* retrieve speeds */
     err = refreshData(typicalNorthSpeeds, res.client, NORTH, TYPICAL, res.errRes);
     FATAL_IF_ERR(err, res.errRes);
@@ -166,7 +167,8 @@ void app_main(void)
         err = quickClearBoard();
         FATAL_IF_ERR(err, res.errRes);
       } else {
-        clearBoard(state.dir);
+        err = clearBoard(state.dir);
+        FATAL_IF_ERR(err, res.errRes);
       }
     }
     /* This task has nothing left to do, but should not exit */
