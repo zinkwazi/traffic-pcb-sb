@@ -7,8 +7,6 @@
 // #include "api_connect.h"
 #include "api_connect.h"
 
-
-
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -114,11 +112,10 @@ esp_err_t getNextResponseBlock(char *output, int *outputLen, esp_http_client_han
  * @param[in] buf An array of length bufSize, used internally by the function.
  *        Assume that the data inside buf is scrambled after use.
  * 
- * @returns ESP_OK if successful. 
+ * @returns ESP_OK if successful.
  *          ESP_ERR_NOT_FOUND if no data was found.
- *          ESP_FAIL otherwise and the circular buffer mark is unmodified, 
- *          however buf is potentially modified. This is likely because there
- *          is a -1 in the input file.
+ *          ESP_FAIL otherwise and the circular buffer mark is unmodified,
+ *          however buf is potentially modified.
  */
 esp_err_t nextCSVEntryFromMark(LEDData *data, CircularBuffer *circBuf, char *buf, uint32_t bufSize) {
     circ_err_t circ_err;

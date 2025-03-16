@@ -1,28 +1,108 @@
 /**
- * test_api_connect.c
+ * test_nextCSVEntryFromMark.c
  * 
- * tests api_connect.h, which contains functionality to parse server HTTP
- * responses.
+ * Black box unit tests for api_connect.c:nextCSVEntryFromMark.
  * 
  * Test file dependencies: common:test_circular_buffer.c
  */
 
-#include "api_connect_pi.h"
-
-#include "circular_buffer.h"
-
-#include "unity.h"
-#include "esp_err.h"
-#include "esp_log.h"
 
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "unity.h"
+#include "esp_err.h"
+#include "esp_log.h"
+
+#include "api_connect_pi.h"
+#include "circular_buffer.h"
+
+
 #define TAG "test"
 
 /**
+ * Tests that ESP_ERR_NOT_FOUND is returned if no data was found.
+ * 
  * Test case dependencies: None.
+ */
+TEST_CASE("nextCSVEntryFromMark_noDataFound", "[api_connect]")
+{
+    esp_err_t err;
+    circ_err_t circ_err;
+    char *str = "456\r\n";
+    const int TEST_BUF_SIZE = 9;
+    const int CIRC_BUF_SIZE = 3 * TEST_BUF_SIZE;
+    char buffer[TEST_BUF_SIZE];
+    char circBufBacking[CIRC_BUF_SIZE];
+    CircularBuffer circBuf;
+    LEDData result;
+    int numBytes;
+    char *expected;
+
+    /* load string into circular buffer and mark it */
+    circ_err = circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
+    TEST_ASSERT_EQUAL(ESP_OK, circ_err);
+    circ_err = circularBufferStore(&circBuf, str, strlen(str));
+    TEST_ASSERT_EQUAL(ESP_OK, circ_err);
+    circ_err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
+    TEST_ASSERT_EQUAL(ESP_OK, circ_err);
+
+    /* parse string through circular buffer */
+    err = nextCSVEntryFromMark(&result, &circBuf, buffer, TEST_BUF_SIZE);
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
+}
+
+/**
+ * Tests input guards.
+ */
+TEST_CASE("nextCSVEntryFromMark_inputGuards", "[api_connect]")
+{
+    char *str = "4,71\r\n5";
+    /* The maximum size of one test_data entry, including "\r\n" and '\0' */
+    const int TEST_BUF_LEN = 9;
+    const int CIRC_BUF_SIZE = 6 * TEST_BUF_LEN;
+    char buffer[TEST_BUF_LEN];
+    char circBufBacking[CIRC_BUF_SIZE];
+    CircularBuffer circBuf;
+    circ_err_t circ_err;
+    esp_err_t err;
+    int numBytes;
+    LEDData result;
+    char *expected;
+
+    /* test NULL circular buffer */
+    err = nextCSVEntryFromMark(&result, NULL, buffer, TEST_BUF_LEN);
+    TEST_ASSERT_EQUAL(ESP_FAIL, err);
+
+    /* load first response block into circular buffer */
+    circ_err = circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
+    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
+    circ_err = circularBufferStore(&circBuf, str, strlen(str));
+    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
+    circ_err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
+    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
+    expected = "4,71\r\n5";
+    numBytes = circularBufferReadFromMark(&circBuf, buffer, TEST_BUF_LEN - 1);
+    TEST_ASSERT_EQUAL(strlen(expected), numBytes);
+    TEST_ASSERT_EQUAL('\0', buffer[TEST_BUF_LEN - 1]);
+    TEST_ASSERT_EQUAL_STRING(expected, buffer);
+
+    /* test NULL response */
+    err = nextCSVEntryFromMark(NULL, &circBuf, buffer, TEST_BUF_LEN);
+    TEST_ASSERT_EQUAL(ESP_FAIL, err);
+
+    /* test NULL buffer */
+    err = nextCSVEntryFromMark(&result, &circBuf, NULL, TEST_BUF_LEN);
+    TEST_ASSERT_EQUAL(ESP_FAIL, err);
+    err = nextCSVEntryFromMark(&result, &circBuf, buffer, 0);
+    TEST_ASSERT_EQUAL(ESP_FAIL, err);
+}
+
+/**
+ * Tests that newline characters do not cause an infinite loop.
+ * 
+ * Test case dependencies: markMoved.
  */
 TEST_CASE("nextCSVEntryFromMark_skipsNewline", "[api_connect]")
 {
