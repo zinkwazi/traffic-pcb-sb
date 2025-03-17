@@ -57,10 +57,13 @@ Ordering of configuration in the version string is as follows: [A/F: data source
 3. search for ESP-IDF from espressif and download
 4. Open setup wizard (alternatively cmd+shift+p, then ">ESP-IDF: Setup extension")
 5. clone repo
-6. open esp-firmware folder and use setup wizard again if necessary, use v5.3.x or 5.4.x
-7. wait for download to complete, follow terminal instructions if errors. This is very likely to be a problematic step. If
-there are issues, navigate to user/esp/install.sh and user/esp/export.sh and follow [ESP-IDF Get Started Guide](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/index.html) instructions. Again,
-this is highly likely to be very problematic and will likely require a lot of troubleshooting. Running "sudo -H ./install.sh" after restarting the terminal on MAC may be helpful.
+6. open esp-firmware folder and use setup wizard again if necessary, use v5.4.x or v5.3.x.
+7. wait for download to complete, follow terminal instructions if errors. This is very likely to be a problematic step,
+and unfortunately will not allow the next steps to work if it fails. If
+there are issues, follow [ESP-IDF Get Started Guide](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/index.html) instructions. Again,
+this is highly likely to be very problematic and will likely require a lot of troubleshooting. Navigating to user/esp/install.sh and user/esp/export.sh and running ./install.sh might fix it. Also, running
+"sudo -H ./install.sh" after restarting the terminal on MAC may be helpful. I think that the v5.3.x script requires python < v3.8, however the tool downloads v3.9 automatically? I recommend trying v5.4.x
+if this happens, but really this is an issue to ask esp-idf maintainers about how to solve.
 9. if everthing is done, go to commands with (cmd+shift+p).
 10. Execute ">ESP-IDF: Select Project Configuration" and choose developV2_0 if flashing for hardware version 2.
 11. On the bottom blue bar, if "esp32" is shown as the device target, change it to "esp32s3" for hardware version 2.
