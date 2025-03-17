@@ -50,4 +50,39 @@ The current version of firmware running on the board can be viewed at boot throu
 Ordering of configuration in the version string is as follows: [A/F: data source][R/B/G/Y: slow led speed][R/B/G/Y: medium led speed][R/B/G/Y: fast led speed]. Example: V1_2_5ARBG denotes the 5th firmware version for board version 1 revision 2.
 
 # Contribution Guide
-**Under Construction**
+
+### Flashing Firmware Guide (preliminary)
+1. download vscode
+2. on the lefthand side, open extensions tab (four boxes button)
+3. search for ESP-IDF from espressif and download
+4. Open setup wizard (alternatively cmd+shift+p, then ">ESP-IDF: Setup extension")
+5. clone repo
+6. open esp-firmware folder and use setup wizard again if necessary, use v5.3.x or 5.4.x
+7. wait for download to complete, follow terminal instructions if errors. This is very likely to be a problematic step. If
+there are issues, navigate to user/esp/install.sh and user/esp/export.sh and follow [ESP-IDF Get Started Guide](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/index.html) instructions. Again,
+this is highly likely to be very problematic and will likely require a lot of troubleshooting. Running "sudo -H ./install.sh" after restarting the terminal on MAC may be helpful.
+9. if everthing is done, go to commands with (cmd+shift+p).
+10. Execute ">ESP-IDF: Select Project Configuration" and choose developV2_0 if flashing for hardware version 2.
+11. On the bottom blue bar, if "esp32" is shown as the device target, change it to "esp32s3" for hardware version 2.
+12. click on the wrench icon in the bottom blue bar to build the project under the chosen configuration. Alternatively,
+use command "ESP-IDF: Build your project". Wait for the build to complete. If there are errors, contact Jaden or fix them.
+13. Plug in board to usb port and hold "Update" through a click of "Restart". Continue holding update until a new COM port
+is discovered in the device manager. Holding "Update" through a restart boots the ESP32 into USB flashing mode.
+11. Click the plug symbol on the blue bar to select the correct COM port, or execute ">ESP-IDF: Select Port" and 
+select the correct port for the connected board.
+12. Click the star symbol, or execute ">ESP-IDF: Select flash method" and choose UART.
+13. Click either the lightning bolt symbol or flame symbol to either flash the device or flash the device and then monitor
+the device logs, respectively. Alternatively, use the corresponding commands: "ESP-IDF: Flash your project" and
+"ESP-IDF: Build, Flash, and Monitor".
+14. Monitor the output, which should display the firmware and hardware version in red at some point. If the hardware version
+is not V2_0, then you have flashed V1_0 firmware to the device and need to select the develop_V2_0 configuration with
+"ESP-IDF: Select project configuration". If the firmware version is not v0.5.x, then an issue exists, which is likely that
+the default build configurations have not made it into the build. Contact Jaden for help.
+15. If the device is asking for wifi settings, type them in carefully (you currently cannot use backspace), however don't
+worry if the credentials are incorrect as you can change them later. The device will reset.
+16. Give the device some time to perform initialization and grab initial data. Watch the logs for any errors, or watch
+the error LED, which will blink or be solid red if something went wrong, such as the wifi credentials being incorrect.
+17. To change the wifi credentials again, hold "Toggle" through a reset and be very patient because, for some yet unknown
+reason, the device has a crazy boot time. You will boot into the wifi configuration menu where you can update the wifi
+credentials.
+18. Congrats! Things should be working. If not, contact Jaden.
