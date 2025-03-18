@@ -14,11 +14,23 @@ menu "Main Application"
             The revision of the PCB that this build is running on, which lets
             the firmware know the capabilities of the board.
 
-    config FIRMWARE_VERSION
-        int "Traffic Firmware Version"
+    config FIRMWARE_MAJOR_VERSION
+        int "Traffic Firmware Major Version"
         default 0
         help
-            The version of firmware this build corresponds to.
+            The major version of firmware this build corresponds to.
+
+    config FIRMWARE_MINOR_VERSION
+        int "Traffic Firmware Minor Version"
+        default 0
+        help
+            The minor version of firmware this build corresponds to.
+
+    config FIRMWARE_PATCH_VERSION
+        int "Traffic Firmware Patch Version"
+        default 0
+        help
+            The patch version of firmware this build corresponds to.
     
     config SERVER_HARDWARE_VERSION
         int "Server Hardware Version"

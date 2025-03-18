@@ -5,9 +5,9 @@
       "ninjaArgs": [],
       "buildDirectoryPath": "${workspaceFolder}\\builds\\develop_V2_0",
       "sdkconfigDefaults": [
-        "${workspaceFolder}\\configurations\\sdkconfig.develop"
+        "${workspaceFolder}\\configurations\\sdkconfig.V2_0"
       ],
-      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig.V2_0"
+      "sdkconfigFilePath": "${workspaceFolder}\\sdkconfig"
     },
     "env": {},
     "flashBaudRate": "",
@@ -30,9 +30,9 @@
       "ninjaArgs": [],
       "buildDirectoryPath": "${workspaceFolder}\\builds\\develop_V1_0",
       "sdkconfigDefaults": [
-        "${workspaceFolder}\\configurations\\sdkconfig.develop"
+        "${workspaceFolder}\\configurations\\sdkconfig.V1_0"
       ],
-      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig.V1_0"
+      "sdkconfigFilePath": "${workspaceFolder}\\sdkconfig"
     },
     "env": {},
     "flashBaudRate": "",

@@ -40,6 +40,10 @@ TEST_CASE("nextCSVEntryFromMark_noDataFound", "[api_connect]")
     int numBytes;
     char *expected;
 
+    /* test uninitialized circular buffer */
+    err = nextCSVEntryFromMark(&result, &circBuf, buffer, TEST_BUF_SIZE);
+    TEST_ASSERT_EQUAL(ESP_FAIL, err);
+
     /* load string into circular buffer and mark it */
     circ_err = circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
     TEST_ASSERT_EQUAL(ESP_OK, circ_err);
@@ -55,6 +59,8 @@ TEST_CASE("nextCSVEntryFromMark_noDataFound", "[api_connect]")
 
 /**
  * Tests input guards.
+ * 
+ * Test case dependencies: None.
  */
 TEST_CASE("nextCSVEntryFromMark_inputGuards", "[api_connect]")
 {

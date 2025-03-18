@@ -31,15 +31,14 @@
 /* Explicitly define addendum filename for every version */
 #define ADDENDUM_ENDING ".add"
 
-#if CONFIG_HARDWARE_VERSION == 1 && CONFIG_HARDWARE_REVISION == 0 && CONFIG_FIRMWARE_VERSION == 5
-#define USE_ADDENDUMS true
-#define FIRST_ADDENDUM_FILENAME "V1_0_5"
-#endif /* CONFIG_HARDWARE_VERSION == 1 && CONFIG_HARDWARE_REVISION == 0 && CONFIG_FIRMWARE_VERSION == 5 */
-
-#if CONFIG_HARDWARE_VERSION == 2 && CONFIG_HARDWARE_REVISION == 0 && CONFIG_FIRMWARE_VERSION == 5
+#if CONFIG_HARDWARE_VERSION == 1
+#define USE_ADDENDUMS false
+#elif CONFIG_HARDWARE_VERSION == 2
 #define USE_ADDENDUMS true
 #define FIRST_ADDENDUM_FILENAME "V2_0_0"
-#endif /* CONFIG_HARDWARE_VERSION == 2 && CONFIG_HARDWARE_REVISION == 0 && CONFIG_FIRMWARE_VERSION == 5 */
+#else
+#error "Unsupported hardware version!"
+#endif
 
 #define TAG "api_connect"
 
