@@ -111,11 +111,11 @@ TEST_CASE("orderLEDs_diagAnim", "[animations]")
 
     err = orderLEDs(ledOrder, 7, DIAG_LINE, coords, 7);
     TEST_ASSERT_EQUAL(ESP_OK, err);
-    TEST_ASSERT_EQUAL(6, ledOrder[0]);
-    TEST_ASSERT_EQUAL(5, ledOrder[1]);
-    TEST_ASSERT_EQUAL(0, ledOrder[2]);
-    TEST_ASSERT_EQUAL(1, ledOrder[3]);
-    TEST_ASSERT_EQUAL(3, ledOrder[4]);
-    TEST_ASSERT_EQUAL(4, ledOrder[5]);
-    TEST_ASSERT_EQUAL(2, ledOrder[6]);
+    TEST_ASSERT_EQUAL(7, ledOrder[0]);
+    TEST_ASSERT_EQUAL(6, ledOrder[1]);
+    TEST_ASSERT_EQUAL(1, ledOrder[2]);
+    TEST_ASSERT_EQUAL(2, ledOrder[3]);
+    TEST_ASSERT_EQUAL(4, ledOrder[4]);
+    TEST_ASSERT_EQUAL(5, ledOrder[5]);
+    TEST_ASSERT_EQUAL(3, ledOrder[6]);
 }

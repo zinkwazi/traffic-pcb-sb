@@ -41,7 +41,7 @@ esp_err_t sortLEDsByDistanceFromCurvedLine(int32_t ledArr[], int32_t ledArrLen, 
  * @param[in] ledOrderLen The length of ledOrder.
  * @param[in] anim The animation that will be generated.
  * @param[in] coords An array containing LED board coordinates, where index 'i'
- *        corresponds to LED number 'i'.
+ *        corresponds to LED number 'i' + 1.
  * @param[in] coordsLen The length of coords.
  * 
  * @returns ESP_OK if successful.
@@ -182,7 +182,7 @@ int compDistFromCurvedLine(const void *c1, const void *c2)
  *        order of distance from the diagonal line.
  * @param[in] ledArrLen The length of ledArr.
  * @param[in] coords An array containing LED board coordinates, where index 'i'
- *        corresponds to LED number 'i'.
+ *        corresponds to LED number 'i' + 1.
  * @param[in] coordsLen The length of coords.
  * 
  * @returns ESP_OK if successful.
@@ -227,7 +227,7 @@ esp_err_t sortLEDsByDistanceFromDiagLine(int32_t ledArr[],
  *        order of distance from the curved line.
  * @param[in] ledArrLen The length of ledArr.
  * @param[in] coords An array containing LED board coordinates, where index 'i'
- *        corresponds to LED number 'i'.
+ *        corresponds to LED number 'i' + 1.
  * @param[in] coordsLen The length of coords.
  * 
  * @returns ESP_OK if successful.
