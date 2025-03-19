@@ -66,7 +66,7 @@ this is highly likely to be very problematic and will likely require a lot of tr
 if this happens, but really this is an issue to ask esp-idf maintainers about how to solve.
 9. if everthing is done, go to commands with (cmd+shift+p).
 10. Execute ">ESP-IDF: Select Project Configuration" and choose developV2_0 if flashing for hardware version 2.
-11. On the bottom blue bar, if "esp32" is shown as the device target, change it to "esp32s3" for hardware version 2.
+11. On the bottom blue bar, if "esp32" is shown as the device target, change it to "esp32s3" for hardware version 2. This step is important, as it creates the build directory and sdkconfig file.
 12. click on the wrench icon in the bottom blue bar to build the project under the chosen configuration. Alternatively,
 use command "ESP-IDF: Build your project". Wait for the build to complete. If there are errors, contact Jaden or fix them.
 13. Plug in board to usb port and hold "Update" through a click of "Restart". Continue holding update until a new COM port
