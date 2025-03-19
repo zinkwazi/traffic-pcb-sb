@@ -89,42 +89,41 @@ esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle) {
  * @returns ESP_OK if successful, otherwise ESP_FAIL.
  */
 esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle) {
-  esp_err_t ret;
+  esp_err_t err;
+  nvs_entry_info_t info;
   nvs_iterator_t nvs_iter;
 
-  ret = nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter);
-  if (ret == ESP_ERR_NVS_NOT_FOUND)
+  err = nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter);
+  if (err == ESP_ERR_NVS_NOT_FOUND) return ESP_OK; // no elements to remove
+  if (err != ESP_OK) return err;
+  if (nvs_iter == NULL) return ESP_OK;
+
+  while (err == ESP_OK)
   {
-    return ESP_OK;
-  } else if (ret != ESP_OK)
-  {
-    return ESP_FAIL;
-  }
-  ret = nvs_entry_next(&nvs_iter);
-  while (ret != ESP_OK) {
-    nvs_entry_info_t info;
-    if (nvs_entry_info(nvs_iter, &info) != ESP_OK) {
-      return ESP_FAIL;
-    }
+    err = nvs_entry_info(nvs_iter, &info);
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL; // should not occur
+
+    ESP_LOGI(TAG, "nvs entry key: %s", info.key);
     if (strcmp(info.namespace_name, NVS_MAIN_NAMESPACE) == 0 &&
-            (strcmp(info.key, WIFI_SSID_NVS_NAME) == 0 ||
-             strcmp(info.key, WIFI_PASS_NVS_NAME) == 0))
+          (strcmp(info.key, WIFI_SSID_NVS_NAME) == 0 ||
+          strcmp(info.key, WIFI_PASS_NVS_NAME) == 0))
     {
-      ret = nvs_entry_next(&nvs_iter);
+      err = nvs_entry_next(&nvs_iter);
+      if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
       continue;
     }
-    if (nvs_erase_key(nvsHandle, info.key) != ESP_OK) {
-      return ESP_FAIL;
+
+    ESP_LOGW(TAG, "erasing main key: %s", info.key);
+    err = nvs_erase_key(nvsHandle, info.key);
+    if (err != ESP_OK) {
+      ESP_LOGE(TAG, "failed to erase key.");
+      return err;
     }
-    ret = nvs_entry_next(&nvs_iter);
   }
-  if (nvs_commit(nvsHandle) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  if (ret == ESP_ERR_INVALID_ARG) {
-    return ESP_FAIL;
-  }
-  return ESP_OK;
+
+  nvs_release_iterator(nvs_iter);
+  err = nvs_commit(nvsHandle);
+  return err;
 }
 
 /**
@@ -146,32 +145,26 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, UserSettings *settings)
 {
   /* retrieve wifi ssid */
   if (nvs_get_str(nvsHandle, WIFI_SSID_NVS_NAME, NULL, &(settings->wifiSSIDLen)) != ESP_OK) {
-    ESP_LOGI(TAG, "failed to retrive wifi ssid length");
     return ESP_FAIL;
   }
   if ((settings->wifiSSID = malloc(settings->wifiSSIDLen)) == NULL) {
-    ESP_LOGI(TAG, "failed to allocate mem1");
     return ESP_FAIL;
   }
   if (nvs_get_str(nvsHandle, WIFI_SSID_NVS_NAME, settings->wifiSSID, &(settings->wifiSSIDLen)) != ESP_OK) {
     free(settings->wifiSSID);
-    ESP_LOGI(TAG, "failed to retrieve wifi ssid");
     return ESP_FAIL;
   }
   /* retrieve wifi password */
   if (nvs_get_str(nvsHandle, WIFI_PASS_NVS_NAME, NULL, &(settings->wifiPassLen)) != ESP_OK) {
-    ESP_LOGI(TAG, "failed to retrieve password length");
     return ESP_FAIL;
   }
   if ((settings->wifiPass = malloc(settings->wifiPassLen)) == NULL) {
     free(settings->wifiSSID);
-    ESP_LOGI(TAG, "failed to allocate mem");
     return ESP_FAIL;
   }
   if (nvs_get_str(nvsHandle, WIFI_PASS_NVS_NAME, settings->wifiPass, &(settings->wifiPassLen)) != ESP_OK) {
     free(settings->wifiSSID);
     free(settings->wifiPass);
-    ESP_LOGI(TAG, "failed to retrieve password");
     return ESP_FAIL;
   }
   /* dynamically allocated SSID and password will exist for the duration of the program */
@@ -369,55 +362,46 @@ esp_err_t storeSpeedsToNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction dir,
 }
 
 esp_err_t removeExtraWorkerNvsEntries(void) {
-  esp_err_t ret;
+  nvs_entry_info_t info;
   nvs_iterator_t nvs_iter;
   nvs_handle_t nvsHandle;
   esp_err_t err;
   err = nvs_open(WORKER_NVS_NAMESPACE, NVS_READWRITE, &nvsHandle);
-  if (err != ESP_OK) {
-    return ESP_FAIL;
-  }
+  if (err != ESP_OK) return err;
+
   err = nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter);
-  if (err == ESP_ERR_NVS_NOT_FOUND) {
-    return ESP_OK; // no entries to remove
-  } else if (err != ESP_OK) {
-    return ESP_FAIL;
-  }
-  if (nvs_iter == NULL) {
-    return ESP_OK;
-  }
-  ret = nvs_entry_next(&nvs_iter);
-  while (ret != ESP_OK) {
-    nvs_entry_info_t info;
-    if (nvs_iter == NULL) {
-        return ESP_OK;
-    }
+  if (err == ESP_ERR_NVS_NOT_FOUND) return ESP_OK; // no entries to remove
+  if (err != ESP_OK) return err;
+  if (nvs_iter == NULL) return ESP_OK;
+
+  while (err == ESP_OK)
+  {
     err = nvs_entry_info(nvs_iter, &info);
-    if (err != ESP_OK) {
-      return ESP_FAIL;
-    }
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL; // should not occur
+
+    ESP_LOGI(TAG, "nvs entry key: %s", info.key);
     if (strcmp(info.namespace_name, WORKER_NVS_NAMESPACE) == 0 &&
-            (strcmp(info.key, CURRENT_NORTH_NVS_KEY) == 0 ||
-             strcmp(info.key, CURRENT_SOUTH_NVS_KEY) == 0 ||
-             strcmp(info.key, TYPICAL_NORTH_NVS_KEY) == 0 ||
-             strcmp(info.key, TYPICAL_SOUTH_NVS_KEY) == 0))
+          (strcmp(info.key, CURRENT_NORTH_NVS_KEY) == 0 ||
+          strcmp(info.key, CURRENT_SOUTH_NVS_KEY) == 0 ||
+          strcmp(info.key, TYPICAL_NORTH_NVS_KEY) == 0 ||
+          strcmp(info.key, TYPICAL_SOUTH_NVS_KEY) == 0))
     {
-      ret = nvs_entry_next(&nvs_iter);
+      err = nvs_entry_next(&nvs_iter);
+      if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
       continue;
     }
+
+    ESP_LOGW(TAG, "erasing worker key: %s", info.key);
     err = nvs_erase_key(nvsHandle, info.key);
     if (err != ESP_OK) {
-      return ESP_FAIL;
+      ESP_LOGE(TAG, "failed to erase key.");
+      return err;
     }
-    ret = nvs_entry_next(&nvs_iter);
   }
-  if (nvs_commit(nvsHandle) != ESP_OK) {
-    return ESP_FAIL;
-  }
-  if (ret == ESP_ERR_INVALID_ARG) {
-    return ESP_FAIL;
-  }
-  return ESP_OK;
+
+  nvs_release_iterator(nvs_iter);
+  err = nvs_commit(nvsHandle);
+  return err;
 }
 
 

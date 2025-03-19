@@ -182,7 +182,7 @@ esp_err_t refreshBoard(LEDData currSpeeds[static MAX_NUM_LEDS_REG], LEDData typi
             ESP_LOGW(TAG, "skipping bad index %d, with typical LED num %u", ledNum, typicalSpeeds[ledNum - 1].ledNum);
             continue;
         }
-        if (currSpeeds[ledNum - 1].speed <= 0) {
+        if (currSpeeds[ledNum - 1].speed < 0) {
             ESP_LOGW(TAG, "skipping led %u for led speed %d", currSpeeds[ledNum - 1].ledNum, currSpeeds[ledNum - 1].speed);
             continue;
         }
