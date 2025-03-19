@@ -79,6 +79,7 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     esp_tls_t *tls = NULL;
     TaskHandle_t otaTask = NULL;
     wifi_init_config_t default_wifi_cfg = WIFI_INIT_CONFIG_DEFAULT();
+    nvs_handle_t workerHandle;
 
     /* input guards */
     if (state == NULL)
@@ -114,11 +115,15 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     /* initialize and cleanup non-volatile storage */
     err = nvs_flash_init();
     FATAL_IF_ERR(err, res->errRes);
-    err = nvs_open("main", NVS_READWRITE, &(res->nvsHandle));
+
+    res->nvsHandle = openMainNvs();
+    FATAL_IF_FALSE(res->nvsHandle != NULL, res->errRes);
+    err = removeExtraMainNvsEntries(res->nvsHandle); // keep handle open
     FATAL_IF_ERR(err, res->errRes);
-    err = removeExtraMainNvsEntries(res->nvsHandle);
-    FATAL_IF_ERR(err, res->errRes);
-    err = removeExtraWorkerNvsEntries();
+
+    workerHandle = openWorkerNvs();
+    FATAL_IF_FALSE(workerHandle != NULL, res->errRes);
+    err = removeExtraWorkerNvsEntries(workerHandle); // keep handle open
     FATAL_IF_ERR(err, res->errRes);
 
     /* check if a settings update is requested or necessary */
@@ -149,7 +154,25 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     FATAL_IF_ERR(err, res->errRes);
     err = initWifi(res->settings->wifiSSID, res->settings->wifiPass);
     FATAL_IF_ERR(err, res->errRes);
-    (void)establishWifiConnection(); // allow operation in no-wifi environment
+    err = establishWifiConnection();
+    if (err == ESP_ERR_NVS_NOT_ENOUGH_SPACE)
+    {
+        ESP_LOGE(TAG, "not enough space for wifi NVS settings. Erasing NVS");
+        err = nvs_erase_all(res->nvsHandle); // keep handle open
+        if (err != ESP_OK)
+        {
+            ESP_LOGE(TAG, "main nvs_erase_all failed. err: %d", err);
+            FATAL_IF_ERR(err, res->errRes);
+        }
+        err = nvs_erase_all(workerHandle); // close handle
+        if (err != ESP_OK)
+        {
+            ESP_LOGE(TAG, "worker nvs_erase_all failed. err: %d", err);
+            FATAL_IF_ERR(err, res->errRes);
+        }
+
+        updateNvsSettings(res->nvsHandle, res->errRes);
+    } // ignore other error codes
     tls = esp_tls_init();
     if (tls == NULL)
         return ESP_ERR_NO_MEM;

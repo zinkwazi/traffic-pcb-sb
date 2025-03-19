@@ -133,27 +133,32 @@ esp_err_t establishWifiConnection(void)
     /* register wifi handler */
     ret = registerWifiHandler(connectHandler, NULL);
     if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "registerWifiHandler");
         return ret;
     }
     /* attempt to connect to AP */
     ret = esp_wifi_set_mode(WIFI_MODE_STA);
     if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_set_mode");
         unregisterWifiHandler();
         return ret;
     }
     ret = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
     if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_set_config");
         unregisterWifiHandler();
         return ret;
     }
     ret = esp_wifi_start();
     if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_start");
         unregisterWifiHandler();
         return ret;
     }
     ESP_LOGI(TAG, "connecting to wifi");
     ret = esp_wifi_connect();
     if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_connect");
         unregisterWifiHandler();
         return ret;
     }

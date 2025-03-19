@@ -32,20 +32,49 @@
 
 #define TAG "nvs_settings"
 
+
+#define NVS_MAIN_NAMESPACE "main"
 /** @brief The name of the non-volatile storage entry for the wifi SSID. */
 #define WIFI_SSID_NVS_NAME "wifi_ssid"
-
 /** @brief The name of the non-volatile storage entry for the wifi password. */
 #define WIFI_PASS_NVS_NAME "wifi_pass"
 
-#define NVS_MAIN_NAMESPACE "main"
-
 /* NVS namespace and keys */
-#define WORKER_NVS_NAMESPACE "worker"
+#define NVS_WORKER_NAMESPACE "worker"
 #define CURRENT_NORTH_NVS_KEY "current_north"
 #define CURRENT_SOUTH_NVS_KEY "current_south"
 #define TYPICAL_NORTH_NVS_KEY "typical_north"
 #define TYPICAL_SOUTH_NVS_KEY "typical_south"
+
+/**
+ * @brief Obtains a handle to the main NVS namespace in read/write mode.
+ * 
+ * @returns A handle to the main NVS namespace if successful, otherwise NULL.
+ */
+nvs_handle_t openMainNvs(void)
+{
+  esp_err_t err;
+  nvs_handle_t handle;
+
+  err = nvs_open(NVS_MAIN_NAMESPACE, NVS_READWRITE, &handle);
+  if (err != ESP_OK) return NULL;
+  return handle;
+}
+
+/**
+ * @brief Obtains a handle to the worker NVS namespace in read/write mode.
+ * 
+ * @returns A handle to the worker NVS namespace if successful, otherwise NULL.
+ */
+nvs_handle_t openWorkerNvs(void)
+{
+  esp_err_t err;
+  nvs_handle_t handle;
+
+  err = nvs_open(NVS_WORKER_NAMESPACE, NVS_READWRITE, &handle);
+  if (err != ESP_OK) return NULL;
+  return handle;
+}
 
 /**
  * @brief Determines whether user settings currently exist in non-volatile
@@ -76,15 +105,15 @@ esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle) {
 }
 
 /**
- * @brief Removes any entries in non-volatile storage that are unnecessary for
- *        device operation.
+ * @brief Removes any entries in the non-volatile storage main namespace that 
+ *        are unnecessary for device operation.
  * 
  * @note Unnecessary NVS entries may exist if a firmware update has been
  *       performed and previously necessary entries have been made obsolete.
  *       All entries that are deemed necessary are those searched for in
  *       the nvsEntriesExist function.
  * 
- * @param nvsHandle The non-volatile storage handle where user settings exist.
+ * @param nvsHandle A read/write handle to the main NVS namespace.
  * 
  * @returns ESP_OK if successful, otherwise ESP_FAIL.
  */
@@ -114,6 +143,59 @@ esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle) {
     }
 
     ESP_LOGW(TAG, "erasing main key: %s", info.key);
+    err = nvs_erase_key(nvsHandle, info.key);
+    if (err != ESP_OK) {
+      ESP_LOGE(TAG, "failed to erase key.");
+      return err;
+    }
+  }
+
+  nvs_release_iterator(nvs_iter);
+  err = nvs_commit(nvsHandle);
+  return err;
+}
+
+/**
+ * @brief Removes any entries in the non-volatile storage worker namespace that 
+ *        are unnecessary for ddevice operation.
+ * 
+ * @note Unnecessary NVS entries may exist if a firmware update has been
+ *       performed and previously necessary entries have been made obsolete.
+ *       All entries that are deemed necessary are those searched for in
+ *       the nvsEntriesExist function.
+ * 
+ * @param nvsHandle A read/write handle to the worker NVS namespace.
+ * 
+ * @returns ESP_OK if successful, otherwise ESP_FAIL.
+ */
+esp_err_t removeExtraWorkerNvsEntries(nvs_handle_t nvsHandle) {
+  nvs_entry_info_t info;
+  nvs_iterator_t nvs_iter;
+  esp_err_t err;
+
+  err = nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter);
+  if (err == ESP_ERR_NVS_NOT_FOUND) return ESP_OK; // no entries to remove
+  if (err != ESP_OK) return err;
+  if (nvs_iter == NULL) return ESP_OK;
+
+  while (err == ESP_OK)
+  {
+    err = nvs_entry_info(nvs_iter, &info);
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL; // should not occur
+
+    ESP_LOGI(TAG, "nvs entry key: %s", info.key);
+    if (strcmp(info.namespace_name, NVS_WORKER_NAMESPACE) == 0 &&
+          (strcmp(info.key, CURRENT_NORTH_NVS_KEY) == 0 ||
+          strcmp(info.key, CURRENT_SOUTH_NVS_KEY) == 0 ||
+          strcmp(info.key, TYPICAL_NORTH_NVS_KEY) == 0 ||
+          strcmp(info.key, TYPICAL_SOUTH_NVS_KEY) == 0))
+    {
+      err = nvs_entry_next(&nvs_iter);
+      if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+      continue;
+    }
+
+    ESP_LOGW(TAG, "erasing worker key: %s", info.key);
     err = nvs_erase_key(nvsHandle, info.key);
     if (err != ESP_OK) {
       ESP_LOGE(TAG, "failed to erase key.");
@@ -238,7 +320,7 @@ esp_err_t refreshSpeedsFromNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction 
         return ESP_ERR_INVALID_ARG;
     }
     /* open nvs */
-    err = nvs_open(WORKER_NVS_NAMESPACE, NVS_READONLY, &nvsHandle);
+    err = nvs_open(NVS_WORKER_NAMESPACE, NVS_READONLY, &nvsHandle);
     if (err != ESP_OK) {
       return err;
     }
@@ -302,7 +384,7 @@ esp_err_t storeSpeedsToNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction dir,
       return ESP_ERR_INVALID_ARG;
   }
   /* open nvs */
-  err = nvs_open(WORKER_NVS_NAMESPACE, NVS_READWRITE, &nvsHandle);
+  err = nvs_open(NVS_WORKER_NAMESPACE, NVS_READWRITE, &nvsHandle);
   if (err != ESP_OK) {
     return err;
   }
@@ -360,50 +442,6 @@ esp_err_t storeSpeedsToNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction dir,
   nvs_close(nvsHandle);
   return ESP_OK;
 }
-
-esp_err_t removeExtraWorkerNvsEntries(void) {
-  nvs_entry_info_t info;
-  nvs_iterator_t nvs_iter;
-  nvs_handle_t nvsHandle;
-  esp_err_t err;
-  err = nvs_open(WORKER_NVS_NAMESPACE, NVS_READWRITE, &nvsHandle);
-  if (err != ESP_OK) return err;
-
-  err = nvs_entry_find_in_handle(nvsHandle, NVS_TYPE_ANY, &nvs_iter);
-  if (err == ESP_ERR_NVS_NOT_FOUND) return ESP_OK; // no entries to remove
-  if (err != ESP_OK) return err;
-  if (nvs_iter == NULL) return ESP_OK;
-
-  while (err == ESP_OK)
-  {
-    err = nvs_entry_info(nvs_iter, &info);
-    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL; // should not occur
-
-    ESP_LOGI(TAG, "nvs entry key: %s", info.key);
-    if (strcmp(info.namespace_name, WORKER_NVS_NAMESPACE) == 0 &&
-          (strcmp(info.key, CURRENT_NORTH_NVS_KEY) == 0 ||
-          strcmp(info.key, CURRENT_SOUTH_NVS_KEY) == 0 ||
-          strcmp(info.key, TYPICAL_NORTH_NVS_KEY) == 0 ||
-          strcmp(info.key, TYPICAL_SOUTH_NVS_KEY) == 0))
-    {
-      err = nvs_entry_next(&nvs_iter);
-      if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
-      continue;
-    }
-
-    ESP_LOGW(TAG, "erasing worker key: %s", info.key);
-    err = nvs_erase_key(nvsHandle, info.key);
-    if (err != ESP_OK) {
-      ESP_LOGE(TAG, "failed to erase key.");
-      return err;
-    }
-  }
-
-  nvs_release_iterator(nvs_iter);
-  err = nvs_commit(nvsHandle);
-  return err;
-}
-
 
 #if CONFIG_HARDWARE_VERSION == 1
 
