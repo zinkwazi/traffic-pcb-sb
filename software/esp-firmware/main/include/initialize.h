@@ -17,6 +17,7 @@
 esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res);
 esp_err_t initializeMatrices(void);
 esp_err_t initializeIndicatorLEDs(void);
+esp_err_t initializeLogChannel(void);
 
 #if CONFIG_HARDWARE_VERSION == 1
 

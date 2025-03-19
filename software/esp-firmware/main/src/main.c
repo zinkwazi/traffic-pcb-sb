@@ -139,6 +139,8 @@ void app_main(void)
     /* set task priority */
     vTaskPrioritySet(NULL, CONFIG_MAIN_PRIO);
     /* print firmware information */
+    err = initializeLogChannel();
+    FATAL_IF_ERR(err, res.errRes);
     ESP_LOGE(TAG, "Hardware Version: " HARDWARE_VERSION_STR);
     ESP_LOGE(TAG, "Firmware Version: " FIRMWARE_VERSION_STR);
     ESP_LOGE(TAG, "OTA binary: " FIRMWARE_UPGRADE_URL);

@@ -49,7 +49,7 @@
 
 static void initializeMainState(MainTaskState *state);
 static esp_http_client_handle_t initHttpClient(void);
-static esp_err_t initializeLogChannel(void);
+
 
 /**
  * @brief Initializes global static resources, software components, and fields
@@ -106,11 +106,6 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     settings.wifiPass = NULL;
     settings.wifiPassLen = 0;
     res->settings = &settings;
-
-    /* enable logging */
-    err = initializeLogChannel();
-    if (err != ESP_OK)
-        return err;
 
     /* initialize and cleanup non-volatile storage */
     err = nvs_flash_init();
@@ -170,6 +165,7 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
         }
 
         updateNvsSettings(res->nvsHandle, res->errRes);
+        (void) establishWifiConnection(); // tried our best, ignore errors
     } // ignore other error codes
     tls = esp_tls_init();
     if (tls == NULL)
@@ -215,6 +211,28 @@ esp_err_t initializeMatrices(void)
     esp_err_t err;
     err = matInitialize(I2C_PORT, SDA_PIN, SCL_PIN);
     return err;
+}
+
+/**
+ * @brief Initializes communication through the USB connector.
+ *
+ * @note For V1_0, communication is achieved through use of UART 0.
+ *
+ * @returns ESP_OK if successful.
+ */
+esp_err_t initializeLogChannel(void)
+{
+    esp_err_t err;
+    err = uart_driver_install(UART_NUM_0,
+                              UART_HW_FIFO_LEN(UART_NUM_0) + 16,
+                              UART_HW_FIFO_LEN(UART_NUM_0) + 16,
+                              32,
+                              NULL,
+                              0);
+    if (err != ESP_OK)
+        return err;
+    uart_vfs_dev_use_driver(UART_NUM_0); // enable interrupt driven IO
+    return ESP_OK;
 }
 
 /**
@@ -286,6 +304,25 @@ esp_err_t initializeMatrices(void)
     err = matSetOperatingMode(NORMAL_OPERATION);
     return err;
 }
+
+/**
+ * @brief Initializes communication through the USB connector. Required for
+ *        logging with ESP_LOG family functions.
+ *
+ * @note For V2_0, communication is achieved through use of the USB peripheral.
+ *
+ * @returns ESP_OK if successful.
+ */
+esp_err_t initializeLogChannel(void)
+{
+    usb_serial_jtag_driver_config_t usb_serial_jtag_config = {
+        .rx_buffer_size = USB_SERIAL_BUF_SIZE,
+        .tx_buffer_size = USB_SERIAL_BUF_SIZE,
+    };
+    vTaskDelay(100); // give usb channel time to connect. I can't find a better way to do this
+    return usb_serial_jtag_driver_install(&usb_serial_jtag_config);
+}
+
 
 /**
  * @brief Initializes indicator LEDs to off state.
@@ -460,51 +497,3 @@ static void initializeMainState(MainTaskState *state)
     state->dir = SOUTH;
 #endif
 }
-
-#if CONFIG_HARDWARE_VERSION == 1
-
-/**
- * @brief Initializes communication through the USB connector.
- *
- * @note For V1_0, communication is achieved through use of UART 0.
- *
- * @returns ESP_OK if successful.
- */
-static esp_err_t initializeLogChannel(void)
-{
-    esp_err_t err;
-    err = uart_driver_install(UART_NUM_0,
-                              UART_HW_FIFO_LEN(UART_NUM_0) + 16,
-                              UART_HW_FIFO_LEN(UART_NUM_0) + 16,
-                              32,
-                              NULL,
-                              0);
-    if (err != ESP_OK)
-        return err;
-    uart_vfs_dev_use_driver(UART_NUM_0); // enable interrupt driven IO
-    return ESP_OK;
-}
-
-#elif CONFIG_HARDWARE_VERSION == 2
-
-/**
- * @brief Initializes communication through the USB connector. Required for
- *        logging with ESP_LOG family functions.
- *
- * @note For V2_0, communication is achieved through use of the USB peripheral.
- *
- * @returns ESP_OK if successful.
- */
-static esp_err_t initializeLogChannel(void)
-{
-    usb_serial_jtag_driver_config_t usb_serial_jtag_config = {
-        .rx_buffer_size = USB_SERIAL_BUF_SIZE,
-        .tx_buffer_size = USB_SERIAL_BUF_SIZE,
-    };
-
-    return usb_serial_jtag_driver_install(&usb_serial_jtag_config);
-}
-
-#else
-#error "Unsupported hardware version!"
-#endif

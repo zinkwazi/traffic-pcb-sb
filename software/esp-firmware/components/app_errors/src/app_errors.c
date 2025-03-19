@@ -218,7 +218,7 @@ void throwFatalError(ErrorResources *errRes, bool callerHasErrMutex) {
 
 #if CONFIG_FATAL_CAUSES_REBOOT == true
   vTaskDelay(pdMS_TO_TICKS(CONFIG_ERROR_PERIOD)); // let the error LED shine for a short time
-  gpio_set_level(ERR_LED_PIN, 0);
+  indicateError();
   esp_restart();
 #endif /* CONFIG_FATAL_CAUSES_REBOOT == true */  
 

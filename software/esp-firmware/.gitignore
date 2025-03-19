@@ -5,3 +5,5 @@ builds/
 unity-app/
 configurations/sdkconfig.V1_0
 configurations/sdkconfig.V2_0
+configurations/sdkconfig.dev_*
+configurations/sdkconfig.prod_*
