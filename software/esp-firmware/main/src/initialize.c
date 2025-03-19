@@ -150,8 +150,12 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     err = initWifi(res->settings->wifiSSID, res->settings->wifiPass);
     FATAL_IF_ERR(err, res->errRes);
     err = establishWifiConnection();
-    if (err == ESP_ERR_NVS_NOT_ENOUGH_SPACE)
-    {
+    while (err == ESP_ERR_NVS_NOT_ENOUGH_SPACE) {
+        /* nvs does not have enough space for wifi. I conclude this is due
+        to fragmentation, so simply erasing everything is a good enough fix.
+        This should really only occur when the user has just changed wifi
+        settings, so I don't think there is a risk of killing non-wifi 
+        operation here by deleting stored data */
         ESP_LOGE(TAG, "erasing nvs");
         err = nvs_erase_all(res->nvsHandle); // keep handle open
         if (err != ESP_OK)
@@ -164,9 +168,13 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
             FATAL_IF_ERR(err, res->errRes);
         }
 
-        updateNvsSettings(res->nvsHandle, res->errRes);
-        (void) establishWifiConnection(); // tried our best, ignore errors
+        ESP_LOGE(TAG, "rewriting user settings to nvs");
+        err = storeNvsSettings(res->nvsHandle, *res->settings);
+        FATAL_IF_ERR(err, res->errRes);
+
+        esp_restart();
     } // ignore other error codes
+
     tls = esp_tls_init();
     if (tls == NULL)
         return ESP_ERR_NO_MEM;

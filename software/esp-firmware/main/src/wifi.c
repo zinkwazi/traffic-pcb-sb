@@ -158,7 +158,7 @@ esp_err_t establishWifiConnection(void)
     ESP_LOGI(TAG, "connecting to wifi");
     ret = esp_wifi_connect();
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "esp_wifi_connect");
+        ESP_LOGE(TAG, "esp_wifi_connect. err: %d", ret);
         unregisterWifiHandler();
         return ret;
     }
@@ -179,6 +179,9 @@ esp_err_t establishWifiConnection(void)
     unregisterWifiHandler();
     xEventGroupClearBits(sWifiEvents, WIFI_CONNECTED_BIT | WIFI_DISCONNECTED_BIT);
     ret = registerWifiHandler(wifiEventHandler, NULL);
+    if (ret != ESP_OK) {
+        ESP_LOGI(TAG, "registerWifiHandler failed");
+    }
     return ret;
 }
 

@@ -21,6 +21,7 @@ nvs_handle_t openMainNvs(void);
 nvs_handle_t openWorkerNvs(void);
 esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle);
 esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, UserSettings *settings);
+esp_err_t storeNvsSettings(nvs_handle_t nvsHandle, UserSettings settings);
 esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle);
 esp_err_t removeExtraWorkerNvsEntries(nvs_handle_t nvsHandle);
 esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle);

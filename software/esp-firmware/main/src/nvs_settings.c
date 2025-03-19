@@ -249,6 +249,26 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, UserSettings *settings)
 }
 
 /**
+ * @brief Stores user settings to non-volatile storage
+ * 
+ * @param nvsHandle The non-volatile storage handle where settings exist.
+ * @param settings The user settings to store in non-volatile storage.
+ */
+esp_err_t storeNvsSettings(nvs_handle_t nvsHandle, UserSettings settings)
+{
+  esp_err_t err;
+  err = nvs_set_str(nvsHandle, WIFI_SSID_NVS_NAME, settings.wifiSSID);
+  if (err != ESP_OK) return err;
+
+  err = nvs_set_str(nvsHandle, WIFI_PASS_NVS_NAME, settings.wifiPass);
+  if (err != ESP_OK) return err;
+
+  err = nvs_commit(nvsHandle);
+
+  return err;
+}
+
+/**
  * @brief Handles errors that are due to a user settings issue by setting the
  *        error LED high, querying the user for new settings, then restarting 
  *        the application.
@@ -357,6 +377,7 @@ esp_err_t refreshSpeedsFromNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction 
     size = MAX_NUM_LEDS_REG * sizeof(LEDData);
     err = nvs_get_blob(nvsHandle, key, data, &size);
     if (err != ESP_OK) {
+      ESP_LOGI(TAG, "here. err: %d", err);
       return err;
     }
     if (size == 0 || size / sizeof(uint8_t) != MAX_NUM_LEDS_REG * sizeof(LEDData))
