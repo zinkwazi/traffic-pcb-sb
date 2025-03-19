@@ -1,3 +1,5 @@
 /builds/
 /.vscode/
 /.devcontainer/
+configurations/sdkconfig.V1_0_test
+configurations/sdkconfig.V2_0_test

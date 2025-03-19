@@ -3,10 +3,13 @@
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
-      "buildDirectoryPath": "${workspaceFolder}\\builds\\develop_V2_0",
-      "sdkconfigDefaults": ["${workspaceFolder}\\configurations\\sdkconfig.test",
-                            "${workspaceFolder}\\..\\esp-firmware\\configurations\\sdkconfig.develop"],
-      "sdkconfigFilePath": "${workspaceFolder}\\..\\esp-firmware\\configurations\\sdkconfig.V2_0"
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\test_V2_0",
+      "sdkconfigDefaults": [
+        ".\\..\\esp-firmware\\configurations\\sdkconfig.settings",
+        ".\\configurations\\sdkconfig.test",
+        ".\\..\\esp-firmware\\configurations\\sdkconfig.V2_0_default"
+      ],
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig.V2_0_test"
     },
     "env": {},
     "flashBaudRate": "",
@@ -28,9 +31,12 @@
       "compileArgs": [],
       "ninjaArgs": [],
       "buildDirectoryPath": "${workspaceFolder}\\builds\\test_V1_0",
-      "sdkconfigDefaults": ["${workspaceFolder}\\configurations\\sdkconfig.test",
-                            "${workspaceFolder}\\..\\esp-firmware\\configurations\\sdkconfig.develop"],
-      "sdkconfigFilePath": "${workspaceFolder}\\..\\esp-firmware\\configurations\\sdkconfig.V1_0"
+      "sdkconfigDefaults": [
+        ".\\..\\esp-firmware\\configurations\\sdkconfig.settings",
+        ".\\configurations\\sdkconfig.test",
+        ".\\..\\esp-firmware\\configurations\\sdkconfig.V1_0_default"
+      ],
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig.V1_0_test"
     },
     "env": {},
     "flashBaudRate": "",

@@ -1,13 +1,15 @@
 {
-  "develop_V2_0": {
+  "v1": {
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
-      "buildDirectoryPath": "${workspaceFolder}\\builds\\develop_V2_0",
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\V1_0",
       "sdkconfigDefaults": [
-        "${workspaceFolder}\\configurations\\sdkconfig.V2_0"
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\sdkconfig.develop",
+        ".\\configurations\\sdkconfig.V1_0_default"
       ],
-      "sdkconfigFilePath": "${workspaceFolder}\\sdkconfig"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig.V1_0"
     },
     "env": {},
     "flashBaudRate": "",
@@ -24,15 +26,17 @@
       "postFlash": ""
     }
   },
-  "develop_V1_0": {
+  "v2": {
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
-      "buildDirectoryPath": "${workspaceFolder}\\builds\\develop_V1_0",
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\V2_0",
       "sdkconfigDefaults": [
-        "${workspaceFolder}\\configurations\\sdkconfig.V1_0"
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\sdkconfig.develop",
+        ".\\configurations\\sdkconfig.V2_0_default"
       ],
-      "sdkconfigFilePath": "${workspaceFolder}\\sdkconfig"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig.V2_0"
     },
     "env": {},
     "flashBaudRate": "",
