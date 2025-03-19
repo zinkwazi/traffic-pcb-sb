@@ -57,7 +57,7 @@ nvs_handle_t openMainNvs(void)
   nvs_handle_t handle;
 
   err = nvs_open(NVS_MAIN_NAMESPACE, NVS_READWRITE, &handle);
-  if (err != ESP_OK) return NULL;
+  if (err != ESP_OK) return (nvs_handle_t) NULL;
   return handle;
 }
 
@@ -72,7 +72,7 @@ nvs_handle_t openWorkerNvs(void)
   nvs_handle_t handle;
 
   err = nvs_open(NVS_WORKER_NAMESPACE, NVS_READWRITE, &handle);
-  if (err != ESP_OK) return NULL;
+  if (err != ESP_OK) return (nvs_handle_t) NULL;
   return handle;
 }
 
@@ -92,16 +92,13 @@ esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle) {
   esp_err_t ret;
   nvs_type_t nvsType;
   ret = nvs_find_key(nvsHandle, WIFI_SSID_NVS_NAME, &nvsType);
-  ESP_RETURN_ON_FALSE(
-    (ret == ESP_OK && nvsType == NVS_TYPE_STR), ret,
-    TAG, "failed to lookup wifi ssid in non-volatile storage"
-  );
+  if (ret != ESP_OK) return ret;
+  if (nvsType != NVS_TYPE_STR) return ESP_FAIL;
+
   ret = nvs_find_key(nvsHandle, WIFI_PASS_NVS_NAME, &nvsType);
-  ESP_RETURN_ON_FALSE(
-    (ret == ESP_OK && nvsType == NVS_TYPE_STR), ret,
-    TAG, "failed to lookup wifi password in non-volatile storage"
-  );
-  return ret;
+  if (ret != ESP_OK) return ret;
+  if (nvsType != NVS_TYPE_STR) return ESP_FAIL;
+  return ESP_OK;
 }
 
 /**
@@ -132,7 +129,7 @@ esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle) {
     err = nvs_entry_info(nvs_iter, &info);
     if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL; // should not occur
 
-    ESP_LOGI(TAG, "nvs entry key: %s", info.key);
+    ESP_LOGI(TAG, "key: %s", info.key);
     if (strcmp(info.namespace_name, NVS_MAIN_NAMESPACE) == 0 &&
           (strcmp(info.key, WIFI_SSID_NVS_NAME) == 0 ||
           strcmp(info.key, WIFI_PASS_NVS_NAME) == 0))
@@ -142,10 +139,9 @@ esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle) {
       continue;
     }
 
-    ESP_LOGW(TAG, "erasing main key: %s", info.key);
+    ESP_LOGW(TAG, "erasing key: %s", info.key);
     err = nvs_erase_key(nvsHandle, info.key);
     if (err != ESP_OK) {
-      ESP_LOGE(TAG, "failed to erase key.");
       return err;
     }
   }
@@ -183,7 +179,7 @@ esp_err_t removeExtraWorkerNvsEntries(nvs_handle_t nvsHandle) {
     err = nvs_entry_info(nvs_iter, &info);
     if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL; // should not occur
 
-    ESP_LOGI(TAG, "nvs entry key: %s", info.key);
+    ESP_LOGI(TAG, "key: %s", info.key);
     if (strcmp(info.namespace_name, NVS_WORKER_NAMESPACE) == 0 &&
           (strcmp(info.key, CURRENT_NORTH_NVS_KEY) == 0 ||
           strcmp(info.key, CURRENT_SOUTH_NVS_KEY) == 0 ||
@@ -195,10 +191,9 @@ esp_err_t removeExtraWorkerNvsEntries(nvs_handle_t nvsHandle) {
       continue;
     }
 
-    ESP_LOGW(TAG, "erasing worker key: %s", info.key);
+    ESP_LOGW(TAG, "erasing key: %s", info.key);
     err = nvs_erase_key(nvsHandle, info.key);
     if (err != ESP_OK) {
-      ESP_LOGE(TAG, "failed to erase key.");
       return err;
     }
   }

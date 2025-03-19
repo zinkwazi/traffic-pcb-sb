@@ -117,12 +117,12 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     FATAL_IF_ERR(err, res->errRes);
 
     res->nvsHandle = openMainNvs();
-    FATAL_IF_FALSE(res->nvsHandle != NULL, res->errRes);
+    FATAL_IF_FALSE((res->nvsHandle != (nvs_handle_t) NULL), res->errRes);
     err = removeExtraMainNvsEntries(res->nvsHandle); // keep handle open
     FATAL_IF_ERR(err, res->errRes);
 
     workerHandle = openWorkerNvs();
-    FATAL_IF_FALSE(workerHandle != NULL, res->errRes);
+    FATAL_IF_FALSE((workerHandle != (nvs_handle_t) NULL), res->errRes);
     err = removeExtraWorkerNvsEntries(workerHandle); // keep handle open
     FATAL_IF_ERR(err, res->errRes);
 
@@ -157,17 +157,15 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     err = establishWifiConnection();
     if (err == ESP_ERR_NVS_NOT_ENOUGH_SPACE)
     {
-        ESP_LOGE(TAG, "not enough space for wifi NVS settings. Erasing NVS");
+        ESP_LOGE(TAG, "erasing nvs");
         err = nvs_erase_all(res->nvsHandle); // keep handle open
         if (err != ESP_OK)
         {
-            ESP_LOGE(TAG, "main nvs_erase_all failed. err: %d", err);
             FATAL_IF_ERR(err, res->errRes);
         }
         err = nvs_erase_all(workerHandle); // close handle
         if (err != ESP_OK)
         {
-            ESP_LOGE(TAG, "worker nvs_erase_all failed. err: %d", err);
             FATAL_IF_ERR(err, res->errRes);
         }
 
