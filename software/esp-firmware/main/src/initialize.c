@@ -109,6 +109,9 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
 
     /* initialize and cleanup non-volatile storage */
     err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_LOGE(TAG, "no free pages in nvs, need to erase nvs partition with parttool.py.");
+    }
     FATAL_IF_ERR(err, res->errRes);
 
     res->nvsHandle = openMainNvs();

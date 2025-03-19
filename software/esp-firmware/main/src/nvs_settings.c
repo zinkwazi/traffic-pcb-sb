@@ -377,7 +377,6 @@ esp_err_t refreshSpeedsFromNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction 
     size = MAX_NUM_LEDS_REG * sizeof(LEDData);
     err = nvs_get_blob(nvsHandle, key, data, &size);
     if (err != ESP_OK) {
-      ESP_LOGI(TAG, "here. err: %d", err);
       return err;
     }
     if (size == 0 || size / sizeof(uint8_t) != MAX_NUM_LEDS_REG * sizeof(LEDData))

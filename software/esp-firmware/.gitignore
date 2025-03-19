@@ -7,3 +7,5 @@ configurations/sdkconfig.V1_0
 configurations/sdkconfig.V2_0
 configurations/sdkconfig.dev_*
 configurations/sdkconfig.prod_*
+configurations/sdkconfig.new_dev_*
+configurations/sdkconfig.new_prod_*
