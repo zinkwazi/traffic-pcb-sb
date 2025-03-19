@@ -766,7 +766,7 @@ esp_err_t matSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue)
         return ESP_FAIL;
     }
     /* determine the correct PWM registers */
-    ledReg = LEDNumToReg[ledNum];
+    ledReg = LEDNumToReg[ledNum - 1];
     err = matParseLEDRegisterInfo(&matrixHandle, &page, NULL, ledReg);
     if (err != ESP_OK)
     {
@@ -812,7 +812,7 @@ esp_err_t matSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blu
         return ESP_FAIL;
     }
     /* determine the correct PWM registers */
-    ledReg = LEDNumToReg[ledNum];
+    ledReg = LEDNumToReg[ledNum - 1];
     err = matParseLEDRegisterInfo(&matrixHandle, NULL, &page, ledReg);
     if (err != ESP_OK)
     {

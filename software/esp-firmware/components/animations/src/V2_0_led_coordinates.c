@@ -16,9 +16,9 @@
 #include "animation_types.h"
 
 
-/* A mapping from LED number to x, y PCB coordinates. */
+/* A mapping from LED number to x, y PCB coordinates,
+where index (i - 1) corresponds to LED number i. */
 const LEDCoord LEDNumToCoord[ANIM_STANDARD_ARRAY_SIZE] = {
-	{0, 0}, // there is no LED with number 0
 	{-178, 68}, // 1
 	{-175, 66}, // 2
 	{-171, 65}, // 3

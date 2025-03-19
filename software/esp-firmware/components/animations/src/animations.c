@@ -205,7 +205,7 @@ esp_err_t sortLEDsByDistanceFromDiagLine(int32_t ledArr[],
     /* copy coordinate pairs */
     for (int32_t i = 0; i < coordsLen; i++)
     {
-        coordPairs[i].ledNum = i;
+        coordPairs[i].ledNum = i + 1;
         coordPairs[i].coord = coords[i];
     }
     /* sort based on distances */
@@ -250,7 +250,7 @@ esp_err_t sortLEDsByDistanceFromCurvedLine(int32_t ledArr[],
     /* copy coordinate pairs */
     for (int32_t i = 0; i < coordsLen; i++)
     {
-        coordPairs[i].ledNum = i;
+        coordPairs[i].ledNum = i + 1;
         coordPairs[i].coord = coords[i];
     }
     /* sort based on distances */

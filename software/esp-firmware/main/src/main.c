@@ -43,9 +43,9 @@
  * 
  * @returns ESP_OK if successful.
  */
-static esp_err_t mainRefresh(MainTaskState *state, MainTaskResources *res, LEDData typicalNorth[static MAX_NUM_LEDS_REG + 1], LEDData typicalSouth[static MAX_NUM_LEDS_REG + 1]) {
+static esp_err_t mainRefresh(MainTaskState *state, MainTaskResources *res, LEDData typicalNorth[static MAX_NUM_LEDS_REG], LEDData typicalSouth[static MAX_NUM_LEDS_REG]) {
   esp_err_t err;
-  LEDData currentSpeeds[MAX_NUM_LEDS_REG + 1];
+  LEDData currentSpeeds[MAX_NUM_LEDS_REG];
   /* input guards */
   if (state == NULL ||
       res == NULL ||
@@ -134,8 +134,8 @@ void app_main(void)
     MainTaskResources res;
     MainTaskState state;
     esp_err_t err;
-    LEDData typicalNorthSpeeds[MAX_NUM_LEDS_REG + 1];
-    LEDData typicalSouthSpeeds[MAX_NUM_LEDS_REG + 1];
+    LEDData typicalNorthSpeeds[MAX_NUM_LEDS_REG];
+    LEDData typicalSouthSpeeds[MAX_NUM_LEDS_REG];
     /* set task priority */
     vTaskPrioritySet(NULL, CONFIG_MAIN_PRIO);
     /* print firmware information */

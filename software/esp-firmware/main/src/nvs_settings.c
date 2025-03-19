@@ -233,7 +233,7 @@ void updateNvsSettings(nvs_handle_t nvsHandle, ErrorResources *errRes) {
  *          Various error codes passed from NVS functions.
  *          ESP_FAIL if something unexpected occurred.
  */
-esp_err_t refreshSpeedsFromNVS(LEDData data[static MAX_NUM_LEDS_REG + 1], Direction dir, SpeedCategory category)
+esp_err_t refreshSpeedsFromNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction dir, SpeedCategory category)
 {
     esp_err_t err;
     nvs_handle_t nvsHandle;
@@ -284,12 +284,12 @@ esp_err_t refreshSpeedsFromNVS(LEDData data[static MAX_NUM_LEDS_REG + 1], Direct
       return ESP_FAIL;
     }
     /* retrieve NVS data */
-    size = MAX_NUM_LEDS_REG + 1 * sizeof(LEDData);
+    size = MAX_NUM_LEDS_REG * sizeof(LEDData);
     err = nvs_get_blob(nvsHandle, key, data, &size);
     if (err != ESP_OK) {
       return err;
     }
-    if (size == 0 || size / sizeof(uint8_t) != MAX_NUM_LEDS_REG + 1 * sizeof(LEDData))
+    if (size == 0 || size / sizeof(uint8_t) != MAX_NUM_LEDS_REG * sizeof(LEDData))
     {
       return ESP_ERR_INVALID_SIZE;
     }
@@ -297,7 +297,7 @@ esp_err_t refreshSpeedsFromNVS(LEDData data[static MAX_NUM_LEDS_REG + 1], Direct
     return ESP_OK;
 }
 
-esp_err_t storeSpeedsToNVS(LEDData data[static MAX_NUM_LEDS_REG + 1], Direction dir, SpeedCategory category)
+esp_err_t storeSpeedsToNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction dir, SpeedCategory category)
 {
   esp_err_t err;
   nvs_handle_t nvsHandle;
@@ -348,7 +348,7 @@ esp_err_t storeSpeedsToNVS(LEDData data[static MAX_NUM_LEDS_REG + 1], Direction 
     return ESP_FAIL;
   }
   /* store data to NVS */
-  size = MAX_NUM_LEDS_REG + 1 * sizeof(LEDData);
+  size = MAX_NUM_LEDS_REG * sizeof(LEDData);
   err = nvs_set_blob(nvsHandle, key, data, size);
   if (err != ESP_OK) {
       err = nvs_erase_key(nvsHandle, key);

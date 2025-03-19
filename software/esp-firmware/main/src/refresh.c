@@ -48,7 +48,7 @@
 
 #elif CONFIG_HARDWARE_VERSION == 2
 
-#define NUM_NO_REFRESH_LEDS 8
+#define NUM_NO_REFRESH_LEDS 11
 
 static const int32_t noRefreshNums[NUM_NO_REFRESH_LEDS] = {WIFI_LED_NUM,
                                                            ERROR_LED_NUM,
@@ -57,7 +57,11 @@ static const int32_t noRefreshNums[NUM_NO_REFRESH_LEDS] = {WIFI_LED_NUM,
                                                            SOUTH_LED_NUM,
                                                            EAST_LED_NUM,
                                                            WEST_LED_NUM,
-                                                           46}; // 46 does not exist for V2_0
+                                                           LIGHT_LED_NUM,
+                                                           MEDIUM_LED_NUM,
+                                                           HEAVY_LED_NUM,
+                                                           46, // 46 does not exist for V2_0
+                                                          }; 
 
 #else
 #error "Unsupported hardware version!"
@@ -98,7 +102,7 @@ static bool contains(const int32_t *arr, int32_t arrLen, int32_t ele);
  *          ESP_ERR_INVALID_ARG if invalid argument.
  *          ESP_FAIL if something unexpected occurred.
  */
-esp_err_t refreshData(LEDData data[static MAX_NUM_LEDS_REG + 1], esp_http_client_handle_t client, Direction dir, SpeedCategory category, ErrorResources *errRes)
+esp_err_t refreshData(LEDData data[static MAX_NUM_LEDS_REG], esp_http_client_handle_t client, Direction dir, SpeedCategory category, ErrorResources *errRes)
 {
     esp_err_t err;
     char *url;
@@ -115,7 +119,7 @@ esp_err_t refreshData(LEDData data[static MAX_NUM_LEDS_REG + 1], esp_http_client
         return ESP_FAIL;
     }
     err = getServerSpeedsWithAddendums(data, 
-                                        MAX_NUM_LEDS_REG + 1, 
+                                        MAX_NUM_LEDS_REG, 
                                         client, 
                                         url, 
                                         API_RETRY_CONN_NUM);
@@ -144,8 +148,8 @@ esp_err_t refreshData(LEDData data[static MAX_NUM_LEDS_REG + 1], esp_http_client
  *          REFRESH_ABORT if a task notification is received during operation.
  *          ESP_ERR_INVALID_ARG if an argument is NULL.
  */
-esp_err_t refreshBoard(LEDData currSpeeds[static MAX_NUM_LEDS_REG + 1], LEDData typicalSpeeds[static MAX_NUM_LEDS_REG + 1], Animation anim) {
-    int32_t ledOrder[MAX_NUM_LEDS_REG + 1];
+esp_err_t refreshBoard(LEDData currSpeeds[static MAX_NUM_LEDS_REG], LEDData typicalSpeeds[static MAX_NUM_LEDS_REG], Animation anim) {
+    int32_t ledOrder[MAX_NUM_LEDS_REG];
     esp_err_t err;
     /* input guards */
     if (currSpeeds == NULL ||
@@ -154,13 +158,13 @@ esp_err_t refreshBoard(LEDData currSpeeds[static MAX_NUM_LEDS_REG + 1], LEDData 
         return ESP_ERR_INVALID_ARG;
     }
     /* generate correct ordering */
-    err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG + 1, anim, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
+    err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, anim, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
     if (err != ESP_OK)
     {
         return err;
     }
     /* update LEDs using provided ordering */
-    for (int ndx = 0; ndx < MAX_NUM_LEDS_REG + 1; ndx++) {
+    for (int ndx = 0; ndx < MAX_NUM_LEDS_REG; ndx++) {
         int ledNum = ledOrder[ndx];
         if (ledNum > MAX_NUM_LEDS_REG || ledNum <= 0) {
             ESP_LOGW(TAG, "skipping out of bounds LED %d", ledNum);
@@ -200,35 +204,52 @@ esp_err_t refreshBoard(LEDData currSpeeds[static MAX_NUM_LEDS_REG + 1], LEDData 
  *        provided.
  * 
  * @param dir The direction that the LEDs will be cleared toward.
+ * 
+ * @returns ESP_OK if successful, otherwise I2C matrix issue.
  */
 esp_err_t clearBoard(Direction dir) {
     esp_err_t err;
+    int32_t ledOrder[MAX_NUM_LEDS_REG];
 
     switch (dir) {
       case NORTH:
-        ESP_LOGI(TAG, "Clearing South...");
-        for (int ndx = 1; ndx <= MAX_NUM_LEDS_REG; ndx++) {
+        ESP_LOGI(TAG, "Clearing North...");
+        err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
+        if (err != ESP_OK) return err;
 
+        for (int i = 0; i < MAX_NUM_LEDS_REG; i++) {
+            int32_t ndx = ledOrder[i];
+            
             for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
             {
                 err = matSetColor(ndx, 0x00, 0x00, 0x00);
                 if (err == ESP_OK) break;
             }
-            if (err != ESP_OK) return err;
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "failed to set matrix color for led: %ld", ndx);
+                return err;
+            }
 
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
         }
         break;
       case SOUTH:
-        ESP_LOGI(TAG, "Clearing North...");
-        for (int ndx = MAX_NUM_LEDS_REG; ndx > 0; ndx--) {
+        ESP_LOGI(TAG, "Clearing South...");
+        err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE_REVERSE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
+        if (err != ESP_OK) return err;
+
+        for (int i = 0; i < MAX_NUM_LEDS_REG; i++) {
+            int32_t ndx = ledOrder[i];
 
             for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
             {
                 err = matSetColor(ndx, 0x00, 0x00, 0x00);
                 if (err == ESP_OK) break;
             }
-            if (err != ESP_OK) return err;
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "failed to set matrix color for led: %ld", ndx);
+                return err;
+            }
 
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
         }
@@ -289,15 +310,20 @@ esp_err_t quickClearBoard(void)
  */
 esp_err_t clearBoard(Direction dir) {
     esp_err_t err;
+    int32_t ledOrder[MAX_NUM_LEDS_REG];
 
     switch (dir) {
       case NORTH:
-        ESP_LOGI(TAG, "Clearing South...");
-        for (int ndx = 1; ndx <= MAX_NUM_LEDS_REG; ndx++) {
+        ESP_LOGI(TAG, "Clearing North...");
+        err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
+        if (err != ESP_OK) return err;
+
+        for (int i = 0; i < MAX_NUM_LEDS_REG; i++) {
+            int32_t ndx = ledOrder[i];
             if (contains(noRefreshNums, NUM_NO_REFRESH_LEDS, ndx)) // only 7 elements (don't fret)
             {
                 /* don't clear indicator LEDs */
-                ESP_LOGW(TAG, "skipping clear of led %d", ndx);
+                ESP_LOGW(TAG, "skipping clear of led %ld", ndx);
                 continue;
             }
             
@@ -307,6 +333,7 @@ esp_err_t clearBoard(Direction dir) {
                 if (err == ESP_OK) break;
             }
             if (err != ESP_OK) {
+                ESP_LOGE(TAG, "failed to set matrix color for led: %ld", ndx);
                 return err;
             }
 
@@ -314,12 +341,16 @@ esp_err_t clearBoard(Direction dir) {
         }
         break;
       case SOUTH:
-        ESP_LOGI(TAG, "Clearing North...");
-        for (int ndx = MAX_NUM_LEDS_REG; ndx > 0; ndx--) {
+        ESP_LOGI(TAG, "Clearing South...");
+        err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE_REVERSE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
+        if (err != ESP_OK) return err;
+
+        for (int i = 0; i < MAX_NUM_LEDS_REG; i++) {
+            int32_t ndx = ledOrder[i];
             if (contains(noRefreshNums, NUM_NO_REFRESH_LEDS, ndx)) // only 7 elements (don't fret)
             {
                 /* don't clear indicator LEDs or attempt those that don't exist */
-                ESP_LOGW(TAG, "skipping clear of led %d", ndx);
+                ESP_LOGW(TAG, "skipping clear of led %ld", ndx);
                 continue;
             }
 
@@ -329,6 +360,7 @@ esp_err_t clearBoard(Direction dir) {
                 if (err == ESP_OK) break;
             }
             if (err != ESP_OK) {
+                ESP_LOGE(TAG, "failed to set matrix color for led: %ld", ndx);
                 return err;
             }
 

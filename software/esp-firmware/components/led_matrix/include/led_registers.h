@@ -23,6 +23,6 @@
 #error "Unsupported Hardware Version"
 #endif
 
-extern const LEDReg LEDNumToReg[MAX_NUM_LEDS_REG + 1];
+extern const LEDReg LEDNumToReg[MAX_NUM_LEDS_REG];
 
 #endif /* LED_REGISTERS_H_ */
