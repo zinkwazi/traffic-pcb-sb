@@ -12,6 +12,7 @@
 #include "esp_err.h"
 
 esp_err_t initWifi(char *wifiSSID, char* wifiPass);
+esp_err_t deinitWifi(void);
 bool isWifiConnected(void);
 esp_err_t establishWifiConnection(void);
 esp_err_t unregisterWifiHandler(void); // used in OTA task before restart

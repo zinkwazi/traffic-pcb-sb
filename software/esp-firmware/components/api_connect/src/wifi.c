@@ -100,6 +100,31 @@ esp_err_t initWifi(char *wifiSSID, char *wifiPass) {
 }
 
 /**
+ * @brief Deinitializes wifi static variables to allow initWifi to be called
+ *        again.
+ * 
+ * @note This function is useful for unit test teardowns.
+ * 
+ * @returns ESP_OK if successful, otherwise wifi handlers may have been removed.
+ */
+esp_err_t deinitWifi(void)
+{
+    esp_err_t err;
+    err = unregisterWifiHandler();
+    if (err != ESP_OK) return err;
+    err = esp_wifi_stop();
+    if (err != ESP_OK) return err;
+    vEventGroupDelete(sWifiEvents);
+    sWifiEvents = NULL;
+    sWifiConnected = false;
+    sInstanceAnyID = NULL;
+    sInstanceAnyIP = NULL;
+    sWifiSSID = NULL;
+    sWifiPass = NULL;
+    return ESP_OK;
+}
+
+/**
  * Establishes a wifi connection with the AP
  * specified by WIFI_SSID and WIFI_PASS in 'api_config.h'.
  * 
@@ -163,10 +188,10 @@ esp_err_t establishWifiConnection(void)
         return ret;
     }
     bits = xEventGroupWaitBits(sWifiEvents,
-                               WIFI_CONNECTED_BIT | WIFI_DISCONNECTED_BIT,
-                               pdFALSE,
-                               pdFALSE,
-                               portMAX_DELAY);
+                            WIFI_CONNECTED_BIT | WIFI_DISCONNECTED_BIT,
+                            pdFALSE,
+                            pdFALSE,
+                            portMAX_DELAY);
     if (bits & ~WIFI_CONNECTED_BIT) {
         ESP_LOGI(TAG, "did not connect to wifi");
         unregisterWifiHandler();
@@ -203,9 +228,9 @@ static void connectHandler(void *arg, esp_event_base_t eventBase, int32_t eventI
 }
 
 /**
-* A handler that recieves wifi events AFTER connection with the AP is made. 
-* See establishWifiConnection.
-*/
+ * A handler that recieves wifi events AFTER connection with the AP is made. 
+ * See establishWifiConnection.
+ */
 static void wifiEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId, void *eventData)
 {
     if (eventBase == WIFI_EVENT && eventId == WIFI_EVENT_STA_DISCONNECTED) {

@@ -145,7 +145,7 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     FATAL_IF_ERR(err, res->errRes);
     err = esp_event_loop_create_default();
     FATAL_IF_ERR(err, res->errRes);
-    (void)esp_netif_create_default_wifi_sta(); // don't need result
+    (void) esp_netif_create_default_wifi_sta(); // don't need result
 
     /* establish wifi connection & tls */
     err = esp_wifi_init(&default_wifi_cfg);

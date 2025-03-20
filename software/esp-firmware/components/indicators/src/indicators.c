@@ -13,36 +13,25 @@
 #include "app_errors.h"
 #include "led_matrix.h"
 #include "pinout.h"
+#include "sdkconfig.h"
 
 #include "main_types.h"
 
-#define WHITE_RED_COMPONENT (0x20)
-#define WHITE_GREEN_COMPONENT (0x30)
-#define WHITE_BLUE_COMPONENT (0x20)
+#define V2_0_WIFI_CONNECTED_COLOR_RED (CONFIG_WHITE_RED_COMPONENT)
+#define V2_0_WIFI_CONNECTED_COLOR_GREEN (CONFIG_WHITE_GREEN_COMPONENT)
+#define V2_0_WIFI_CONNECTED_COLOR_BLUE (CONFIG_WHITE_BLUE_COMPONENT)
 
-#define V2_0_WIFI_CONNECTED_COLOR_RED (WHITE_RED_COMPONENT)
-#define V2_0_WIFI_CONNECTED_COLOR_GREEN (WHITE_GREEN_COMPONENT)
-#define V2_0_WIFI_CONNECTED_COLOR_BLUE (WHITE_BLUE_COMPONENT)
+#define V2_0_OTA_UPDATE_COLOR_RED (CONFIG_WHITE_RED_COMPONENT)
+#define V2_0_OTA_UPDATE_COLOR_GREEN (CONFIG_WHITE_GREEN_COMPONENT)
+#define V2_0_OTA_UPDATE_COLOR_BLUE (CONFIG_WHITE_BLUE_COMPONENT)
 
-#define V2_0_OTA_UPDATE_COLOR_RED (WHITE_RED_COMPONENT)
-#define V2_0_OTA_UPDATE_COLOR_GREEN (WHITE_GREEN_COMPONENT)
-#define V2_0_OTA_UPDATE_COLOR_BLUE (WHITE_BLUE_COMPONENT)
+#define V2_0_NORTHBOUND_COLOR_RED (CONFIG_WHITE_RED_COMPONENT)
+#define V2_0_NORTHBOUND_COLOR_GREEN (CONFIG_WHITE_GREEN_COMPONENT)
+#define V2_0_NORTHBOUND_COLOR_BLUE (CONFIG_WHITE_BLUE_COMPONENT)
 
-#define V2_0_OTA_FAILURE_COLOR_RED (0xFF)
-#define V2_0_OTA_FAILURE_COLOR_GREEN (0x00)
-#define V2_0_OTA_FAILURE_COLOR_BLUE (0x00)
-
-#define V2_0_OTA_SUCCESS_COLOR_RED (0x00)
-#define V2_0_OTA_SUCCESS_COLOR_GREEN (0xFF)
-#define V2_0_OTA_SUCCESS_COLOR_BLUE (0x00)
-
-#define V2_0_NORTHBOUND_COLOR_RED (WHITE_RED_COMPONENT)
-#define V2_0_NORTHBOUND_COLOR_GREEN (WHITE_GREEN_COMPONENT)
-#define V2_0_NORTHBOUND_COLOR_BLUE (WHITE_BLUE_COMPONENT)
-
-#define V2_0_SOUTHBOUND_COLOR_RED (WHITE_RED_COMPONENT)
-#define V2_0_SOUTHBOUND_COLOR_GREEN (WHITE_GREEN_COMPONENT)
-#define V2_0_SOUTHBOUND_COLOR_BLUE (WHITE_BLUE_COMPONENT)
+#define V2_0_SOUTHBOUND_COLOR_RED (CONFIG_WHITE_RED_COMPONENT)
+#define V2_0_SOUTHBOUND_COLOR_GREEN (CONFIG_WHITE_GREEN_COMPONENT)
+#define V2_0_SOUTHBOUND_COLOR_BLUE (CONFIG_WHITE_BLUE_COMPONENT)
 
 #if CONFIG_HARDWARE_VERSION == 1
 
@@ -335,9 +324,9 @@ esp_err_t indicateOTAFailure(ErrorResources *errRes, int32_t delay)
 {
     esp_err_t err;
     err = matSetColor(OTA_LED_NUM,
-                      V2_0_OTA_FAILURE_COLOR_RED,
-                      V2_0_OTA_FAILURE_COLOR_GREEN,
-                      V2_0_OTA_FAILURE_COLOR_BLUE);
+                      CONFIG_V2_0_OTA_FAILURE_RED_COMPONENT,
+                      CONFIG_V2_0_OTA_FAILURE_GREEN_COMPONENT,
+                      CONFIG_V2_0_OTA_FAILURE_BLUE_COMPONENT);
     if (err != ESP_OK) return err;
     vTaskDelay(pdMS_TO_TICKS(delay));
     err = matSetColor(OTA_LED_NUM, 0x00, 0x00, 0x00);
@@ -363,9 +352,9 @@ esp_err_t indicateOTASuccess(int32_t delay)
 {
     esp_err_t err;
     err = matSetColor(OTA_LED_NUM,
-                      V2_0_OTA_SUCCESS_COLOR_RED,
-                      V2_0_OTA_SUCCESS_COLOR_GREEN,
-                      V2_0_OTA_SUCCESS_COLOR_BLUE);
+                      CONFIG_V2_0_OTA_SUCCESS_RED_COMPONENT,
+                      CONFIG_V2_0_OTA_SUCCESS_GREEN_COMPONENT,
+                      CONFIG_V2_0_OTA_SUCCESS_BLUE_COMPONENT);
     if (err != ESP_OK) return err;
     vTaskDelay(pdMS_TO_TICKS(delay));
     err = matSetColor(OTA_LED_NUM, 0x00, 0x00, 0x00);
@@ -421,14 +410,14 @@ esp_err_t indicateSouthbound(void)
 {
     esp_err_t err;
     err = matSetColor(SOUTH_LED_NUM,
-                      V2_0_NORTHBOUND_COLOR_RED,
-                      V2_0_NORTHBOUND_COLOR_GREEN,
-                      V2_0_NORTHBOUND_COLOR_BLUE);
+                      V2_0_SOUTHBOUND_COLOR_RED,
+                      V2_0_SOUTHBOUND_COLOR_GREEN,
+                      V2_0_SOUTHBOUND_COLOR_BLUE);
     if (err != ESP_OK) return err;
     err = matSetColor(EAST_LED_NUM,
-                      V2_0_NORTHBOUND_COLOR_RED,
-                      V2_0_NORTHBOUND_COLOR_GREEN,
-                      V2_0_NORTHBOUND_COLOR_BLUE);
+                      V2_0_SOUTHBOUND_COLOR_RED,
+                      V2_0_SOUTHBOUND_COLOR_GREEN,
+                      V2_0_SOUTHBOUND_COLOR_BLUE);
     if (err != ESP_OK) return err;
     err = matSetColor(NORTH_LED_NUM, 0x00, 0x00, 0x00);
     if (err != ESP_OK) return err;

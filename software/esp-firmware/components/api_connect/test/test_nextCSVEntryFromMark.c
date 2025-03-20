@@ -6,6 +6,7 @@
  * Test file dependencies: common:test_circular_buffer.c
  */
 
+#include "api_connect_pi.h"
 
 #include <string.h>
 #include <stdint.h>
@@ -15,9 +16,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 
-#include "api_connect_pi.h"
 #include "circular_buffer.h"
-
 
 #define TAG "test"
 
@@ -37,12 +36,10 @@ TEST_CASE("nextCSVEntryFromMark_noDataFound", "[api_connect]")
     char circBufBacking[CIRC_BUF_SIZE];
     CircularBuffer circBuf;
     LEDData result;
-    int numBytes;
-    char *expected;
 
     /* test uninitialized circular buffer */
     err = nextCSVEntryFromMark(&result, &circBuf, buffer, TEST_BUF_SIZE);
-    TEST_ASSERT_EQUAL(ESP_FAIL, err);
+    TEST_ASSERT_EQUAL(CIRC_UNINITIALIZED, err);
 
     /* load string into circular buffer and mark it */
     circ_err = circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
@@ -79,7 +76,7 @@ TEST_CASE("nextCSVEntryFromMark_inputGuards", "[api_connect]")
 
     /* test NULL circular buffer */
     err = nextCSVEntryFromMark(&result, NULL, buffer, TEST_BUF_LEN);
-    TEST_ASSERT_EQUAL(ESP_FAIL, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 
     /* load first response block into circular buffer */
     circ_err = circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
@@ -96,13 +93,13 @@ TEST_CASE("nextCSVEntryFromMark_inputGuards", "[api_connect]")
 
     /* test NULL response */
     err = nextCSVEntryFromMark(NULL, &circBuf, buffer, TEST_BUF_LEN);
-    TEST_ASSERT_EQUAL(ESP_FAIL, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 
     /* test NULL buffer */
     err = nextCSVEntryFromMark(&result, &circBuf, NULL, TEST_BUF_LEN);
-    TEST_ASSERT_EQUAL(ESP_FAIL, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
     err = nextCSVEntryFromMark(&result, &circBuf, buffer, 0);
-    TEST_ASSERT_EQUAL(ESP_FAIL, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 }
 
 /**

@@ -118,11 +118,11 @@ esp_err_t refreshData(LEDData data[static MAX_NUM_LEDS_REG], esp_http_client_han
     if (url == NULL) {
         return ESP_FAIL;
     }
-    err = getServerSpeedsWithAddendums(data, 
-                                        MAX_NUM_LEDS_REG, 
-                                        client, 
-                                        url, 
-                                        API_RETRY_CONN_NUM);
+    err = getServerSpeeds(data, 
+                          MAX_NUM_LEDS_REG, 
+                          client, 
+                          url, 
+                          API_RETRY_CONN_NUM);
     if (err != ESP_OK)
     {
         ESP_LOGW(TAG, "searching nvs for data");

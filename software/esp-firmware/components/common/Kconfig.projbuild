@@ -113,20 +113,6 @@ menu "Main Application"
         default "https://bearanvil.com"
         help
             The server to query for the latest firmware binary file for this device.
-
-    config DATA_SERVER
-        string "Data Server"
-        default "https://bearanvil.com"
-        help
-            The server to request updated segment speed data from.
-
-    config MAX_DATA_URL_LEN
-        int "Max Data URL Length"
-        default 60
-        help
-            The maximum length that the URL of the current data from
-            the data server can be, not including null terminator. 
-            ex: "https://bearanvil.com/current_data/data_north_V1_0_0.json" -> 57
         
     config NVS_ENTRY_BUFFER_LENGTH
         int "NVS Query Buffer Length"
@@ -135,13 +121,6 @@ menu "Main Application"
             The length of the buffer used when querying NVS entries from the user.
             Therefore this is also the maximum length of NVS entries for this firmware
             image, however old NVS entries from other images may be a different length.
-
-    config USE_FAKE_DATA
-        bool "Use Fake API Data"
-        default true
-        help
-            Whether the TomTom component should simulate API
-            data or actually make API calls using the provided API key.
 
     config TIMER_CAUSES_TOGGLE
         bool "Timer Causes Toggle"
@@ -178,14 +157,6 @@ menu "Main Application"
     config MAIN_PRIO
         int "Priority of the main task"
         default 3
-
-    config WORKER_STACK
-        int "Stack size in bytes of the worker task"
-        default 4184
-    
-    config WORKER_PRIO
-        int "Priority of the worker task"
-        default 1
     
     config OTA_STACK
         int "Stack size in bytes of the OTA task"

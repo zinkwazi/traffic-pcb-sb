@@ -1,0 +1,15 @@
+menu "Test Configuration"
+
+    config TEST_WIFI_SSID
+        string "Test Wifi SSID"
+        default "test_ssid"
+        help
+            "SSID of the wifi network to connect to for testing."
+    
+    config TEST_WIFI_PASSWORD
+        string "Test Wifi Password"
+        default "test_pass"
+        help
+            "Password of the wifi network to connect to for testing."
+
+endmenu

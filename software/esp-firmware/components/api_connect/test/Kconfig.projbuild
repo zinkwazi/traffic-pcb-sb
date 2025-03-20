@@ -1,24 +1,23 @@
-menu "API Connect"
+menu "API Connect Test"
 
-    config DATA_SERVER
-        string "Data Server"
+    config TEST_DATA_SERVER
+        string "Test Data Server"
         default "https://bearanvil.com"
         help
             The server to request updated segment speed data from.
 
-    config MAX_DATA_URL_LEN
-        int "Max Data URL Length"
+    config TEST_MAX_DATA_URL_LEN
+        int "Test Max Data URL Length"
         default 60
         help
             The maximum length that the URL of the current data from
             the data server can be, not including null terminator. 
             ex: "https://bearanvil.com/current_data/data_north_V1_0_0.json" -> 57
 
-    config USE_FAKE_DATA
-        bool "Use Fake API Data"
-        default true
+    config TEST_DATA_BASE_URL
+        string "Test Data Base URL"
+        default "/test_data/test_api_connect_data"
         help
-            Whether the TomTom component should simulate API
-            data or actually make API calls using the provided API key.
+            The base page for the test data files on the test data server.
 
 endmenu

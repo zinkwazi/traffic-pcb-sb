@@ -6,6 +6,7 @@
       "buildDirectoryPath": "${workspaceFolder}\\builds\\test_V2_0",
       "sdkconfigDefaults": [
         ".\\..\\esp-firmware\\configurations\\sdkconfig.settings",
+        ".\\configurations\\sdkconfig.test_secrets",
         ".\\configurations\\sdkconfig.test",
         ".\\..\\esp-firmware\\configurations\\sdkconfig.V2_0_default"
       ],
@@ -33,6 +34,7 @@
       "buildDirectoryPath": "${workspaceFolder}\\builds\\test_V1_0",
       "sdkconfigDefaults": [
         ".\\..\\esp-firmware\\configurations\\sdkconfig.settings",
+        ".\\configurations\\sdkconfig.test_secrets",
         ".\\configurations\\sdkconfig.test",
         ".\\..\\esp-firmware\\configurations\\sdkconfig.V1_0_default"
       ],
