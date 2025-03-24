@@ -6,6 +6,10 @@
  * Test file dependencies: 
  *     api_connect:test_openServerFile.c.
  *     common:test_circular_buffer.c.
+ * 
+ * Server file dependencies:
+ *     CONFIG_TEST_DATA_BASE_URL/data_north_V1_0_5.csv.
+ *     CONFIG_TEST_DATA_BASE_URL/getNextResponseBlock_typical.1.
  */
 
 #include "api_connect_pi.h"
@@ -18,7 +22,6 @@
 #include "esp_crt_bundle.h"
 #include "esp_err.h"
 #include "esp_http_client.h"
-#include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_tls.h"
 #include "esp_wifi.h"
@@ -27,37 +30,10 @@
 #include "sdkconfig.h"
 
 #include "circular_buffer.h"
-#include "wifi.h"
 
-#define API_METHOD HTTP_METHOD_GET
-#define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
 #define RETRY_NUM 5
 
-#define TAG "test"
-
-static esp_http_client_handle_t client;
-
-void setUp(void) {
-    const esp_http_client_config_t httpConfig = {
-        .host = CONFIG_DATA_SERVER,
-        .path = CONFIG_TEST_DATA_BASE_URL,
-        .auth_type = API_AUTH_TYPE,
-        .method = API_METHOD,
-        .crt_bundle_attach = esp_crt_bundle_attach,
-        .event_handler = NULL,
-        .user_data = NULL,
-    };
-
-    client = esp_http_client_init(&httpConfig);
-    TEST_ASSERT_NOT_NULL(client);
-}
-
-void tearDown(void) {
-    esp_err_t err;
-
-    err = esp_http_client_cleanup(client);
-    TEST_ASSERT_EQUAL(ESP_OK, err);
-}
+extern esp_http_client_handle_t client;
 
 /**
  * Tests input guards.
@@ -103,6 +79,11 @@ TEST_CASE("getNextResponseBlock_inputGuards", "[api_connect]")
     TEST_ASSERT_EQUAL(ESP_OK, err);
 }
 
+/**
+ * Tests a typical use case file.
+ * 
+ * Test case dependencies: None.
+ */
 TEST_CASE("getNextResponseBlock_typical", "[api_connect]")
 {
     const char *URL = CONFIG_DATA_SERVER CONFIG_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";

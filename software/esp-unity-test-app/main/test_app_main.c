@@ -17,6 +17,34 @@
 
 #include "wifi.h"
 
+#define API_METHOD HTTP_METHOD_GET
+#define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
+#define RETRY_NUM 5
+
+esp_http_client_handle_t client;
+
+void setUp(void) {
+    const esp_http_client_config_t httpConfig = {
+        .host = CONFIG_DATA_SERVER,
+        .path = CONFIG_TEST_DATA_BASE_URL,
+        .auth_type = API_AUTH_TYPE,
+        .method = API_METHOD,
+        .crt_bundle_attach = esp_crt_bundle_attach,
+        .event_handler = NULL,
+        .user_data = NULL,
+    };
+
+    client = esp_http_client_init(&httpConfig);
+    TEST_ASSERT_NOT_NULL(client);
+}
+
+void tearDown(void) {
+    esp_err_t err;
+
+    err = esp_http_client_cleanup(client);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+}
+
 void app_main(void)
 {
     esp_err_t err;

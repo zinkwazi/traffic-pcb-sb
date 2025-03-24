@@ -372,7 +372,7 @@ esp_err_t openServerFile(int64_t *contentLength, esp_http_client_handle_t client
         }
         return ESP_OK;
     }
-    return ESP_OK;
+    return ESP_FAIL; // retried too many times
 }
 
 #if USE_ADDENDUMS == true
