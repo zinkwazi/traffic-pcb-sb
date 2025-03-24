@@ -310,6 +310,14 @@ esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf, LEDData ledSpeeds[
  * @brief Initiates an HTTPS request to the provided URL, leaving the client in
  *        a state to begin reading the response using esp_http_client_read.
  * 
+ * @note Requires that a wifi connection is present and client has been
+ *       initialized with esp_http_client_init.
+ * 
+ * @bug #1: If the response is a non-200 status code, the response is not flushed.
+ *      This is likely due to an issue with the esp_http_client_flush_response
+ *      function and its interaction with esp_http_client_read. The workaround
+ *      is to completely destroy the client and reinitialize it.
+ * 
  * @param[out] contentLength The location where the response content length will
  *        be placed if successful. Will be modified even if the function fails.
  * @param[in] client The HTTP client to make the request through, which should
@@ -320,8 +328,10 @@ esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf, LEDData ledSpeeds[
  * @returns ESP_OK if successful, with contentLength equal to the contentLength
  *          returned by the HTTPS response and client open.
  *          ESP_ERR_INVALID_ARG if invalid arguments.
- *          ESP_FAIL otherwise, with contentLength either 0 or -1 and client 
- *          closed.
+ *          ESP_ERR_NOT_FOUND if the content length was 0.
+ *          ESP_ERR_NOT_SUPPORTED if the status code was not 200, see bug #1.
+ *          ESP_FAIL if unable to close client or flush response.
+ *          Other error codes if an unexpected error occurs.
  */
 esp_err_t openServerFile(int64_t *contentLength, esp_http_client_handle_t client, const char *URL, int retryNum)
 {
@@ -330,7 +340,7 @@ esp_err_t openServerFile(int64_t *contentLength, esp_http_client_handle_t client
     if (contentLength == NULL) return ESP_ERR_INVALID_ARG;
     if (client == NULL) return ESP_ERR_INVALID_ARG;
     if (URL == NULL) return ESP_ERR_INVALID_ARG;
-    if (retryNum == 0) return ESP_ERR_INVALID_ARG;
+    if (retryNum <= 0) return ESP_ERR_INVALID_ARG;
 
     /* establish connection and open URL */
     ESP_LOGI(TAG, "retrieving: %s", URL);
@@ -362,8 +372,16 @@ esp_err_t openServerFile(int64_t *contentLength, esp_http_client_handle_t client
         if (esp_http_client_get_status_code(client) != 200)
         {
             ESP_LOGE(TAG, "status code is %d", status);
-            if (esp_http_client_close(client) != ESP_OK)
-            {
+            return ESP_ERR_NOT_SUPPORTED; // temporary error code for bug #1.
+
+            err = esp_http_client_flush_response(client, (int *) contentLength);
+            ESP_LOGW(TAG, "flushed %lld bytes", *contentLength);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "failed to flush response");
+                return ESP_FAIL;
+            }
+            err = esp_http_client_close(client);
+            if (err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to close client");
                 return ESP_FAIL;
             }
@@ -372,7 +390,7 @@ esp_err_t openServerFile(int64_t *contentLength, esp_http_client_handle_t client
         }
         return ESP_OK;
     }
-    return ESP_FAIL; // retried too many times
+    return ESP_ERR_NOT_FOUND; // retried too many times
 }
 
 #if USE_ADDENDUMS == true
