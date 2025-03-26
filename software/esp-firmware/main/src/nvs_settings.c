@@ -329,11 +329,6 @@ esp_err_t refreshSpeedsFromNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction 
     nvs_handle_t nvsHandle;
     size_t size;
     char *key;
-    /* input guards */
-    if (data == NULL)
-    {
-        return ESP_ERR_INVALID_ARG;
-    }
     /* open nvs */
     err = nvs_open(NVS_WORKER_NAMESPACE, NVS_READONLY, &nvsHandle);
     if (err != ESP_OK) {
@@ -393,11 +388,6 @@ esp_err_t storeSpeedsToNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction dir,
   nvs_handle_t nvsHandle;
   size_t size;
   char *key;
-  /* input guards */
-  if (data == NULL)
-  {
-      return ESP_ERR_INVALID_ARG;
-  }
   /* open nvs */
   err = nvs_open(NVS_WORKER_NAMESPACE, NVS_READWRITE, &nvsHandle);
   if (err != ESP_OK) {

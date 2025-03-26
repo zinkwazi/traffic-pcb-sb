@@ -106,8 +106,6 @@ esp_err_t refreshData(LEDData data[static MAX_NUM_LEDS_REG], esp_http_client_han
 {
     esp_err_t err;
     char *url;
-    /* input guards */
-    if (data == NULL) return ESP_ERR_INVALID_ARG;
     /* retrieve NVS data if necessary */
     if (client == NULL)
     {
@@ -151,12 +149,6 @@ esp_err_t refreshData(LEDData data[static MAX_NUM_LEDS_REG], esp_http_client_han
 esp_err_t refreshBoard(LEDData currSpeeds[static MAX_NUM_LEDS_REG], LEDData typicalSpeeds[static MAX_NUM_LEDS_REG], Animation anim) {
     int32_t ledOrder[MAX_NUM_LEDS_REG];
     esp_err_t err;
-    /* input guards */
-    if (currSpeeds == NULL ||
-        typicalSpeeds == NULL)
-    {
-        return ESP_ERR_INVALID_ARG;
-    }
     /* generate correct ordering */
     err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, anim, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
     if (err != ESP_OK)

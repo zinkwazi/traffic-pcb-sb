@@ -49,9 +49,7 @@ static esp_err_t mainRefresh(MainTaskState *state, MainTaskResources *res, LEDDa
   /* input guards */
   if (state == NULL ||
       res == NULL ||
-      res->client == NULL ||
-      typicalNorth == NULL ||
-      typicalSouth == NULL)
+      res->client == NULL)
   {
     return ESP_ERR_INVALID_ARG;
   }

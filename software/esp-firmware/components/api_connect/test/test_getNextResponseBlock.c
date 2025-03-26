@@ -96,14 +96,14 @@ TEST_CASE("getNextResponseBlock_typical", "[api_connect]")
     err = openServerFile(&contentLen, client, URL, RETRY_NUM);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    expected = "1,71\r\n2,"; // 10th char is null-terminator
+    expected = "1,71\n2,7"; // 10th char is null-terminator
     len = 10;
     err = getNextResponseBlock(buffer, &len, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(8, len); // function reserves 2 chars
     TEST_ASSERT_EQUAL_STRING(expected, buffer);
 
-    expected = "71\r\n3,71"; // 10th char is null-terminator
+    expected = "1\n3,71\n4"; // 10th char is null-terminator
     len = 10;
     err = getNextResponseBlock(buffer, &len, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);

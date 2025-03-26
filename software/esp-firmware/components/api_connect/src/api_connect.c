@@ -6,6 +6,7 @@
 
 // #include "api_connect.h"
 #include "api_connect.h"
+#include "api_connect_config.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -16,34 +17,6 @@
 #include "esp_assert.h"
 
 #include "circular_buffer.h"
-
-/* The size in chars of the block size api http responses will be received in,
-   which will be added to a circular buffer of double the size. This allows
-   blocks that do not exactly align with blocks to be handled.  */
-#define RESPONSE_BLOCK_SIZE (128)
-#define CIRC_BUF_SIZE (2 * RESPONSE_BLOCK_SIZE)
-
-/* the maximum number of characters necessary to fully contain an addendum
-   filename and folder. */
-#define MAX_ADDENDUM_FILEPATH (128)
-#define ADDENDUM_FOLDER_ENDING "_add"
-
-/* Explicitly define addendum filename for every version */
-#define ADDENDUM_ENDING ".add"
-
-#if CONFIG_HARDWARE_VERSION == 1
-
-#define USE_ADDENDUMS true
-#define FIRST_ADDENDUM_FILENAME "V1_0_5"
-
-#elif CONFIG_HARDWARE_VERSION == 2
-
-#define USE_ADDENDUMS true
-#define FIRST_ADDENDUM_FILENAME "V2_0_0"
-
-#else
-#error "Unsupported hardware version!"
-#endif
 
 #define TAG "api_connect"
 
@@ -77,7 +50,11 @@ esp_err_t readServerSpeedData(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_ht
  * 
  * @returns ESP_OK if successful, otherwise ESP_FAIL.
  */
-esp_err_t getServerSpeeds(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client, char *URL, int retryNum)
+esp_err_t getServerSpeeds(LEDData ledSpeeds[], 
+                          uint32_t ledSpeedsLen, 
+                          esp_http_client_handle_t client, 
+                          char *URL, 
+                          int retryNum)
 {
 #if USE_ADDENDUMS == true
     return getServerSpeedsWithAddendums(ledSpeeds, ledSpeedsLen, client, URL, retryNum);
@@ -111,7 +88,9 @@ esp_err_t getServerSpeeds(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_c
  *          ESP_ERR_NOT_FOUND if esp_http_client_read returns 0.
  *          ESP_FAIL if failed to read HTTP response.
  */
-esp_err_t getNextResponseBlock(char *output, int *outputLen, esp_http_client_handle_t client)
+esp_err_t getNextResponseBlock(char *output, 
+                               int *outputLen, 
+                               esp_http_client_handle_t client)
 {
     int numBytesToRead;
     esp_err_t ret = ESP_OK;
@@ -124,13 +103,16 @@ esp_err_t getNextResponseBlock(char *output, int *outputLen, esp_http_client_han
     if (client == NULL) return ESP_ERR_INVALID_ARG;
 
     /* read block */
-    numBytesToRead = *outputLen - 2; // preprocessing includes a null-terminator, and potentially a newline character
+    numBytesToRead = ((int32_t) *outputLen) - 2; // preprocessing includes a null-terminator, 
+                                                 // and potentially a newline character
     do
     {
         numBytesRead = esp_http_client_read(client, output, numBytesToRead);
     } while (numBytesRead == -ESP_ERR_HTTP_EAGAIN);
     if (numBytesRead < 0) return ESP_FAIL;
-    if (numBytesRead == 0) ret = ESP_ERR_NOT_FOUND;
+    if (numBytesRead == 0) {
+        ret = ESP_ERR_NOT_FOUND;
+    }
 
     /* preprocess block */
     if (numBytesRead < numBytesToRead)
@@ -165,10 +147,14 @@ esp_err_t getNextResponseBlock(char *output, int *outputLen, esp_http_client_han
  *          ESP_ERR_INVALID_ARG if invalid arguments.
  *          CIRC_UNINITIALIZED if circBuf is uninitialized.
  *          ESP_ERR_NOT_FOUND if no data was found.
+ *          ESP_ERR_INVALID_RESPONSE if the server returned -1 speed.
  *          ESP_FAIL otherwise and the circular buffer mark is unmodified,
  *          however buf is potentially modified.
  */
-esp_err_t nextCSVEntryFromMark(LEDData *data, CircularBuffer *circBuf, char *buf, uint32_t bufSize)
+esp_err_t nextCSVEntryFromMark(LEDData *data, 
+                               CircularBuffer *circBuf, 
+                               char *buf, 
+                               uint32_t bufSize)
 {
     circ_err_t circ_err;
     int bufferLen = 0;
@@ -185,8 +171,8 @@ esp_err_t nextCSVEntryFromMark(LEDData *data, CircularBuffer *circBuf, char *buf
 
     /* retrieve data from circular buffer */
     bufferLen = circularBufferReadFromMark(circBuf, buf, bufSize - 1);
-    if (bufferLen < 0) return (esp_err_t) bufferLen; // bufferLen is an error code if faiure
-
+    if (bufferLen < 0) return (esp_err_t) bufferLen; // bufferLen is an error 
+                                                     // code if faiure
     /* parse CSV data from linear buffer */
     int i = 0;
     if (buf[i] == '\n')
@@ -232,7 +218,7 @@ esp_err_t nextCSVEntryFromMark(LEDData *data, CircularBuffer *circBuf, char *buf
 
     data->ledNum = entryLEDNum;
     data->speed = entrySpeed;
-    if (entrySpeed == -1) return ESP_FAIL; // -1 indicates 'Error' LED type
+    if (entrySpeed == -1) return ESP_ERR_INVALID_RESPONSE; // -1 indicates 'Error' LED type
     if (entrySpeed == -2) return ESP_OK; // -2 indicates 'Special' LED type
 
     return ESP_OK;
@@ -246,8 +232,9 @@ esp_err_t nextCSVEntryFromMark(LEDData *data, CircularBuffer *circBuf, char *buf
  * @note This is useful when part of a file includes non-csv data, such as
  *       addendums, which contain metadata before csv rows.
  * 
- * @param[in] circBuf A circular buffer that has already been initialized, filled
- *        with some data, and marked at the beginning of CSV data.
+ * @param[in] circBuf A circular buffer that has already been initialized,
+ *        filled with some data, and marked at the beginning of CSV data. Must
+ *        be initialized with a buffer of at least 2 * RESPONSE_BLOCK_SIZE.
  * @param[out] ledSpeeds An output array where retrieved data will be stored.
  *        Specifically, LED number 'x' will be stored at index x - 1. If an
  *        index already has an LED number that is not 0, the index will be
@@ -262,7 +249,10 @@ esp_err_t nextCSVEntryFromMark(LEDData *data, CircularBuffer *circBuf, char *buf
  *          ESP_ERR_INVALID_ARG if invalid arguments.
  *          ESP_FAIL otherwise.
  */
-esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf, LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client)
+esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf, 
+                                     LEDData ledSpeeds[], 
+                                     uint32_t ledSpeedsLen, 
+                                     esp_http_client_handle_t client)
 {
     circ_err_t circ_err;
     esp_err_t err;
@@ -282,13 +272,19 @@ esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf, LEDData ledSpeeds[
         /* parse rows while available */
         do {
             err = nextCSVEntryFromMark(&result, circBuf, buffer, RESPONSE_BLOCK_SIZE);
+            /* assert that ledNum is within indices */
+            if (err == ESP_OK && result.ledNum > ledSpeedsLen)
+            {
+                ESP_LOGW(TAG, "found LED %u in file, which is out of bounds", result.ledNum);
+                continue;
+            }
+            /* set data point if not present */
             if (err == ESP_OK && ledSpeeds[result.ledNum - 1].ledNum == 0)
             {
-                /* set data point if not present */
                 ledSpeeds[result.ledNum - 1].ledNum = result.ledNum;
                 ledSpeeds[result.ledNum - 1].speed = result.speed;
             }
-            if (err != ESP_OK && err != ESP_ERR_NOT_FOUND) return err;
+            if (err != ESP_OK && err != ESP_ERR_NOT_FOUND && err != ESP_ERR_INVALID_RESPONSE) return err;
         } while (err != ESP_ERR_NOT_FOUND);
 
         /* read new data from response */
@@ -302,7 +298,6 @@ esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf, LEDData ledSpeeds[
 
     } while (len > 0);
 
-    ESP_LOGW(TAG, "reached end of readServerSpeedDataPreinit");
     return ESP_FAIL; // should not exit here
 }
 
@@ -333,8 +328,12 @@ esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf, LEDData ledSpeeds[
  *          ESP_FAIL if unable to close client or flush response.
  *          Other error codes if an unexpected error occurs.
  */
-esp_err_t openServerFile(int64_t *contentLength, esp_http_client_handle_t client, const char *URL, int retryNum)
+esp_err_t openServerFile(int64_t *contentLength, 
+                         esp_http_client_handle_t client, 
+                         const char *URL, 
+                         int retryNum)
 {
+    int bytesFlushed;
     esp_err_t err;
     /* input guards */
     if (contentLength == NULL) return ESP_ERR_INVALID_ARG;
@@ -344,8 +343,8 @@ esp_err_t openServerFile(int64_t *contentLength, esp_http_client_handle_t client
 
     /* establish connection and open URL */
     ESP_LOGI(TAG, "retrieving: %s", URL);
-    while (retryNum != 0)
-    {
+    // while (retryNum != 0)
+    // {
         err = esp_http_client_set_url(client, URL);
         if (err != ESP_OK) return err; // should always be able to do this
 
@@ -366,16 +365,16 @@ esp_err_t openServerFile(int64_t *contentLength, esp_http_client_handle_t client
                 return ESP_FAIL;
             }
             retryNum--;
-            continue;
+            return ESP_ERR_NOT_FOUND;
         }
         int status = esp_http_client_get_status_code(client);
         if (esp_http_client_get_status_code(client) != 200)
         {
             ESP_LOGE(TAG, "status code is %d", status);
-            return ESP_ERR_NOT_SUPPORTED; // temporary error code for bug #1.
+            // return ESP_ERR_NOT_SUPPORTED; // temporary error code for bug #1.
 
-            err = esp_http_client_flush_response(client, (int *) contentLength);
-            ESP_LOGW(TAG, "flushed %lld bytes", *contentLength);
+            err = esp_http_client_flush_response(client, &bytesFlushed);
+            ESP_LOGW(TAG, "flushed %d bytes", bytesFlushed);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to flush response");
                 return ESP_FAIL;
@@ -386,10 +385,10 @@ esp_err_t openServerFile(int64_t *contentLength, esp_http_client_handle_t client
                 return ESP_FAIL;
             }
             retryNum--;
-            continue;
+            return ESP_ERR_NOT_FOUND;
         }
         return ESP_OK;
-    }
+    // }
     return ESP_ERR_NOT_FOUND; // retried too many times
 }
 
@@ -417,7 +416,11 @@ esp_err_t openServerFile(int64_t *contentLength, esp_http_client_handle_t client
  *          ESP_ERR_INVALID_ARG if invalid arguments.
  *          Various errors if failure and client may not be closed.
  */
-esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client, char *fileURL, int retryNum)
+esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[], 
+                                      uint32_t ledSpeedsLen, 
+                                      esp_http_client_handle_t client, 
+                                      char *fileURL, 
+                                      int retryNum)
 {
     const char *addFolderEnding = ADDENDUM_FOLDER_ENDING "/";
     const int META_SIZE = MAX_ADDENDUM_FILEPATH + 2; // "{filepath}"
@@ -546,7 +549,11 @@ esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[], uint32_t ledSpeedsLe
  *          ESP_ERR_INVALID_ARG if invalid arguments.
  *          ESP_FAIL otherwise.
  */
-esp_err_t parseMetadata(char **dataStart, char *block, int blockLen, char *metadata, int *metadataLen)
+esp_err_t parseMetadata(char **dataStart,
+                        char *block, 
+                        int blockLen, 
+                        char *metadata, 
+                        int *metadataLen)
 {
     char *prev, *curr;
 
@@ -640,7 +647,11 @@ esp_err_t parseMetadata(char **dataStart, char *block, int blockLen, char *metad
  *          ESP_ERR_INVALID_ARG if invalid arguments.
  *          ESP_FAIL otherwise.
  */
-esp_err_t getServerSpeedsNoAddendums(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client, char *URL, int retryNum)
+esp_err_t getServerSpeedsNoAddendums(LEDData ledSpeeds[],
+                                     uint32_t ledSpeedsLen,
+                                     esp_http_client_handle_t client,
+                                     char *URL,
+                                     int retryNum)
 {
     int64_t contentLength;
     esp_err_t err;
@@ -684,7 +695,9 @@ esp_err_t getServerSpeedsNoAddendums(LEDData ledSpeeds[], uint32_t ledSpeedsLen,
  *          ESP_ERR_INVALID_ARG if invalid arguments.
  *          ESP_FAIL otherwise.
  */
-esp_err_t readServerSpeedData(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client)
+esp_err_t readServerSpeedData(LEDData ledSpeeds[],
+                              uint32_t ledSpeedsLen,
+                              esp_http_client_handle_t client)
 {
     CircularBuffer circBuf;
     circ_err_t circ_err;
