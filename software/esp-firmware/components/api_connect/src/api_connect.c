@@ -343,8 +343,8 @@ esp_err_t openServerFile(int64_t *contentLength,
 
     /* establish connection and open URL */
     ESP_LOGI(TAG, "retrieving: %s", URL);
-    // while (retryNum != 0)
-    // {
+    while (retryNum != 0)
+    {
         err = esp_http_client_set_url(client, URL);
         if (err != ESP_OK) return err; // should always be able to do this
 
@@ -388,7 +388,7 @@ esp_err_t openServerFile(int64_t *contentLength,
             return ESP_ERR_NOT_FOUND;
         }
         return ESP_OK;
-    // }
+    }
     return ESP_ERR_NOT_FOUND; // retried too many times
 }
 
