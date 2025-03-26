@@ -147,11 +147,13 @@ double signedDistanceFromDiagLine(LEDCoord coords, double angle)
  */
 double signedDistanceFromCurvedLineNorth(LEDCoord coords, double angle)
 {
-    double x1 = coords.x + CURVED_X_OFFSET;
-    double y1 = coords.y + CURVED_Y_OFFSET;
-    double x2 = cos(-angle) * x1 - sin(-angle) * y1;
-    double y2 = sin(-angle) * x1 + cos(-angle) * y1;
-    return (PARABOLIC_MAP_FACTOR * x2) * (PARABOLIC_MAP_FACTOR * x2) + y2;
+    double xPrime = cos(-angle) * coords.x - sin(-angle) * coords.y;
+    double yPrime = sin(-angle) * coords.x + cos(-angle) * coords.y;
+    xPrime *= NORTH_GROWTH_FACTOR;
+    yPrime *= NORTH_GROWTH_FACTOR;
+    xPrime -= CURVED_NORTH_TANGENTIAL_OFFSET;
+    yPrime += CURVED_NORTH_OFFSET;
+    return (NORTH_OVAL_FACTOR * xPrime * xPrime) + (yPrime * yPrime);
 }
 
 /**
@@ -167,13 +169,14 @@ double signedDistanceFromCurvedLineNorth(LEDCoord coords, double angle)
  */
 double signedDistanceFromCurvedLineSouth(LEDCoord coords, double angle)
 {
-    double x1 = coords.x + CURVED_X_OFFSET;
-    double y1 = coords.y + CURVED_Y_OFFSET;
-    double x2 = cos(-angle) * x1 - sin(-angle) * y1;
-    double y2 = sin(-angle) * x1 + cos(-angle) * y1;
-    return (PARABOLIC_MAP_FACTOR * x2) * (PARABOLIC_MAP_FACTOR * x2) - y2;
+    double xPrime = cos(-angle) * coords.x - sin(-angle) * coords.y;
+    double yPrime = sin(-angle) * coords.x + cos(-angle) * coords.y;
+    xPrime *= SOUTH_GROWTH_FACTOR;
+    yPrime *= SOUTH_GROWTH_FACTOR;
+    xPrime -= CURVED_SOUTH_TANGENTIAL_OFFSET;
+    yPrime -= CURVED_SOUTH_OFFSET;
+    return (SOUTH_OVAL_FACTOR * xPrime * xPrime) + (yPrime * yPrime);
 }
-
 
 /**
  * @brief Compares the signed distance of two LEDCoordPairs to the line defined

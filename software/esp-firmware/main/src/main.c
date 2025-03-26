@@ -77,7 +77,7 @@ static esp_err_t mainRefresh(MainTaskState *state, MainTaskResources *res, LEDDa
   switch (state->dir)
   {
     case NORTH:
-      err = refreshBoard(currentSpeeds, typicalNorth, CURVED_LINE_SOUTH_REVERSE);
+      err = refreshBoard(currentSpeeds, typicalNorth, CURVED_LINE_NORTH);
       break;
     case SOUTH:
       err = refreshBoard(currentSpeeds, typicalSouth, CURVED_LINE_SOUTH);
