@@ -239,7 +239,6 @@ int compDistFromCurvedLineSouth(const void *c1, const void *c2)
     return (dist1 > dist2) - (dist1 < dist2);
 }
 
-
 /**
  * @brief Fills ledArr with a list of LEDs, whose coordinates are stored in
  *        led_coordinates.h, sorted by the distance calculated by

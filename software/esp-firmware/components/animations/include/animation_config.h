@@ -12,7 +12,6 @@
 
 
 
-
 /* The parabolic factor of the curved diagonal line animation, which controls
 how quickly distance values grow. This factor is necessary if values are growing
 too large to be accurately represented by a double. If this value is too low,
@@ -38,7 +37,6 @@ direction of the tangent. */
 
 
 
-
 /* The parabolic factor of the curved diagonal line animation, which controls
 how quickly distance values grow. This factor is necessary if values are growing
 too large to be accurately represented by a double. If this value is too low,
@@ -49,7 +47,7 @@ intermediate step of the calculation. */
 /* The amount of ovaling of curved animations, which controls the 'pointiness' 
 of the curve. A greater value increases the pointness, with a value of 1
 corresponding to a perfect circle. */
-#define SOUTH_OVAL_FACTOR 6
+#define SOUTH_OVAL_FACTOR 4
 
 /* The distance from the origin of the origin of curved animation ovals,
 in the direction of DIAG_LINE_ANGLE. This will affect the 'pointiness' of
@@ -60,6 +58,6 @@ the curve along with OVAL_FACTOR. */
 naturally likes to have a tangent that is a line with an angle equal to
 DIAG_LINE_ANGLE through the origin, this parameter moves this point in the 
 direction of the tangent. */
-#define CURVED_SOUTH_TANGENTIAL_OFFSET 30
+#define CURVED_SOUTH_TANGENTIAL_OFFSET 20
 
 #endif /* ifndef ANIMATION_CONFIG_H_ */
