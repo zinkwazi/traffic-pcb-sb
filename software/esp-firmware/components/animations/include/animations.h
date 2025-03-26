@@ -17,9 +17,11 @@
 enum Animation {
     DIAG_LINE = 0,
     DIAG_LINE_REVERSE = 1,
-    CURVED_LINE = 2,
-    CURVED_LINE_REVERSE = 3,
-    ANIM_MAXIMUM = 4,
+    CURVED_LINE_NORTH = 2,
+    CURVED_LINE_NORTH_REVERSE = 3,
+    CURVED_LINE_SOUTH = 4,
+    CURVED_LINE_SOUTH_REVERSE = 5,
+    ANIM_MAXIMUM = 6,
 };
 
 typedef enum Animation Animation;

@@ -206,7 +206,7 @@ esp_err_t clearBoard(Direction dir) {
     switch (dir) {
       case NORTH:
         ESP_LOGI(TAG, "Clearing North...");
-        err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
+        err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE_SOUTH_REVERSE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
         if (err != ESP_OK) return err;
 
         for (int i = 0; i < MAX_NUM_LEDS_REG; i++) {
@@ -227,7 +227,7 @@ esp_err_t clearBoard(Direction dir) {
         break;
       case SOUTH:
         ESP_LOGI(TAG, "Clearing South...");
-        err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE_REVERSE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
+        err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE_SOUTH, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
         if (err != ESP_OK) return err;
 
         for (int i = 0; i < MAX_NUM_LEDS_REG; i++) {
@@ -307,7 +307,7 @@ esp_err_t clearBoard(Direction dir) {
     switch (dir) {
       case NORTH:
         ESP_LOGI(TAG, "Clearing North...");
-        err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
+        err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE_SOUTH, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
         if (err != ESP_OK) return err;
 
         for (int i = 0; i < MAX_NUM_LEDS_REG; i++) {
@@ -334,7 +334,7 @@ esp_err_t clearBoard(Direction dir) {
         break;
       case SOUTH:
         ESP_LOGI(TAG, "Clearing South...");
-        err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE_REVERSE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
+        err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE_SOUTH_REVERSE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
         if (err != ESP_OK) return err;
 
         for (int i = 0; i < MAX_NUM_LEDS_REG; i++) {

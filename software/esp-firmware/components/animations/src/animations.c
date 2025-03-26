@@ -25,13 +25,18 @@ struct LEDCoordPair {
     LEDCoord coord;
 };
 
+/* the function declarations below are not static to allow for white-box unit testing */
+
 esp_err_t orderLEDs(int32_t ledOrder[], int32_t ledOrderLen, Animation anim, const LEDCoord coords[], int32_t coordsLen);
 double signedDistanceFromDiagLine(LEDCoord coords, double angle);
-double signedDistanceFromCurvedLine(LEDCoord coords, double angle);
-int compDistFromDiagLine(const void *c1, const void *c2);
-int compDistFromCurvedLine(const void *c1, const void *c2);
+double signedDistanceFromCurvedLineNorth(LEDCoord coords, double angle);
+double signedDistanceFromCurvedLineSouth(LEDCoord coords, double angle);
+int compDistFromCurvedLineNorth(const void *c1, const void *c2);
+int compDistFromCurvedLineSouth(const void *c1, const void *c2);
 esp_err_t sortLEDsByDistanceFromDiagLine(int32_t ledArr[], int32_t ledArrLen, const LEDCoord coords[], int32_t coordsLen);
-esp_err_t sortLEDsByDistanceFromCurvedLine(int32_t ledArr[], int32_t ledArrLen, const LEDCoord coords[], int32_t coordsLen);
+esp_err_t sortLEDsByDistanceFromCurvedLineNorth(int32_t ledArr[], int32_t ledArrLen, const LEDCoord coords[], int32_t coordsLen);
+esp_err_t sortLEDsByDistanceFromCurvedLineSouth(int32_t ledArr[], int32_t ledArrLen, const LEDCoord coords[], int32_t coordsLen);
+
 
 /**
  * @brief Generates an ordering of LEDs corresponding to the chosen animation.
@@ -80,11 +85,23 @@ esp_err_t orderLEDs(int32_t ledOrder[],
                 ledOrder[ledOrderLen - i - 1] = temp;
             }
             break;
-        case CURVED_LINE:
-            err = sortLEDsByDistanceFromCurvedLine(ledOrder, ledOrderLen, coords, coordsLen);
+        case CURVED_LINE_NORTH:
+            err = sortLEDsByDistanceFromCurvedLineNorth(ledOrder, ledOrderLen, coords, coordsLen);
             break;
-        case CURVED_LINE_REVERSE:
-            err = sortLEDsByDistanceFromCurvedLine(ledOrder, ledOrderLen, coords, coordsLen);
+        case CURVED_LINE_NORTH_REVERSE:
+            err = sortLEDsByDistanceFromCurvedLineNorth(ledOrder, ledOrderLen, coords, coordsLen);
+            for (int32_t i = 0; i < (ledOrderLen) / 2; i++)
+            {
+                int32_t temp = ledOrder[i];
+                ledOrder[i] = ledOrder[ledOrderLen - i - 1];
+                ledOrder[ledOrderLen - i - 1] = temp;
+            }
+            break;
+        case CURVED_LINE_SOUTH:
+            err = sortLEDsByDistanceFromCurvedLineSouth(ledOrder, ledOrderLen, coords, coordsLen);
+            break;
+        case CURVED_LINE_SOUTH_REVERSE:
+            err = sortLEDsByDistanceFromCurvedLineSouth(ledOrder, ledOrderLen, coords, coordsLen);
             for (int32_t i = 0; i < (ledOrderLen) / 2; i++)
             {
                 int32_t temp = ledOrder[i];
@@ -112,7 +129,7 @@ esp_err_t orderLEDs(int32_t ledOrder[],
  *          to the left of the line.
  * 
  */
-inline double signedDistanceFromDiagLine(LEDCoord coords, double angle)
+double signedDistanceFromDiagLine(LEDCoord coords, double angle)
 {
     return sin(angle) * coords.x - (cos(angle) * coords.y);
 }
@@ -120,13 +137,35 @@ inline double signedDistanceFromDiagLine(LEDCoord coords, double angle)
 /**
  * @brief Calculates the distance of point (x, y) to a curved diagonal line.
  * 
+ * @note The curved line resembles a parabola opening to the southeast.
+ * 
  * @param[in] coords The coordinates of the point.
  * @param[in] angle The angle of the diagonal line.
  * 
  * @returns The calculated distance from the line, with negative distances
  *          to the left of the line.
  */
-inline double signedDistanceFromCurvedLine(LEDCoord coords, double angle)
+double signedDistanceFromCurvedLineNorth(LEDCoord coords, double angle)
+{
+    double x1 = coords.x + CURVED_X_OFFSET;
+    double y1 = coords.y + CURVED_Y_OFFSET;
+    double x2 = cos(-angle) * x1 - sin(-angle) * y1;
+    double y2 = sin(-angle) * x1 + cos(-angle) * y1;
+    return (PARABOLIC_MAP_FACTOR * x2) * (PARABOLIC_MAP_FACTOR * x2) + y2;
+}
+
+/**
+ * @brief Calculates the distance of point (x, y) to a curved diagonal line.
+ * 
+ * @note The curved line resembles a parabola opening to the northwest.
+ * 
+ * @param[in] coords The coordinates of the point.
+ * @param[in] angle The angle of the diagonal line.
+ * 
+ * @returns The calculated distance from the line, with negative distances
+ *          to the left of the line.
+ */
+double signedDistanceFromCurvedLineSouth(LEDCoord coords, double angle)
 {
     double x1 = coords.x + CURVED_X_OFFSET;
     double y1 = coords.y + CURVED_Y_OFFSET;
@@ -134,6 +173,7 @@ inline double signedDistanceFromCurvedLine(LEDCoord coords, double angle)
     double y2 = sin(-angle) * x1 + cos(-angle) * y1;
     return (PARABOLIC_MAP_FACTOR * x2) * (PARABOLIC_MAP_FACTOR * x2) - y2;
 }
+
 
 /**
  * @brief Compares the signed distance of two LEDCoordPairs to the line defined
@@ -156,7 +196,9 @@ int compDistFromDiagLine(const void *c1, const void *c2)
 
 /**
  * @brief Compares the signed distance of two LEDCoordPairs to the line defined
- *        by signedDistanceFromCurvedLine.
+ *        by signedDistanceFromCurvedLineNorth.
+ * 
+ * @note The curved line resembles a parabola opening to the southwest.
  * 
  * @param[in] c1 A pointer to an LEDCoordPair.
  * @param[in] c2 A pointer to an LEDCoordPair.
@@ -164,14 +206,36 @@ int compDistFromDiagLine(const void *c1, const void *c2)
  * @returns Less than 0 if the signed distance of c1 from the line is less than
  *          that of c2, 0 if they are equal, otherwise greater than 0.
  */
-int compDistFromCurvedLine(const void *c1, const void *c2)
+int compDistFromCurvedLineNorth(const void *c1, const void *c2)
 {
     LEDCoord coord1 = ((struct LEDCoordPair *) c1)->coord;
     LEDCoord coord2 = ((struct LEDCoordPair *) c2)->coord;
-    double dist1 = signedDistanceFromCurvedLine(coord1, DIAG_LINE_ANGLE);
-    double dist2 = signedDistanceFromCurvedLine(coord2, DIAG_LINE_ANGLE);
+    double dist1 = signedDistanceFromCurvedLineNorth(coord1, DIAG_LINE_ANGLE);
+    double dist2 = signedDistanceFromCurvedLineNorth(coord2, DIAG_LINE_ANGLE);
     return (dist1 > dist2) - (dist1 < dist2);
 }
+
+/**
+ * @brief Compares the signed distance of two LEDCoordPairs to the line defined
+ *        by signedDistanceFromCurvedLineSouth.
+ * 
+ * @note The curved line resembles a parabola opening to the northeast.
+ * 
+ * @param[in] c1 A pointer to an LEDCoordPair.
+ * @param[in] c2 A pointer to an LEDCoordPair.
+ * 
+ * @returns Less than 0 if the signed distance of c1 from the line is less than
+ *          that of c2, 0 if they are equal, otherwise greater than 0.
+ */
+int compDistFromCurvedLineSouth(const void *c1, const void *c2)
+{
+    LEDCoord coord1 = ((struct LEDCoordPair *) c1)->coord;
+    LEDCoord coord2 = ((struct LEDCoordPair *) c2)->coord;
+    double dist1 = signedDistanceFromCurvedLineSouth(coord1, DIAG_LINE_ANGLE);
+    double dist2 = signedDistanceFromCurvedLineSouth(coord2, DIAG_LINE_ANGLE);
+    return (dist1 > dist2) - (dist1 < dist2);
+}
+
 
 /**
  * @brief Fills ledArr with a list of LEDs, whose coordinates are stored in
@@ -221,7 +285,9 @@ esp_err_t sortLEDsByDistanceFromDiagLine(int32_t ledArr[],
 /**
  * @brief Fills ledArr with a list of LEDs, whose coordinates are stored in
  *        led_coordinates.h, sorted by the distance calculated by
- *        distanceFromCurvedLine.
+ *        distanceFromCurvedLineNorth.
+ * 
+ * @note The animation has a curve resembling a parabola opening to the southwest.
  * 
  * @param[out] ledArr The location to place the list of LEDs sorted in ascending
  *        order of distance from the curved line.
@@ -235,7 +301,7 @@ esp_err_t sortLEDsByDistanceFromDiagLine(int32_t ledArr[],
  *          ESP_ERR_INVALID_SIZE if either ledArrLen or coordsLen is greater
  *          than STANDARD_ARR_SIZE, or ledArrLen does not equal coordsLen.
  */
-esp_err_t sortLEDsByDistanceFromCurvedLine(int32_t ledArr[], 
+esp_err_t sortLEDsByDistanceFromCurvedLineNorth(int32_t ledArr[], 
                                            int32_t ledArrLen, 
                                            const LEDCoord coords[], 
                                            int32_t coordsLen)
@@ -254,11 +320,58 @@ esp_err_t sortLEDsByDistanceFromCurvedLine(int32_t ledArr[],
         coordPairs[i].coord = coords[i];
     }
     /* sort based on distances */
-    qsort(coordPairs, coordsLen, sizeof(struct LEDCoordPair), compDistFromCurvedLine);
+    qsort(coordPairs, coordsLen, sizeof(struct LEDCoordPair), compDistFromCurvedLineNorth);
     /* copy results */
     for (int32_t i = 0; i < coordsLen; i++)
     {
         ledArr[i] = coordPairs[i].ledNum;
     }
     return ESP_OK;
+}
+
+/**
+ * @brief Fills ledArr with a list of LEDs, whose coordinates are stored in
+ *        led_coordinates.h, sorted by the distance calculated by
+ *        distanceFromCurvedLineSouth.
+ * 
+ * @note The animation has a curve resembling a parabola opening to the northeast.
+ * 
+ * @param[out] ledArr The location to place the list of LEDs sorted in ascending
+ *        order of distance from the curved line.
+ * @param[in] ledArrLen The length of ledArr.
+ * @param[in] coords An array containing LED board coordinates, where index 'i'
+ *        corresponds to LED number 'i' + 1.
+ * @param[in] coordsLen The length of coords.
+ * 
+ * @returns ESP_OK if successful.
+ *          ESP_ERR_INVALID_ARG if ledArr or coords is NULL.
+ *          ESP_ERR_INVALID_SIZE if either ledArrLen or coordsLen is greater
+ *          than STANDARD_ARR_SIZE, or ledArrLen does not equal coordsLen.
+ */
+esp_err_t sortLEDsByDistanceFromCurvedLineSouth(int32_t ledArr[], 
+                                                int32_t ledArrLen, 
+                                                const LEDCoord coords[], 
+                                                int32_t coordsLen)
+{
+struct LEDCoordPair coordPairs[ANIM_STANDARD_ARRAY_SIZE];
+/* input guards */
+if (ledArr == NULL) return ESP_ERR_INVALID_ARG;
+if (coords == NULL) return ESP_ERR_INVALID_ARG;
+if (ledArrLen > ANIM_STANDARD_ARRAY_SIZE) return ESP_ERR_INVALID_SIZE;
+if (coordsLen > ANIM_STANDARD_ARRAY_SIZE) return ESP_ERR_INVALID_SIZE;
+if (ledArrLen != coordsLen) return ESP_ERR_INVALID_SIZE;
+/* copy coordinate pairs */
+for (int32_t i = 0; i < coordsLen; i++)
+{
+coordPairs[i].ledNum = i + 1;
+coordPairs[i].coord = coords[i];
+}
+/* sort based on distances */
+qsort(coordPairs, coordsLen, sizeof(struct LEDCoordPair), compDistFromCurvedLineSouth);
+/* copy results */
+for (int32_t i = 0; i < coordsLen; i++)
+{
+ledArr[i] = coordPairs[i].ledNum;
+}
+return ESP_OK;
 }

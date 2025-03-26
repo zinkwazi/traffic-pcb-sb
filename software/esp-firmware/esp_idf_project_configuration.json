@@ -53,33 +53,6 @@
       "postFlash": ""
     }
   },
-  "new_develop_V2_0": {
-    "build": {
-      "compileArgs": [],
-      "ninjaArgs": [],
-      "buildDirectoryPath": "${workspaceFolder}\\builds\\new_develop_V2_0",
-      "sdkconfigDefaults": [
-        ".\\configurations\\sdkconfig.settings",
-        ".\\configurations\\sdkconfig.develop",
-        ".\\configurations\\sdkconfig.V2_0_new_default"
-      ],
-      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig.new_dev_V2_0"
-    },
-    "env": {},
-    "flashBaudRate": "",
-    "monitorBaudRate": "",
-    "openOCD": {
-      "debugLevel": 0,
-      "configs": [],
-      "args": []
-    },
-    "tasks": {
-      "preBuild": "",
-      "preFlash": "",
-      "postBuild": "",
-      "postFlash": ""
-    }
-  },
   "production_V1_0": {
     "build": {
       "compileArgs": [],
@@ -118,33 +91,6 @@
         ".\\configurations\\sdkconfig.V2_0_default"
       ],
       "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig.prod_V2_0"
-    },
-    "env": {},
-    "flashBaudRate": "",
-    "monitorBaudRate": "",
-    "openOCD": {
-      "debugLevel": 0,
-      "configs": [],
-      "args": []
-    },
-    "tasks": {
-      "preBuild": "",
-      "preFlash": "",
-      "postBuild": "",
-      "postFlash": ""
-    }
-  },
-  "new_production_V2_0": {
-    "build": {
-      "compileArgs": [],
-      "ninjaArgs": [],
-      "buildDirectoryPath": "${workspaceFolder}\\builds\\new_production_V2_0",
-      "sdkconfigDefaults": [
-        ".\\configurations\\sdkconfig.settings",
-        ".\\configurations\\sdkconfig.production",
-        ".\\configurations\\sdkconfig.V2_0_new_default"
-      ],
-      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig.new_prod_V2_0"
     },
     "env": {},
     "flashBaudRate": "",

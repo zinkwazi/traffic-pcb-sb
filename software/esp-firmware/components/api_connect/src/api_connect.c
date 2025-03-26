@@ -4,7 +4,6 @@
  * Contains functions for connecting to and retrieving data from the server.
  */
 
-// #include "api_connect.h"
 #include "api_connect.h"
 #include "api_connect_config.h"
 

@@ -9,10 +9,11 @@
  *     common:test_circular_buffer.c
  * 
  * Server file dependencies:
+ *     CONFIG_TEST_DATA_BASE_URL/data_north_V1_0_5.csv.
+ *     CONFIG_TEST_DATA_BASE_URL/readServerSpeedDataPreinit_smallFile.csv.
  */
 
 #include "api_connect_pi.h"
-#include "api_connect_config.h"
 
 #include "esp_log.h"
 #include "unity.h"
@@ -92,7 +93,7 @@ TEST_CASE("readServerSpeedDataPreinit_smallFile", "[api_connect]")
 /**
  * Tests a typical use case.
  * 
- * Test case dependencies: typical.
+ * Test case dependencies: smallFile.
  */
 TEST_CASE("readServerSpeedDataPreinit_typical", "[api_connect]")
 {

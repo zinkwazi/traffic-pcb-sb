@@ -12,6 +12,8 @@
 /* Include the public interface */
 #include "api_connect.h"
 
+#include "api_connect_config.h"
+
 #include <stdint.h>
 #include <stdbool.h>
 

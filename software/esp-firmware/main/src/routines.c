@@ -174,7 +174,12 @@ esp_timer_handle_t createDirectionFlashTimer(void) {
  * @param params A TaskHandle_t that is the handle of the main task.
  */
 static void refreshTimerCallback(void *params) {
-  TaskHandle_t mainTask = (TaskHandle_t) params;
+  TaskHandle_t mainTask = ((RefreshTimerParams *) params)->mainTask;
+  bool *toggle = ((RefreshTimerParams *) params)->toggle;
+
+#ifdef CONFIG_TIMER_CAUSES_TOGGLE
+  *toggle = true;
+#endif
 
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
