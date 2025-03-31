@@ -1,11 +1,11 @@
 idf_component_register(SRCS "src/main.c" 
                             "src/routines.c"
-                            "src/tasks.c"
                             "src/nvs_settings.c"
                             "src/refresh.c"
                             "src/initialize.c"
                     INCLUDE_DIRS "include"
                     REQUIRES common
+                             ota
                              app_errors  
                              led_matrix
                              animations
@@ -15,7 +15,6 @@ idf_component_register(SRCS "src/main.c"
                              esp_wifi
                              esp_http_client
                              esp-tls
-                             esp_https_ota
                              esp_event)
 
 

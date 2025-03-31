@@ -18,40 +18,58 @@ menu "Indicators"
         help
             The blue component of the white color used for the indicator.
 
+    config V2_0_OTA_AVAILABLE_RED_COMPONENT
+        int "V2_0 OTA Available Red Component"
+        default 0
+        help
+            The red component of the color used for the V2_0 OTA update available indicator.
+            
+    config V2_0_OTA_AVAILABLE_GREEN_COMPONENT
+        int "V2_0 OTA Available Green Component"
+        default 0
+        help
+            The green component of the color used for the V2_0 OTA update available indicator.
+
+    config V2_0_OTA_AVAILABLE_BLUE_COMPONENT
+        int "V2_0 OTA Available Blue Component"
+        default 0
+        help
+            The blue component of the color used for the V2_0 OTA update available indicator.
+
     config V2_0_OTA_FAILURE_RED_COMPONENT
         int "V2_0 OTA Failure Red Component"
         default 255
         help
-            The red component of the color used for the V2.0 OTA failure indicator.
+            The red component of the color used for the V2_0 OTA failure indicator.
 
     config V2_0_OTA_FAILURE_GREEN_COMPONENT
         int "V2_0 OTA Failure Green Component"
         default 0
         help
-            The green component of the color used for the V2.0 OTA failure indicator.
+            The green component of the color used for the V2_0 OTA failure indicator.
 
     config V2_0_OTA_FAILURE_BLUE_COMPONENT
         int "V2_0 OTA Failure Blue Component"
         default 0
         help
-            The blue component of the color used for the V2.0 OTA failure indicator.
+            The blue component of the color used for the V2_0 OTA failure indicator.
 
     config V2_0_OTA_SUCCESS_RED_COMPONENT
         int "V2_0 OTA Success Red Component"
         default 0
         help
-            The red component of the color used for the V2.0 OTA success indicator.
+            The red component of the color used for the V2_0 OTA success indicator.
 
     config V2_0_OTA_SUCCESS_GREEN_COMPONENT
         int "V2_0 OTA Success Green Component"
         default 255
         help
-            The green component of the color used for the V2.0 OTA success indicator.
+            The green component of the color used for the V2_0 OTA success indicator.
 
     config V2_0_OTA_SUCCESS_BLUE_COMPONENT
         int "V2_0 OTA Success Blue Component"
         default 0
         help
-            The blue component of the color used for the V2.0 OTA success indicator.
+            The blue component of the color used for the V2_0 OTA success indicator.
 
 endmenu

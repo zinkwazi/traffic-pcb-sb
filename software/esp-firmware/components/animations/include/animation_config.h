@@ -7,6 +7,50 @@
 #ifndef ANIMATION_CONFIG_H_
 #define ANIMATION_CONFIG_H_
 
+/*******************************************/
+/*       MULTIPLE DEFINITION GUARDS        */
+/*******************************************/
+
+#ifdef DIAG_LINE_ANGLE
+#error "Multiple definitions of animation_config.h DIAG_LINE_ANGLE macro!"
+#endif /* DIAG_LINE_ANGLE */
+
+#ifdef NORTH_GROWTH_FACTOR
+#error "Multiple definitions of animation_config.h NORTH_GROWTH_FACTOR macro!"
+#endif /* NORTH_GROWTH_FACTOR */
+
+#ifdef NORTH_OVAL_FACTOR
+#error "Multiple definitions of animation_config.h NORTH_OVAL_FACTOR macro!"
+#endif /* NORTH_OVAL_FACTOR */
+
+#ifdef CURVED_NORTH_OFFSET
+#error "Multiple definitions of animation_config.h CURVED_NORTH_OFFSET macro!"
+#endif /* CURVED_NORTH_OFFSET */
+
+#ifdef CURVED_NORTH_TANGENTIAL_OFFSET
+#error "Multiple definitions of animation_config.h CURVED_NORTH_TANGENTIAL_OFFSET macro!"
+#endif /* CURVED_NORTH_TANGENTIAL_OFFSET */
+
+#ifdef SOUTH_GROWTH_FACTOR
+#error "Multiple definitions of animation_config.h SOUTH_GROWTH_FACTOR macro!"
+#endif /* SOUTH_GROWTH_FACTOR */
+
+#ifdef SOUTH_OVAL_FACTOR
+#error "Multiple definitions of animation_config.h SOUTH_OVAL_FACTOR macro!"
+#endif /* SOUTH_OVAL_FACTOR */
+
+#ifdef CURVED_SOUTH_OFFSET
+#error "Multiple definitions of animation_config.h CURVED_SOUTH_OFFSET macro!"
+#endif /* CURVED_SOUTH_OFFSET */
+
+#ifdef CURVED_SOUTH_TANGENTIAL_OFFSET
+#error "Multiple definitions of animation_config.h CURVED_SOUTH_TANGENTIAL_OFFSET macro!"
+#endif /* CURVED_SOUTH_TANGENTIAL_OFFSET */
+
+/*******************************************/
+/*              DEFINITIONS                */
+/*******************************************/
+
 /* The angle of the diagonal line and curved diagonal line animations */
 #define DIAG_LINE_ANGLE (M_PI / 3)
 

@@ -34,7 +34,7 @@
 
 #include "main_types.h"
 #include "nvs_settings.h"
-#include "tasks.h"
+#include "ota.h"
 #include "utilities.h"
 #include "routines.h"
 #include "wifi.h"
