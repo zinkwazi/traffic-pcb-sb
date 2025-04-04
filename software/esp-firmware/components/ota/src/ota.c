@@ -29,7 +29,7 @@
 
 #include "ota_config.h"
 
-#define TAG "tasks"
+#define TAG "ota"
 
 enum VersionType {
     HARDWARE = 1,
@@ -324,9 +324,9 @@ bool compareVersions(uint hardVer,
  * @param[in] client The client which has been opened to the correct file, such
  *        that esp_http_client_read can be called repeatedly on it.
  * 
- * @returns ESP_OK if successful.
- *          ESP_ERR_INVALID_ARG if invalid argument.
- *          ESP_FAIL or other codes if an error occurs.
+ * @returns ESP_OK if successful and available contains true or false.
+ *          ESP_ERR_INVALID_ARG if invalid argument and available is unchanged.
+ *          ESP_FAIL or other codes if an error occurs and available is false.
  */
 esp_err_t processOTAAvailableFile(bool *available, 
                                   esp_http_client_handle_t client)
@@ -651,11 +651,11 @@ esp_err_t queryOTAUpdateAvailable(bool *available)
         }
 
         err = processOTAAvailableFile(available, client);
+        if (err == ESP_OK) return ESP_OK;
         if (err != ESP_OK)
         {
             *available = false;
             ESP_LOGE(TAG, "failed to process OTA available file. err: %d", err);
-            return ESP_FAIL;
         }
     }
     ESP_LOGW(TAG, "queryOTAUpdateAvailable max retries exceeded");

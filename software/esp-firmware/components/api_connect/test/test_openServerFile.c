@@ -139,7 +139,6 @@ TEST_CASE("openServerFile_nonExistent", "[api_connect]")
     char *expected;
     int64_t contentLength;
 
-    // don't run this test case until bug #1 is fixed!
     err = openServerFile(&contentLength, client, URLNonexistent, RETRY_NUM);
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
 

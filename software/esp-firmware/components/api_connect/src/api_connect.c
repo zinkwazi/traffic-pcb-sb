@@ -306,11 +306,6 @@ esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf,
  * @note Requires that a wifi connection is present and client has been
  *       initialized with esp_http_client_init.
  * 
- * @bug #1: If the response is a non-200 status code, the response is not flushed.
- *      This is likely due to an issue with the esp_http_client_flush_response
- *      function and its interaction with esp_http_client_read. The workaround
- *      is to completely destroy the client and reinitialize it.
- * 
  * @param[out] contentLength The location where the response content length will
  *        be placed if successful. Will be modified even if the function fails.
  * @param[in] client The HTTP client to make the request through, which should
@@ -322,7 +317,6 @@ esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf,
  *          returned by the HTTPS response and client open.
  *          ESP_ERR_INVALID_ARG if invalid arguments.
  *          ESP_ERR_NOT_FOUND if the content length was 0.
- *          ESP_ERR_NOT_SUPPORTED if the status code was not 200, see bug #1.
  *          ESP_FAIL if unable to close client or flush response.
  *          Other error codes if an unexpected error occurs.
  */
@@ -344,6 +338,7 @@ esp_err_t openServerFile(int64_t *contentLength,
     /* clear http buffer if not clear */
     do {
         bytesFlushed = esp_http_client_read(client, buf, flushBufSize);
+        if (bytesFlushed < 0 && bytesFlushed != -ESP_ERR_HTTP_EAGAIN) return ESP_FAIL;
     } while (bytesFlushed != 0);
 
     /* establish connection and open URL */
@@ -379,6 +374,7 @@ esp_err_t openServerFile(int64_t *contentLength,
             /* flush internal response buffer and close client */
             do {
                 bytesFlushed = esp_http_client_read(client, buf, flushBufSize);
+                if (bytesFlushed < 0 && bytesFlushed != -ESP_ERR_HTTP_EAGAIN) return ESP_FAIL;
             } while (bytesFlushed != 0);
 
             err = esp_http_client_close(client);
