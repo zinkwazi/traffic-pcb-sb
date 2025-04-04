@@ -325,6 +325,8 @@ bool compareVersions(uint hardVer,
  *        that esp_http_client_read can be called repeatedly on it.
  * 
  * @returns ESP_OK if successful.
+ *          ESP_ERR_INVALID_ARG if invalid argument.
+ *          ESP_FAIL or other codes if an error occurs.
  */
 esp_err_t processOTAAvailableFile(bool *available, 
                                   esp_http_client_handle_t client)
@@ -370,21 +372,22 @@ esp_err_t processOTAAvailableFile(bool *available,
     err = (esp_err_t) circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
     if (err != ESP_OK) return err;
 
-    /* mark initial bracket when found */
-    bytesRead = circularBufferReadFromMark(&circBuf, buf, OTA_RECV_BUF_SIZE - 1);
-    if (bytesRead <= 0) return bytesRead; // error code
-    for (ndx = 0; ndx < bytesRead; ndx++)
+    // handle edge case of formatting character at buf[0]. The loop below skips
+    // the previous formatting character at buf[0], so this character must be
+    // handled manually here.
+    if (buf[0] == '{')
     {
-        if (buf[ndx] != '{') continue;
         inJSON = true;
         inKey = true;
-        err = (esp_err_t) circularBufferMark(&circBuf, ndx, FROM_PREV_MARK);
-        if (err != ESP_OK) return err;
-        break;
-    }
-    if (!inJSON)
+    } else if (buf[0] == '#')
     {
-        ESP_LOGW(TAG, "Did not find JSON object in JSON file");
+        inComment = true;
+    } else if (buf[0] == ':' || 
+               buf[0] == ',' || 
+               buf[0] == '}' || 
+               buf[0] == '\"')
+    {
+        ESP_LOGW(TAG, "JSON contains stray formatting character, %c", buf[0]);
         return ESP_FAIL;
     }
 
@@ -416,22 +419,27 @@ esp_err_t processOTAAvailableFile(bool *available,
                 ESP_LOGE(TAG, "processOTAAvailableFile circularBufferStore err: %d", err);
                 return err;
             }
+
+            /* reset 'skip' states because characters mutating the state
+               will be reread, and must not be read incorrectly. This has
+               the effect of increasing the effective size between marks,
+               meaning comments add to the field length. */
+            inComment = false;
+            inString = false;
         }
         bytesRead = circularBufferReadFromMark(&circBuf, buf, OTA_RECV_BUF_SIZE - 1);
         if (bytesRead < 0) return bytesRead; // error code
 
         /* search for formatting character */
         foundFormattingChar = false;
-        for (ndx = 1; ndx < bytesRead; ndx++)
+        for (ndx = 1; ndx < bytesRead; ndx++) // ndx = 1: skip prev formatting char
         {
             /* handle comments */
-            if (buf[ndx] == '#' && !inString && !inComment)
+            if (buf[ndx] == '#' && !inString)
             {
                 inComment = true;
                 continue;
-            }
-
-            if (buf[ndx] == '\n' && inComment)
+            } else if (buf[ndx] == '\n' && inComment)
             {
                 inComment = false;
                 continue;
@@ -439,19 +447,28 @@ esp_err_t processOTAAvailableFile(bool *available,
 
             if (inComment)
             {
-                continue; // skip parsing this character
-            }
-
-            /* handle 'inString' state, which allows formatting characters in strings */
-            if (buf[ndx] == '\"' && inKey && !inString)
-            {
-                inString = true;
                 continue;
             }
 
-            if (buf[ndx] == '\"' && inKey && inString)
+            /* handle 'inString' state, which allows formatting characters in strings */
+            if (buf[ndx] == '\"')
             {
-                inString = false;
+                if (!inKey && inJSON)
+                {
+                    ESP_LOGW(TAG, "found invalid \" in JSON. String values are not supported!");
+                    return ESP_FAIL;
+                } else if (!inKey && !inJSON)
+                {
+                    ESP_LOGW(TAG, "missing '{' in JSON, or stray \" exists before JSON object!");
+                    return ESP_FAIL;
+                }
+
+                inString = !inString;
+                continue;
+            }
+
+            if (inString)
+            {
                 continue;
             }
 
@@ -461,21 +478,30 @@ esp_err_t processOTAAvailableFile(bool *available,
                 buf[ndx] == ',' ||
                 buf[ndx] == '}')
             {
-               /* a formatting character that is not in
-               a comment or string has been found */
-               foundFormattingChar = true;
-               err = (esp_err_t) circularBufferMark(&circBuf, ndx, FROM_PREV_MARK);
-               if (err != (esp_err_t) CIRC_OK) return err;
-               break;
+                /* a formatting character that is not in
+                a comment or string has been found */
+                foundFormattingChar = true;
+                err = (esp_err_t) circularBufferMark(&circBuf, ndx, FROM_PREV_MARK);
+                if (err != (esp_err_t) CIRC_OK) 
+                {
+                    return err;
+                }
+                break;
             }
         }
 
         /* at this point, a formatting char has been found and marked, 
-           with buf[0] denoting the previous formatting char */
-        if (buf[ndx] == '{' && inJSON)
+           with buf[0] denoting the previous formatting char or start of file */
+        if (buf[ndx] == '{')
         {
-            ESP_LOGW(TAG, "misplaced \'{\' found in JSON");
-            return ESP_FAIL;
+            if (inJSON)
+            {
+                ESP_LOGW(TAG, "misplaced \'{\' found in JSON");
+                return ESP_FAIL;
+            }
+
+            inJSON = true;
+            inKey = true;
         }
 
         if (buf[ndx] == ':')
@@ -520,10 +546,10 @@ esp_err_t processOTAAvailableFile(bool *available,
                 /* determine value */
                 buf[ndx] = '\0'; // create a c-string from value, necessary for strtol
                 value = (int) strtol(&buf[1], NULL, 10); // this is not a thread safe function,
-                                                            // because errno is not thread safe.
-                                                            // However, this func returns 0 if it fails,
-                                                            // which for this purpose is ok because
-                                                            // 0 will always be the smallest value possible
+                                                         // because errno is not thread safe.
+                                                         // However, this func returns 0 if it fails,
+                                                         // which for this purpose is ok because
+                                                         // 0 will always be the smallest value possible
                 if (value < 0) value = 0; // clamp value. 0 is a safe number b/c no version is smaller.
                 buf[ndx] = ','; // avoid potential issues from null terminator...
 

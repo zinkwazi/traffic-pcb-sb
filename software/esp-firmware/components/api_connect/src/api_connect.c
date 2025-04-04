@@ -332,12 +332,19 @@ esp_err_t openServerFile(int64_t *contentLength,
                          int retryNum)
 {
     int bytesFlushed;
+    const int flushBufSize = 128;
+    char buf[flushBufSize];
     esp_err_t err;
     /* input guards */
     if (contentLength == NULL) return ESP_ERR_INVALID_ARG;
     if (client == NULL) return ESP_ERR_INVALID_ARG;
     if (URL == NULL) return ESP_ERR_INVALID_ARG;
     if (retryNum <= 0) return ESP_ERR_INVALID_ARG;
+
+    /* clear http buffer if not clear */
+    do {
+        bytesFlushed = esp_http_client_read(client, buf, flushBufSize);
+    } while (bytesFlushed != 0);
 
     /* establish connection and open URL */
     ESP_LOGI(TAG, "retrieving: %s", URL);
@@ -369,14 +376,11 @@ esp_err_t openServerFile(int64_t *contentLength,
         if (esp_http_client_get_status_code(client) != 200)
         {
             ESP_LOGE(TAG, "status code is %d", status);
-            // return ESP_ERR_NOT_SUPPORTED; // temporary error code for bug #1.
+            /* flush internal response buffer and close client */
+            do {
+                bytesFlushed = esp_http_client_read(client, buf, flushBufSize);
+            } while (bytesFlushed != 0);
 
-            err = esp_http_client_flush_response(client, &bytesFlushed);
-            ESP_LOGW(TAG, "flushed %d bytes", bytesFlushed);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "failed to flush response");
-                return ESP_FAIL;
-            }
             err = esp_http_client_close(client);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to close client");

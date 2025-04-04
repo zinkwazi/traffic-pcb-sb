@@ -127,39 +127,34 @@ TEST_CASE("openServerFile_zeroContentLength", "[api_connect]")
  * Tests that a status code other than 200 returns ESP_ERR_NOT_FOUND and closes 
  * client.
  * 
- * @bug #1: The function should return ESP_ERR_NOT_SUPPORTED instead of
- *      ESP_ERR_NOT_FOUND when the status code is not 200 due to
- *      esp_http_client_flush_response not behaving as expected. This test case
- *      will fail until the bug is fixed.
- * 
  * Test case dependencies: openServerFile_typical.
  */
-// TEST_CASE("openServerFile_nonExistent", "[api_connect]")
-// {
-//     const char *URLNonexistent = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/DOES_NOT_EXIST";
-//     const char *URLTypical = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/openServerFile_typical.1";
-//     esp_err_t err = ESP_FAIL;
-//     const int32_t bufLen = 30;
-//     char buffer[bufLen];
-//     char *expected;
-//     int64_t contentLength;
+TEST_CASE("openServerFile_nonExistent", "[api_connect]")
+{
+    const char *URLNonexistent = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/DOES_NOT_EXIST";
+    const char *URLTypical = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/openServerFile_typical.1";
+    esp_err_t err = ESP_FAIL;
+    const int32_t bufLen = 30;
+    char buffer[bufLen];
+    char *expected;
+    int64_t contentLength;
 
-//     // don't run this test case until bug #1 is fixed!
-//     // err = openServerFile(&contentLength, client, URLNonexistent, RETRY_NUM);
-//     TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
+    // don't run this test case until bug #1 is fixed!
+    err = openServerFile(&contentLength, client, URLNonexistent, RETRY_NUM);
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
 
-//     err = openServerFile(&contentLength, client, URLTypical, RETRY_NUM);
-//     TEST_ASSERT_EQUAL(ESP_OK, err);
-//     TEST_ASSERT_EQUAL(55, contentLength); // size of file
+    err = openServerFile(&contentLength, client, URLTypical, RETRY_NUM);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    TEST_ASSERT_EQUAL(55, contentLength); // size of file
 
-//     expected = "abcdefghijklmnopqrstuvwxyz\nhe";
-//     do {
-//         contentLength = esp_http_client_read(client, buffer, bufLen - 1);
-//     } while (contentLength == -ESP_ERR_HTTP_EAGAIN);
-//     TEST_ASSERT_EQUAL(bufLen - 1, contentLength);
-//     buffer[bufLen - 1] = '\0';
-//     TEST_ASSERT_EQUAL_STRING(expected, buffer);
+    expected = "abcdefghijklmnopqrstuvwxyz\nhe";
+    do {
+        contentLength = esp_http_client_read(client, buffer, bufLen - 1);
+    } while (contentLength == -ESP_ERR_HTTP_EAGAIN);
+    TEST_ASSERT_EQUAL(bufLen - 1, contentLength);
+    buffer[bufLen - 1] = '\0';
+    TEST_ASSERT_EQUAL_STRING(expected, buffer);
 
-//     err = esp_http_client_close(client);
-//     TEST_ASSERT_EQUAL(ESP_OK, err);
-// }
+    err = esp_http_client_close(client);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+}
