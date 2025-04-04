@@ -160,7 +160,7 @@ menu "Main Application"
     
     config OTA_STACK
         int "Stack size in bytes of the OTA task"
-        default 3584
+        default 10000
 
     config OTA_PRIO
         int "Priority of the OTA task"

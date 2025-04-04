@@ -109,9 +109,11 @@ circ_err_t circularBufferInit(CircularBuffer *buf, char* backing, uint32_t len) 
  *        greater than the size of the buffer.
  * 
  * @returns CIRC_OK if successful.
+ *          CIRC_LOST_MARK if successful but the mark was overwritten.
  *          CIRC_INVALID_ARG if invalid argument.
  *          CIRC_UNINITIALIZED if buf is uninitialized or was illegally modified.
  *          CIRC_INVALID_SIZE if len is larger than the size of the buffer.
+ *          
  */
 circ_err_t circularBufferStore(CircularBuffer *buf, char *str, uint32_t len) {
     uint64_t len64;

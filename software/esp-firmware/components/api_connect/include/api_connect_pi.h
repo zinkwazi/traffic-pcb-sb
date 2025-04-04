@@ -29,7 +29,6 @@
 esp_err_t nextCSVEntryFromMark(LEDData *data, CircularBuffer *circBuf, char *buf, uint32_t bufSize);
 esp_err_t getNextResponseBlock(char *output, int *outputLen, esp_http_client_handle_t client);
 esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf, LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client);
-esp_err_t openServerFile(int64_t *contentLength, esp_http_client_handle_t client, const char *URL, int retryNum);
 
 #if USE_ADDENDUMS == true
 esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client, char *fileURL, int retryNum);

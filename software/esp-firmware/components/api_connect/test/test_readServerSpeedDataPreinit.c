@@ -9,8 +9,8 @@
  *     common:test_circular_buffer.c
  * 
  * Server file dependencies:
- *     CONFIG_TEST_DATA_BASE_URL/data_north_V1_0_5.csv.
- *     CONFIG_TEST_DATA_BASE_URL/readServerSpeedDataPreinit_smallFile.csv.
+ *     CONFIG_API_CONN_TEST_DATA_BASE_URL/data_north_V1_0_5.csv.
+ *     CONFIG_API_CONN_TEST_DATA_BASE_URL/readServerSpeedDataPreinit_smallFile.csv.
  */
 
 #include "api_connect_pi.h"
@@ -56,7 +56,7 @@ TEST_CASE("readServerSpeedDataPreinit_inputGuards", "[api_connect]")
  */
 TEST_CASE("readServerSpeedDataPreinit_smallFile", "[api_connect]")
 {
-    const char *URL = CONFIG_DATA_SERVER CONFIG_TEST_DATA_BASE_URL "/readServerSpeedDataPreinit_smallFile.csv";
+    const char *URL = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/readServerSpeedDataPreinit_smallFile.csv";
     esp_err_t err;
     circ_err_t circ_err;
     CircularBuffer circBuf;
@@ -97,7 +97,7 @@ TEST_CASE("readServerSpeedDataPreinit_smallFile", "[api_connect]")
  */
 TEST_CASE("readServerSpeedDataPreinit_typical", "[api_connect]")
 {
-    const char *URL = CONFIG_DATA_SERVER CONFIG_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
+    const char *URL = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
     esp_err_t err;
     circ_err_t circ_err;
     CircularBuffer circBuf;
@@ -138,7 +138,7 @@ TEST_CASE("readServerSpeedDataPreinit_typical", "[api_connect]")
  */
 TEST_CASE("readServerSpeedDataPreinit_memoryCorruption", "[api_connect]")
 {
-    const char *URL = CONFIG_DATA_SERVER CONFIG_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
+    const char *URL = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
     esp_err_t err;
     circ_err_t circ_err;
     CircularBuffer circBuf;

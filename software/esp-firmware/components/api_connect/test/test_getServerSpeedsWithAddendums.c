@@ -6,8 +6,8 @@
  * Test file dependencies: None.
  * 
  * Server file dependencies: 
- *     CONFIG_TEST_DATA_BASE_URL/data_north_V1_0_5.csv.
- *     CONFIG_TEST_DATA_BASE_URL/data_north_V1_0_5.csv_add/ALL_FIRST_ADDENDUM_FILENAMES
+ *     CONFIG_API_CONN_TEST_DATA_BASE_URL/data_north_V1_0_5.csv.
+ *     CONFIG_API_CONN_TEST_DATA_BASE_URL/data_north_V1_0_5.csv_add/ALL_FIRST_ADDENDUM_FILENAMES
  */
 
 #include "api_connect_pi.h"
@@ -33,7 +33,7 @@ extern esp_http_client_handle_t client;
  */
 TEST_CASE("getServerSpeedsWithAddendums_inputGuards", "[api_connect]")
 {
-    const char *URL = CONFIG_DATA_SERVER CONFIG_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
+    const char *URL = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
     esp_err_t err;
     const uint32_t ledSpeedsLen = 5;
     const int retryNum = 3;
@@ -65,7 +65,7 @@ TEST_CASE("getServerSpeedsWithAddendums_typical", "[api_connect]")
     extern const uint8_t test_expected_start[] asm("_binary_data_north_V1_0_3_dat_start");
     extern const uint8_t test_expected_end[] asm("_binary_data_north_V1_0_3_dat_end");
 
-    const char *URL = CONFIG_DATA_SERVER CONFIG_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
+    const char *URL = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
     esp_err_t err;
     const uint32_t ledSpeedsLen = 326;
     const int retryNum = 3;

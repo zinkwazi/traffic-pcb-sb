@@ -1,14 +1,14 @@
-menu "API Connect Test"
+menu "OTA Test"
 
-    config API_CONN_TEST_DATA_SERVER
+    config OTA_TEST_DATA_SERVER
         string "Test Data Server"
         default "https://bearanvil.com"
         help
             The server to request updated segment speed data from.
 
-    config API_CONN_TEST_DATA_BASE_URL
+    config OTA_TEST_DATA_BASE_URL
         string "Test Data Base URL"
-        default "/test_data/test_api_connect_data"
+        default "/test_data/test_ota_data"
         help
             The base page for the test data files on the test data server.
 

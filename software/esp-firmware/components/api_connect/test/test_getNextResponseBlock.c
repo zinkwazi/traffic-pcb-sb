@@ -8,8 +8,8 @@
  *     common:test_circular_buffer.c.
  * 
  * Server file dependencies:
- *     CONFIG_TEST_DATA_BASE_URL/data_north_V1_0_5.csv.
- *     CONFIG_TEST_DATA_BASE_URL/getNextResponseBlock_typical.1.
+ *     CONFIG_API_CONN_TEST_DATA_BASE_URL/data_north_V1_0_5.csv.
+ *     CONFIG_API_CONN_TEST_DATA_BASE_URL/getNextResponseBlock_typical.1.
  */
 
 #include "api_connect_pi.h"
@@ -42,7 +42,7 @@ extern esp_http_client_handle_t client;
  */
 TEST_CASE("getNextResponseBlock_inputGuards", "[api_connect]")
 {
-    const char *URL = CONFIG_DATA_SERVER CONFIG_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
+    const char *URL = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
     esp_err_t err;
     int len;
     char buffer[10];
@@ -86,7 +86,7 @@ TEST_CASE("getNextResponseBlock_inputGuards", "[api_connect]")
  */
 TEST_CASE("getNextResponseBlock_typical", "[api_connect]")
 {
-    const char *URL = CONFIG_DATA_SERVER CONFIG_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
+    const char *URL = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
     esp_err_t err;
     int len;
     char buffer[10];

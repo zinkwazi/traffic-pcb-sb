@@ -26,7 +26,7 @@ esp_http_client_handle_t client;
 void setUp(void) {
     const esp_http_client_config_t httpConfig = {
         .host = CONFIG_DATA_SERVER,
-        .path = CONFIG_TEST_DATA_BASE_URL,
+        .path = "/",
         .auth_type = API_AUTH_TYPE,
         .method = API_METHOD,
         .crt_bundle_attach = esp_crt_bundle_attach,

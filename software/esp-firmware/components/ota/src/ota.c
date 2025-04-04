@@ -43,10 +43,40 @@ enum VersionType {
 typedef enum VersionType VersionType;
 
 void vOTATask(void* pvParameters);
-esp_err_t versionFromKey(VersionType *verType, char *str, int strLen);
+esp_err_t versionFromKey(VersionType *verType, const char *str, int strLen);
 bool compareVersions(uint hardVer, uint revVer, uint majorVer, uint minorVer, uint patchVer);
 esp_err_t processOTAAvailableFile(bool *available, esp_http_client_handle_t client);
 esp_err_t queryOTAUpdateAvailable(bool *available);
+
+#ifndef CONFIG_DISABLE_TESTING_FEATURES
+
+static uint hardVer;
+static uint hardRev;
+static uint majorVer;
+static uint minorVer;
+static uint patchVer;
+
+void setHardwareVersion(uint version);
+void setHardwareRevision(uint version);
+void setFirmwareMajorVersion(uint version);
+void setFirmwareMinorVersion(uint version);
+void setFirmwarePatchVersion(uint version);
+
+uint getHardwareVersion(void);
+uint getHardwareRevision(void);
+uint getFirmwareMajorVersion(void);
+uint getFirmwareMinorVersion(void);
+uint getFirmwarePatchVersion(void);
+
+#else
+
+static uint getHardwareVersion(void);
+static uint getHardwareRevision(void);
+static uint getFirmwareMajorVersion(void);
+static uint getFirmwareMinorVersion(void);
+static uint getFirmwarePatchVersion(void);
+
+#endif /* CONFIG_DISABLE_TESTING_FEATURES */
 
 /**
  * @brief Initializes the over-the-air (OTA) task, which is implemented by
@@ -97,15 +127,22 @@ void vOTATask(void* pvParameters) {
     };
     ErrorResources *errRes = (ErrorResources *) pvParameters;
     esp_err_t err;
-    bool updateAvailable;
+    
 
     /* query most recent server firmware version and indicate if an update is available */
 #if CONFIG_HARDWARE_VERSION == 1
         /* feature unsupported */
 #elif CONFIG_HARDWARE_VERSION == 2
+    bool updateAvailable;
+
     (void) queryOTAUpdateAvailable(&updateAvailable); // allow firmware updates even if this
                                                       // function fails in order to fix 
                                                       // potential issues in this function
+    if (updateAvailable)
+    {
+        indicateOTAUpdate();
+    }
+
 #else
 #error "Unsupported hardware version!"
 #endif
@@ -145,15 +182,24 @@ void vOTATask(void* pvParameters) {
 /**
  * @brief Determines the version type the JSON key corresponds to.
  * 
+ * @note The function will set verType to VER_TYPE_UNKNOWN if the
+ *       key does not match a versioning key, even when ESP_OK is returned.
+ * 
  * @param[out] verType The location to place the version type of str.
- * @param[in] str A buffer containing the JSON key, with '\"' marks. Modified.
+ * @param[in] str A buffer containing the JSON key. Contents are
+ *        unmodified.
  * @param[in] strLen The length of str.
+ * 
+ * @returns ESP_OK if successful.
+ *          ESP_ERR_INVALID_ARG if invalid argument,
+ *          and verType is unchanged.
+ *          ESP_ERR_NOT_FOUND if quotation marks are not found,
+ *          and verType is unchanged.
  */
 esp_err_t versionFromKey(VersionType *verType, 
-                         char str[], 
+                         const char str[], 
                          int strLen)
 {
-    esp_err_t err;
     int currNdx = 0;
     int keyStartNdx = 0; // the beginning of the key, inclusive
     int keyEndNdx = 0; // the end of the key, exclusive
@@ -180,7 +226,7 @@ esp_err_t versionFromKey(VersionType *verType,
     {
         if (str[currNdx] == '\"')
         {
-            keyEndNdx = currNdx - 1;
+            keyEndNdx = currNdx;
             break;
         }
         currNdx++;
@@ -191,15 +237,38 @@ esp_err_t versionFromKey(VersionType *verType,
         return ESP_ERR_NOT_FOUND;
     }
 
-    str[keyEndNdx] = '\0'; // create c-string from key
-
     /* parse and match string */
     *verType = VER_TYPE_UNKNOWN;
-    if (0 == strcmp(&str[keyStartNdx], HARDWARE_VERSION_KEY)) *verType = HARDWARE;
-    if (0 == strcmp(&str[keyStartNdx], HARDWARE_REVISION_KEY)) *verType = REVISION;
-    if (0 == strcmp(&str[keyStartNdx], HARDWARE_REVISION_KEY)) *verType = MAJOR;
-    if (0 == strcmp(&str[keyStartNdx], HARDWARE_REVISION_KEY)) *verType = MINOR;
-    if (0 == strcmp(&str[keyStartNdx], HARDWARE_REVISION_KEY)) *verType = PATCH;
+    if (keyEndNdx - keyStartNdx == sizeof(HARDWARE_VERSION_KEY) - 1 &&
+        0 == strncmp(&str[keyStartNdx], HARDWARE_VERSION_KEY, keyEndNdx - keyStartNdx))
+    {
+        *verType = HARDWARE;
+    }
+
+    if (keyEndNdx - keyStartNdx == sizeof(HARDWARE_REVISION_KEY) - 1 &&
+        0 == strncmp(&str[keyStartNdx], HARDWARE_REVISION_KEY, keyEndNdx - keyStartNdx))
+    {
+        *verType = REVISION;
+    }
+
+    if (keyEndNdx - keyStartNdx == sizeof(FIRMWARE_MAJOR_KEY) - 1 &&
+        0 == strncmp(&str[keyStartNdx], FIRMWARE_MAJOR_KEY, keyEndNdx - keyStartNdx))
+    {
+        *verType = MAJOR;
+    }
+
+    if (keyEndNdx - keyStartNdx == sizeof(FIRMWARE_MINOR_KEY) - 1 &&
+        0 == strncmp(&str[keyStartNdx], FIRMWARE_MINOR_KEY, keyEndNdx - keyStartNdx))
+    {
+        *verType = MINOR;
+    }
+
+    if (keyEndNdx - keyStartNdx == sizeof(FIRMWARE_PATCH_KEY) - 1 &&
+        0 == strncmp(&str[keyStartNdx], FIRMWARE_PATCH_KEY, keyEndNdx - keyStartNdx))
+    {
+        *verType = PATCH;
+    }
+
     return ESP_OK;
 }
 
@@ -222,13 +291,17 @@ bool compareVersions(uint hardVer,
                      uint minorVer, 
                      uint patchVer)
 {
+
+    ESP_LOGI(TAG, "server firmware image is V%d_%d v%d.%d.%d", hardVer, revVer, majorVer, minorVer, patchVer);
+    ESP_LOGI(TAG, "device firmware image is V%d_%d v%d.%d.%d", getHardwareVersion(), getHardwareRevision(), getFirmwareMajorVersion(), getFirmwareMinorVersion(), getFirmwarePatchVersion());
+
     /* compare hadware version */
-    if (hardVer != CONFIG_HARDWARE_VERSION) return false;
-    if (revVer != CONFIG_HARDWARE_REVISION) return false;
+    if (hardVer != getHardwareVersion()) return false;
+    if (revVer != getHardwareRevision()) return false;
     /* compare firmware version */
-    if (majorVer > CONFIG_FIRMWARE_MAJOR_VERSION) return true;
-    if (minorVer > CONFIG_FIRMWARE_MINOR_VERSION) return true;
-    if (patchVer > CONFIG_FIRMWARE_PATCH_VERSION) return true;
+    if (majorVer > getFirmwareMajorVersion()) return true;
+    if (minorVer > getFirmwareMinorVersion()) return true;
+    if (patchVer > getFirmwarePatchVersion()) return true;
     return false;
 }
 
@@ -237,16 +310,13 @@ bool compareVersions(uint hardVer,
  *        and compares that version to the current version installed on the device.
  * 
  * @note Expects buf contents to be formatted as a JSON file with all keys ignored
- *       except for the following, whose values are parsed as integers:
+ *       except for the following, whose VALUES ARE PARSED AS INTEGERS--
  *       hardware_version, hardware_revision, firmware_major_version,
  *       firmware_minor_version, firmware_patch_version. This function ignores
  *       brackets in the file.
  * 
- * @note The maximum distance between any '{' or '}' to any other '{' or '}'
- *       in the file must be less than OTA_RECV_BUF_SIZE due to limitations
- *       of the processing buffer.
- * 
- * @note Special characters that cannot be included in 
+ * @note This function does not implement a full JSON parser. It expects a single
+ *       flat JSON object with only key value pairs, where the value is an integer.
  * 
  * @param[out] available The location to place the output of the function,
  *        which is true when a firmware update is available that is a newer
@@ -264,7 +334,7 @@ esp_err_t processOTAAvailableFile(bool *available,
     char circBacking[2 * OTA_RECV_BUF_SIZE];
     int bytesRead;
     int ndx;
-    int startKey, endKey, startVal, endVal;
+    int value;
     VersionType verType;
     esp_err_t err;
     uint foundHardVer = 0;
@@ -273,9 +343,19 @@ esp_err_t processOTAAvailableFile(bool *available,
     uint foundMinorVer = 0;
     uint foundPatchVer = 0;
 
+    /* parsing state variables */
+    bool inKey = false;
+    bool inValue = false;
+    bool inJSON = false;
+    bool inComment = false;
+    bool inString = false;
+    bool JSONParsed = false;
+
     /* input guards */
     if (available == NULL) return ESP_ERR_INVALID_ARG;
     if (client == NULL) return ESP_ERR_INVALID_ARG;
+
+    *available = false;
 
     /* load initial data into circular buffer */
     do {
@@ -296,52 +376,189 @@ esp_err_t processOTAAvailableFile(bool *available,
     for (ndx = 0; ndx < bytesRead; ndx++)
     {
         if (buf[ndx] != '{') continue;
+        inJSON = true;
+        inKey = true;
         err = (esp_err_t) circularBufferMark(&circBuf, ndx, FROM_PREV_MARK);
         if (err != ESP_OK) return err;
         break;
     }
-
-    /* process file in chunks */
-    while (circBuf.len > 0)
+    if (!inJSON)
     {
-        /* search for end of key, ':', and parse it */
+        ESP_LOGW(TAG, "Did not find JSON object in JSON file");
+        return ESP_FAIL;
+    }
+
+    /* continuously process, mark file, and read data in as necessary */
+    // the mark will always be on a formatting character, which should be skipped in processing
+    bool foundFormattingChar = true;
+    while (bytesRead > 0)
+    {
+        if (!foundFormattingChar)
+        {
+            /* circular buffer is missing next formatting char, retrieve more data */
+            do {
+                bytesRead = esp_http_client_read(client, buf, OTA_RECV_BUF_SIZE - 1);
+            } while (bytesRead == -ESP_ERR_HTTP_EAGAIN);
+            if (bytesRead < 0) {
+                ESP_LOGE(TAG, "processOTAAvailableFile esp_http_client_read err: %d", err);
+                return err;
+            }
+            if (bytesRead == 0) break; // circ buf is empty and nothing else to read
+        
+            err = (esp_err_t) circularBufferStore(&circBuf, buf, bytesRead);
+            if (err == (esp_err_t) CIRC_LOST_MARK)
+            {
+                ESP_LOGW(TAG, "JSON contains fields that are too large to parse");
+                return ESP_FAIL;
+            }
+            if (err != ESP_OK)
+            {
+                ESP_LOGE(TAG, "processOTAAvailableFile circularBufferStore err: %d", err);
+                return err;
+            }
+        }
         bytesRead = circularBufferReadFromMark(&circBuf, buf, OTA_RECV_BUF_SIZE - 1);
-        if (bytesRead <= 0) return bytesRead; // error code
-        for (ndx = 0; ndx < bytesRead; ndx++)
+        if (bytesRead < 0) return bytesRead; // error code
+
+        /* search for formatting character */
+        foundFormattingChar = false;
+        for (ndx = 1; ndx < bytesRead; ndx++)
         {
-            if (buf[ndx] != ':') continue;
-            break;
-        }
-        if (buf[ndx] != ':')
-        {
-            ESP_LOGW(TAG, "JSON version file is malformed!");
-            *available = false;
-            return ESP_OK;
-        }
-        err = versionFromKey(&verType, buf, ndx);
-        if (err == ESP_ERR_NOT_FOUND)
-        {
-            ESP_LOGW(TAG, "JSON version file is malformed");
-            *available = false;
-            return ESP_OK;
+            /* handle comments */
+            if (buf[ndx] == '#' && !inString && !inComment)
+            {
+                inComment = true;
+                continue;
+            }
+
+            if (buf[ndx] == '\n' && inComment)
+            {
+                inComment = false;
+                continue;
+            }
+
+            if (inComment)
+            {
+                continue; // skip parsing this character
+            }
+
+            /* handle 'inString' state, which allows formatting characters in strings */
+            if (buf[ndx] == '\"' && inKey && !inString)
+            {
+                inString = true;
+                continue;
+            }
+
+            if (buf[ndx] == '\"' && inKey && inString)
+            {
+                inString = false;
+                continue;
+            }
+
+            /* valid JSON formatting */
+            if (buf[ndx] == '{' ||
+                buf[ndx] == ':' ||
+                buf[ndx] == ',' ||
+                buf[ndx] == '}')
+            {
+               /* a formatting character that is not in
+               a comment or string has been found */
+               foundFormattingChar = true;
+               err = (esp_err_t) circularBufferMark(&circBuf, ndx, FROM_PREV_MARK);
+               if (err != (esp_err_t) CIRC_OK) return err;
+               break;
+            }
         }
 
-        /* search for end of value, ',', and parse it */
-        for (; ndx < bytesRead; ndx++)
+        /* at this point, a formatting char has been found and marked, 
+           with buf[0] denoting the previous formatting char */
+        if (buf[ndx] == '{' && inJSON)
         {
-            if (buf[ndx] == ',')
+            ESP_LOGW(TAG, "misplaced \'{\' found in JSON");
+            return ESP_FAIL;
         }
 
-        /* read more data from the file */
-        do {
-            bytesRead = esp_http_client_read(client, buf, OTA_RECV_BUF_SIZE - 1);
-        } while (bytesRead == -ESP_ERR_HTTP_EAGAIN);
-        if (bytesRead <= 0) return ESP_ERR_NOT_FOUND;
-    
-        err = (esp_err_t) circularBufferStore(&circBuf, buf, bytesRead);
-        if (err != ESP_OK) return err;
+        if (buf[ndx] == ':')
+        {
+            if (!inKey)
+            {
+                ESP_LOGW(TAG, "misplaced \':\' found in JSON");
+                return ESP_FAIL;
+            }
+
+            inValue = true;
+            inKey = false;
+            
+            err = versionFromKey(&verType, &buf[1], ndx - 1);
+            if (err != ESP_OK)
+            {
+                ESP_LOGW(TAG, "processOTAavailableFile versionFromKey err: %d", err);
+                return ESP_FAIL;
+            }
+        }
+
+        if (buf[ndx] == ',' || buf[ndx] == '}')
+        {
+            if (!inValue)
+            {
+                ESP_LOGW(TAG, "misplaced \'%c\' found in JSON", buf[ndx]);
+                return ESP_FAIL;
+            }
+
+            inValue = false;
+            if (buf[ndx] == '}')
+            {
+                inJSON = false;
+                JSONParsed = true;
+            } else 
+            {
+                inKey = true;
+            }
+
+            if (verType < VER_TYPE_UNKNOWN) // short-circuit don't care keys
+            {
+                /* determine value */
+                buf[ndx] = '\0'; // create a c-string from value, necessary for strtol
+                value = (int) strtol(&buf[1], NULL, 10); // this is not a thread safe function,
+                                                            // because errno is not thread safe.
+                                                            // However, this func returns 0 if it fails,
+                                                            // which for this purpose is ok because
+                                                            // 0 will always be the smallest value possible
+                if (value < 0) value = 0; // clamp value. 0 is a safe number b/c no version is smaller.
+                buf[ndx] = ','; // avoid potential issues from null terminator...
+
+                /* record key/value pair */
+                switch (verType)
+                {
+                    case HARDWARE:
+                        foundHardVer = value;
+                        break;
+                    case REVISION:
+                        foundRevVer = value;
+                        break;
+                    case MAJOR:
+                        foundMajorVer = value;
+                        break;
+                    case MINOR:
+                        foundMinorVer = value;
+                        break;
+                    case PATCH:
+                        foundPatchVer = value;
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+
+    if (!JSONParsed)
+    {
+        ESP_LOGW(TAG, "Did not find \'}\' in JSON");
+        return ESP_FAIL;
     }
     /* compare versioning information against current version */
+
     *available = compareVersions(foundHardVer, foundRevVer, foundMajorVer, foundMinorVer, foundPatchVer);
     return ESP_OK;
 }
@@ -366,63 +583,81 @@ esp_err_t queryOTAUpdateAvailable(bool *available)
     esp_err_t err;
     esp_http_client_handle_t client;
     int64_t contentLength;
-    CircularBuffer circBuf;
-    char circBufBacking[OTA_RECV_BUF_SIZE];
-    int numBytesRead;
 
     if (available == NULL) return ESP_ERR_INVALID_ARG;
 
-    // for (int i = 0; i < RETRY_CONNECT_OTA_AVAILABLE; i++)
-    // {
-    //     /* connect to server and query file */
-    //     client = esp_http_client_init(&https_config);
-    //     if (client == NULL)
-    //     {
-    //         ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_init error");
-    //         return ESP_FAIL;
-    //     }
-    
-    //     err = esp_http_client_open(client, 0);
-    //     if (err != ESP_OK)
-    //     {
-    //         ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_open err: %d", err);
-    //         return err;
-    //     }
-    
-    //     contentLength = esp_http_client_fetch_headers(client);
-    //     while (contentLength == -ESP_ERR_HTTP_EAGAIN)
-    //     {
-    //         contentLength = esp_http_client_fetch_headers(client);
-    //     }
-    //     if (contentLength <= 0 || contentLength >= AVAILABLE_BUFFER_SIZE) // null-terminator
-    //     {
-    //         ESP_LOGE(TAG, "queryOTAUpdateAvailable contentLength: %lld", contentLength);
-    //         return ESP_FAIL;
-    //     }
+    for (int i = 0; i < RETRY_CONNECT_OTA_AVAILABLE; i++)
+    {
+        /* connect to server and query file */
+        client = esp_http_client_init(&https_config);
+        if (client == NULL)
+        {
+            ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_init error");
+            return ESP_FAIL;
+        }
+        
+        ESP_LOGI(TAG, "Checking server firmware version: %s", FIRMWARE_UPGRADE_VERSION_URL);
+        err = esp_http_client_open(client, 0);
+        if (err != ESP_OK)
+        {
+            ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_open err: %d", err);
+            return err;
+        }
 
-    //     int status = esp_http_client_get_status_code(client);
-    //     if (esp_http_client_get_status_code(client) != 200)
-    //     {
-    //         ESP_LOGE(TAG, "queryOTAUpdateAvailable status code is %d", status);
-    //         err = esp_http_client_cleanup(client);
-    //         if (err != ESP_OK) {
-    //             ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_cleanup err: %d", err);
-    //             return ESP_FAIL;
-    //         }
-    //     }
+        do {
+            contentLength = esp_http_client_fetch_headers(client);
+        } while (contentLength == -ESP_ERR_HTTP_EAGAIN);
+        if (contentLength <= 0) // null-terminator
+        {
+            ESP_LOGE(TAG, "queryOTAUpdateAvailable contentLength: %lld", contentLength);
+            return ESP_FAIL;
+        }
 
-    //     /* read file */
-    //     do
-    //     {
-    //         numBytesRead = esp_http_client_read(client, buffer, AVAILABLE_BUFFER_SIZE - 1);
-    //     } while (numBytesRead == -ESP_ERR_HTTP_EAGAIN);
-    //     if (numBytesRead <= 0) {
-    //         ESP_LOGE(TAG, "queryOTAUpdateAvailable read %d bytes", numBytesRead);
-    //         return ESP_FAIL;
-    //     }
+        int status = esp_http_client_get_status_code(client);
+        if (esp_http_client_get_status_code(client) != 200)
+        {
+            ESP_LOGE(TAG, "queryOTAUpdateAvailable status code is %d", status);
+            err = esp_http_client_cleanup(client);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_cleanup err: %d", err);
+                return ESP_FAIL;
+            }
+        }
 
-
-    // }
+        err = processOTAAvailableFile(available, client);
+        if (err != ESP_OK)
+        {
+            *available = false;
+            ESP_LOGE(TAG, "failed to process OTA available file. err: %d", err);
+            return ESP_FAIL;
+        }
+    }
     ESP_LOGW(TAG, "queryOTAUpdateAvailable max retries exceeded");
     return ESP_FAIL; // max num retries exceeded
 }
+
+#ifndef CONFIG_DISABLE_TESTING_FEATURES
+
+void setHardwareVersion(uint version) { hardVer = version; }
+void setHardwareRevision(uint version) { hardRev = version; }
+void setFirmwareMajorVersion(uint version) { majorVer = version; }
+void setFirmwareMinorVersion(uint version) { minorVer = version; }
+void setFirmwarePatchVersion(uint version) { patchVer = version; }
+
+/* Mocking getter functions that replace __attribute__((weak)) functions */
+
+uint getHardwareVersion(void) { return hardVer; }
+uint getHardwareRevision(void) { return hardRev; }
+uint getFirmwareMajorVersion(void) { return majorVer; }
+uint getFirmwareMinorVersion(void) { return minorVer; }
+uint getFirmwarePatchVersion(void) { return patchVer; }
+
+#else
+
+static uint getHardwareVersion() { return CONFIG_HARDWARE_VERSION; }
+static uint getHardwareRevision() { return CONFIG_HARDWARE_REVISION; }
+static uint getFirmwareMajorVersion() { return CONFIG_FIRMWARE_MAJOR_VERSION; }
+static uint getFirmwareMinorVersion() { return CONFIG_FIRMWARE_MINOR_VERSION; }
+static uint getFirmwarePatchVersion() { return CONFIG_FIRMWARE_PATCH_VERSION; }
+
+#endif /* CONFIG_DISABLE_TESTING_FEATURES */

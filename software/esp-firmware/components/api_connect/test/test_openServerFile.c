@@ -6,8 +6,8 @@
  * Test file dependencies: None.
  * 
  * Server file dependencies: 
- *     CONFIG_TEST_DATA_BASE_URL/data_north_V1_0_5.csv.
- *     CONFIG_TEST_DATA_BASE_URL/openServerFile_typical.1.
+ *     CONFIG_API_CONN_TEST_DATA_BASE_URL/data_north_V1_0_5.csv.
+ *     CONFIG_API_CONN_TEST_DATA_BASE_URL/openServerFile_typical.1.
  */
 
 #include "api_connect_pi.h"
@@ -39,7 +39,7 @@ extern esp_http_client_handle_t client;
  */
 TEST_CASE("openServerFile_inputGuards", "[api_connect]")
 {
-    const char *URL = CONFIG_DATA_SERVER CONFIG_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
+    const char *URL = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
     esp_err_t err;
     int64_t contentLength;
 
@@ -66,7 +66,7 @@ TEST_CASE("openServerFile_inputGuards", "[api_connect]")
  */
 TEST_CASE("openServerFile_typical", "[api_connect]")
 {
-    const char *URL = CONFIG_DATA_SERVER CONFIG_TEST_DATA_BASE_URL "/openServerFile_typical.1";
+    const char *URL = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/openServerFile_typical.1";
     esp_err_t err;
     const int32_t bufLen = 30;
     char buffer[bufLen];
@@ -96,8 +96,8 @@ TEST_CASE("openServerFile_typical", "[api_connect]")
  */
 TEST_CASE("openServerFile_zeroContentLength", "[api_connect]")
 {
-    const char *URLZeroContent = CONFIG_DATA_SERVER CONFIG_TEST_DATA_BASE_URL "/openServerFile_zeroContentLength.1";
-    const char *URLTypical = CONFIG_DATA_SERVER CONFIG_TEST_DATA_BASE_URL "/openServerFile_typical.1";
+    const char *URLZeroContent = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/openServerFile_zeroContentLength.1";
+    const char *URLTypical = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/openServerFile_typical.1";
     esp_err_t err;
     const int32_t bufLen = 30;
     char buffer[bufLen];
@@ -136,8 +136,8 @@ TEST_CASE("openServerFile_zeroContentLength", "[api_connect]")
  */
 // TEST_CASE("openServerFile_nonExistent", "[api_connect]")
 // {
-//     const char *URLNonexistent = CONFIG_DATA_SERVER CONFIG_TEST_DATA_BASE_URL "/DOES_NOT_EXIST";
-//     const char *URLTypical = CONFIG_DATA_SERVER CONFIG_TEST_DATA_BASE_URL "/openServerFile_typical.1";
+//     const char *URLNonexistent = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/DOES_NOT_EXIST";
+//     const char *URLTypical = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/openServerFile_typical.1";
 //     esp_err_t err = ESP_FAIL;
 //     const int32_t bufLen = 30;
 //     char buffer[bufLen];
