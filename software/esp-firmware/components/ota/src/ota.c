@@ -300,8 +300,13 @@ bool compareVersions(uint hardVer,
     if (revVer != getHardwareRevision()) return false;
     /* compare firmware version */
     if (majorVer > getFirmwareMajorVersion()) return true;
+    if (majorVer < getFirmwareMajorVersion()) return false;
+
     if (minorVer > getFirmwareMinorVersion()) return true;
+    if (minorVer < getFirmwareMinorVersion()) return false;
+
     if (patchVer > getFirmwarePatchVersion()) return true;
+    if (patchVer < getFirmwarePatchVersion()) return false;
     return false;
 }
 

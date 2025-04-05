@@ -110,3 +110,226 @@ TEST_CASE("compareVersions_typical", "[ota]")
                              CONFIG_FIRMWARE_PATCH_VERSION);
     TEST_ASSERT_EQUAL(false, output);
 }
+
+/**
+ * More versions that are lower than the current.
+ * 
+ * Test case dependencies:
+ *     - typical
+ */
+TEST_CASE("compareVersions_lower", "[ota]")
+{
+    bool output;
+
+    setHardwareVersion(2);
+    setHardwareRevision(1);
+    setFirmwareMajorVersion(3);
+    setFirmwareMinorVersion(6);
+    setFirmwarePatchVersion(15);
+
+    output = compareVersions(2, 1, 3, 7, 0);
+    TEST_ASSERT_EQUAL(true, output);
+
+    output = compareVersions(2, 1, 3, 7, 15);
+    TEST_ASSERT_EQUAL(true, output);
+
+    output = compareVersions(2, 1, 3, 7, 16);
+    TEST_ASSERT_EQUAL(true, output);
+
+    output = compareVersions(2, 1, 3, 5, 16);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 1, 3, 5, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 1, 3, 5, 14);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 1, 2, 6, 16);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 1, 2, 6, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 1, 2, 6, 14);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 1, 2, 7, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 1, 2, 6, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 1, 2, 5, 15);
+    TEST_ASSERT_EQUAL(false, output);
+}
+
+/**
+ * Tests that mismatched hardware versions always returns false.
+ * 
+ * Test case dependencies: None.
+ */
+TEST_CASE("compareVersions_mismatch", "[ota]")
+{
+    bool output;
+
+    setHardwareVersion(2);
+    setHardwareRevision(1);
+    setFirmwareMajorVersion(3);
+    setFirmwareMinorVersion(6);
+    setFirmwarePatchVersion(15);
+
+    /* test lower revision2*/
+
+    output = compareVersions(2, 0, 3, 7, 0);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 0, 3, 7, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 0, 3, 7, 16);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 0, 3, 5, 16);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 0, 3, 5, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 0, 3, 5, 14);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 0, 2, 6, 16);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 0, 2, 6, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 0, 2, 6, 14);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 0, 2, 7, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 0, 2, 6, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 0, 2, 5, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    
+
+    /* test higher revision  */
+
+    output = compareVersions(2, 2, 3, 7, 0);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 2, 3, 7, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 2, 3, 7, 16);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 2, 3, 5, 16);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 2, 3, 5, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 2, 3, 5, 14);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 2, 2, 6, 16);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 2, 2, 6, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 2, 2, 6, 14);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 2, 2, 7, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 2, 2, 6, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(2, 2, 2, 5, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    /* test lower hardware version  */
+
+    output = compareVersions(1, 1, 3, 7, 0);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(1, 1, 3, 7, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(1, 1, 3, 7, 16);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(1, 1, 3, 5, 16);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(1, 1, 3, 5, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(1, 1, 3, 5, 14);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(1, 1, 2, 6, 16);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(1, 1, 2, 6, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(1, 1, 2, 6, 14);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(1, 1, 2, 7, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(1, 1, 2, 6, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(1, 1, 2, 5, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    /* test higher hardware version  */
+
+    output = compareVersions(3, 1, 3, 7, 0);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(3, 1, 3, 7, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(3, 1, 3, 7, 16);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(3, 1, 3, 5, 16);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(3, 1, 3, 5, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(3, 1, 3, 5, 14);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(3, 1, 2, 6, 16);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(3, 1, 2, 6, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(3, 1, 2, 6, 14);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(3, 1, 2, 7, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(3, 1, 2, 6, 15);
+    TEST_ASSERT_EQUAL(false, output);
+
+    output = compareVersions(3, 1, 2, 5, 15);
+    TEST_ASSERT_EQUAL(false, output);
+}
