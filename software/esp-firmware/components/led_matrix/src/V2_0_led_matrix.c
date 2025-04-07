@@ -924,11 +924,6 @@ esp_err_t matSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue)
  */
 esp_err_t matGetColor(uint16_t ledNum, uint8_t *red, uint8_t *green, uint8_t *blue)
 {
-    esp_err_t err;
-    LEDReg ledReg;
-    i2c_master_dev_handle_t matrixHandle;
-    uint8_t page;
-
     return ESP_FAIL;
 }
 

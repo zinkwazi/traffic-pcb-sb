@@ -8,14 +8,14 @@
 
 #include <stdint.h>
 
+#include "sdkconfig.h"
 #include "esp_err.h"
 
 #include "app_errors.h"
 #include "led_matrix.h"
 #include "pinout.h"
-#include "sdkconfig.h"
-
 #include "main_types.h"
+#include "strobe.h"
 
 #define V2_0_WIFI_CONNECTED_COLOR_RED (CONFIG_WHITE_RED_COMPONENT)
 #define V2_0_WIFI_CONNECTED_COLOR_GREEN (CONFIG_WHITE_GREEN_COMPONENT)
@@ -279,6 +279,33 @@ esp_err_t indicateWifiNotConnected(void)
 }
 
 /**
+ * @brief Indicates to the user that an OTA update is available.
+ * 
+ * @note For V2_0, sets OTA LED to OTA success color, but strobes the LED.
+ * 
+ * @see indicateOTASuccess, indicateOTAUpdate.
+ * 
+ * @requires:
+ * - initializeIndicatorLEDs executed.
+ * - strobe task created with createStrobeTask.
+ * 
+ * @returns ESP_OK if successful.
+ */
+esp_err_t indicateOTAAvailable(void)
+{
+    esp_err_t err;
+    err = matSetScaling(OTA_LED_NUM, 0x00, 0x00, 0x00); // let strobe task handle this
+    if (err != ESP_OK) return err;
+    err = matSetColor(OTA_LED_NUM,
+                        CONFIG_V2_0_OTA_AVAILABLE_RED_COMPONENT,
+                        CONFIG_V2_0_OTA_AVAILABLE_GREEN_COMPONENT,
+                        CONFIG_V2_0_OTA_AVAILABLE_BLUE_COMPONENT);
+    if (err != ESP_OK) return err;
+    err = strobeRegisterLED(OTA_LED_NUM);
+    return err;
+}
+
+/**
  * @brief Indicates to the user that an OTA update is occurring.
  * 
  * @note For V2_0, sets OTA LED to specified update color.
@@ -287,12 +314,23 @@ esp_err_t indicateWifiNotConnected(void)
  * 
  * @requires:
  * - initializeIndicatorLEDs executed.
+ * - strobe task created with createStrobeTask.
+ * - strobe task has a higher task priority than caller.
  * 
- * @returns ESP_OK if successful.
+ * @returns ESP_OK if successful, otherwise OTA LED may be unregistered from
+ *          strobe task and LED scaling may be incorrect.
  */
 esp_err_t indicateOTAUpdate(void)
 {
     esp_err_t err;
+    err = strobeUnregisterLED(OTA_LED_NUM); // strobe task will handle this
+                                            // immediately, meaning strobe task
+                                            // will no longer set scaling. If
+                                            // not registered, the strobe task
+                                            // will ignore this request
+    if (err != ESP_OK) return err; // problem sending command to queue
+    err = matSetScaling(OTA_LED_NUM, 0xFF, 0xFF, 0xFF);
+    if (err != ESP_OK) return err;
     err = matSetColor(OTA_LED_NUM,
                       V2_0_OTA_UPDATE_COLOR_RED,
                       V2_0_OTA_UPDATE_COLOR_GREEN,
@@ -313,16 +351,27 @@ esp_err_t indicateOTAUpdate(void)
  * 
  * @requires:
  * - initializeIndicatorLEDs executed.
+ * - strobe task created with createStrobeTask.
+ * - strobe task has a higher task priority than caller.
  * 
  * @param[in] errRes Unused, exists for versioning reasons.
  * @param[in] delay The amount of time in milliseconds to keep failure
  *        indication in place.
  * 
- * @returns ESP_OK if successful.
+ * @returns ESP_OK if successful, otherwise OTA LED may be unregistered from
+ *          strobe task and LED scaling may be incorrect.
  */
 esp_err_t indicateOTAFailure(ErrorResources *errRes, int32_t delay)
 {
     esp_err_t err;
+    err = strobeUnregisterLED(OTA_LED_NUM); // strobe task will handle this
+                                            // immediately, meaning strobe task
+                                            // will no longer set scaling. If
+                                            // not registered, the strobe task
+                                            // will ignore this request
+    if (err != ESP_OK) return err; // problem sending command to queue
+    err = matSetScaling(OTA_LED_NUM, 0xFF, 0xFF, 0xFF);
+    if (err != ESP_OK) return err;
     err = matSetColor(OTA_LED_NUM,
                       CONFIG_V2_0_OTA_FAILURE_RED_COMPONENT,
                       CONFIG_V2_0_OTA_FAILURE_GREEN_COMPONENT,
@@ -342,15 +391,26 @@ esp_err_t indicateOTAFailure(ErrorResources *errRes, int32_t delay)
  * 
  * @requires:
  * - initializeIndicatorLEDs executed.
+ * - strobe task created with createStrobeTask.
+ * - strobe task has a higher task priority than caller.
  * 
  * @param[in] delay The amount of time in milliseconds to keep success
  *        indication in place.
  * 
- * @returns ESP_OK always.
+ * @returns ESP_OK if successful, otherwise OTA LED may be unregistered from
+ *          strobe task and LED scaling may be incorrect.
  */
 esp_err_t indicateOTASuccess(int32_t delay)
 {
     esp_err_t err;
+    err = strobeUnregisterLED(OTA_LED_NUM); // strobe task will handle this
+                                            // immediately, meaning strobe task
+                                            // will no longer set scaling. If
+                                            // not registered, the strobe task
+                                            // will ignore this request
+    if (err != ESP_OK) return err; // problem sending command to queue
+    err = matSetScaling(OTA_LED_NUM, 0xFF, 0xFF, 0xFF);
+    if (err != ESP_OK) return err;
     err = matSetColor(OTA_LED_NUM,
                       CONFIG_V2_0_OTA_SUCCESS_RED_COMPONENT,
                       CONFIG_V2_0_OTA_SUCCESS_GREEN_COMPONENT,

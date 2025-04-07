@@ -36,6 +36,7 @@
 #include "nvs_settings.h"
 #include "ota.h"
 #include "utilities.h"
+#include "strobe_task.h"
 #include "routines.h"
 #include "wifi.h"
 
@@ -188,6 +189,8 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
         return ESP_FAIL;
 
     /* create tasks */
+    err = createStrobeTask(NULL, res->errRes);
+    FATAL_IF_ERR(err, res->errRes);
     err = createOTATask(&otaTask, res->errRes);
     FATAL_IF_ERR(err, res->errRes);
     if (otaTask == NULL)

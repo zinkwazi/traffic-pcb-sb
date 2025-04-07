@@ -127,7 +127,6 @@ void vOTATask(void* pvParameters) {
     };
     ErrorResources *errRes = (ErrorResources *) pvParameters;
     esp_err_t err;
-    
 
     /* query most recent server firmware version and indicate if an update is available */
 #if CONFIG_HARDWARE_VERSION == 1
@@ -140,9 +139,8 @@ void vOTATask(void* pvParameters) {
                                                       // potential issues in this function
     if (updateAvailable)
     {
-        indicateOTAUpdate();
+        indicateOTAAvailable();
     }
-
 #else
 #error "Unsupported hardware version!"
 #endif

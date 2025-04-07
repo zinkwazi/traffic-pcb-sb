@@ -383,9 +383,6 @@ static struct Color {
 esp_err_t quickClearBoard(void)
 {
     esp_err_t err;
-    struct Color savedColors[NUM_NO_REFRESH_LEDS];
-    struct Color savedScalings[NUM_NO_REFRESH_LEDS];
-    uint8_t red, green, blue;
 
     for (int32_t num = 1; num <= MAX_NUM_LEDS_REG; num++)
     {

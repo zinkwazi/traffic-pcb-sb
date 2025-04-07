@@ -26,7 +26,7 @@ menu "Indicators"
             
     config V2_0_OTA_AVAILABLE_GREEN_COMPONENT
         int "V2_0 OTA Available Green Component"
-        default 0
+        default 255
         help
             The green component of the color used for the V2_0 OTA update available indicator.
 
