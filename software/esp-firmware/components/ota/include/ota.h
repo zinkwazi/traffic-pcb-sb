@@ -13,5 +13,6 @@
 #include "app_errors.h"
 
 esp_err_t createOTATask(TaskHandle_t *handle, const ErrorResources *errorResources);
+esp_err_t queryOTAUpdateAvailable(bool *available);
 
 #endif /* OTA_H_3_27_25 */

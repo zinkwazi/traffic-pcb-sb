@@ -31,6 +31,7 @@
 
 #include "led_matrix.h"
 #include "pinout.h"
+#include "actions.h"
 
 #include "main_types.h"
 #include "nvs_settings.h"
@@ -205,6 +206,9 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     res->refreshTimer = createRefreshTimer(xTaskGetCurrentTaskHandle(), &(state->toggle));
     if (res->refreshTimer == NULL)
         return ESP_FAIL;
+
+    /* schedule jobs and start timers */
+    err = initJobs();
 
     /* initialize buttons */
     err = gpio_install_isr_service(0);

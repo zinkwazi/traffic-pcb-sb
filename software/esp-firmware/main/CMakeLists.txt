@@ -6,6 +6,7 @@ idf_component_register(SRCS "src/main.c"
                     INCLUDE_DIRS "include"
                     REQUIRES common
                              ota
+                             actions
                              app_errors  
                              led_matrix
                              animations

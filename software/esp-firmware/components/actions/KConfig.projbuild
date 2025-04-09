@@ -1,0 +1,15 @@
+menu "Action Task"
+
+    config ACTION_STACK
+        int "Action Task Stack Size"
+        default 5000
+        help
+            The stack size in bytes of the action task.
+
+    config ACTION_PRIO
+        int "Action Task Priority"
+        default 1
+        help
+            The priority of the action task.
+
+endmenu

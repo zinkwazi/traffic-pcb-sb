@@ -46,7 +46,6 @@ void vOTATask(void* pvParameters);
 esp_err_t versionFromKey(VersionType *verType, const char *str, int strLen);
 bool compareVersions(uint hardVer, uint revVer, uint majorVer, uint minorVer, uint patchVer);
 esp_err_t processOTAAvailableFile(bool *available, esp_http_client_handle_t client);
-esp_err_t queryOTAUpdateAvailable(bool *available);
 
 #ifndef CONFIG_DISABLE_TESTING_FEATURES
 
@@ -128,22 +127,23 @@ void vOTATask(void* pvParameters) {
     ErrorResources *errRes = (ErrorResources *) pvParameters;
     esp_err_t err;
 
-    /* query most recent server firmware version and indicate if an update is available */
-#if CONFIG_HARDWARE_VERSION == 1
-        /* feature unsupported */
-#elif CONFIG_HARDWARE_VERSION == 2
+    /* query most recent server firmware version and indicate if an update is available.
+    This also happens at scheduled times of the day, see the actions component. */
+    #if CONFIG_HARDWARE_VERSION == 1
+    /* feature unsupported */
+    #elif CONFIG_HARDWARE_VERSION == 2
     bool updateAvailable;
 
     (void) queryOTAUpdateAvailable(&updateAvailable); // allow firmware updates even if this
-                                                      // function fails in order to fix 
-                                                      // potential issues in this function
+                                                // function fails in order to fix 
+                                                // potential issues in this function
     if (updateAvailable)
     {
-        indicateOTAAvailable();
+    indicateOTAAvailable();
     }
-#else
-#error "Unsupported hardware version!"
-#endif
+    #else
+    #error "Unsupported hardware version!"
+    #endif
 
     /* wait for Update/IO0 button press and execute OTA update */
     while (true) {
