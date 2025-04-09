@@ -209,6 +209,7 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
 
     /* schedule jobs and start timers */
     err = initJobs();
+    FATAL_IF_ERR(err, res->errRes);
 
     /* initialize buttons */
     err = gpio_install_isr_service(0);
