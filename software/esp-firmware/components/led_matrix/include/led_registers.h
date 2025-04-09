@@ -1,5 +1,8 @@
 /**
  * led_registers.h
+ * 
+ * Contains a mapping from Kicad LED number to matrix driver registers that
+ * control the LED.
  */
 
 #ifndef LED_REGISTERS_H_

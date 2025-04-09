@@ -23,6 +23,7 @@
 #include "led_coordinates.h"
 #include "led_matrix.h"
 #include "led_registers.h"
+#include "mat_err.h"
 #include "pinout.h"
 
 #include "main_types.h"
@@ -201,6 +202,7 @@ esp_err_t refreshBoard(LEDData currSpeeds[static MAX_NUM_LEDS_REG], LEDData typi
  */
 esp_err_t clearBoard(Direction dir) {
     esp_err_t err;
+    mat_err_t mat_err;
     int32_t ledOrder[MAX_NUM_LEDS_REG];
 
     switch (dir) {
@@ -214,12 +216,12 @@ esp_err_t clearBoard(Direction dir) {
             
             for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
             {
-                err = matSetColor(ndx, 0x00, 0x00, 0x00);
-                if (err == ESP_OK) break;
+                mat_err = matSetColor(ndx, 0x00, 0x00, 0x00);
+                if (mat_err == ESP_OK) break; 
             }
-            if (err != ESP_OK) {
+            if (mat_err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to set matrix color for led: %ld", ndx);
-                return err;
+                return ESP_FAIL;
             }
 
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
@@ -235,12 +237,12 @@ esp_err_t clearBoard(Direction dir) {
 
             for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
             {
-                err = matSetColor(ndx, 0x00, 0x00, 0x00);
-                if (err == ESP_OK) break;
+                mat_err = matSetColor(ndx, 0x00, 0x00, 0x00);
+                if (mat_err == ESP_OK) break;
             }
-            if (err != ESP_OK) {
+            if (mat_err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to set matrix color for led: %ld", ndx);
-                return err;
+                return ESP_FAIL;
             }
 
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
@@ -262,32 +264,32 @@ esp_err_t clearBoard(Direction dir) {
  */
 esp_err_t quickClearBoard(void)
 {
-    esp_err_t err;
+    mat_err_t mat_err;
     /* restart matrices */
     ESP_LOGI(TAG, "Quick clearing matrices");
 
     for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
     {
-        err = matReset();
-        if (err == ESP_OK) break;
+        mat_err = matReset();
+        if (mat_err == ESP_OK) break;
     }
-    if (err != ESP_OK) return err;
+    if (mat_err != ESP_OK) return ESP_FAIL;
 
     for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
     {
-        err = matSetGlobalCurrentControl(CONFIG_GLOBAL_LED_CURRENT);
-        if (err == ESP_OK) break;
+        mat_err = matSetGlobalCurrentControl(CONFIG_GLOBAL_LED_CURRENT);
+        if (mat_err == ESP_OK) break;
     }
-    if (err != ESP_OK) return err;
+    if (mat_err != ESP_OK) return ESP_FAIL;
 
     for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
     {
-        err = matSetOperatingMode(NORMAL_OPERATION);
-        if (err == ESP_OK) break;
+        mat_err = matSetOperatingMode(NORMAL_OPERATION);
+        if (mat_err == ESP_OK) break;
     }
-    if (err != ESP_OK) return err;
+    if (mat_err != ESP_OK) return ESP_FAIL;
     
-    return err;
+    return ESP_OK;
 }
 
 #elif CONFIG_HARDWARE_VERSION == 2
@@ -302,6 +304,7 @@ esp_err_t quickClearBoard(void)
  */
 esp_err_t clearBoard(Direction dir) {
     esp_err_t err;
+    mat_err_t mat_err;
     int32_t ledOrder[MAX_NUM_LEDS_REG];
 
     switch (dir) {
@@ -321,12 +324,12 @@ esp_err_t clearBoard(Direction dir) {
             
             for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
             {
-                err = matSetColor(ndx, 0x00, 0x00, 0x00);
-                if (err == ESP_OK) break;
+                mat_err = matSetColor(ndx, 0x00, 0x00, 0x00);
+                if (mat_err == ESP_OK) break;
             }
-            if (err != ESP_OK) {
+            if (mat_err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to set matrix color for led: %ld", ndx);
-                return err;
+                return ESP_FAIL;
             }
 
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
@@ -348,12 +351,12 @@ esp_err_t clearBoard(Direction dir) {
 
             for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
             {
-                err = matSetColor(ndx, 0x00, 0x00, 0x00);
-                if (err == ESP_OK) break;
+                mat_err = matSetColor(ndx, 0x00, 0x00, 0x00);
+                if (mat_err == ESP_OK) break;
             }
-            if (err != ESP_OK) {
+            if (mat_err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to set matrix color for led: %ld", ndx);
-                return err;
+                return ESP_FAIL;
             }
 
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
@@ -366,12 +369,6 @@ esp_err_t clearBoard(Direction dir) {
     return ESP_OK;
 }
 
-static struct Color {
-    uint8_t red;
-    uint8_t green;
-    uint8_t blue;
-};
-
 /**
  * @brief Quickly sets all of the non-indicator LEDs to off.
  * 
@@ -382,7 +379,7 @@ static struct Color {
  */
 esp_err_t quickClearBoard(void)
 {
-    esp_err_t err;
+    mat_err_t mat_err;
 
     for (int32_t num = 1; num <= MAX_NUM_LEDS_REG; num++)
     {
@@ -395,12 +392,10 @@ esp_err_t quickClearBoard(void)
 
         for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
         {
-            err = matSetColor(num, 0x00, 0x00, 0x00);
-            if (err == ESP_OK) break;
+            mat_err = matSetColor(num, 0x00, 0x00, 0x00);
+            if (mat_err == ESP_OK) break;
         }
-        if (err != ESP_OK) {
-            return err;
-        }
+        if (mat_err != ESP_OK) return ESP_FAIL;
     }
     return ESP_OK;
 }
@@ -431,24 +426,23 @@ static void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t percen
 }
 
 static esp_err_t updateLED(uint16_t ledNum, uint8_t percentFlow) {
-    esp_err_t err;
+    mat_err_t mat_err;
     uint8_t red, green, blue;
     setColor(&red, &green, &blue, percentFlow);
 
     for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
     {
-        err = matSetColor(ledNum, red, green, blue);
-        if (err == ESP_OK) break;
+        mat_err = matSetColor(ledNum, red, green, blue);
+        if (mat_err == ESP_OK) break;
     }
-    if (err != ESP_OK) return err;
+    if (mat_err != ESP_OK) return mat_err;
 
     for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
     {
-        err = matSetScaling(ledNum, 0xFF, 0xFF, 0xFF);
-        if (err == ESP_OK) break;
+        mat_err = matSetScaling(ledNum, 0xFF, 0xFF, 0xFF);
+        if (mat_err == ESP_OK) break;
     }
-    if (err != ESP_OK) return err;
-    
+    if (mat_err != ESP_OK) return ESP_FAIL;    
     return ESP_OK;
 }
 

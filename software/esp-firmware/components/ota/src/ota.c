@@ -166,7 +166,7 @@ void vOTATask(void* pvParameters) {
             unregisterWifiHandler();
             esp_restart();
         }
-        
+
         ESP_LOGI(TAG, "did not complete OTA update successfully!");
         err = indicateOTAFailure(errRes, CONFIG_OTA_LEFT_ON_MS);
         FATAL_IF_ERR(err, errRes);
@@ -175,6 +175,9 @@ void vOTATask(void* pvParameters) {
             throwFatalError(errRes, false);
         }
     }
+
+    ESP_LOGE(TAG, "OTA Task is returning!");
+    throwFatalError(errRes, false);
 }
 
 /**

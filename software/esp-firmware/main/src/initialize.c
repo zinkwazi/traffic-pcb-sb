@@ -189,8 +189,12 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
         return ESP_FAIL;
 
     /* create tasks */
+#if CONFIG_HARDWARE_VERSION == 1
+        /* strobe task is not supported */
+#else
     err = createStrobeTask(NULL, res->errRes);
     FATAL_IF_ERR(err, res->errRes);
+#endif /* CONFIG_HARDWARE_VERISON == 1*/
     err = createOTATask(&otaTask, res->errRes);
     FATAL_IF_ERR(err, res->errRes);
     if (otaTask == NULL)

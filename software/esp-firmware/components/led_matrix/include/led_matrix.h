@@ -1,15 +1,22 @@
 /**
  * led_matrix.h
+ * 
+ * This file contains a hardware abstraction layer for interaction with 
+ * the LED matrix driver ICs through I2C.
+ * 
+ * See: https://www.lumissil.com/assets/pdf/core/IS31FL3741A_DS.pdf.
  */
 
-#ifndef d_MATRIX_H_
-#define d_MATRIX_H_
+#ifndef LED_MATRIX_H_4_8_25
+#define LED_MATRIX_H_4_8_25
 
 #include <stdint.h>
 
 #include "driver/i2c_types.h"
 #include "driver/gpio.h"
 #include "esp_err.h"
+
+#include "mat_err.h"
 
 enum PWMFrequency {
     TWENTY_NINE_K = 0,
@@ -72,39 +79,25 @@ enum SWXSetting {
     MATRIX_SWXSETTING_MAX = 9, // indicates start of invalid values
 };
 
-esp_err_t matSetOperatingMode(enum Operation setting);
-esp_err_t matSetOpenShortDetection(enum ShortDetectionEnable setting);
-esp_err_t matSetLogicLevel(enum LogicLevel setting);
-esp_err_t matSetSWxSetting(enum SWXSetting setting);
-esp_err_t matSetGlobalCurrentControl(uint8_t value);
-esp_err_t matSetResistorPullupSetting(enum ResistorSetting setting);
-esp_err_t matSetResistorPulldownSetting(enum ResistorSetting setting);
-esp_err_t matSetPWMFrequency(enum PWMFrequency freq);
-esp_err_t matReset(void);
-esp_err_t matSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
-esp_err_t matGetColor(uint16_t ledNum, uint8_t *red, uint8_t *green, uint8_t *blue);
-esp_err_t matSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
-esp_err_t matGetScaling(uint16_t ledNum, uint8_t *red, uint8_t *green, uint8_t *blue);
-
+mat_err_t matSetOperatingMode(enum Operation setting);
+mat_err_t matSetOpenShortDetection(enum ShortDetectionEnable setting);
+mat_err_t matSetLogicLevel(enum LogicLevel setting);
+mat_err_t matSetSWxSetting(enum SWXSetting setting);
+mat_err_t matSetGlobalCurrentControl(uint8_t value);
+mat_err_t matSetResistorPullupSetting(enum ResistorSetting setting);
+mat_err_t matSetResistorPulldownSetting(enum ResistorSetting setting);
+mat_err_t matSetPWMFrequency(enum PWMFrequency freq);
+mat_err_t matReset(void);
+mat_err_t matSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
+mat_err_t matSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
 
 #if CONFIG_HARDWARE_VERSION == 1
-
-esp_err_t matInitialize(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
-
+mat_err_t matInitialize(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
 #elif CONFIG_HARDWARE_VERSION == 2
-
-esp_err_t matInitializeBus1(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
-esp_err_t matInitializeBus2(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
-
+mat_err_t matInitializeBus1(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
+mat_err_t matInitializeBus2(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
 #else
 #error "Unsupported hardware version!"
 #endif
 
-
-#if CONFIG_DISABLE_TESTING_FEATURES == false
-
-esp_err_t matReleaseBus(void);
-
-#endif /* CONFIG_DISABLE_TESTING_FEATURES == false */
-
-#endif /* d_MATRIX_H_ */
+#endif /* LED_MATRIX_H_4_8_25 */

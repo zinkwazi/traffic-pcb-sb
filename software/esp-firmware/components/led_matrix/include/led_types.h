@@ -1,5 +1,7 @@
 /**
- * dots_types.h
+ * led_types.h
+ * 
+ * Contains types and enums necessary for the led_matrix component.
  */
 
 #ifndef LED_TYPES_H_
