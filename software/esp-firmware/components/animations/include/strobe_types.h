@@ -20,6 +20,10 @@ struct StrobeLED {
     TaskHandle_t caller;
     /* the target LED hardware number */
     uint16_t ledNum;
+    /* the maximum brightness value */
+    uint8_t maxScale;
+    /* the minimum brightness value */
+    uint8_t minScale;
     /* scaling value */
     uint8_t currScale;
     /* scaling direction */
@@ -34,6 +38,14 @@ struct StrobeTaskCommand {
     TaskHandle_t caller;
     /* the target LED hardware number. An LED number of UINT16_MAX indicates unregister all. */
     uint16_t ledNum;
+    /* the initial brightness direction. Ignored if register LED is false. */
+    uint8_t initScale;
+    /* The initial strobing direction. Ignored if register LED is false. */
+    bool initStrobeUp;
+    /* the maximum brightness value. Ignored if registerLED is false. */
+    uint8_t maxScale;
+    /* the minimum brightness value. Ignored if registerLED is false. */
+    uint8_t minScale;
     /* whether to register or unregister strobing on the LED */
     bool registerLED;
 };

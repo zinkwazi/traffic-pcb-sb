@@ -77,7 +77,7 @@ static const int32_t noRefreshNums[NUM_NO_REFRESH_LEDS] = {WIFI_LED_NUM,
 #endif
 
 static void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t percentFlow);
-static esp_err_t updateLED(uint16_t ledNum, uint8_t percentFlow);
+static esp_err_t updateLED(uint16_t ledNum, uint8_t percentFlow, bool setScaling);
 static char *getCorrectURL(Direction dir, SpeedCategory category);
 static bool mustAbort(void);
 
@@ -288,14 +288,15 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
         if (currentSpeeds[ledNum - 1].speed == 0)
         {
             /* register strobing for closed roads */
-            (void) updateLED(ledNum, 0);
-            err = strobeRegisterLED(ledNum);
+            (void) matSetScaling(ledNum, 0x00, 0x00, 0x00); // intentional best effort
+            (void) updateLED(ledNum, 0, false); // intentional best effort
+            err = strobeRegisterLED(ledNum, 0xFF, 0x20, 0xFF, false);
             if (err != ESP_OK) ESP_LOGW(TAG, "Failed to register LED %d strobing", ledNum);
         } else
         {
             /* update color */
             uint32_t percentFlow = (100 * currentSpeeds[ledNum - 1].speed) / typicalSpeeds[ledNum - 1].speed;
-           (void) updateLED(ledNum, percentFlow); // intentional best effort
+           (void) updateLED(ledNum, percentFlow, true); // intentional best effort
         }
 
         /* handle button presses and calculate time until next LED update */
@@ -561,18 +562,21 @@ static void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t percen
     }
 }
 
-static esp_err_t updateLED(uint16_t ledNum, uint8_t percentFlow) {
+static esp_err_t updateLED(uint16_t ledNum, uint8_t percentFlow, bool setScaling) {
     mat_err_t mat_err;
     uint8_t red, green, blue;
-    setColor(&red, &green, &blue, percentFlow);
 
+    /* determine and update color */
+    setColor(&red, &green, &blue, percentFlow);
     for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
     {
         mat_err = matSetColor(ledNum, red, green, blue);
         if (mat_err == ESP_OK) break;
     }
     if (mat_err != ESP_OK) return mat_err;
+    if (!setScaling) return ESP_OK;
 
+    /* set scaling if requested */
     for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
     {
         mat_err = matSetScaling(ledNum, 0xFF, 0xFF, 0xFF);

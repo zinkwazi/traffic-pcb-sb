@@ -33,12 +33,6 @@
    literal strobe period, while potentially fixing missed deadlines. */
 #define STROBE_PERIOD (100)
 
-/* The minimum brightness that LEDs will decrease to when strobing. */
-#define MIN_SCALE_VAL (0x08)
-
-/* The maximum brightness that LEDs will increase to when strobing. */
-#define MAX_SCALE_VAL (0x55)
-
 /* The percentage of the way from MIN_SCALE_VAL to MAX_SCALE_VAL
    that HIGH strobe steps will take effect instead of LOW strobe steps*/
 #define SCALE_CUTOFF_FRAC (1.0 / 4.0)
@@ -268,8 +262,21 @@ static void receiveCommand(StrobeLED strobeInfo[],
         ESP_LOGI(TAG, "Registering LED %d", strobeInfo[ndx].ledNum);
         strobeInfo[*strobeInfoLen].caller = command->caller;
         strobeInfo[*strobeInfoLen].ledNum = command->ledNum;
-        strobeInfo[*strobeInfoLen].scalingUp = false; // simulate conditions under which next
-        strobeInfo[*strobeInfoLen].currScale = 0;     // scale value will be 0 and scaling up.
+        strobeInfo[*strobeInfoLen].maxScale = command->maxScale;
+        strobeInfo[*strobeInfoLen].minScale = command->minScale;
+        if (command->initScale >= command->maxScale)
+        {
+            strobeInfo[*strobeInfoLen].currScale = command->maxScale;
+            strobeInfo[*strobeInfoLen].scalingUp = false;
+        } else if (command->initScale <= command->minScale)
+        {
+            strobeInfo[*strobeInfoLen].currScale = command->minScale;
+            strobeInfo[*strobeInfoLen].scalingUp = true;
+        } else
+        {
+            strobeInfo[*strobeInfoLen].currScale = command->initScale;
+            strobeInfo[*strobeInfoLen].scalingUp = command->initStrobeUp;
+        }
         (*strobeInfoLen)++;
     } else
     {
@@ -311,7 +318,7 @@ static void strobeLEDs(StrobeLED strobeInfo[], const int strobeInfoLen, ErrorRes
     {
         int strobeStep;
         /* determine correct step size */
-        if (strobeInfo[ndx].currScale > ((int) ((MAX_SCALE_VAL - MIN_SCALE_VAL) * SCALE_CUTOFF_FRAC)) + MIN_SCALE_VAL)
+        if (strobeInfo[ndx].currScale > ((int) ((strobeInfo[ndx].maxScale - strobeInfo[ndx].minScale) * SCALE_CUTOFF_FRAC)) + strobeInfo[ndx].minScale)
         {
             if (strobeInfo[ndx].scalingUp)
             {
@@ -335,10 +342,10 @@ static void strobeLEDs(StrobeLED strobeInfo[], const int strobeInfoLen, ErrorRes
         {
             
             if (strobeInfo[ndx].currScale + strobeStep < strobeInfo[ndx].currScale ||
-                strobeInfo[ndx].currScale + strobeStep >= MAX_SCALE_VAL)
+                strobeInfo[ndx].currScale + strobeStep >= strobeInfo[ndx].maxScale)
             {
                 /* maxval or overflow would occur, cap at maxval and change dir */
-                strobeInfo[ndx].currScale = MAX_SCALE_VAL;
+                strobeInfo[ndx].currScale = strobeInfo[ndx].maxScale;
                 strobeInfo[ndx].scalingUp = false;
             } else
             {
@@ -347,10 +354,10 @@ static void strobeLEDs(StrobeLED strobeInfo[], const int strobeInfoLen, ErrorRes
         } else 
         {
             if (strobeInfo[ndx].currScale - strobeStep > strobeInfo[ndx].currScale ||
-                strobeInfo[ndx].currScale - strobeStep <= MIN_SCALE_VAL)
+                strobeInfo[ndx].currScale - strobeStep <= strobeInfo[ndx].minScale)
             {
                 /* minval or underflow would occur, cap at minval and change dir */
-                strobeInfo[ndx].currScale = MIN_SCALE_VAL;
+                strobeInfo[ndx].currScale = strobeInfo[ndx].minScale;
                 strobeInfo[ndx].scalingUp = true;
             } else
             {

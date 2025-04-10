@@ -301,7 +301,7 @@ esp_err_t indicateOTAAvailable(void)
                         CONFIG_V2_0_OTA_AVAILABLE_GREEN_COMPONENT,
                         CONFIG_V2_0_OTA_AVAILABLE_BLUE_COMPONENT);
     if (err != ESP_OK) return err;
-    err = strobeRegisterLED(OTA_LED_NUM);
+    err = strobeRegisterLED(OTA_LED_NUM, 0x55, 0x08, 0x08, true);
     return err;
 }
 

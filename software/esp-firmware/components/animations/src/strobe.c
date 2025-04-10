@@ -23,10 +23,24 @@
  *       installed on the target LED. This is a silent failure and may cause
  *       a subsequent call to strobeUnregisterLED to also be ignored.
  * 
+ * @param[in] ledNum The LED to register strobing to.
+ * @param[in] maxBrightness The maximum brightness to strobe the LED to.
+ * @param[in] minBrightness The minimum brightness to strobe the LED to.
+ * @param[in] initBrightness The initial brightness to start strobing from. If
+ * this is greater than maxBrightness, the initial strobe direction will be
+ * decreasing and the initial brightness will be maxBrightness and vice-versa
+ * with minBrightness.
+ * @param[in] initStrobeUp Whether strobing begins by increasing to the maximum
+ * value or by decreasing to the minimum value.
+ * 
  * @returns ESP_OK if successful.
  *          ESP_ERR_INVALID_STATE if the command queue is not initialized.
  */
-esp_err_t strobeRegisterLED(uint16_t ledNum)
+esp_err_t strobeRegisterLED(uint16_t ledNum, 
+                            uint8_t maxBrightness, 
+                            uint8_t minBrightness,
+                            uint8_t initBrightness, 
+                            bool initStrobeUp)
 {
     BaseType_t success;
     StrobeTaskCommand command;
@@ -37,6 +51,9 @@ esp_err_t strobeRegisterLED(uint16_t ledNum)
     /* create command */
     command.caller = xTaskGetCurrentTaskHandle();
     command.ledNum = ledNum;
+    command.maxScale = maxBrightness;
+    command.minScale = minBrightness;
+    command.initStrobeUp = initStrobeUp;
     command.registerLED = true;
 
     /* send command */
