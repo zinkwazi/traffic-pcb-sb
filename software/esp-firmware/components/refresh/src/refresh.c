@@ -23,6 +23,7 @@
 #include "api_connect.h"
 #include "app_errors.h"
 #include "app_nvs.h"
+#include "strobe.h"
 #include "led_coordinates.h"
 #include "led_matrix.h"
 #include "led_registers.h"
@@ -260,6 +261,8 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
     TickType_t prevWake = xTaskGetTickCount();
     for (int ndx = 0; ndx < MAX_NUM_LEDS_REG; ndx++) {
         int ledNum = ledOrder[ndx];
+
+        /* check for various failure conditions */
         if (ledNum > MAX_NUM_LEDS_REG || ledNum <= 0) {
             ESP_LOGW(TAG, "skipping out of bounds LED %d", ledNum);
             continue;
@@ -280,8 +283,22 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
             ESP_LOGW(TAG, "skipping led %u for led speed %d", currentSpeeds[ledNum - 1].ledNum, currentSpeeds[ledNum - 1].speed);
             continue;
         }
-        uint32_t percentFlow = (100 * currentSpeeds[ledNum - 1].speed) / typicalSpeeds[ledNum - 1].speed;
-        updateLED(currentSpeeds[ledNum - 1].ledNum, percentFlow);
+        
+        /* update LED */
+        if (currentSpeeds[ledNum - 1].speed == 0)
+        {
+            /* register strobing for closed roads */
+            (void) updateLED(ledNum, 0);
+            err = strobeRegisterLED(ledNum);
+            if (err != ESP_OK) ESP_LOGW(TAG, "Failed to register LED %d strobing", ledNum);
+        } else
+        {
+            /* update color */
+            uint32_t percentFlow = (100 * currentSpeeds[ledNum - 1].speed) / typicalSpeeds[ledNum - 1].speed;
+           (void) updateLED(ledNum, percentFlow); // intentional best effort
+        }
+
+        /* handle button presses and calculate time until next LED update */
         if (mustAbort()) {
             return REFRESH_ABORT;
         }
@@ -305,6 +322,10 @@ esp_err_t clearBoard(Direction dir) {
     esp_err_t err;
     mat_err_t mat_err;
     int32_t ledOrder[MAX_NUM_LEDS_REG];
+
+    /* remove all LED strobing registered by this task */
+    err = strobeUnregisterAll();
+    if (err != ESP_OK) return ESP_FAIL;
 
     switch (dir) {
     case NORTH:
@@ -366,6 +387,11 @@ esp_err_t clearBoard(Direction dir) {
 esp_err_t quickClearBoard(void)
 {
     mat_err_t mat_err;
+
+    /* remove all LED strobing registered by this task */
+    err = strobeUnregisterAll();
+    if (err != ESP_OK) return ESP_FAIL;
+
     /* restart matrices */
     ESP_LOGI(TAG, "Quick clearing matrices");
 
@@ -408,6 +434,11 @@ esp_err_t clearBoard(Direction dir) {
     mat_err_t mat_err;
     int32_t ledOrder[MAX_NUM_LEDS_REG];
 
+    /* remove all LED strobing registered by this task */
+    err = strobeUnregisterAll();
+    if (err != ESP_OK) return ESP_FAIL;
+
+    /* set all LEDs to zero brightness, except for indicator LEDs */
     switch (dir) {
     case NORTH:
         ESP_LOGI(TAG, "Clearing North...");
@@ -481,6 +512,10 @@ esp_err_t clearBoard(Direction dir) {
 esp_err_t quickClearBoard(void)
 {
     mat_err_t mat_err;
+
+    /* remove all LED strobing registered by this task */
+    esp_err_t err = strobeUnregisterAll();
+    if (err != ESP_OK) return ESP_FAIL;
 
     for (int32_t num = 1; num <= MAX_NUM_LEDS_REG; num++)
     {
