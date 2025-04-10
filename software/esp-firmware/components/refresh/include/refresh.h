@@ -22,8 +22,8 @@
 
 esp_err_t initRefresh(ErrorResources *errRes);
 esp_http_client_handle_t initHttpClient(void);
-esp_err_t clearBoard(Direction dir);
-esp_err_t quickClearBoard(void);
+esp_err_t clearBoard(Direction dir, bool quick);
+esp_err_t quickClearBoard(Direction dir);
 esp_err_t refreshData(LEDData data[static MAX_NUM_LEDS_REG], esp_http_client_handle_t client, Direction dir, SpeedCategory category, ErrorResources *errRes);
 esp_err_t refreshBoard(Direction dir, Animation anim);
 

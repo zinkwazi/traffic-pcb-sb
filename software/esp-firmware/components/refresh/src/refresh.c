@@ -342,24 +342,29 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
  *        provided.
  * 
  * @param dir The direction that the LEDs will be cleared toward.
+ * @param quick Whether to clear the board quickly, or to add a slight delay
+ * between each LED, which causes an animation.
  * 
  * @returns ESP_OK if successful, otherwise I2C matrix issue.
  */
-esp_err_t clearBoard(Direction dir) {
+esp_err_t clearBoard(Direction dir, bool quick) {
     esp_err_t err;
     mat_err_t mat_err;
+    TickType_t prevWake;
     int32_t ledOrder[MAX_NUM_LEDS_REG];
 
     /* remove all LED strobing registered by this task */
     err = strobeUnregisterAll();
     if (err != ESP_OK) return ESP_FAIL;
 
+    
     switch (dir) {
     case NORTH:
         ESP_LOGI(TAG, "Clearing North...");
         err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE_NORTH_REVERSE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
         if (err != ESP_OK) return err;
 
+        prevWake = xTaskGetTickCount();
         for (int i = 0; i < MAX_NUM_LEDS_REG; i++) {
             int32_t ndx = ledOrder[i];
             
@@ -378,7 +383,10 @@ esp_err_t clearBoard(Direction dir) {
                 return REFRESH_ABORT;
             }
 
-            vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
+            if (quick)
+            {
+                vTaskDelayUntil(&prevWake, pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
+            }
         }
         break;
     case SOUTH:
@@ -386,6 +394,7 @@ esp_err_t clearBoard(Direction dir) {
         err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE_SOUTH_REVERSE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
         if (err != ESP_OK) return err;
 
+        prevWake = xTaskGetTickCount();
         for (int i = 0; i < MAX_NUM_LEDS_REG; i++) {
             int32_t ndx = ledOrder[i];
 
@@ -404,7 +413,11 @@ esp_err_t clearBoard(Direction dir) {
                 return REFRESH_ABORT;
             }
 
-            vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
+            if (quick)
+            {
+                vTaskDelayUntil(&prevWake, pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
+            }
+            
         }
         break;
     default:
@@ -419,11 +432,14 @@ esp_err_t clearBoard(Direction dir) {
  * 
  * @note For V1_0, this function works by resetting each matrix.
  * 
+ * @param[in] dir This is unused in V1_0.
+ * 
  * @returns ESP_OK if successful
  */
-esp_err_t quickClearBoard(void)
+esp_err_t quickClearBoard(__unused Direction dir)
 {
     mat_err_t mat_err;
+    esp_err_t err;
 
     /* remove all LED strobing registered by this task */
     err = strobeUnregisterAll();
@@ -463,14 +479,17 @@ esp_err_t quickClearBoard(void)
  *        provided.
  * 
  * @param dir The direction that the LEDs will be cleared toward.
+ * @param quick Whether to clear LEDs quickly, or with a slight delay causing
+ * a clearing animation.
  * 
  * @returns ESP_OK if successful.
  * REFRESH_ABORT if the toggle button is pressed, in which case the board should
  * be cleared by quickClearBoard.
  */
-esp_err_t clearBoard(Direction dir) {
+esp_err_t clearBoard(Direction dir, bool quick) {
     esp_err_t err;
     mat_err_t mat_err;
+    TickType_t prevWake;
     int32_t ledOrder[MAX_NUM_LEDS_REG];
 
     /* remove all LED strobing registered by this task */
@@ -484,6 +503,7 @@ esp_err_t clearBoard(Direction dir) {
         err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE_NORTH_REVERSE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
         if (err != ESP_OK) return err;
 
+        prevWake = xTaskGetTickCount();
         for (int i = 0; i < MAX_NUM_LEDS_REG; i++) {
             int32_t ndx = ledOrder[i];
             if (contains(noRefreshNums, NUM_NO_REFRESH_LEDS, ndx)) // only 7 elements (don't fret)
@@ -508,7 +528,11 @@ esp_err_t clearBoard(Direction dir) {
                 return REFRESH_ABORT;
             }
 
-            vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
+            if (!quick)
+            {
+                vTaskDelayUntil(&prevWake, pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
+            }
+            
         }
         break;
     case SOUTH:
@@ -516,6 +540,7 @@ esp_err_t clearBoard(Direction dir) {
         err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE_SOUTH_REVERSE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
         if (err != ESP_OK) return err;
 
+        prevWake = xTaskGetTickCount();
         for (int i = 0; i < MAX_NUM_LEDS_REG; i++) {
             int32_t ndx = ledOrder[i];
             if (contains(noRefreshNums, NUM_NO_REFRESH_LEDS, ndx)) // only 7 elements (don't fret)
@@ -540,7 +565,10 @@ esp_err_t clearBoard(Direction dir) {
                 return REFRESH_ABORT;
             }
 
-            vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
+            if (!quick)
+            {
+                vTaskDelayUntil(&prevWake, pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
+            }
         }
         break;
     default:
@@ -556,33 +584,14 @@ esp_err_t clearBoard(Direction dir) {
  * @note For V2_0, this function works by manually clearing every LED. Resetting
  *       matrices is not used because that would turn off indicator LEDs.
  * 
+ * @param[in] dir The direction to clear the board, which is relevant for
+ * versions that have matrix LED indicator lights.
+ * 
  * @returns ESP_OK always.
  */
-esp_err_t quickClearBoard(void)
+esp_err_t quickClearBoard(Direction dir)
 {
-    mat_err_t mat_err;
-
-    /* remove all LED strobing registered by this task */
-    esp_err_t err = strobeUnregisterAll();
-    if (err != ESP_OK) return ESP_FAIL;
-
-    for (int32_t num = 1; num <= MAX_NUM_LEDS_REG; num++)
-    {
-        if (contains(noRefreshNums, NUM_NO_REFRESH_LEDS, num)) // only 7 elements (don't fret)
-        {
-            /* don't clear indicator LEDs */
-            ESP_LOGW(TAG, "skipping clear of led %ld", num);
-            continue;
-        }
-
-        for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
-        {
-            mat_err = matSetColor(num, 0x00, 0x00, 0x00);
-            if (mat_err == ESP_OK) break;
-        }
-        if (mat_err != ESP_OK) return ESP_FAIL;
-    }
-    return ESP_OK;
+    return clearBoard(dir, true);
 }
 
 #else

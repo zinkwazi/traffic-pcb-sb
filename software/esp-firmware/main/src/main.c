@@ -142,7 +142,7 @@ void app_main(void)
     err = initializeMatrices();
     FATAL_IF_ERR(err, res.errRes);
     /* quick clear LEDs, maybe leftover from reboot */
-    (void) quickClearBoard(); // let this fail, refresh will occur after
+    (void) quickClearBoard(SOUTH); // let this fail, refresh will occur after
     err = initializeIndicatorLEDs();
     FATAL_IF_ERR(err, res.errRes);
     err = initializeApplication(&state, &res);
@@ -156,16 +156,16 @@ void app_main(void)
       (void) mainWaitForTaskNotification(&res); // extremely noticeable error, allows clearing after notification recieved
       if (err == REFRESH_ABORT)
       {
-        err = quickClearBoard();
+        err = quickClearBoard(state.dir);
         FATAL_IF_ERR(err, res.errRes);
       } else if (err == REFRESH_ABORT_NO_CLEAR)
       {
         /* do nothing, improves efficiency slightly */
       } else {
-        err = clearBoard(state.dir);
+        err = clearBoard(state.dir, false);
         if (err == REFRESH_ABORT)
         {
-          err = quickClearBoard();
+          err = quickClearBoard(state.dir);
           FATAL_IF_ERR(err, res.errRes);
           // consume this task notification
           (void) ulTaskNotifyTake(pdTRUE, 0);

@@ -60,6 +60,11 @@ a block of LEDs that should be strobed starting from particular values in order
 to achieve an animation. The strobe task aquires this when reading from the queue. */
 static SemaphoreHandle_t strobeQueueMutex = NULL;
 
+static void vStrobeTask(void *pvParameters);
+static int findStrobeLED(const StrobeLED strobeInfo[], int strobeInfoLen, uint16_t targetLED);
+static void receiveCommand(StrobeLED strobeInfo[], int *strobeInfoLen, const StrobeTaskCommand *command, ErrorResources *errRes);
+static void strobeLEDs(StrobeLED strobeInfo[], const int strobeInfoLen, ErrorResources *errRes);
+
 /**
  * @brief Returns a copy of the strobeQueue handle. The strobeQueue holds
  *        StrobeTaskCommand objects.
@@ -88,11 +93,6 @@ esp_err_t releaseStrobeQueueMutex(void)
 {
     return (xSemaphoreGive(strobeQueueMutex) == pdPASS) ? ESP_OK : ESP_FAIL;
 }
-
-static void vStrobeTask(void *pvParameters);
-static int findStrobeLED(const StrobeLED strobeInfo[], int strobeInfoLen, uint16_t targetLED);
-static void receiveCommand(StrobeLED strobeInfo[], int *strobeInfoLen, const StrobeTaskCommand *command, ErrorResources *errRes);
-static void strobeLEDs(StrobeLED strobeInfo[], const int strobeInfoLen, ErrorResources *errRes);
 
 /**
  * @brief Initializes the over-the-air (OTA) task, which is implemented by
