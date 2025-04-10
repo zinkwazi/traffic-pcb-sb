@@ -1,21 +1,25 @@
-idf_component_register(SRCS "src/main.c" 
-                            "src/routines.c"
-                            "src/nvs_settings.c"
-                            "src/refresh.c"
+idf_component_register(SRCS "src/main.c"
                             "src/initialize.c"
-                    INCLUDE_DIRS "include"
-                    REQUIRES common
-                             ota
-                             actions
-                             app_errors  
-                             led_matrix
-                             animations
-                             api_connect
-                             indicators
-                             esp_timer
-                             esp_wifi
-                             esp_http_client
-                             esp-tls
-                             esp_event)
+                       INCLUDE_DIRS "include"
+                       REQUIRES common
+                                led_matrix
+                                actions
+                                animations
+                                api_connect
+                                app_errors
+                                app_nvs
+                                ota
+                                routines
+                                refresh
+                                indicators
+                                esp_driver_gpio
+                                esp_driver_uart
+                                esp_driver_usb_serial_jtag
+                                esp_netif
+                                esp-tls
+                                vfs
+                                esp_wifi
+                                nvs_flash
+                                esp_timer)
 
 

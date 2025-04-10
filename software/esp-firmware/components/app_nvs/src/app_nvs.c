@@ -5,7 +5,7 @@
  * particularly those that deal with persistent user settings.
  */
 
-#include "nvs_settings.h"
+#include "app_nvs.h"
 
 #include <malloc.h>
 #include <stdbool.h>
@@ -24,9 +24,7 @@
 #include "sdkconfig.h"
 
 #include "app_errors.h"
-#include "api_connect.h"
 #include "led_registers.h"
-
 #include "main_types.h"
 #include "routines.h"
 
@@ -47,10 +45,10 @@
 #define TYPICAL_SOUTH_NVS_KEY "typical_south"
 
 /**
- * @brief Obtains a handle to the main NVS namespace in read/write mode.
- * 
- * @returns A handle to the main NVS namespace if successful, otherwise NULL.
- */
+* @brief Obtains a handle to the main NVS namespace in read/write mode.
+* 
+* @returns A handle to the main NVS namespace if successful, otherwise NULL.
+*/
 nvs_handle_t openMainNvs(void)
 {
   esp_err_t err;
@@ -62,10 +60,10 @@ nvs_handle_t openMainNvs(void)
 }
 
 /**
- * @brief Obtains a handle to the worker NVS namespace in read/write mode.
- * 
- * @returns A handle to the worker NVS namespace if successful, otherwise NULL.
- */
+* @brief Obtains a handle to the worker NVS namespace in read/write mode.
+* 
+* @returns A handle to the worker NVS namespace if successful, otherwise NULL.
+*/
 nvs_handle_t openWorkerNvs(void)
 {
   esp_err_t err;
@@ -77,17 +75,17 @@ nvs_handle_t openWorkerNvs(void)
 }
 
 /**
- * @brief Determines whether user settings currently exist in non-volatile
- *        storage.
- * 
- * @note User settings should not exist in storage on the first powerup of the
- *       system, however they should exist during subsequent reboots.
- * 
- * @param nvsHandle The non-volatile storage handle where the settings would
- *                  exist.
- * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- */
+* @brief Determines whether user settings currently exist in non-volatile
+*        storage.
+* 
+* @note User settings should not exist in storage on the first powerup of the
+*       system, however they should exist during subsequent reboots.
+* 
+* @param nvsHandle The non-volatile storage handle where the settings would
+*                  exist.
+* 
+* @returns ESP_OK if successful, otherwise ESP_FAIL.
+*/
 esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle) {
   esp_err_t ret;
   nvs_type_t nvsType;
@@ -102,18 +100,18 @@ esp_err_t nvsEntriesExist(nvs_handle_t nvsHandle) {
 }
 
 /**
- * @brief Removes any entries in the non-volatile storage main namespace that 
- *        are unnecessary for device operation.
- * 
- * @note Unnecessary NVS entries may exist if a firmware update has been
- *       performed and previously necessary entries have been made obsolete.
- *       All entries that are deemed necessary are those searched for in
- *       the nvsEntriesExist function.
- * 
- * @param nvsHandle A read/write handle to the main NVS namespace.
- * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- */
+* @brief Removes any entries in the non-volatile storage main namespace that 
+*        are unnecessary for device operation.
+* 
+* @note Unnecessary NVS entries may exist if a firmware update has been
+*       performed and previously necessary entries have been made obsolete.
+*       All entries that are deemed necessary are those searched for in
+*       the nvsEntriesExist function.
+* 
+* @param nvsHandle A read/write handle to the main NVS namespace.
+* 
+* @returns ESP_OK if successful, otherwise ESP_FAIL.
+*/
 esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle) {
   esp_err_t err;
   nvs_entry_info_t info;
@@ -152,18 +150,18 @@ esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle) {
 }
 
 /**
- * @brief Removes any entries in the non-volatile storage worker namespace that 
- *        are unnecessary for ddevice operation.
- * 
- * @note Unnecessary NVS entries may exist if a firmware update has been
- *       performed and previously necessary entries have been made obsolete.
- *       All entries that are deemed necessary are those searched for in
- *       the nvsEntriesExist function.
- * 
- * @param nvsHandle A read/write handle to the worker NVS namespace.
- * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- */
+* @brief Removes any entries in the non-volatile storage worker namespace that 
+*        are unnecessary for ddevice operation.
+* 
+* @note Unnecessary NVS entries may exist if a firmware update has been
+*       performed and previously necessary entries have been made obsolete.
+*       All entries that are deemed necessary are those searched for in
+*       the nvsEntriesExist function.
+* 
+* @param nvsHandle A read/write handle to the worker NVS namespace.
+* 
+* @returns ESP_OK if successful, otherwise ESP_FAIL.
+*/
 esp_err_t removeExtraWorkerNvsEntries(nvs_handle_t nvsHandle) {
   nvs_entry_info_t info;
   nvs_iterator_t nvs_iter;
@@ -204,20 +202,20 @@ esp_err_t removeExtraWorkerNvsEntries(nvs_handle_t nvsHandle) {
 }
 
 /**
- * @brief Retrieves user settings from non-volatile storage.
- * 
- * Retrieves user settings from non-volatile storage and places results in
- * the provided settings, with space allocated from the heap.
- * 
- * @note It is necessary for the calling function to free pointers in 
- *       settings if settings is to be destroyed.
- * 
- * @param nvsHandle The non-volatile storage handle where settings exist.
- * @param[out] settings A pointer to struct UserSettings that will be
- *                      populated with the retrieved user settings.
- * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- */
+* @brief Retrieves user settings from non-volatile storage.
+* 
+* Retrieves user settings from non-volatile storage and places results in
+* the provided settings, with space allocated from the heap.
+* 
+* @note It is necessary for the calling function to free pointers in 
+*       settings if settings is to be destroyed.
+* 
+* @param nvsHandle The non-volatile storage handle where settings exist.
+* @param[out] settings A pointer to struct UserSettings that will be
+*                      populated with the retrieved user settings.
+* 
+* @returns ESP_OK if successful, otherwise ESP_FAIL.
+*/
 esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, UserSettings *settings)
 {
   /* retrieve wifi ssid */
@@ -249,11 +247,11 @@ esp_err_t retrieveNvsEntries(nvs_handle_t nvsHandle, UserSettings *settings)
 }
 
 /**
- * @brief Stores user settings to non-volatile storage
- * 
- * @param nvsHandle The non-volatile storage handle where settings exist.
- * @param settings The user settings to store in non-volatile storage.
- */
+* @brief Stores user settings to non-volatile storage
+* 
+* @param nvsHandle The non-volatile storage handle where settings exist.
+* @param settings The user settings to store in non-volatile storage.
+*/
 esp_err_t storeNvsSettings(nvs_handle_t nvsHandle, UserSettings settings)
 {
   esp_err_t err;
@@ -269,22 +267,22 @@ esp_err_t storeNvsSettings(nvs_handle_t nvsHandle, UserSettings settings)
 }
 
 /**
- * @brief Handles errors that are due to a user settings issue by setting the
- *        error LED high, querying the user for new settings, then restarting 
- *        the application.
- * 
- * @note Errors that occur while attempting to query the user cause the
- *       spinForever function to be called.
- * 
- * @param nvsHandle The non-volatile storage handle to store settings in.
- * @param errorOccurred A pointer to a bool that indicates whether an error
- *                      has occurred at any point in the program or not. This
- *                      bool is shared by all tasks and should only be accessed
- *                      after errorOccurredMutex has been obtained, ideally
- *                      through the use of the boolWithTestSet function.
- * @param errorOccurredMutex A handle to a mutex that guards access to the bool
- *                           pointed to by errorOccurred.
- */
+* @brief Handles errors that are due to a user settings issue by setting the
+*        error LED high, querying the user for new settings, then restarting 
+*        the application.
+* 
+* @note Errors that occur while attempting to query the user cause the
+*       spinForever function to be called.
+* 
+* @param nvsHandle The non-volatile storage handle to store settings in.
+* @param errorOccurred A pointer to a bool that indicates whether an error
+*                      has occurred at any point in the program or not. This
+*                      bool is shared by all tasks and should only be accessed
+*                      after errorOccurredMutex has been obtained, ideally
+*                      through the use of the boolWithTestSet function.
+* @param errorOccurredMutex A handle to a mutex that guards access to the bool
+*                           pointed to by errorOccurred.
+*/
 void updateNvsSettings(nvs_handle_t nvsHandle, ErrorResources *errRes) {
   throwHandleableError(errRes, false); // turns on error LED
   /* flash direction LEDs to indicate settings update is requested */
@@ -310,19 +308,19 @@ void updateNvsSettings(nvs_handle_t nvsHandle, ErrorResources *errRes) {
 }
 
 /**
- * @brief Updates the data stored in the provided array by querying it from
- *        non-volatile storage.
- * 
- * @param[out] data The destination of the retrieved data.
- * @param[in] dir The direction of data to retrieve.
- * @param[in] category The category of data to retrieve.
- * 
- * @returns ESP_OK if successful.
- *          ESP_ERR_INVALID_ARG if invalid argument.
- *          ESP_ERR_INVALID_SIZE if retrieved data is incorrect size.
- *          Various error codes passed from NVS functions.
- *          ESP_FAIL if something unexpected occurred.
- */
+* @brief Updates the data stored in the provided array by querying it from
+*        non-volatile storage.
+* 
+* @param[out] data The destination of the retrieved data.
+* @param[in] dir The direction of data to retrieve.
+* @param[in] category The category of data to retrieve.
+* 
+* @returns ESP_OK if successful.
+*          ESP_ERR_INVALID_ARG if invalid argument.
+*          ESP_ERR_INVALID_SIZE if retrieved data is incorrect size.
+*          Various error codes passed from NVS functions.
+*          ESP_FAIL if something unexpected occurred.
+*/
 esp_err_t refreshSpeedsFromNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction dir, SpeedCategory category)
 {
     esp_err_t err;
@@ -451,15 +449,15 @@ esp_err_t storeSpeedsToNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction dir,
 #if CONFIG_HARDWARE_VERSION == 1
 
 /**
- * @brief Queries the user for settings and writes responses in non-volatile
- *        storage.
- * 
- * @note Uses UART0 to query settings.
- * 
- * @param nvsHandle The non-volatile storage handle to store settings in.
- * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- */
+* @brief Queries the user for settings and writes responses in non-volatile
+*        storage.
+* 
+* @note Uses UART0 to query settings.
+* 
+* @param nvsHandle The non-volatile storage handle to store settings in.
+* 
+* @returns ESP_OK if successful, otherwise ESP_FAIL.
+*/
 esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
   const unsigned short bufLen = CONFIG_NVS_ENTRY_BUFFER_LENGTH;
   char c;
@@ -510,15 +508,15 @@ esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
 #elif CONFIG_HARDWARE_VERSION == 2
 
 /**
- * @brief Queries the user for settings and writes responses in non-volatile
- *        storage.
- * 
- * @note Uses UART0 to query settings.
- * 
- * @param nvsHandle The non-volatile storage handle to store settings in.
- * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- */
+* @brief Queries the user for settings and writes responses in non-volatile
+*        storage.
+* 
+* @note Uses UART0 to query settings.
+* 
+* @param nvsHandle The non-volatile storage handle to store settings in.
+* 
+* @returns ESP_OK if successful, otherwise ESP_FAIL.
+*/
 esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
   const unsigned short bufLen = CONFIG_NVS_ENTRY_BUFFER_LENGTH;
   char c;

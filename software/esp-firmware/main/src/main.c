@@ -25,11 +25,12 @@
 #include "led_registers.h"
 
 #include "indicators.h"
-#include "initialize.h"
 #include "main_types.h"
 #include "refresh.h"
 #include "routines.h"
 #include "utilities.h"
+
+#include "initialize.h"
 
 #define TAG "app_main"
 
@@ -45,11 +46,9 @@
  */
 static esp_err_t mainRefresh(MainTaskState *state, MainTaskResources *res, LEDData typicalNorth[static MAX_NUM_LEDS_REG], LEDData typicalSouth[static MAX_NUM_LEDS_REG]) {
   esp_err_t err;
-  LEDData currentSpeeds[MAX_NUM_LEDS_REG];
   /* input guards */
   if (state == NULL ||
-      res == NULL ||
-      res->client == NULL)
+      res == NULL)
   {
     return ESP_ERR_INVALID_ARG;
   }
@@ -68,19 +67,16 @@ static esp_err_t mainRefresh(MainTaskState *state, MainTaskResources *res, LEDDa
         break;
     }
   }
-  /* retrieve updated data */
-  err = refreshData(currentSpeeds, res->client, state->dir, LIVE, res->errRes);
-  if (err != ESP_OK) return err;
   /* refresh LEDs */
   err = indicateDirection(state->dir);
   if (err != ESP_OK) return err;
   switch (state->dir)
   {
     case NORTH:
-      err = refreshBoard(currentSpeeds, typicalNorth, CURVED_LINE_NORTH);
+      err = refreshBoard(NORTH, CURVED_LINE_NORTH);
       break;
     case SOUTH:
-      err = refreshBoard(currentSpeeds, typicalSouth, CURVED_LINE_SOUTH);
+      err = refreshBoard(SOUTH, CURVED_LINE_SOUTH);
       break;
     default:
       err = ESP_FAIL;
@@ -152,11 +148,6 @@ void app_main(void)
     err = initializeApplication(&state, &res);
     FATAL_IF_ERR(err, res.errRes);
     
-    /* retrieve speeds */
-    err = refreshData(typicalNorthSpeeds, res.client, NORTH, TYPICAL, res.errRes);
-    FATAL_IF_ERR(err, res.errRes);
-    err = refreshData(typicalSouthSpeeds, res.client, SOUTH, TYPICAL, res.errRes);
-    FATAL_IF_ERR(err, res.errRes);
     /* handle requests to update all LEDs */
     err = enableDirectionButtonIntr();
     FATAL_IF_ERR(err, res.errRes);

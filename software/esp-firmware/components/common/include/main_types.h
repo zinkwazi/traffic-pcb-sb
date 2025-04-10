@@ -53,21 +53,28 @@ struct UserSettings {
 typedef struct UserSettings UserSettings;
 
 struct MainTaskResources {
-    esp_http_client_handle_t client;
     nvs_handle_t nvsHandle;
     UserSettings *settings;
     esp_timer_handle_t refreshTimer;
     ErrorResources *errRes;
-  };
-  
-  typedef struct MainTaskResources MainTaskResources;
-  
-  struct MainTaskState {
-    bool toggle; // whether the direction of flow should be switched
-    bool first; // whether this is the first refresh
-    Direction dir; // current LED refresh direction
-  };
-  
-  typedef struct MainTaskState MainTaskState;
+};
+
+typedef struct MainTaskResources MainTaskResources;
+
+struct MainTaskState {
+  bool toggle; // whether the direction of flow should be switched
+  bool first; // whether this is the first refresh
+  Direction dir; // current LED refresh direction
+};
+
+typedef struct MainTaskState MainTaskState;
+
+struct LEDData {
+    uint16_t ledNum;
+    /* The speed of the LED, with negative values specifying special LED types.*/
+    int8_t speed;
+};
+
+typedef struct LEDData LEDData;
 
 #endif /* MAIN_TYPES_H_ */

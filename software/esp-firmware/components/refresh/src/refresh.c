@@ -1,7 +1,8 @@
 /**
- * refresh.h
+ * refresh.c
  * 
- * Contains function that handle refreshes of the LEDs.
+ * Contains functionality for refreshing all of the traffic and direction LEDs
+ * on the board.
  */
 
 #include "refresh.h"
@@ -9,26 +10,28 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "esp_crt_bundle.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_http_client.h"
-#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/projdefs.h"
 #include "freertos/task.h"
+#include "sdkconfig.h"
 
 #include "animations.h"
 #include "api_connect.h"
 #include "app_errors.h"
+#include "app_nvs.h"
 #include "led_coordinates.h"
 #include "led_matrix.h"
 #include "led_registers.h"
 #include "mat_err.h"
 #include "pinout.h"
-
 #include "main_types.h"
-#include "nvs_settings.h"
 #include "utilities.h"
+
+#include "traffic_data.h"
 
 #define TAG "refresh"
 
@@ -38,6 +41,10 @@
 #define URL_DATA_CURRENT_SOUTH CONFIG_DATA_SERVER "/current_data/data_south_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
 #define URL_DATA_TYPICAL_NORTH CONFIG_DATA_SERVER "/current_data/typical_north_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
 #define URL_DATA_TYPICAL_SOUTH CONFIG_DATA_SERVER "/current_data/typical_south_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
+
+/* TomTom HTTPS configuration */
+#define API_METHOD HTTP_METHOD_GET
+#define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
 
 #define API_RETRY_CONN_NUM 5
 
@@ -52,17 +59,17 @@
 #define NUM_NO_REFRESH_LEDS 11
 
 static const int32_t noRefreshNums[NUM_NO_REFRESH_LEDS] = {WIFI_LED_NUM,
-                                                           ERROR_LED_NUM,
-                                                           OTA_LED_NUM,
-                                                           NORTH_LED_NUM,
-                                                           SOUTH_LED_NUM,
-                                                           EAST_LED_NUM,
-                                                           WEST_LED_NUM,
-                                                           LIGHT_LED_NUM,
-                                                           MEDIUM_LED_NUM,
-                                                           HEAVY_LED_NUM,
-                                                           46, // 46 does not exist for V2_0
-                                                          }; 
+                                                        ERROR_LED_NUM,
+                                                        OTA_LED_NUM,
+                                                        NORTH_LED_NUM,
+                                                        SOUTH_LED_NUM,
+                                                        EAST_LED_NUM,
+                                                        WEST_LED_NUM,
+                                                        LIGHT_LED_NUM,
+                                                        MEDIUM_LED_NUM,
+                                                        HEAVY_LED_NUM,
+                                                        46, // 46 does not exist for V2_0
+                                                        }; 
 
 #else
 #error "Unsupported hardware version!"
@@ -84,6 +91,90 @@ static bool contains(const int32_t *arr, int32_t arrLen, int32_t ele);
 #else
 #error "Unsupported hardware version!"
 #endif
+
+/**
+ * @brief Initializes refresh functionality, including initialization of
+ * data from the server or non-volatile storage.
+ * 
+ * @returns ESP_OK if successful.
+ * ESP_ERR_INVALID_ARG if invalid arguments.
+ */
+esp_err_t initRefresh(ErrorResources *errRes)
+{
+    LEDData northData[MAX_NUM_LEDS_REG];
+    LEDData southData[MAX_NUM_LEDS_REG];
+    esp_http_client_handle_t client;
+    esp_err_t err;
+
+    /* input guards */
+    if (errRes == NULL) return ESP_ERR_INVALID_ARG;
+    if (errRes->errMutex == NULL) return ESP_ERR_INVALID_ARG;
+
+    /* initialize static traffic data */
+    err = initTrafficData();
+    if (err != ESP_OK) return err;
+
+    /* query typical data from server, falling back to nvs if necessary */
+    client = initHttpClient();
+    if (client == NULL) return ESP_FAIL;
+    err = refreshData(northData, client, NORTH, TYPICAL, errRes);
+    if (err != ESP_OK) return err;
+    err = refreshData(southData, client, SOUTH, TYPICAL, errRes);
+    if (err != ESP_OK) return err;
+
+    /* update typical static traffic data */
+    err = borrowTrafficData(TYPICAL, portMAX_DELAY);
+    if (err != ESP_OK) return err;
+    err = updateTrafficData(northData, MAX_NUM_LEDS_REG, NORTH, TYPICAL);
+    if (err != ESP_OK) return err;
+    err = updateTrafficData(southData, MAX_NUM_LEDS_REG, SOUTH, TYPICAL);
+    if (err != ESP_OK) return err;
+    err= releaseTrafficData(TYPICAL);
+    if (err != ESP_OK) return err;
+
+    /* query current data from server, falling back to nvs if necessary */
+    client = initHttpClient();
+    if (client == NULL) return ESP_FAIL;
+    err = refreshData(northData, client, NORTH, LIVE, errRes);
+    if (err != ESP_OK) return err;
+    err = refreshData(southData, client, SOUTH, LIVE, errRes);
+    if (err != ESP_OK) return err;
+
+    /* update current static traffic data */
+    err = borrowTrafficData(LIVE, portMAX_DELAY);
+    if (err != ESP_OK) return err;
+    err = updateTrafficData(northData, MAX_NUM_LEDS_REG, NORTH, LIVE);
+    if (err != ESP_OK) return err;
+    err = updateTrafficData(southData, MAX_NUM_LEDS_REG, SOUTH, LIVE);
+    if (err != ESP_OK) return err;
+    err= releaseTrafficData(LIVE);
+    if (err != ESP_OK) return err;
+
+    return ESP_OK;
+}
+
+/**
+ * @brief Initializes an http client to the server.
+ *
+ * @note Returned client must have a call to esp_http_client_cleanup after use.
+ *
+ * @returns A handle to the initialized client if successful,
+ *          otherwise NULL.
+ */
+esp_http_client_handle_t initHttpClient(void)
+{
+    esp_http_client_config_t httpConfig = {
+        .host = CONFIG_DATA_SERVER,
+        .path = "/",
+        .auth_type = API_AUTH_TYPE,
+        .method = API_METHOD,
+        .crt_bundle_attach = esp_crt_bundle_attach,
+        .event_handler = NULL,
+        .user_data = NULL,
+    };
+
+    return esp_http_client_init(&httpConfig);
+}
 
 /**
  * @brief Updates the data stored in the provided array by querying it
@@ -118,44 +209,53 @@ esp_err_t refreshData(LEDData data[static MAX_NUM_LEDS_REG], esp_http_client_han
         return ESP_FAIL;
     }
     err = getServerSpeeds(data, 
-                          MAX_NUM_LEDS_REG, 
-                          client, 
-                          url, 
-                          API_RETRY_CONN_NUM);
+                        MAX_NUM_LEDS_REG, 
+                        client, 
+                        url,
+                        API_RETRY_CONN_NUM);
     if (err != ESP_OK)
     {
         ESP_LOGW(TAG, "searching nvs for data");
         throwNoConnError(errRes, false);
         return refreshSpeedsFromNVS(data, dir, category);
     }
-    /* store new data in NVS */
     resolveNoConnError(errRes, true, false);
-    err = storeSpeedsToNVS(data, dir, category);
     return err;
 }
 
 /**
- * @brief Refreshes the board following the given data and animation.
-
- * @param[in] currSpeeds The current speeds to display on the board, where index
- *        (i - 1) corresponds to LED number i.
- * @param[in] typicalSpeeds The typical speeds of LEDs, where index (i - 1)
- *        corresponds to LED number i.
+ * @brief Refreshes the board following the animation with the most recently
+ * updated traffic data available.
+ * 
+ * @param[in] dir The direction of the traffic data set to be displayed.
  * @param[in] anim The animation to refresh the board using.
  * 
  * @returns ESP_OK if successful.
  *          REFRESH_ABORT if a task notification is received during operation.
- *          ESP_ERR_INVALID_ARG if an argument is NULL.
  */
-esp_err_t refreshBoard(LEDData currSpeeds[static MAX_NUM_LEDS_REG], LEDData typicalSpeeds[static MAX_NUM_LEDS_REG], Animation anim) {
+esp_err_t refreshBoard(Direction dir, Animation anim) {
+    LEDData currentSpeeds[MAX_NUM_LEDS_REG];
+    LEDData typicalSpeeds[MAX_NUM_LEDS_REG];
     int32_t ledOrder[MAX_NUM_LEDS_REG];
     esp_err_t err;
     /* generate correct ordering */
     err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, anim, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
-    if (err != ESP_OK)
-    {
-        return err;
-    }
+    if (err != ESP_OK) return err;
+
+    /* copy typical static traffic data */
+    err = borrowTrafficData(TYPICAL, portMAX_DELAY);
+    if (err != ESP_OK) return err;
+    err = copyTrafficData(typicalSpeeds, MAX_NUM_LEDS_REG, dir, TYPICAL);
+    err= releaseTrafficData(TYPICAL);
+    if (err != ESP_OK) return err;
+
+    /* copy current static traffic data */
+    err = borrowTrafficData(LIVE, portMAX_DELAY);
+    if (err != ESP_OK) return err;
+    err = copyTrafficData(currentSpeeds, MAX_NUM_LEDS_REG, dir, LIVE);
+    err= releaseTrafficData(LIVE);
+    if (err != ESP_OK) return err;
+
     /* update LEDs using provided ordering */
     for (int ndx = 0; ndx < MAX_NUM_LEDS_REG; ndx++) {
         int ledNum = ledOrder[ndx];
@@ -164,23 +264,23 @@ esp_err_t refreshBoard(LEDData currSpeeds[static MAX_NUM_LEDS_REG], LEDData typi
             continue;
         }
         if (typicalSpeeds[ledNum - 1].speed <= 0) {
-            ESP_LOGW(TAG, "skipping LED %d update due to lack of typical speed", currSpeeds[ledNum - 1].ledNum);
+            ESP_LOGW(TAG, "skipping LED %d update due to lack of typical speed", currentSpeeds[ledNum - 1].ledNum);
             continue;
         }
-        if (ledNum != currSpeeds[ledNum - 1].ledNum) {
-            ESP_LOGW(TAG, "skipping bad index %d, with LED num %u", ledNum, currSpeeds[ledNum - 1].ledNum);
+        if (ledNum != currentSpeeds[ledNum - 1].ledNum) {
+            ESP_LOGW(TAG, "skipping bad index %d, with LED num %u", ledNum, currentSpeeds[ledNum - 1].ledNum);
             continue;
         }
         if (ledNum != typicalSpeeds[ledNum - 1].ledNum) {
             ESP_LOGW(TAG, "skipping bad index %d, with typical LED num %u", ledNum, typicalSpeeds[ledNum - 1].ledNum);
             continue;
         }
-        if (currSpeeds[ledNum - 1].speed < 0) {
-            ESP_LOGW(TAG, "skipping led %u for led speed %d", currSpeeds[ledNum - 1].ledNum, currSpeeds[ledNum - 1].speed);
+        if (currentSpeeds[ledNum - 1].speed < 0) {
+            ESP_LOGW(TAG, "skipping led %u for led speed %d", currentSpeeds[ledNum - 1].ledNum, currentSpeeds[ledNum - 1].speed);
             continue;
         }
-        uint32_t percentFlow = (100 * currSpeeds[ledNum - 1].speed) / typicalSpeeds[ledNum - 1].speed;
-        updateLED(currSpeeds[ledNum - 1].ledNum, percentFlow);
+        uint32_t percentFlow = (100 * currentSpeeds[ledNum - 1].speed) / typicalSpeeds[ledNum - 1].speed;
+        updateLED(currentSpeeds[ledNum - 1].ledNum, percentFlow);
         if (mustAbort()) {
             return REFRESH_ABORT;
         }
@@ -206,7 +306,7 @@ esp_err_t clearBoard(Direction dir) {
     int32_t ledOrder[MAX_NUM_LEDS_REG];
 
     switch (dir) {
-      case NORTH:
+    case NORTH:
         ESP_LOGI(TAG, "Clearing North...");
         err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE_NORTH_REVERSE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
         if (err != ESP_OK) return err;
@@ -227,7 +327,7 @@ esp_err_t clearBoard(Direction dir) {
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
         }
         break;
-      case SOUTH:
+    case SOUTH:
         ESP_LOGI(TAG, "Clearing South...");
         err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE_SOUTH_REVERSE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
         if (err != ESP_OK) return err;
@@ -248,7 +348,7 @@ esp_err_t clearBoard(Direction dir) {
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
         }
         break;
-      default:
+    default:
         break;
     }
 
@@ -308,7 +408,7 @@ esp_err_t clearBoard(Direction dir) {
     int32_t ledOrder[MAX_NUM_LEDS_REG];
 
     switch (dir) {
-      case NORTH:
+    case NORTH:
         ESP_LOGI(TAG, "Clearing North...");
         err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE_NORTH_REVERSE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
         if (err != ESP_OK) return err;
@@ -335,7 +435,7 @@ esp_err_t clearBoard(Direction dir) {
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
         }
         break;
-      case SOUTH:
+    case SOUTH:
         ESP_LOGI(TAG, "Clearing South...");
         err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, CURVED_LINE_SOUTH_REVERSE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
         if (err != ESP_OK) return err;
@@ -362,7 +462,7 @@ esp_err_t clearBoard(Direction dir) {
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
         }
         break;
-      default:
+    default:
         break;
     }
 
@@ -455,32 +555,32 @@ static char *getCorrectURL(Direction dir, SpeedCategory category) {
     char *url = NULL;
     switch (dir)
     {
-      case NORTH:
+    case NORTH:
         switch(category)
         {
-          case LIVE:
+        case LIVE:
             url = URL_DATA_CURRENT_NORTH;
             break;
-          case TYPICAL:
+        case TYPICAL:
             url = URL_DATA_TYPICAL_NORTH;
             break;
-          default:
+        default:
             return NULL;
         }
         break;
-      case SOUTH:
-      switch(category)
-      {
+    case SOUTH:
+    switch(category)
+    {
         case LIVE:
-          url = URL_DATA_CURRENT_SOUTH;
-          break;
+            url = URL_DATA_CURRENT_SOUTH;
+            break;
         case TYPICAL:
-          url = URL_DATA_TYPICAL_SOUTH;
-          break;
+            url = URL_DATA_TYPICAL_SOUTH;
+            break;
         default:
-          return NULL;
-      }
-      break;
+        return NULL;
+    }
+    break;
     }
     return url;
 }

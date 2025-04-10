@@ -1,17 +1,16 @@
 /**
- * nvs_settings.h
+ * app_nvs.h
  * 
  * This file contains functions that interact with non-volatile storage,
  * particularly those that deal with persistent user settings.
  */
 
-#ifndef NVS_H_
-#define NVS_H_
+#ifndef APP_NVS_H_4_9_25
+#define APP_NVS_H_4_9_25
 
 #include "esp_err.h"
 #include "nvs.h"
 
-#include "api_connect.h"
 #include "app_errors.h"
 #include "led_registers.h"
 
@@ -30,4 +29,4 @@ esp_err_t refreshSpeedsFromNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction 
 esp_err_t storeSpeedsToNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction dir, SpeedCategory category);
 
 
-#endif /* NVS_H_ */
+#endif /* APP_NVS_H_4_9_25 */

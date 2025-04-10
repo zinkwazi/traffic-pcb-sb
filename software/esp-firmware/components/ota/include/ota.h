@@ -7,8 +7,11 @@
 #ifndef OTA_H_3_27_25
 #define OTA_H_3_27_25
 
+#include <stdbool.h>
+
 #include "esp_err.h"
 #include "freertos/freeRTOS.h"
+#include "freertos/task.h"
 
 #include "app_errors.h"
 

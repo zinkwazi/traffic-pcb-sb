@@ -8,8 +8,32 @@
 #ifndef ACTIONS_H_4_7_25
 #define ACTIONS_H_4_7_25
 
+#include <stddef.h>
+#include <stdint.h>
+#include <time.h>
+
 #include "esp_err.h"
 
-esp_err_t initJobs(void);
+#include "app_errors.h"
+
+#include "action_task.h"
+
+/**
+ * @note To create a new action, add an option to the enum below and register
+ * a handler with handleAction in actions.c.
+ */
+
+enum Action {
+    ACTION_UPDATE_DATA,
+    ACTION_QUERY_OTA,
+};
+
+typedef enum Action Action;
+
+/* used by action task */
+int64_t getUpdateTrafficDataPeriodSec(void);
+const time_t *getCheckOTAAvailableTimes(void);
+size_t getCheckOTAAvailableTimesSize(void);
+esp_err_t handleAction(Action action, ErrorResources *errRes);
 
 #endif /* ACTIONS_H_4_7_25 */

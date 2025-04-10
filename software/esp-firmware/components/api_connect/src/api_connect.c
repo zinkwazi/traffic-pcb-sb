@@ -16,6 +16,7 @@
 #include "esp_assert.h"
 
 #include "circular_buffer.h"
+#include "main_types.h"
 
 #define TAG "api_connect"
 

@@ -156,7 +156,7 @@ menu "Main Application"
 
     config MAIN_PRIO
         int "Priority of the main task"
-        default 3
+        default 4
     
     config OTA_STACK
         int "Stack size in bytes of the OTA task"
@@ -164,7 +164,7 @@ menu "Main Application"
 
     config OTA_PRIO
         int "Priority of the OTA task"
-        default 4
+        default 3
 
     config DISABLE_TESTING_FEATURES
         bool "Disable Testing Features"

@@ -5,187 +5,123 @@
  */
 #include "actions.h"
 
+#include <stddef.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <time.h>
 
 #include "esp_err.h"
 #include "esp_log.h"
-#include "esp_netif_sntp.h"
-#include "esp_sntp.h"
+#include "esp_http_client.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "app_errors.h"
+#include "main_types.h"
 #include "ota.h"
 #include "indicators.h"
+#include "led_registers.h"
+#include "refresh.h"
+#include "traffic_data.h"
 
 #define TAG "actions"
 
 #define HOURS_TO_SECS(h) (h * 60 * 60)
 #define MINS_TO_SECS(m) (m * 60)
 
-/* The SNTP sync interval, in minutes */
-#define SYNC_INTERVAL (120)
-
 /* The number of seconds between updating traffic data from the server */
 #define UPDATE_TRAFFIC_DATA_PERIOD_SEC MINS_TO_SECS(1)
-
-#define SECONDS_IN_DAY (HOURS_TO_SECS(24))
-
 #define CHECK_OTA_AVAILABLE_TIMES_SIZE (sizeof(checkOTAAvailableTimes) / sizeof(time_t))
 
 /* The times of day to check whether an OTA update is available */
 static const time_t checkOTAAvailableTimes[] = {
     HOURS_TO_SECS(0) + MINS_TO_SECS(0), // midnight
     HOURS_TO_SECS(11) + MINS_TO_SECS(0), // 11:00am
+    HOURS_TO_SECS(15) + MINS_TO_SECS(20), // 3:20pm
     HOURS_TO_SECS(17) + MINS_TO_SECS(0), // 5:00pm
 };
 
-static int64_t secsUntilNextJob(void);
-static void jobTimerCallback(void *arg);
-static void updateDataTimerCallback(void *arg);
+int64_t getUpdateTrafficDataPeriodSec(void)
+{
+    return UPDATE_TRAFFIC_DATA_PERIOD_SEC;
+}
 
-static const esp_timer_create_args_t updateTrafficTimerCfg = {
-    .callback = updateDataTimerCallback,
-    .arg = NULL,
-    .dispatch_method = ESP_TIMER_TASK,
-    .name = "dataTimer",
-};
+const time_t *getCheckOTAAvailableTimes(void)
+{
+    return checkOTAAvailableTimes;
+}
 
-static esp_timer_handle_t updateTrafficTimer = NULL;
+size_t getCheckOTAAvailableTimesSize(void)
+{
+    return CHECK_OTA_AVAILABLE_TIMES_SIZE;
+}
 
-static const esp_timer_create_args_t nextJobTimerCfg = {
-    .callback = jobTimerCallback,
-    .arg = NULL,
-    .dispatch_method = ESP_TIMER_TASK,
-    .name = "jobTimer",
-};
-
-static esp_timer_handle_t nextJobTimer = NULL;
+static esp_err_t handleActionUpdateData(ErrorResources *errRes);
+static esp_err_t handleActionQueryOTA(ErrorResources *errRes);
 
 /**
- * @brief Initializes SNTP and timers to run jobs at particular times of day
- *        and starts both the data update and job timer.
+ * @brief Performs the given action.
  * 
- * @requires:
- *  - esp_timer library initialized by esp_timer_init.
+ * @param[in] action The action to perform.
  * 
  * @returns ESP_OK if successful.
+ * ESP_ERR_NOT_FOUND if the action handler was not registered in the function.
+ * ESP_FAIL if the action failed.
  */
-esp_err_t initJobs(void)
+esp_err_t handleAction(Action action, ErrorResources *errRes)
 {
-    esp_sntp_config_t sntp_cfg = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
+    switch (action)
+    {
+        case ACTION_UPDATE_DATA:
+            ESP_LOGI(TAG, "Performing Action: ACTION_UPDATE_DATA");
+            return handleActionUpdateData(errRes);
+        case ACTION_QUERY_OTA:
+            ESP_LOGI(TAG, "Performing Action: ACTION_QUERY_OTA");
+            return handleActionQueryOTA(errRes);
+        default:
+            return ESP_ERR_NOT_FOUND;
+    }
+    return ESP_ERR_NOT_FOUND;
+}
+
+static esp_err_t handleActionUpdateData(ErrorResources *errRes)
+{
     esp_err_t err;
-    int64_t nextJobSecs;
+    esp_http_client_handle_t client;
+    LEDData northData[MAX_NUM_LEDS_REG];
+    LEDData southData[MAX_NUM_LEDS_REG];
 
-    // Set timezone to Los Angeles time zone (PST/PDT)
-    setenv("TZ", "PST8PDT,M3.2.0/2,M11.1.0/2", 1);
-    tzset();
+    /* query typical data from server, falling back to nvs if necessary */
+    client = initHttpClient();
+    err = refreshData(northData, client, NORTH, LIVE, errRes);
+    if (err != ESP_OK)
+    {
+        err = esp_http_client_cleanup(client);
+        if (err != ESP_OK) throwFatalError(errRes, false);
+        return ESP_FAIL;
+    }
+    err = refreshData(southData, client, SOUTH, LIVE, errRes);
+    if (err != ESP_OK)
+    {
+        err = esp_http_client_cleanup(client);
+        if (err != ESP_OK) throwFatalError(errRes, false);
+        return ESP_FAIL;
+    }
 
-    /* initialize and sync SNTP */
-    ESP_LOGI(TAG, "Initializing SNTP...");
-    esp_sntp_setoperatingmode(SNTP_SYNC_MODE_IMMED); // override default
-    err = esp_netif_sntp_init(&sntp_cfg);
-    if (err != ESP_OK) return err;
-    sntp_set_sync_interval(pdMS_TO_TICKS(SYNC_INTERVAL * 1000 * 60));
-    do {
-        ESP_LOGI(TAG, "waiting for SNTP sync...");
-        err = esp_netif_sntp_sync_wait(INT_MAX);
-    } while (err != ESP_OK);
-    ESP_LOGI(TAG, "SNTP sync complete...");
-    err = esp_netif_sntp_start();
-    if (err != ESP_OK) return err;
-
-    /* initialize timers */
-    err = esp_timer_create(&updateTrafficTimerCfg, &updateTrafficTimer);
-    if (err != ESP_OK) return err;
-    err = esp_timer_create(&nextJobTimerCfg, &nextJobTimer);
-    if (err != ESP_OK) return err;
-
-    /* start timers */
-    ESP_LOGI(TAG, "traffic timer set for %d seconds from now", UPDATE_TRAFFIC_DATA_PERIOD_SEC);
-    err = esp_timer_start_periodic(updateTrafficTimer, UPDATE_TRAFFIC_DATA_PERIOD_SEC * 1000000);
-    if (err != ESP_OK) return err;
+    /* update static data */
+    err = borrowTrafficData(LIVE, portMAX_DELAY);
+    if (err != ESP_OK) return ESP_FAIL;
+    err = updateTrafficData(northData, MAX_NUM_LEDS_REG, NORTH, LIVE);
+    if (err != ESP_OK) return ESP_FAIL;
+    err = updateTrafficData(southData, MAX_NUM_LEDS_REG, SOUTH, LIVE);
+    if (err != ESP_OK) return ESP_FAIL;
+    err = releaseTrafficData(LIVE);
+    if (err != ESP_OK) return ESP_FAIL;
     
-    /* set a timer that goes off at next job */
-    nextJobSecs = secsUntilNextJob();
-    ESP_LOGI(TAG, "job timer set for %lld seconds from now", nextJobSecs);
-    err = esp_timer_start_once(nextJobTimer, nextJobSecs * 1000000);
-    if (err != ESP_OK) return err;
-
     return ESP_OK;
 }
 
-/**
- * @brief returns the number of seconds until a job is scheduled to occur.
- * 
- * @requires:
- *  - SNTP initialized, ie. gettimeofday is callable.
- * 
- * @returns A positive integer representing the number of seconds until a
- * job is scheduled to occur. If no job is scheduled, 0 is returned. If an
- * error occurred, -1 is returned. Other negative values are unexpected.
- */
-static int64_t secsUntilNextJob(void)
+static esp_err_t handleActionQueryOTA(ErrorResources *errRes)
 {
-    time_t currTime, earliestJobOfDay, earliestJobAfterCurrTime;
-    earliestJobAfterCurrTime = SECONDS_IN_DAY;
-    earliestJobOfDay = SECONDS_IN_DAY;
-    bool foundAfter = false;
-    struct tm localTime;
-
-    /* get current time */
-    if (time(&currTime) == -1)
-    {
-        ESP_LOGE(TAG, "failed to get time");
-        return -1;
-    }
-    if (localtime_r(&currTime, &localTime) == NULL)
-    {
-        ESP_LOGE(TAG, "failed to get current time of day");
-        return -1;
-    }
-
-    currTime = HOURS_TO_SECS(localTime.tm_hour) + MINS_TO_SECS(localTime.tm_min) + localTime.tm_sec;
-    ESP_LOGI(TAG, "Seconds passed today: %lld", currTime);
-
-    /* check for earliest job and earliest job after current time */
-    if (CHECK_OTA_AVAILABLE_TIMES_SIZE == 0) 
-    {
-        ESP_LOGW(TAG, "No scheduled jobs");
-        return 0;
-    }
-
-    for (int i = 0; i < CHECK_OTA_AVAILABLE_TIMES_SIZE; i++)
-    {
-        time_t jobTime = checkOTAAvailableTimes[i];
-        if (jobTime < earliestJobOfDay)
-        {
-            earliestJobOfDay = jobTime;
-        }
-        if (jobTime > currTime &&
-            jobTime < earliestJobAfterCurrTime)
-        {
-            foundAfter = true;
-            earliestJobAfterCurrTime = jobTime;
-        }
-    }
-
-    /* return seconds until next job */
-    if (!foundAfter)
-    {
-        /* no jobs occur after currTime, thus schedule for next day */
-        return SECONDS_IN_DAY - (currTime - earliestJobOfDay);
-    }
-    /* a job occurs after currTime */
-    return earliestJobAfterCurrTime - currTime;
-}
-
-
-static void jobTimerCallback(void *arg)
-{
-    int64_t nextJobSecs;
-    ESP_LOGI(TAG, "Job timer expired...");
-
     /* query most recent server firmware version and indicate if an update is available */
     #if CONFIG_HARDWARE_VERSION == 1
     /* feature unsupported */
@@ -203,14 +139,8 @@ static void jobTimerCallback(void *arg)
     #error "Unsupported hardware version!"
     #endif
 
-    nextJobSecs = secsUntilNextJob();
-    ESP_LOGI(TAG, "job timer set for %lld seconds from now", nextJobSecs);
-    (void) esp_timer_start_once(nextJobTimer, nextJobSecs * 1000000); // nowhere for the error to go
+    return ESP_OK;
 }
 
 
-static void updateDataTimerCallback(void *arg)
-{
-    ESP_LOGI(TAG, "Data timer expired...");
-    
-}
+

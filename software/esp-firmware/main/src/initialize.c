@@ -14,11 +14,10 @@
 #include "driver/uart_vfs.h"
 #include "driver/uart.h"
 #include "driver/usb_serial_jtag.h"
-#include "esp_crt_bundle.h"
 #include "esp_err.h"
-#include "esp_http_client.h"
 #include "esp_log.h"
 #include "esp_netif.h"
+#include "esp_system.h"
 #include "esp_tls.h"
 #include "esp_vfs_dev.h"
 #include "esp_wifi_default.h"
@@ -26,31 +25,28 @@
 #include "freertos/freeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
+#include "nvs.h"
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 
 #include "led_matrix.h"
 #include "pinout.h"
-#include "actions.h"
-
 #include "main_types.h"
-#include "nvs_settings.h"
+#include "app_errors.h"
+#include "app_nvs.h"
 #include "ota.h"
 #include "utilities.h"
 #include "strobe_task.h"
+#include "action_task.h"
 #include "routines.h"
+#include "refresh.h"
 #include "wifi.h"
 
 #define TAG "init"
 
-/* TomTom HTTPS configuration */
-#define API_METHOD HTTP_METHOD_GET
-#define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
-
 #define USB_SERIAL_BUF_SIZE (1024)
 
 static void initializeMainState(MainTaskState *state);
-static esp_http_client_handle_t initHttpClient(void);
 
 
 /**
@@ -91,8 +87,7 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
 
     /* initialize state and resources to known values */
     initializeMainState(state);
-    res->client = NULL;
-    res->nvsHandle = (nvs_handle_t)NULL;
+    res->nvsHandle = (nvs_handle_t) NULL;
     res->refreshTimer = NULL;
 
     /* initialize global resources */
@@ -184,10 +179,9 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     if (tls == NULL)
         return ESP_ERR_NO_MEM;
 
-    /* initialize http client */
-    res->client = initHttpClient();
-    if (res->client == NULL)
-        return ESP_FAIL;
+    /* initialize data */
+    err = initRefresh(res->errRes);
+    FATAL_IF_ERR(err, res->errRes);
 
     /* create tasks */
 #if CONFIG_HARDWARE_VERSION == 1
@@ -196,6 +190,8 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     err = createStrobeTask(NULL, res->errRes);
     FATAL_IF_ERR(err, res->errRes);
 #endif /* CONFIG_HARDWARE_VERISON == 1*/
+    err = createActionTask(NULL, res->errRes);
+    FATAL_IF_ERR(err, res->errRes);
     err = createOTATask(&otaTask, res->errRes);
     FATAL_IF_ERR(err, res->errRes);
     if (otaTask == NULL)
@@ -204,12 +200,7 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     /* create refresh timer */
     state->toggle = false;
     res->refreshTimer = createRefreshTimer(xTaskGetCurrentTaskHandle(), &(state->toggle));
-    if (res->refreshTimer == NULL)
-        return ESP_FAIL;
-
-    /* schedule jobs and start timers */
-    err = initJobs();
-    FATAL_IF_ERR(err, res->errRes);
+    if (res->refreshTimer == NULL) return ESP_FAIL;
 
     /* initialize buttons */
     err = gpio_install_isr_service(0);
@@ -481,29 +472,6 @@ esp_err_t initLEDLegendLight(uint8_t red, uint8_t green, uint8_t blue)
 #else
 #error "Unsupported hardware version!"
 #endif
-
-/**
- * @brief Initializes an http client to the server.
- *
- * @note Returned client must have a call to esp_http_client_cleanup after use.
- *
- * @returns A handle to the initialized client if successful,
- *          otherwise NULL.
- */
-static esp_http_client_handle_t initHttpClient(void)
-{
-    esp_http_client_config_t httpConfig = {
-        .host = CONFIG_DATA_SERVER,
-        .path = "/",
-        .auth_type = API_AUTH_TYPE,
-        .method = API_METHOD,
-        .crt_bundle_attach = esp_crt_bundle_attach,
-        .event_handler = NULL,
-        .user_data = NULL,
-    };
-
-    return esp_http_client_init(&httpConfig);
-}
 
 /**
  * @brief Initializes state to a known state.

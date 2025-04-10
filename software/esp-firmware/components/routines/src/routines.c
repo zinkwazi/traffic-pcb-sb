@@ -11,7 +11,6 @@
 #include "esp_err.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/portmacro.h"
 #include "freertos/projdefs.h"
 #include "freertos/task.h"
 
