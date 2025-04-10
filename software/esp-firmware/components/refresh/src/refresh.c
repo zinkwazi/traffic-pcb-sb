@@ -257,6 +257,7 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
     if (err != ESP_OK) return err;
 
     /* update LEDs using provided ordering */
+    TickType_t prevWake = xTaskGetTickCount();
     for (int ndx = 0; ndx < MAX_NUM_LEDS_REG; ndx++) {
         int ledNum = ledOrder[ndx];
         if (ledNum > MAX_NUM_LEDS_REG || ledNum <= 0) {
@@ -284,7 +285,7 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
         if (mustAbort()) {
             return REFRESH_ABORT;
         }
-        vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_UPDATE_PERIOD));
+        vTaskDelayUntil(&prevWake, pdMS_TO_TICKS(CONFIG_LED_UPDATE_PERIOD));
     }
 
     return ESP_OK;
