@@ -246,8 +246,10 @@ static void receiveCommand(StrobeLED strobeInfo[],
         {
             if (strobeInfo[ndx].caller != command->caller) continue;
             
+            ESP_LOGI(TAG, "Unregistering LED %d", strobeInfo[ndx].ledNum);
             strobeInfo[ndx] = strobeInfo[*strobeInfoLen - 1];
             *strobeInfoLen -= 1;
+            ndx--; // need to check this index again bc new led is placed here
         }
         return;
     }
@@ -263,6 +265,7 @@ static void receiveCommand(StrobeLED strobeInfo[],
             return;
         }
         
+        ESP_LOGI(TAG, "Registering LED %d", strobeInfo[ndx].ledNum);
         strobeInfo[*strobeInfoLen].caller = command->caller;
         strobeInfo[*strobeInfoLen].ledNum = command->ledNum;
         strobeInfo[*strobeInfoLen].scalingUp = false; // simulate conditions under which next
@@ -278,6 +281,7 @@ static void receiveCommand(StrobeLED strobeInfo[],
             return;
         }
 
+        ESP_LOGI(TAG, "Unregistering LED %d", strobeInfo[ndx].ledNum);
         strobeInfo[ndx] = strobeInfo[*strobeInfoLen - 1]; // strobeInfoLen > 0 bc ndx != -1
         *strobeInfoLen -= 1;
     }
