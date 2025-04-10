@@ -17,6 +17,7 @@
 #include "main_types.h"
 
 #define REFRESH_ABORT (0x3578)
+#define REFRESH_ABORT_NO_CLEAR (0x3592)
 #define CONNECT_ERROR (0x3569)
 
 esp_err_t initRefresh(ErrorResources *errRes);

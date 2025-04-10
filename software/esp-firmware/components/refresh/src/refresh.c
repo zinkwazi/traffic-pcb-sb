@@ -235,13 +235,22 @@ esp_err_t refreshData(LEDData data[static MAX_NUM_LEDS_REG], esp_http_client_han
  * @param[in] anim The animation to refresh the board using.
  * 
  * @returns ESP_OK if successful.
- *          REFRESH_ABORT if a task notification is received during operation.
+ * REFRESH_ABORT if a task notification is received during operation
+ * and the board must be cleared.
+ * REFRESH_ABORT_NO_CLEAR if a task notification is received before operation,
+ * meaning no board clear is required.
  */
 esp_err_t refreshBoard(Direction dir, Animation anim) {
     LEDData currentSpeeds[MAX_NUM_LEDS_REG];
     LEDData typicalSpeeds[MAX_NUM_LEDS_REG];
     int32_t ledOrder[MAX_NUM_LEDS_REG];
     esp_err_t err;
+    /* check for a task notification */
+    if (mustAbort())
+    {
+        return REFRESH_ABORT_NO_CLEAR;
+    }
+
     /* generate correct ordering */
     err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, anim, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
     if (err != ESP_OK) return err;

@@ -110,8 +110,8 @@ static esp_err_t mainWaitForTaskNotification(MainTaskResources *res) {
   /* wait for button press or timer reset */
   uint32_t notificationValue;
   do {
-    notificationValue = ulTaskNotifyTake(pdTRUE, INT_MAX);
-  } while (notificationValue != 1); // a timeout occurred while waiting for button press
+    notificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+  } while (notificationValue == 0); // a timeout occurred while waiting for button press
   err = esp_timer_stop(res->refreshTimer);
   return err;
 }
@@ -152,18 +152,22 @@ void app_main(void)
     err = enableDirectionButtonIntr();
     FATAL_IF_ERR(err, res.errRes);
     while (true) {
-      err = mainRefresh(&state, &res, typicalNorthSpeeds, typicalSouthSpeeds);
+      err = mainRefresh(&state, &res, typicalNorthSpeeds, typicalSouthSpeeds); // never consumes task notifications, only checks them
       (void) mainWaitForTaskNotification(&res); // extremely noticeable error, allows clearing after notification recieved
       if (err == REFRESH_ABORT)
       {
         err = quickClearBoard();
         FATAL_IF_ERR(err, res.errRes);
+      } else if (err == REFRESH_ABORT_NO_CLEAR)
+      {
+        /* do nothing, improves efficiency slightly */
       } else {
         err = clearBoard(state.dir);
         FATAL_IF_ERR(err, res.errRes);
       }
     }
     /* This task has nothing left to do, but should not exit */
+    ESP_LOGE(TAG, "Main task is exiting!");
     throwFatalError(res.errRes, false);
     for (;;) {
       vTaskDelay(INT_MAX);
