@@ -51,6 +51,9 @@
 
 #define MATRIX_RETRY_NUM 15
 
+#define DEFAULT_SCALE (0xFF)
+#define STROBE_LOW_SCALE (0x20)
+
 #if CONFIG_HARDWARE_VERSION == 1
 
 // no static variables here
@@ -257,6 +260,11 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
     err= releaseTrafficData(LIVE);
     if (err != ESP_OK) return err;
 
+    /* pause strobe queue to stop desync of newly registered strobe leds.
+    The strobe task will take everything from the queue at once. */
+    err = pauseStrobeRegisterLEDs(portMAX_DELAY);
+    if (err != ESP_OK) return ESP_FAIL;
+
     /* update LEDs using provided ordering */
     TickType_t prevWake = xTaskGetTickCount();
     for (int ndx = 0; ndx < MAX_NUM_LEDS_REG; ndx++) {
@@ -288,10 +296,13 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
         if (currentSpeeds[ledNum - 1].speed == 0)
         {
             /* register strobing for closed roads */
-            (void) matSetScaling(ledNum, 0x00, 0x00, 0x00); // intentional best effort
-            (void) updateLED(ledNum, 0, false); // intentional best effort
-            err = strobeRegisterLED(ledNum, 0xFF, 0x20, 0xFF, false);
-            if (err != ESP_OK) ESP_LOGW(TAG, "Failed to register LED %d strobing", ledNum);
+            /* manual set scale to initial strobe value, which will begin
+            strobing after all LEDs are placed to avoid desynchronization
+            between strobing LEDs. */
+            (void) updateLED(ledNum, 0, true); // intentional best effort
+            err = strobeRegisterLED(ledNum, DEFAULT_SCALE, STROBE_LOW_SCALE, DEFAULT_SCALE, false);
+            vTaskDelay(pdMS_TO_TICKS(100)); // TEMPORARY: delay to force race condition to show
+            if (err != ESP_OK) ESP_LOGW(TAG, "failed to register strobing on LED %d", ledNum);
         } else
         {
             /* update color */
@@ -301,10 +312,16 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
 
         /* handle button presses and calculate time until next LED update */
         if (mustAbort()) {
+            err = resumeStrobeRegisterLEDs(); // clear board takes care of newly registered strobe LEDs
+            if (err != ESP_OK) return ESP_FAIL;
             return REFRESH_ABORT;
         }
         vTaskDelayUntil(&prevWake, pdMS_TO_TICKS(CONFIG_LED_UPDATE_PERIOD));
     }
+
+    /* release strobe queue bc nothing else will be added */
+    err = resumeStrobeRegisterLEDs();
+    if (err != ESP_OK) return ESP_FAIL;
 
     return ESP_OK;
 }
@@ -579,7 +596,7 @@ static esp_err_t updateLED(uint16_t ledNum, uint8_t percentFlow, bool setScaling
     /* set scaling if requested */
     for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
     {
-        mat_err = matSetScaling(ledNum, 0xFF, 0xFF, 0xFF);
+        mat_err = matSetScaling(ledNum, DEFAULT_SCALE, DEFAULT_SCALE, DEFAULT_SCALE);
         if (mat_err == ESP_OK) break;
     }
     if (mat_err != ESP_OK) return ESP_FAIL;    

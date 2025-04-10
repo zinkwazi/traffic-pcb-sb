@@ -23,7 +23,7 @@
 #define TAG "strobe_task"
 
 /* The size in commands of the strobe command queue */
-#define STROBE_QUEUE_SIZE (20)
+#define STROBE_QUEUE_SIZE (MAX_NUM_LEDS_REG) // must be able to strobe every LED in sync
 
 /* The maximum number of LEDs the strobe task can handle simultaneously */
 #define MAX_STROBE_LEDS (MAX_NUM_LEDS_REG)
@@ -55,6 +55,11 @@
    in order to reduce the risk of accidentally overwriting this handle. */
 static QueueHandle_t strobeQueue = NULL; // holds StrobeTaskCommand
 
+/* protects strobeQueue, effectively stopping the strobe task from desynchronizing
+a block of LEDs that should be strobed starting from particular values in order
+to achieve an animation. The strobe task aquires this when reading from the queue. */
+static SemaphoreHandle_t strobeQueueMutex = NULL;
+
 /**
  * @brief Returns a copy of the strobeQueue handle. The strobeQueue holds
  *        StrobeTaskCommand objects.
@@ -62,6 +67,26 @@ static QueueHandle_t strobeQueue = NULL; // holds StrobeTaskCommand
 QueueHandle_t getStrobeQueue(void)
 {
     return strobeQueue; // make sure that others cannot modify the base handle
+}
+
+/**
+ * @brief wraps xSemaphoreTake, where the mutex to take is always strobeQueueMutex.
+ * 
+ * @returns ESP_OK if successful, otherwise ESP_FAIL.
+ */
+esp_err_t acquireStrobeQueueMutex(TickType_t blockTime)
+{
+    return (xSemaphoreTake(strobeQueueMutex, blockTime) == pdPASS) ? ESP_OK : ESP_FAIL;
+}
+
+/**
+ * @brief wraps xSemaphoreGive, where the mutex to give is always strobeQueueMutex.
+ * 
+ * @returns ESP_OK if successful, otherwise ESP_FAIL.
+ */
+esp_err_t releaseStrobeQueueMutex(void)
+{
+    return (xSemaphoreGive(strobeQueueMutex) == pdPASS) ? ESP_OK : ESP_FAIL;
 }
 
 static void vStrobeTask(void *pvParameters);
@@ -106,6 +131,8 @@ esp_err_t createStrobeTask(TaskHandle_t *handle,
     if (strobeQueue != NULL) return ESP_FAIL; // already initialized
     strobeQueue = xQueueCreate(STROBE_QUEUE_SIZE, sizeof(StrobeTaskCommand));
     if (strobeQueue == NULL) return ESP_ERR_NO_MEM;
+    strobeQueueMutex = xSemaphoreCreateMutex();
+    if (strobeQueueMutex == NULL) return ESP_ERR_NO_MEM;
 
     /* create OTA task */
     success = xTaskCreate(vStrobeTask, "StrobeTask", CONFIG_STROBE_STACK,
@@ -151,20 +178,42 @@ static void vStrobeTask(void *pvParameters)
         /* wait for and handle commands */
         if (strobeInfoLen == 0)
         {
+            /* block on the queue. Blocking on the mutex is not possible here,
+            so there special handling here of when the queue is paused.*/
             do {
                 success = xQueueReceive(strobeQueue, &command, INT_MAX);
-            } while (success != pdPASS);
+                receiveCommand(strobeInfo, &strobeInfoLen, &command, errRes);
+            } while (success != pdTRUE);
+
+            /* check if the queue is currently paused. If so, wait, then
+            take the rest of the information from the queue */
+            success = xSemaphoreTake(strobeQueueMutex, portMAX_DELAY);
+            if (success != pdTRUE) throwFatalError(errRes, false);
+            success = xSemaphoreGive(strobeQueueMutex);
+            if (success != pdTRUE) throwFatalError(errRes, false);
+            /* now queue is resumed */
+
             prevWake = xTaskGetTickCount(); // start counting deadlines
         } else 
         {
-            success = xQueueReceive(strobeQueue, &command, 0);
-        }
+            /* check for a paused queue */
+            success = xSemaphoreTake(strobeQueueMutex, 0);
+            if (success)
+            {
+                /* queue is not paused, check it */
+                do {
+                    success = xQueueReceive(strobeQueue, &command, 0);
+                    if (success) // item received from queue
+                    {
+                        receiveCommand(strobeInfo, &strobeInfoLen, &command, errRes);
+                    }
+                    
+                } while (success != pdFALSE);
 
-        if (success == pdPASS)
-        {
-            /* a command was received from the queue */
-            receiveCommand(strobeInfo, &strobeInfoLen, &command, errRes);
-            continue; // receive commands until queue is empty
+                /* release mutex */
+                success = xSemaphoreGive(strobeQueueMutex);
+                if (success != pdTRUE) throwFatalError(errRes, false);
+            }
         }
 
         /* strobe LEDs */

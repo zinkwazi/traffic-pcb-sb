@@ -10,8 +10,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/projdefs.h"
+
 #include "esp_err.h"
 
+esp_err_t pauseStrobeRegisterLEDs(TickType_t blockTime);
+esp_err_t resumeStrobeRegisterLEDs(void);
 esp_err_t strobeRegisterLED(uint16_t ledNum, uint8_t maxBrightness, uint8_t minBrightness, uint8_t initBrightness, bool initStrobeUp);
 esp_err_t strobeUnregisterLED(uint16_t ledNum);
 esp_err_t strobeUnregisterAll(void);

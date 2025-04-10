@@ -11,10 +11,45 @@
 #include <stdint.h>
 
 #include "freertos/FreeRTOS.h"
+#include "freertos/projdefs.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 
 #include "esp_err.h"
+
+/**
+ * @brief Pauses the strobe task from registering new LEDs from the strobe queue,
+ * which allows tasks to add LEDs to the queue in chunks at a time. This removes
+ * the potential for the chunk of LEDs to desync their strobing.
+ * 
+ * @note This affects strobe registration globally, meaning the queue should not
+ * be paused for a long interval.
+ * 
+ * @requires:
+ * - The caller must call resumeRegisteringLEDs when done registering a chunk
+ * of LEDs that must have in-sync strobing.
+ * 
+ * @returns ESP_OK if successful, otherwise ESP_FAIL. If ESP_FAIL, another
+ * task has likely paused the queue already, in which case an indefinite block
+ * time with portMAX_DELAY.
+ */
+esp_err_t pauseStrobeRegisterLEDs(TickType_t blockTime)
+{
+    return acquireStrobeQueueMutex(blockTime);
+}
+
+/**
+ * @brief Resumes the strobe task registering new LEDs from the strobe queue.
+ * 
+ * @requires:
+ * - The caller must have previously called pauseRegisteringLEDs.
+ * 
+ * @returns ESP_OK if successful, otherwise ESP_FAIL.
+ */
+esp_err_t resumeStrobeRegisterLEDs(void)
+{
+    return releaseStrobeQueueMutex();
+}
 
 /**
  * @brief Sends a command to the strobe task to register strobing of ledNum.
