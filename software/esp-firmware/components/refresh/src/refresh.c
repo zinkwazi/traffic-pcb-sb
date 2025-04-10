@@ -373,6 +373,11 @@ esp_err_t clearBoard(Direction dir) {
                 return ESP_FAIL;
             }
 
+            if (mustAbort())
+            {
+                return REFRESH_ABORT;
+            }
+
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
         }
         break;
@@ -392,6 +397,11 @@ esp_err_t clearBoard(Direction dir) {
             if (mat_err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to set matrix color for led: %ld", ndx);
                 return ESP_FAIL;
+            }
+
+            if (mustAbort())
+            {
+                return REFRESH_ABORT;
             }
 
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
@@ -454,7 +464,9 @@ esp_err_t quickClearBoard(void)
  * 
  * @param dir The direction that the LEDs will be cleared toward.
  * 
- * @returns ESP_OK if successful, otherwise I2C matrix issue.
+ * @returns ESP_OK if successful.
+ * REFRESH_ABORT if the toggle button is pressed, in which case the board should
+ * be cleared by quickClearBoard.
  */
 esp_err_t clearBoard(Direction dir) {
     esp_err_t err;
@@ -491,6 +503,11 @@ esp_err_t clearBoard(Direction dir) {
                 return ESP_FAIL;
             }
 
+            if (mustAbort())
+            {
+                return REFRESH_ABORT;
+            }
+
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
         }
         break;
@@ -516,6 +533,11 @@ esp_err_t clearBoard(Direction dir) {
             if (mat_err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to set matrix color for led: %ld", ndx);
                 return ESP_FAIL;
+            }
+
+            if (mustAbort())
+            {
+                return REFRESH_ABORT;
             }
 
             vTaskDelay(pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));

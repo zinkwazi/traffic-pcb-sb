@@ -163,6 +163,13 @@ void app_main(void)
         /* do nothing, improves efficiency slightly */
       } else {
         err = clearBoard(state.dir);
+        if (err == REFRESH_ABORT)
+        {
+          err = quickClearBoard();
+          FATAL_IF_ERR(err, res.errRes);
+          // consume this task notification
+          (void) ulTaskNotifyTake(pdTRUE, 0);
+        }
         FATAL_IF_ERR(err, res.errRes);
       }
     }
