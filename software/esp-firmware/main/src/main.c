@@ -157,8 +157,8 @@ void app_main(void)
         if (err == REFRESH_ABORT)
         {
           err = quickClearBoard(state.dir);
-          if (err != ESP_OK && err != REFRESH_ABORT) throwFatalError();
-          // consume this task notification
+          if (err != ESP_OK) throwFatalError();
+          // consume this task notification bc it indicates quick clear board
           (void) ulTaskNotifyTake(pdTRUE, 0);
         }
         if (err != ESP_OK) throwFatalError();

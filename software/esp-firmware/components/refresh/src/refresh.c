@@ -522,9 +522,10 @@ esp_err_t clearBoard(Direction dir, bool quick) {
                 return ESP_FAIL;
             }
 
-            if (mustAbort()) return REFRESH_ABORT;
+            
             if (!quick)
             {
+                if (mustAbort()) return REFRESH_ABORT; // don't abort if quick
                 vTaskDelayUntil(&prevWake, pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
             }
             
@@ -555,9 +556,9 @@ esp_err_t clearBoard(Direction dir, bool quick) {
                 return ESP_FAIL;
             }
 
-            if (mustAbort()) return REFRESH_ABORT;
             if (!quick)
             {
+                if (mustAbort()) return REFRESH_ABORT; // don't abort if quick
                 vTaskDelayUntil(&prevWake, pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
             }
         }
