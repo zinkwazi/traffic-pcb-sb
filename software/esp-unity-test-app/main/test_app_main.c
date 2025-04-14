@@ -15,9 +15,11 @@
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 
-#include "wifi.h"
+#include "app_errors.h"
+#include "led_matrix.h"
 #include "pinout.h"
 #include "refresh.h"
+#include "wifi.h"
 
 #define API_METHOD HTTP_METHOD_GET
 #define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
@@ -56,6 +58,12 @@ void app_main(void)
     err = nvs_flash_init();
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
+    /* initialize components */
+    err = initAppErrors();
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = initLedMatrix();
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
     /* initialize tcp/ip stack */
     err = esp_netif_init();
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -74,21 +82,9 @@ void app_main(void)
     err = establishWifiConnection();
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    /* initialize components */
     
-
-#if CONFIG_HARDWARE_VERSION == 1
-    err = matInitialize(I2C_PORT, SDA_PIN, SCL_PIN);
+    err = initRefresh();
     TEST_ASSERT_EQUAL(ESP_OK, err);
-#elif CONFIG_HARDWARE_VERSION == 2
-    err = matInitializeBus1(I2C1_PORT, SDA1_PIN, SCL1_PIN);
-    TEST_ASSERT_EQUAL(ESP_OK, err);
-    err = matInitializeBus2(I2C2_PORT, SDA2_PIN, SCL2_PIN);
-    TEST_ASSERT_EQUAL(ESP_OK, err);
-#else
-#error "Hardware version unsupported!"
-#endif
-    err = initRefresh()
     
     /* run unit tests */
     unity_run_all_tests();
