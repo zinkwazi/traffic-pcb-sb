@@ -53,6 +53,8 @@
 
 #define DEFAULT_SCALE (0xFF)
 #define STROBE_LOW_SCALE (0x20)
+#define STROBE_STEP_HIGH (10)
+#define STROBE_STEP_LOW (10)
 
 #if CONFIG_HARDWARE_VERSION == 1
 
@@ -305,11 +307,21 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
         if (currentSpeeds[ledNum - 1].speed == 0)
         {
             /* register strobing for closed roads */
+            const StrobeTaskCommand strobeCommand = {
+                .ledNum = ledNum,
+                .initScale = DEFAULT_SCALE,
+                .maxScale = DEFAULT_SCALE,
+                .minScale = STROBE_LOW_SCALE,
+                .stepSizeHigh = STROBE_STEP_HIGH,
+                .stepSizeLow = STROBE_STEP_LOW,
+                .stepCutoff = STROBE_LOW_SCALE + ((DEFAULT_SCALE - STROBE_LOW_SCALE) / 2)
+            };
             /* manual set scale to initial strobe value, which will begin
             strobing after all LEDs are placed to avoid desynchronization
             between strobing LEDs. */
             (void) updateLED(ledNum, 0, true); // intentional best effort
-            err = strobeRegisterLED(ledNum, DEFAULT_SCALE, STROBE_LOW_SCALE, DEFAULT_SCALE, false);
+
+            err = strobeRegisterLED(strobeCommand);
             vTaskDelay(pdMS_TO_TICKS(100)); // TEMPORARY: delay to force race condition to show
             if (err != ESP_OK) ESP_LOGW(TAG, "failed to register strobing on LED %d", ledNum);
         } else

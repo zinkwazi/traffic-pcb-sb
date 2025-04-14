@@ -19,6 +19,7 @@
 #include "app_errors.h"
 #include "led_matrix.h"
 #include "led_registers.h"
+#include "strobe.h"
 
 #define TAG "strobe_task"
 
@@ -304,6 +305,9 @@ static void receiveCommand(StrobeLED strobeInfo[],
         strobeInfo[*strobeInfoLen].ledNum = command->ledNum;
         strobeInfo[*strobeInfoLen].maxScale = command->maxScale;
         strobeInfo[*strobeInfoLen].minScale = command->minScale;
+        strobeInfo[*strobeInfoLen].stepSizeHigh = command->stepSizeHigh;
+        strobeInfo[*strobeInfoLen].stepSizeLow = command->stepSizeLow;
+        strobeInfo[*strobeInfoLen].stepCutoff = command->stepCutoff;
         if (command->initScale >= command->maxScale)
         {
             strobeInfo[*strobeInfoLen].currScale = command->maxScale;
@@ -357,24 +361,12 @@ static void strobeLEDs(StrobeLED strobeInfo[], const int strobeInfoLen)
     {
         int strobeStep;
         /* determine correct step size */
-        if (strobeInfo[ndx].currScale > ((int) ((strobeInfo[ndx].maxScale - strobeInfo[ndx].minScale) * SCALE_CUTOFF_FRAC)) + strobeInfo[ndx].minScale)
+        if (strobeInfo[ndx].currScale > strobeInfo[ndx].stepCutoff)
         {
-            if (strobeInfo[ndx].scalingUp)
-            {
-                strobeStep = STROBE_STEP_UP_HIGH;
-            } else 
-            {
-                strobeStep = STROBE_STEP_DOWN_HIGH;
-            }
+            strobeStep = strobeInfo[ndx].stepSizeHigh;
         } else 
         {
-            if (strobeInfo[ndx].scalingUp)
-            {
-                strobeStep = STROBE_STEP_UP_LOW;
-            } else
-            {
-                strobeStep = STROBE_STEP_DOWN_LOW;
-            }
+            strobeStep = strobeInfo[ndx].stepSizeLow;
         }
         /* calculate new scaling value */
         if (strobeInfo[ndx].scalingUp)

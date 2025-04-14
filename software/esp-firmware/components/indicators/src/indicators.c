@@ -303,6 +303,16 @@ esp_err_t indicateWifiNotConnected(void)
  */
 esp_err_t indicateOTAAvailable(void)
 {
+    const StrobeTaskCommand strobeCommand = {
+        .ledNum = OTA_LED_NUM,
+        .initScale = 0x55,
+        .initStrobeUp = true,
+        .maxScale = 0x70,
+        .minScale = 0x08,
+        .stepSizeHigh = 30,
+        .stepSizeLow = 1,
+        .stepCutoff = 0x30
+    };
     esp_err_t err;
     err = matSetScaling(OTA_LED_NUM, 0x00, 0x00, 0x00); // let strobe task handle this
     if (err != ESP_OK) return err;
@@ -311,7 +321,7 @@ esp_err_t indicateOTAAvailable(void)
                         CONFIG_V2_0_OTA_AVAILABLE_GREEN_COMPONENT,
                         CONFIG_V2_0_OTA_AVAILABLE_BLUE_COMPONENT);
     if (err != ESP_OK) return err;
-    err = strobeRegisterLED(OTA_LED_NUM, 0x55, 0x08, 0x08, true);
+    err = strobeRegisterLED(strobeCommand);
     return err;
 }
 

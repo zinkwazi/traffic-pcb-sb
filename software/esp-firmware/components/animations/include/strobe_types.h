@@ -26,30 +26,19 @@ struct StrobeLED {
     uint8_t minScale;
     /* scaling value */
     uint8_t currScale;
+    /* the brightness step size when the brightness is above stepCutoff.
+    This controls the speed of strobing. If a faster speed is necessary, but 
+    quantization is an issue, consider reducing the strobe task period. */
+    uint8_t stepSizeHigh;
+    /* the brightness step size when the brightness is below stepCutoff. */
+    uint8_t stepSizeLow;
+    /* the brightness cutoff at which the step size switches from stepSizeHigh
+    to stepSizeLow. */
+    uint8_t stepCutoff;
     /* scaling direction */
     bool scalingUp;
 };
 
 typedef struct StrobeLED StrobeLED;
-
-/* Holds command information for the strobe task, passed via the strobe command queue */
-struct StrobeTaskCommand {
-    /* the calling task, necessary to synchronize unregistering */
-    TaskHandle_t caller;
-    /* the target LED hardware number. An LED number of UINT16_MAX indicates unregister all. */
-    uint16_t ledNum;
-    /* the initial brightness direction. Ignored if register LED is false. */
-    uint8_t initScale;
-    /* The initial strobing direction. Ignored if register LED is false. */
-    bool initStrobeUp;
-    /* the maximum brightness value. Ignored if registerLED is false. */
-    uint8_t maxScale;
-    /* the minimum brightness value. Ignored if registerLED is false. */
-    uint8_t minScale;
-    /* whether to register or unregister strobing on the LED */
-    bool registerLED;
-};
-
-typedef struct StrobeTaskCommand StrobeTaskCommand;
 
 #endif /* STROBE_TYPES_H_4_5_25 */

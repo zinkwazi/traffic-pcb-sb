@@ -74,29 +74,20 @@ esp_err_t resumeStrobeRegisterLEDs(void)
  * @returns ESP_OK if successful.
  *          ESP_ERR_INVALID_STATE if the command queue is not initialized.
  */
-esp_err_t strobeRegisterLED(uint16_t ledNum, 
-                            uint8_t maxBrightness, 
-                            uint8_t minBrightness,
-                            uint8_t initBrightness, 
-                            bool initStrobeUp)
+esp_err_t strobeRegisterLED(StrobeTaskCommand command)
 {
     BaseType_t success;
-    StrobeTaskCommand command;
     const QueueHandle_t strobeQueue = getStrobeQueue();
 
     if (strobeQueue == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
     
     /* create command */
     command.caller = xTaskGetCurrentTaskHandle();
-    command.ledNum = ledNum;
-    command.maxScale = maxBrightness;
-    command.minScale = minBrightness;
-    command.initStrobeUp = initStrobeUp;
     command.registerLED = true;
 
     /* send command */
     do {
-        success = xQueueSend(strobeQueue, &command, INT_MAX);
+        success = xQueueSend(strobeQueue, &command, INT_MAX); // shallow copy of command
     } while (success != pdPASS);
     return ESP_OK;
 }
