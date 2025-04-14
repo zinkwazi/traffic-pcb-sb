@@ -583,7 +583,6 @@ esp_err_t clearBoard(Direction dir, bool quick) {
  */
 esp_err_t quickClearBoard(Direction dir)
 {
-    ESP_LOGI(TAG, "quick clearing");
     return clearBoard(dir, true);
 }
 

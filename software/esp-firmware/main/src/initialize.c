@@ -88,9 +88,9 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     res->refreshTimer = NULL;
 
     /* initialize components and resources */
-    err = initAppErrors();
-    if (err != ESP_OK) return err;
     err = initLedMatrix();
+    if (err != ESP_OK) return err;
+    err = initAppErrors();
     if (err != ESP_OK) return err;
     err = calculateLEDSequences();
     if (err != ESP_OK) return err;

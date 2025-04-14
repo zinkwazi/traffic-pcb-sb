@@ -166,8 +166,8 @@ esp_err_t initLedMatrix(void)
 {
     esp_err_t err;
     /* check that component is not already initialized */
-    // err = getLedMatrixStatus(); // if not ESP_OK, static vars are now NULL.
-    // if (err == ESP_OK) THROW_ERR((esp_err_t) ESP_ERR_INVALID_STATE);
+    err = getLedMatrixStatus(); // if not ESP_OK, static vars are now NULL.
+    if (err == ESP_OK) THROW_ERR((esp_err_t) ESP_ERR_INVALID_STATE);
 
     /* initialize component */
 #if CONFIG_HARDWARE_VERSION == 1
@@ -198,79 +198,22 @@ esp_err_t initLedMatrix(void)
 }
 
 /**
- * @brief Determines whether handle is null or not. If so, anyNull is set true;
- * If not, allNull is set false.
- */
-static void getLedMatrixStatusHelper(const void *const handle, bool *allNull, bool *anyNull)
-{
-    if (handle == NULL)
-    {
-        *anyNull = true;
-    } else
-    {
-        *allNull = false;
-    }
-}
-
-/**
  * @brief Checks the initialization status of the led_matrix component.
  * 
  * @returns ESP_OK if the component is initialized.
- * ESP_ERR_INVALID_STATE if the component state was unexpected and the state
- * was reset to a pre-init state.
  * ESP_FAIL if the component is not initialized.
  */
 esp_err_t getLedMatrixStatus(void)
 {
 #if CONFIG_HARDWARE_VERSION == 1
-    const int handlesLen = 7;
-    void *handles[7] = {
-        (void *) &sI2CBus,
-        (void *) &sMat1Handle,
-        (void *) &sMat2Handle,
-        (void *) &sMat3Handle,
-        (void *) &sMat1Mutex,
-        (void *) &sMat2Mutex,
-        (void *) &sMat3Mutex
-    };
+    if (sI2CBus == NULL) return ESP_FAIL;
 #elif CONFIG_HARDWARE_VERSION == 2
-    const int handlesLen = 10;
-    void *handles[10] = {
-        (void *) &sI2CBus1,
-        (void *) &sI2CBus2,
-        (void *) &sMat1Handle,
-        (void *) &sMat2Handle,
-        (void *) &sMat3Handle,
-        (void *) &sMat4Handle,
-        (void *) &sMat1Mutex,
-        (void *) &sMat2Mutex,
-        (void *) &sMat3Mutex,
-        (void *) &sMat4Mutex
-    };
+    if (sI2CBus1 == NULL) return ESP_FAIL;
+    if (sI2CBus2 == NULL) return ESP_FAIL;
 #else
 #error "Unsupported hardware version!"
 #endif
-
-    bool allNull = true;
-    bool anyNull = false;
-
-    for (int i = 0; i < handlesLen; i++)
-    {
-        getLedMatrixStatusHelper(handles[i], &allNull, &anyNull);
-    }
-
-    if (anyNull && !allNull)
-    {
-        /* invalid state was found, reset all handles */
-        for (int i = 0; i < handlesLen; i++)
-        {
-            handles[i] = NULL;
-        }
-        THROW_ERR((esp_err_t) ESP_ERR_INVALID_STATE);
-    }
-
-    if (allNull) THROW_ERR((esp_err_t) ESP_FAIL);
-    return (esp_err_t) ESP_OK;
+    return ESP_OK;
 }
 
 #if CONFIG_HARDWARE_VERSION == 1

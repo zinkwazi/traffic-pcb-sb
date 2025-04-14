@@ -59,11 +59,11 @@ void app_main(void)
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     /* initialize components */
-    err = initAppErrors();
-    TEST_ASSERT_EQUAL(ESP_OK, err);
     err = initLedMatrix();
     TEST_ASSERT_EQUAL(ESP_OK, err);
-
+    err = initAppErrors();
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    
     /* initialize tcp/ip stack */
     err = esp_netif_init();
     TEST_ASSERT_EQUAL(ESP_OK, err);
