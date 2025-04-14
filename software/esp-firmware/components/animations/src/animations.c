@@ -26,6 +26,14 @@ struct LEDCoordPair {
     LEDCoord coord;
 };
 
+/* sequences that are calculated during initialization to avoid delays during refreshes */
+static bool sDiagLineSaved = false;
+static int32_t sDiagLineSequence[ANIM_STANDARD_ARRAY_SIZE];
+static bool sCurvedNorthSaved = false;
+static int32_t sCurvedLineNorthSequence[ANIM_STANDARD_ARRAY_SIZE];
+static bool sCurvedSouthSaved = false;
+static int32_t sCurvedLineSouthSequence[ANIM_STANDARD_ARRAY_SIZE];
+
 /* the function declarations below are not static to allow for white-box unit testing */
 
 esp_err_t orderLEDs(int32_t ledOrder[], int32_t ledOrderLen, Animation anim, const LEDCoord coords[], int32_t coordsLen);
@@ -38,9 +46,61 @@ esp_err_t sortLEDsByDistanceFromDiagLine(int32_t ledArr[], int32_t ledArrLen, co
 esp_err_t sortLEDsByDistanceFromCurvedLineNorth(int32_t ledArr[], int32_t ledArrLen, const LEDCoord coords[], int32_t coordsLen);
 esp_err_t sortLEDsByDistanceFromCurvedLineSouth(int32_t ledArr[], int32_t ledArrLen, const LEDCoord coords[], int32_t coordsLen);
 
+/**
+ * @brief Calculates LED sequences for each animation and stores them for
+ * quick loading during calls to sort functions. This reduces delays during
+ * refreshes.
+ * 
+ * @returns ESP_OK if calculated and stored sequences successfully.
+ */
+esp_err_t calculateLEDSequences(void)
+{
+    esp_err_t err;
+    if (!sDiagLineSaved)
+    {
+        err = sortLEDsByDistanceFromDiagLine(sDiagLineSequence, ANIM_STANDARD_ARRAY_SIZE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
+        if (err == ESP_OK)
+        {
+            sDiagLineSaved = true;
+        } else
+        {
+            sDiagLineSaved = false;
+            THROW_ERR(err);
+        }
+    }
+    if (!sCurvedNorthSaved)
+    {
+        err = sortLEDsByDistanceFromCurvedLineNorth(sCurvedLineNorthSequence, ANIM_STANDARD_ARRAY_SIZE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
+        if (err == ESP_OK)
+        {
+            sCurvedNorthSaved = true;
+        } else
+        {
+            sCurvedNorthSaved = false;
+            THROW_ERR(err);
+        }
+    }
+    if (!sCurvedSouthSaved)
+    {
+        err = sortLEDsByDistanceFromCurvedLineSouth(sCurvedLineSouthSequence, ANIM_STANDARD_ARRAY_SIZE, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
+        if (err == ESP_OK)
+        {
+            sCurvedSouthSaved = true;
+        } else
+        {
+            sCurvedSouthSaved = false;
+            THROW_ERR(err);
+        }
+    }
+    return ESP_OK;
+}
 
 /**
  * @brief Generates an ordering of LEDs corresponding to the chosen animation.
+ * 
+ * @see calculateLEDSequences, which pre-calculates animation sequences so
+ * that this function does not manually calculate orderings every time it is
+ * called.
  * 
  * @param[out] ledOrder The location where the order of LEDs will be placed,
  *        where the first LED in the animation is stored at index 0.
@@ -75,45 +135,101 @@ esp_err_t orderLEDs(int32_t ledOrder[],
     switch (anim)
     {
         case DIAG_LINE:
-            err = sortLEDsByDistanceFromDiagLine(ledOrder, ledOrderLen, coords, coordsLen);
-            if (err != ESP_OK) return err;
+            if (sDiagLineSaved)
+            {
+                for (int32_t i = 0; i < ledOrderLen; i++)
+                {
+                    ledOrder[i] = sDiagLineSequence[i];
+                }
+            } else
+            {
+                err = sortLEDsByDistanceFromDiagLine(ledOrder, ledOrderLen, coords, coordsLen);
+                if (err != ESP_OK) return err;
+            }
+            
             break;
         case DIAG_LINE_REVERSE:
-            err = sortLEDsByDistanceFromDiagLine(ledOrder, ledOrderLen, coords, coordsLen);
-            if (err != ESP_OK) return err;
-            for (int32_t i = 0; i < ledOrderLen / 2; i++)
+            if (sDiagLineSaved)
             {
-                int32_t temp = ledOrder[i];
-                ledOrder[i] = ledOrder[ledOrderLen - i - 1];
-                ledOrder[ledOrderLen - i - 1] = temp;
+                for (int32_t i = 0; i < ledOrderLen; i++)
+                {
+                    ledOrder[i] = sDiagLineSequence[ANIM_STANDARD_ARRAY_SIZE - i - 1];
+                }
+            } else
+            {
+                err = sortLEDsByDistanceFromDiagLine(ledOrder, ledOrderLen, coords, coordsLen);
+                if (err != ESP_OK) return err;
+                for (int32_t i = 0; i < ledOrderLen / 2; i++)
+                {
+                    int32_t temp = ledOrder[i];
+                    ledOrder[i] = ledOrder[ledOrderLen - i - 1];
+                    ledOrder[ledOrderLen - i - 1] = temp;
+                }
             }
             break;
         case CURVED_LINE_NORTH:
-            err = sortLEDsByDistanceFromCurvedLineNorth(ledOrder, ledOrderLen, coords, coordsLen);
-            if (err != ESP_OK) return err;
+            if (sCurvedNorthSaved)
+            {
+                for (int32_t i = 0; i < ledOrderLen; i++)
+                {
+                    ledOrder[i] = sCurvedLineNorthSequence[i];
+                }
+            } else
+            {
+                err = sortLEDsByDistanceFromCurvedLineNorth(ledOrder, ledOrderLen, coords, coordsLen);
+                if (err != ESP_OK) return err;
+            }
+            
             break;
         case CURVED_LINE_NORTH_REVERSE:
-            err = sortLEDsByDistanceFromCurvedLineNorth(ledOrder, ledOrderLen, coords, coordsLen);
-            if (err != ESP_OK) return err;
-            for (int32_t i = 0; i < (ledOrderLen) / 2; i++)
+            if (sCurvedNorthSaved)
             {
-                int32_t temp = ledOrder[i];
-                ledOrder[i] = ledOrder[ledOrderLen - i - 1];
-                ledOrder[ledOrderLen - i - 1] = temp;
+                for (int32_t i = 0; i < ledOrderLen; i++)
+                {
+                    ledOrder[i] = sCurvedLineNorthSequence[ANIM_STANDARD_ARRAY_SIZE - i - 1];
+                }
+            } else
+            {
+                err = sortLEDsByDistanceFromCurvedLineNorth(ledOrder, ledOrderLen, coords, coordsLen);
+                if (err != ESP_OK) return err;
+                for (int32_t i = 0; i < (ledOrderLen) / 2; i++)
+                {
+                    int32_t temp = ledOrder[i];
+                    ledOrder[i] = ledOrder[ledOrderLen - i - 1];
+                    ledOrder[ledOrderLen - i - 1] = temp;
+                }
             }
             break;
         case CURVED_LINE_SOUTH:
-            err = sortLEDsByDistanceFromCurvedLineSouth(ledOrder, ledOrderLen, coords, coordsLen);
-            if (err != ESP_OK) return err;
+            if (sCurvedSouthSaved)
+            {
+                for (int i = 0; i < ledOrderLen; i++)
+                {
+                    ledOrder[i] = sCurvedLineSouthSequence[i];
+                }
+            } else
+            {
+                err = sortLEDsByDistanceFromCurvedLineSouth(ledOrder, ledOrderLen, coords, coordsLen);
+                if (err != ESP_OK) return err;
+            }
             break;
         case CURVED_LINE_SOUTH_REVERSE:
-            err = sortLEDsByDistanceFromCurvedLineSouth(ledOrder, ledOrderLen, coords, coordsLen);
-            if (err != ESP_OK) return err;
-            for (int32_t i = 0; i < (ledOrderLen) / 2; i++)
+            if (sCurvedSouthSaved)
             {
-                int32_t temp = ledOrder[i];
-                ledOrder[i] = ledOrder[ledOrderLen - i - 1];
-                ledOrder[ledOrderLen - i - 1] = temp;
+                for (int32_t i = 0; i < ledOrderLen; i++)
+                {
+                    ledOrder[i] = sCurvedLineSouthSequence[ANIM_STANDARD_ARRAY_SIZE - i - 1];
+                }
+            } else
+            {
+                err = sortLEDsByDistanceFromCurvedLineSouth(ledOrder, ledOrderLen, coords, coordsLen);
+                if (err != ESP_OK) return err;
+                for (int32_t i = 0; i < (ledOrderLen) / 2; i++)
+                {
+                    int32_t temp = ledOrder[i];
+                    ledOrder[i] = ledOrder[ledOrderLen - i - 1];
+                    ledOrder[ledOrderLen - i - 1] = temp;
+                }
             }
             break;
         default:

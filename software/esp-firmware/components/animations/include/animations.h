@@ -26,6 +26,7 @@ enum Animation {
 
 typedef enum Animation Animation;
 
+esp_err_t calculateLEDSequences(void);
 esp_err_t orderLEDs(int32_t ledOrder[], int32_t ledOrderLen, Animation anim, const LEDCoord coords[], int32_t coordsLen);
 
 #endif /* ANIMATIONS_H_ */

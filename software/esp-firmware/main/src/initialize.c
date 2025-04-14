@@ -29,6 +29,7 @@
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 
+#include "animations.h"
 #include "led_matrix.h"
 #include "pinout.h"
 #include "main_types.h"
@@ -47,7 +48,6 @@
 #define USB_SERIAL_BUF_SIZE (1024)
 
 static void initializeMainState(MainTaskState *state);
-
 
 /**
  * @brief Initializes global static resources, software components, and fields
@@ -91,6 +91,8 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     err = initAppErrors();
     if (err != ESP_OK) return err;
     err = initLedMatrix();
+    if (err != ESP_OK) return err;
+    err = calculateLEDSequences();
     if (err != ESP_OK) return err;
 
     settings.wifiSSID = NULL;
