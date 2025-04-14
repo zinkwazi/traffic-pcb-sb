@@ -36,7 +36,6 @@
 static const time_t checkOTAAvailableTimes[] = {
     HOURS_TO_SECS(0) + MINS_TO_SECS(0), // midnight
     HOURS_TO_SECS(11) + MINS_TO_SECS(0), // 11:00am
-    HOURS_TO_SECS(15) + MINS_TO_SECS(20), // 3:20pm
     HOURS_TO_SECS(17) + MINS_TO_SECS(0), // 5:00pm
 };
 
