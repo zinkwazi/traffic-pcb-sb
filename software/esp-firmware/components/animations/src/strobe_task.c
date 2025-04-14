@@ -15,6 +15,7 @@
 #include "freertos/queue.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "sdkconfig.h"
 
 #include "app_errors.h"
 #include "led_matrix.h"

@@ -8,6 +8,8 @@
 #ifndef STROBE_TASK_H_4_5_25
 #define STROBE_TASK_H_4_5_25
 
+#include "sdkconfig.h"
+
 #ifdef CONFIG_SUPPORT_STROBING
 
 #include "freertos/FreeRTOS.h"

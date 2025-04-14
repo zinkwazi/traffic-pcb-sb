@@ -7,6 +7,8 @@
 #ifndef STROBE_H_4_5_25
 #define STROBE_H_4_5_25
 
+#include "sdkconfig.h"
+
 #ifdef CONFIG_SUPPORT_STROBING
 
 #include <stdbool.h>

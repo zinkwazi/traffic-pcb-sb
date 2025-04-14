@@ -15,6 +15,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "esp_err.h"
+#include "sdkconfig.h"
 
 #include "app_err.h"
 
