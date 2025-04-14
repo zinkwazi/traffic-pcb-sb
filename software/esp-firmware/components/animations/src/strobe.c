@@ -20,6 +20,8 @@
 
 #define TAG "strobe"
 
+#ifdef CONFIG_SUPPORT_STROBING
+
 /**
  * @brief Pauses the strobe task from registering new LEDs from the strobe queue,
  * which allows tasks to add LEDs to the queue in chunks at a time. This removes
@@ -147,3 +149,5 @@ esp_err_t strobeUnregisterAll(void)
     } while (success != pdPASS);
     return ESP_OK;
 }
+
+#endif /* CONFIG_SUPPORT_STROBING */

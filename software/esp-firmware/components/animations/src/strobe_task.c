@@ -23,6 +23,8 @@
 
 #define TAG "strobe_task"
 
+#ifdef CONFIG_SUPPORT_STROBING
+
 /* The size in commands of the strobe command queue */
 #define STROBE_QUEUE_SIZE (MAX_NUM_LEDS_REG) // must be able to strobe every LED in sync
 
@@ -390,6 +392,11 @@ static void strobeLEDs(StrobeLED strobeInfo[], const int strobeInfoLen)
                 /* minval or underflow would occur, cap at minval and change dir */
                 strobeInfo[ndx].currScale = strobeInfo[ndx].minScale;
                 strobeInfo[ndx].scalingUp = true;
+                // /* execute callback, if it exists */
+                // if (strobeInfo[ndx].doneCallback != NULL)
+                // {
+                //     strobeInfo[ndx].doneCallback(&strobeInfo[ndx]);
+                // }
             } else
             {
                 strobeInfo[ndx].currScale -= strobeStep;
@@ -405,3 +412,5 @@ static void strobeLEDs(StrobeLED strobeInfo[], const int strobeInfoLen)
         }
     }
 }
+
+#endif /* CONFIG_SUPPORT_STROBING */

@@ -8,6 +8,8 @@
 #ifndef STROBE_TASK_H_4_5_25
 #define STROBE_TASK_H_4_5_25
 
+#ifdef CONFIG_SUPPORT_STROBING
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_err.h"
@@ -19,4 +21,5 @@ esp_err_t acquireStrobeQueueMutex(TickType_t blockTime);
 esp_err_t releaseStrobeQueueMutex(void);
 esp_err_t createStrobeTask(TaskHandle_t *handle);
 
+#endif /* CONFIG_SUPPORT_STROBING */
 #endif /* STROBE_TASK_H_4_5_25 */

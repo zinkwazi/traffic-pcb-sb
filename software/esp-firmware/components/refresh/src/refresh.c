@@ -52,9 +52,12 @@
 #define MATRIX_RETRY_NUM 15
 
 #define DEFAULT_SCALE (0xFF)
+
+#ifdef CONFIG_SUPPORT_STROBING
 #define STROBE_LOW_SCALE (0x20)
 #define STROBE_STEP_HIGH (10)
 #define STROBE_STEP_LOW (10)
+#endif
 
 #if CONFIG_HARDWARE_VERSION == 1
 
@@ -271,10 +274,12 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
     err= releaseTrafficData(LIVE);
     if (err != ESP_OK) return err;
 
+#ifdef CONFIG_SUPPORT_STROBING
     /* pause strobe queue to stop desync of newly registered strobe leds.
     The strobe task will take everything from the queue at once. */
     err = pauseStrobeRegisterLEDs(portMAX_DELAY);
     if (err != ESP_OK) return ESP_FAIL;
+#endif
 
     /* update LEDs using provided ordering */
     TickType_t prevWake = xTaskGetTickCount();
@@ -304,6 +309,7 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
         }
         
         /* update LED */
+#ifdef CONFIG_SUPPORT_STROBING
         if (currentSpeeds[ledNum - 1].speed == 0)
         {
             /* register strobing for closed roads */
@@ -330,19 +336,28 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
             uint32_t percentFlow = (100 * currentSpeeds[ledNum - 1].speed) / typicalSpeeds[ledNum - 1].speed;
            (void) updateLED(ledNum, percentFlow, true); // intentional best effort
         }
+#else
+        /* update color */
+        uint32_t percentFlow = (100 * currentSpeeds[ledNum - 1].speed) / typicalSpeeds[ledNum - 1].speed;
+        (void) updateLED(ledNum, percentFlow, true); // intentional best effort
+#endif
 
         /* handle button presses and calculate time until next LED update */
         if (mustAbort()) {
+#ifdef CONFIG_SUPPORT_STROBING
             err = resumeStrobeRegisterLEDs(); // clear board takes care of newly registered strobe LEDs
+#endif
             if (err != ESP_OK) return ESP_FAIL;
             return REFRESH_ABORT;
         }
         vTaskDelayUntil(&prevWake, pdMS_TO_TICKS(CONFIG_LED_UPDATE_PERIOD));
     }
 
+#ifdef CONFIG_SUPPORT_STROBING
     /* release strobe queue bc nothing else will be added */
     err = resumeStrobeRegisterLEDs();
     if (err != ESP_OK) return ESP_FAIL;
+#endif
 
     return ESP_OK;
 }
@@ -361,15 +376,16 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
  */
 esp_err_t clearBoard(Direction dir, bool quick) {
     esp_err_t err;
-    mat_err_t mat_err;
     TickType_t prevWake;
     int32_t ledOrder[MAX_NUM_LEDS_REG];
 
+#ifdef CONFIG_SUPPORT_STROBING
     /* remove all LED strobing registered by this task */
     err = strobeUnregisterAll();
     if (err != ESP_OK) return ESP_FAIL;
+#endif
 
-    
+    /* clear board */
     switch (dir) {
     case NORTH:
         ESP_LOGI(TAG, "Clearing North...");
@@ -382,21 +398,17 @@ esp_err_t clearBoard(Direction dir, bool quick) {
             
             for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
             {
-                mat_err = matSetColor(ndx, 0x00, 0x00, 0x00);
-                if (mat_err == ESP_OK) break; 
+                err = matSetColor(ndx, 0x00, 0x00, 0x00);
+                if (err == ESP_OK) break; 
             }
-            if (mat_err != ESP_OK) {
+            if (err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to set matrix color for led: %ld", ndx);
                 return ESP_FAIL;
             }
 
-            if (mustAbort())
+            if (!quick)
             {
-                return REFRESH_ABORT;
-            }
-
-            if (quick)
-            {
+                if (mustAbort()) return REFRESH_ABORT; // don't abort if quick
                 vTaskDelayUntil(&prevWake, pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
             }
         }
@@ -412,21 +424,17 @@ esp_err_t clearBoard(Direction dir, bool quick) {
 
             for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
             {
-                mat_err = matSetColor(ndx, 0x00, 0x00, 0x00);
-                if (mat_err == ESP_OK) break;
+                err = matSetColor(ndx, 0x00, 0x00, 0x00);
+                if (err == ESP_OK) break;
             }
-            if (mat_err != ESP_OK) {
+            if (err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to set matrix color for led: %ld", ndx);
                 return ESP_FAIL;
             }
 
-            if (mustAbort())
+            if (!quick)
             {
-                return REFRESH_ABORT;
-            }
-
-            if (quick)
-            {
+                if (mustAbort()) return REFRESH_ABORT; // don't abort if quick
                 vTaskDelayUntil(&prevWake, pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
             }
             
@@ -450,36 +458,37 @@ esp_err_t clearBoard(Direction dir, bool quick) {
  */
 esp_err_t quickClearBoard(__unused Direction dir)
 {
-    mat_err_t mat_err;
     esp_err_t err;
 
+#ifdef CONFIG_SUPPORT_STROBING
     /* remove all LED strobing registered by this task */
     err = strobeUnregisterAll();
     if (err != ESP_OK) return ESP_FAIL;
+#endif
 
     /* restart matrices */
     ESP_LOGI(TAG, "Quick clearing matrices");
 
     for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
     {
-        mat_err = matReset();
-        if (mat_err == ESP_OK) break;
+        err = matReset();
+        if (err == ESP_OK) break;
     }
-    if (mat_err != ESP_OK) return ESP_FAIL;
+    if (err != ESP_OK) return ESP_FAIL;
 
     for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
     {
-        mat_err = matSetGlobalCurrentControl(CONFIG_GLOBAL_LED_CURRENT);
-        if (mat_err == ESP_OK) break;
+        err = matSetGlobalCurrentControl(CONFIG_GLOBAL_LED_CURRENT);
+        if (err == ESP_OK) break;
     }
-    if (mat_err != ESP_OK) return ESP_FAIL;
+    if (err != ESP_OK) return ESP_FAIL;
 
     for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
     {
-        mat_err = matSetOperatingMode(NORMAL_OPERATION);
-        if (mat_err == ESP_OK) break;
+        err = matSetOperatingMode(NORMAL_OPERATION);
+        if (err == ESP_OK) break;
     }
-    if (mat_err != ESP_OK) return ESP_FAIL;
+    if (err != ESP_OK) return ESP_FAIL;
     
     return ESP_OK;
 }

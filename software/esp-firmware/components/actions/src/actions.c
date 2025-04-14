@@ -29,7 +29,7 @@
 #define MINS_TO_SECS(m) (m * 60)
 
 /* The number of seconds between updating traffic data from the server */
-#define UPDATE_TRAFFIC_DATA_PERIOD_SEC MINS_TO_SECS(1)
+#define UPDATE_TRAFFIC_DATA_PERIOD_SEC MINS_TO_SECS(20)
 #define CHECK_OTA_AVAILABLE_TIMES_SIZE (sizeof(checkOTAAvailableTimes) / sizeof(time_t))
 
 /* The times of day to check whether an OTA update is available */
@@ -38,6 +38,7 @@ static const time_t checkOTAAvailableTimes[] = {
     HOURS_TO_SECS(11) + MINS_TO_SECS(0), // 11:00am
     HOURS_TO_SECS(15) + MINS_TO_SECS(20), // 3:20pm
     HOURS_TO_SECS(17) + MINS_TO_SECS(0), // 5:00pm
+    HOURS_TO_SECS(23) + MINS_TO_SECS(0),
 };
 
 int64_t getUpdateTrafficDataPeriodSec(void)

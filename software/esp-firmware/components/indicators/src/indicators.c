@@ -17,6 +17,8 @@
 #include "main_types.h"
 #include "strobe.h"
 
+#define TAG "indicators"
+
 #define V2_0_WIFI_CONNECTED_COLOR_RED (CONFIG_WHITE_RED_COMPONENT)
 #define V2_0_WIFI_CONNECTED_COLOR_GREEN (CONFIG_WHITE_GREEN_COMPONENT)
 #define V2_0_WIFI_CONNECTED_COLOR_BLUE (CONFIG_WHITE_BLUE_COMPONENT)
@@ -49,11 +51,8 @@
  */
 esp_err_t indicateWifiConnected(void)
 {
-    esp_err_t err;
-    err = gpio_set_direction(WIFI_LED_PIN, GPIO_MODE_OUTPUT);
-    if (err != ESP_OK) THROW_ERR(err);
-    err = gpio_set_level(WIFI_LED_PIN, 1);
-    if (err != ESP_OK) THROW_ERR(err);
+    (void) gpio_set_direction(WIFI_LED_PIN, GPIO_MODE_OUTPUT); // only ESP_ERR_INVALID_ARG
+    (void) gpio_set_level(WIFI_LED_PIN, 1);
     return ESP_OK;
 }
 
@@ -71,9 +70,7 @@ esp_err_t indicateWifiConnected(void)
  */
 esp_err_t indicateWifiNotConnected(void)
 {
-    esp_err_t err;
-    err = gpio_set_level(WIFI_LED_PIN, 0);
-    if (err != ESP_OK) THROW_ERR(err);
+    (void) gpio_set_level(WIFI_LED_PIN, 0); // only ESP_ERR_INVALID_ARG
     return ESP_OK;
 }
 
@@ -91,15 +88,11 @@ esp_err_t indicateWifiNotConnected(void)
  */
 esp_err_t indicateOTAUpdate(void)
 {
-    esp_err_t err;
-    err = gpio_set_level(LED_NORTH_PIN, 1);
-    if (err != ESP_OK) return err;
-    err = gpio_set_level(LED_SOUTH_PIN, 1);
-    if (err != ESP_OK) return err;
-    err = gpio_set_level(LED_EAST_PIN, 1);
-    if (err != ESP_OK) return err;
-    err = gpio_set_level(LED_WEST_PIN, 1);
-    return err;
+    (void) gpio_set_level(LED_NORTH_PIN, 1); // only ESP_ERR_INVALID_ARG
+    (void) gpio_set_level(LED_SOUTH_PIN, 1);
+    (void) gpio_set_level(LED_EAST_PIN, 1);
+    (void) gpio_set_level(LED_WEST_PIN, 1);
+    return ESP_OK;
 }
 
 /**
@@ -121,15 +114,10 @@ esp_err_t indicateOTAUpdate(void)
  */
 esp_err_t indicateOTAFailure(int32_t delay)
 {
-    esp_err_t err;
-    err = gpio_set_level(LED_NORTH_PIN, 0);
-    if (err != ESP_OK) return err;
-    err = gpio_set_level(LED_SOUTH_PIN, 0);
-    if (err != ESP_OK) return err;
-    err = gpio_set_level(LED_EAST_PIN, 0);
-    if (err != ESP_OK) return err;
-    err = gpio_set_level(LED_WEST_PIN, 0);
-    if (err != ESP_OK) return err;
+    (void) gpio_set_level(LED_NORTH_PIN, 0); // only ESP_ERR_INVALID_ARG
+    (void) gpio_set_level(LED_SOUTH_PIN, 0);
+    (void) gpio_set_level(LED_EAST_PIN, 0);
+    (void) gpio_set_level(LED_WEST_PIN, 0);
 
     throwHandleableError();
     vTaskDelay(pdMS_TO_TICKS(delay));
@@ -172,15 +160,11 @@ esp_err_t indicateOTASuccess(int32_t delay)
  */
 esp_err_t indicateNorthbound(void)
 {
-    esp_err_t err;
-    err = gpio_set_level(LED_NORTH_PIN, 1);
-    if (err != ESP_OK) return err;
-    err = gpio_set_level(LED_SOUTH_PIN, 0);
-    if (err != ESP_OK) return err;
-    err = gpio_set_level(LED_EAST_PIN, 0);
-    if (err != ESP_OK) return err;
-    err = gpio_set_level(LED_WEST_PIN, 1);
-    return err;
+    (void) gpio_set_level(LED_NORTH_PIN, 1); // only ESP_ERR_INVALID_ARG
+    (void) gpio_set_level(LED_SOUTH_PIN, 0);
+    (void) gpio_set_level(LED_EAST_PIN, 0);
+    (void) gpio_set_level(LED_WEST_PIN, 1);
+    return ESP_OK;
 }
 
 /**
@@ -198,15 +182,11 @@ esp_err_t indicateNorthbound(void)
  */
 esp_err_t indicateSouthbound(void)
 {
-    esp_err_t err;
-    err = gpio_set_level(LED_NORTH_PIN, 0);
-    if (err != ESP_OK) return err;
-    err = gpio_set_level(LED_SOUTH_PIN, 1);
-    if (err != ESP_OK) return err;
-    err = gpio_set_level(LED_EAST_PIN, 1);
-    if (err != ESP_OK) return err;
-    err = gpio_set_level(LED_WEST_PIN, 0);
-    return err;
+    (void) gpio_set_level(LED_NORTH_PIN, 0); // only ESP_ERR_INVALID_ARG
+    (void) gpio_set_level(LED_SOUTH_PIN, 1);
+    (void) gpio_set_level(LED_EAST_PIN, 1);
+    (void) gpio_set_level(LED_WEST_PIN, 0);
+    return ESP_OK;
 }
 
 /**

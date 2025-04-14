@@ -49,5 +49,6 @@ esp_err_t disableDirectionButtonIntr(void);
 esp_err_t initIOButton(TaskHandle_t otaTask);
 esp_timer_handle_t createRefreshTimer(TaskHandle_t mainTask, bool *toggle);
 esp_timer_handle_t createDirectionFlashTimer(void);
+esp_timer_handle_t createLoadingAnimTimer(void);
 
 #endif /* ROUTINES_H_ */

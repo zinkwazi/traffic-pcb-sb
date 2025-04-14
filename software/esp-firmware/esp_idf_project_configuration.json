@@ -7,7 +7,8 @@
       "sdkconfigDefaults": [
         ".\\configurations\\sdkconfig.settings",
         ".\\configurations\\sdkconfig.develop",
-        ".\\configurations\\sdkconfig.V1_0_default"
+        ".\\configurations\\sdkconfig.V1_0_default",
+        ".\\configurations\\sdkconfig.V1_0_dev"
       ],
       "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig.dev_V1_0"
     },
@@ -61,7 +62,8 @@
       "sdkconfigDefaults": [
         ".\\configurations\\sdkconfig.settings",
         ".\\configurations\\sdkconfig.production",
-        ".\\configurations\\sdkconfig.V1_0_default"
+        ".\\configurations\\sdkconfig.V1_0_default",
+        ".\\configurations\\sdkconfig.V1_0_prod"
       ],
       "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig.prod_V1_0"
     },

@@ -206,7 +206,7 @@ esp_err_t initLedMatrix(void)
 esp_err_t getLedMatrixStatus(void)
 {
 #if CONFIG_HARDWARE_VERSION == 1
-    if (sI2CBus == NULL) return ESP_FAIL;
+    if (sI2CBus1 == NULL) return ESP_FAIL;
 #elif CONFIG_HARDWARE_VERSION == 2
     if (sI2CBus1 == NULL) return ESP_FAIL;
     if (sI2CBus2 == NULL) return ESP_FAIL;
@@ -233,7 +233,7 @@ esp_err_t getLedMatrixStatus(void)
  * recommended.
  * ESP_FAIL if an unexpected error occurred.
  */
-esp_err_t matInitializeBus1(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin)
+esp_err_t matInitialize(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin)
 {
     esp_err_t err;
     i2c_master_bus_config_t master_bus_config = {
@@ -309,7 +309,7 @@ esp_err_t matInitializeBus1(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t s
     err = giveMatrixMutex(sMat1Handle);
     if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
 
-    err = matSetPage(sMat2Handle, CONFIG_PAGE); // acquires sMat1Mutex
+    err = matSetPage(sMat2Handle, CONFIG_PAGE); // acquires sMat2Mutex
     if (err != ESP_OK)
     {
         err = handleMatSetPageErr(err, sMat2Handle); // releases device mutex
@@ -324,7 +324,7 @@ esp_err_t matInitializeBus1(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t s
     err = giveMatrixMutex(sMat2Handle);
     if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
 
-    err = matSetPage(sMat3Handle, CONFIG_PAGE); // acquires sMat1Mutex
+    err = matSetPage(sMat3Handle, CONFIG_PAGE); // acquires sMat3Mutex
     if (err != ESP_OK)
     {
         err = handleMatSetPageErr(err, sMat3Handle); // releases device mutex
@@ -1410,7 +1410,7 @@ static esp_err_t matSetRegisters(uint8_t page, uint8_t addr, uint8_t data)
     if (err != ESP_OK) return err;
     err = matSetRegister(sMat3Handle, page, addr, data);
     if (err != ESP_OK) return err;
-#if CONFIG_HARWARE_VERSION == 1
+#if CONFIG_HARDWARE_VERSION == 1
     /* none */
 #elif CONFIG_HARDWARE_VERSION == 2
     err = matSetRegister(sMat4Handle, page, addr, data);
@@ -1455,7 +1455,7 @@ static esp_err_t takeMatrixMutex(i2c_master_dev_handle_t device)
     {
         found = true;
         mutex = sMat3Mutex;
-#if CONFIG_HARWARE_VERSION == 1
+#if CONFIG_HARDWARE_VERSION == 1
     }
 #elif CONFIG_HARDWARE_VERSION == 2
     } else if (device == sMat4Handle)
@@ -1508,7 +1508,7 @@ static esp_err_t giveMatrixMutex(i2c_master_dev_handle_t device)
     {
         found = true;
         mutex = sMat3Mutex;
-#if CONFIG_HARWARE_VERSION == 1
+#if CONFIG_HARDWARE_VERSION == 1
     }
 #elif CONFIG_HARDWARE_VERSION == 2
     } else if (device == sMat4Handle)

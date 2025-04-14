@@ -38,6 +38,8 @@
 #include "ota.h"
 #include "utilities.h"
 #include "strobe_task.h"
+#include "strobe.h"
+#include "strobe_types.h"
 #include "action_task.h"
 #include "routines.h"
 #include "refresh.h"
@@ -47,6 +49,9 @@
 
 #define USB_SERIAL_BUF_SIZE (1024)
 
+// static void loadingAnimStrobeCallback(StrobeLED *info);
+// static esp_err_t beginLoadingAnimation(void);
+// static esp_err_t endLoadingAnimation(void);
 static void initializeMainState(MainTaskState *state);
 
 /**
@@ -104,6 +109,15 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     /* initialize indicator LEDs */
     err = initializeIndicatorLEDs();
     if (err != ESP_OK) return err;
+
+    /* begin loading animation */
+#ifdef CONFIG_SUPPORT_STROBING
+    err = createStrobeTask(NULL); // need this task to start early
+    if (err != ESP_OK) return err;
+#endif
+
+    // err = beginLoadingAnimation();
+    // if (err != ESP_OK) return err;
 
     /* initialize and cleanup non-volatile storage */
     err = nvs_flash_init();
@@ -179,8 +193,6 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     if (err != ESP_OK) return err;
 
     /* create tasks */
-    err = createStrobeTask(NULL);
-    if (err != ESP_OK) return err;
     err = createActionTask(NULL);
     if (err != ESP_OK) return err;
     err = createOTATask(&otaTask);
@@ -198,6 +210,10 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     if (err != ESP_OK) return err;
     err = initDirectionButton(&(state->toggle));
     if (err != ESP_OK) return err;
+
+    /* end loading animation */
+    // err = endLoadingAnimation();
+    // if (err != ESP_OK) return err;
 
     return ESP_OK;
 }
@@ -427,3 +443,55 @@ static void initializeMainState(MainTaskState *state)
     state->dir = SOUTH;
 #endif
 }
+
+
+
+#if CONFIG_HARDWARE_VERSION == 1
+// static void loadingAnimStrobeCallback(StrobeLED *info)
+// {
+//     /* unsupported */
+// }
+
+// static esp_err_t beginLoadingAnimation(void)
+// {
+//     /* unsupported */
+//     return ESP_OK;
+// }
+
+// static esp_err_t endLoadingAnimation(void)
+// {
+//     /* unsupported */
+//     return ESP_OK;
+// }
+#elif CONFIG_HARDWARE_VERSION == 2
+
+// static void loadingAnimStrobeCallback(StrobeLED *info)
+// {
+
+// }
+
+// static esp_err_t beginLoadingAnimation(void)
+// {
+//     const StrobeTaskCommand strobeCommand = {
+//         .ledNum = NORTH_LED_NUM,
+//         .initScale = 0x09,
+//         .initStrobeUp = true,
+//         .maxScale = 0x70,
+//         .minScale = 0x08,
+//         .stepSizeHigh = 10,
+//         .stepSizeLow = 10,
+//         .stepCutoff = 0x30,
+//         // .doneCallback = loadingAnimStrobeCallback,
+//     }
+
+    
+// }
+
+// static esp_err_t endLoadingAnimation(void)
+// {
+
+// }
+
+#else
+#error "Unsupported hardware version!"
+#endif
