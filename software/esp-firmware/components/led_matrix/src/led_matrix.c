@@ -30,10 +30,19 @@
 
 #define I2C_TIMEOUT_MS 100
 
+#if CONFIG_HARDWARE_VERSION == 1
+#define MAT1_ADDR 0b0110000
+#define MAT2_ADDR 0b0110011
+#define MAT3_ADDR 0b0110010
+#elif CONFIG_HARDWARE_VERSION == 2
 #define MAT1_ADDR 0b0110000
 #define MAT2_ADDR 0b0110011
 #define MAT3_ADDR 0b0110000
 #define MAT4_ADDR 0b0110011
+#else
+#error "Unsupported hardware version!"
+#endif
+
 
 #define BUS_SPEED_HZ 400000 // 400kHz maximum
 #define SCL_WAIT_US 0       // use default value
