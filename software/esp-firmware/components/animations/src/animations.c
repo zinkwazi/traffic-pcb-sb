@@ -15,8 +15,9 @@
 
 #include "animations.h"
 #include "animation_types.h"
-#include "led_coordinates.h"
 #include "animation_config.h"
+#include "app_err.h"
+#include "led_coordinates.h"
 
 #define TAG "animations"
 
@@ -63,21 +64,23 @@ esp_err_t orderLEDs(int32_t ledOrder[],
 {
     esp_err_t err;
     /* input guards */
-    if (ledOrder == NULL) return ESP_ERR_INVALID_ARG;
-    if (coords == NULL) return ESP_ERR_INVALID_ARG;
-    if (anim >= ANIM_MAXIMUM) return ESP_ERR_INVALID_ARG;
-    if (ledOrderLen > ANIM_STANDARD_ARRAY_SIZE) return ESP_ERR_INVALID_SIZE;
-    if (coordsLen > ANIM_STANDARD_ARRAY_SIZE) return ESP_ERR_INVALID_SIZE;
-    if (ledOrderLen != coordsLen) return ESP_ERR_INVALID_SIZE;
+    if (ledOrder == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (coords == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (anim >= ANIM_MAXIMUM) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (ledOrderLen > ANIM_STANDARD_ARRAY_SIZE) THROW_ERR(ESP_ERR_INVALID_SIZE);
+    if (coordsLen > ANIM_STANDARD_ARRAY_SIZE) THROW_ERR(ESP_ERR_INVALID_SIZE);
+    if (ledOrderLen != coordsLen) THROW_ERR(ESP_ERR_INVALID_SIZE);
     /* select ordering function */
     err = ESP_FAIL;
     switch (anim)
     {
         case DIAG_LINE:
             err = sortLEDsByDistanceFromDiagLine(ledOrder, ledOrderLen, coords, coordsLen);
+            if (err != ESP_OK) return err;
             break;
         case DIAG_LINE_REVERSE:
             err = sortLEDsByDistanceFromDiagLine(ledOrder, ledOrderLen, coords, coordsLen);
+            if (err != ESP_OK) return err;
             for (int32_t i = 0; i < ledOrderLen / 2; i++)
             {
                 int32_t temp = ledOrder[i];
@@ -87,9 +90,11 @@ esp_err_t orderLEDs(int32_t ledOrder[],
             break;
         case CURVED_LINE_NORTH:
             err = sortLEDsByDistanceFromCurvedLineNorth(ledOrder, ledOrderLen, coords, coordsLen);
+            if (err != ESP_OK) return err;
             break;
         case CURVED_LINE_NORTH_REVERSE:
             err = sortLEDsByDistanceFromCurvedLineNorth(ledOrder, ledOrderLen, coords, coordsLen);
+            if (err != ESP_OK) return err;
             for (int32_t i = 0; i < (ledOrderLen) / 2; i++)
             {
                 int32_t temp = ledOrder[i];
@@ -99,9 +104,11 @@ esp_err_t orderLEDs(int32_t ledOrder[],
             break;
         case CURVED_LINE_SOUTH:
             err = sortLEDsByDistanceFromCurvedLineSouth(ledOrder, ledOrderLen, coords, coordsLen);
+            if (err != ESP_OK) return err;
             break;
         case CURVED_LINE_SOUTH_REVERSE:
             err = sortLEDsByDistanceFromCurvedLineSouth(ledOrder, ledOrderLen, coords, coordsLen);
+            if (err != ESP_OK) return err;
             for (int32_t i = 0; i < (ledOrderLen) / 2; i++)
             {
                 int32_t temp = ledOrder[i];
@@ -110,10 +117,9 @@ esp_err_t orderLEDs(int32_t ledOrder[],
             }
             break;
         default:
-            err = ESP_FAIL;
-            break;
+            THROW_ERR(ESP_FAIL);
     }
-    return err;
+    return ESP_OK;
 }
 
 /**
@@ -263,11 +269,11 @@ esp_err_t sortLEDsByDistanceFromDiagLine(int32_t ledArr[],
 {
     struct LEDCoordPair coordPairs[ANIM_STANDARD_ARRAY_SIZE];
     /* input guards */
-    if (ledArr == NULL) return ESP_ERR_INVALID_ARG;
-    if (coords == NULL) return ESP_ERR_INVALID_ARG;
-    if (ledArrLen > ANIM_STANDARD_ARRAY_SIZE) return ESP_ERR_INVALID_SIZE;
-    if (coordsLen > ANIM_STANDARD_ARRAY_SIZE) return ESP_ERR_INVALID_SIZE;
-    if (ledArrLen != coordsLen) return ESP_ERR_INVALID_SIZE;
+    if (ledArr == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (coords == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (ledArrLen > ANIM_STANDARD_ARRAY_SIZE) THROW_ERR(ESP_ERR_INVALID_SIZE);
+    if (coordsLen > ANIM_STANDARD_ARRAY_SIZE) THROW_ERR(ESP_ERR_INVALID_SIZE);
+    if (ledArrLen != coordsLen) THROW_ERR(ESP_ERR_INVALID_SIZE);
     /* copy coordinate pairs */
     for (int32_t i = 0; i < coordsLen; i++)
     {
@@ -310,11 +316,11 @@ esp_err_t sortLEDsByDistanceFromCurvedLineNorth(int32_t ledArr[],
 {
     struct LEDCoordPair coordPairs[ANIM_STANDARD_ARRAY_SIZE];
     /* input guards */
-    if (ledArr == NULL) return ESP_ERR_INVALID_ARG;
-    if (coords == NULL) return ESP_ERR_INVALID_ARG;
-    if (ledArrLen > ANIM_STANDARD_ARRAY_SIZE) return ESP_ERR_INVALID_SIZE;
-    if (coordsLen > ANIM_STANDARD_ARRAY_SIZE) return ESP_ERR_INVALID_SIZE;
-    if (ledArrLen != coordsLen) return ESP_ERR_INVALID_SIZE;
+    if (ledArr == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (coords == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (ledArrLen > ANIM_STANDARD_ARRAY_SIZE) THROW_ERR(ESP_ERR_INVALID_SIZE);
+    if (coordsLen > ANIM_STANDARD_ARRAY_SIZE) THROW_ERR(ESP_ERR_INVALID_SIZE);
+    if (ledArrLen != coordsLen) THROW_ERR(ESP_ERR_INVALID_SIZE);
     /* copy coordinate pairs */
     for (int32_t i = 0; i < coordsLen; i++)
     {
@@ -355,25 +361,25 @@ esp_err_t sortLEDsByDistanceFromCurvedLineSouth(int32_t ledArr[],
                                                 const LEDCoord coords[], 
                                                 int32_t coordsLen)
 {
-struct LEDCoordPair coordPairs[ANIM_STANDARD_ARRAY_SIZE];
-/* input guards */
-if (ledArr == NULL) return ESP_ERR_INVALID_ARG;
-if (coords == NULL) return ESP_ERR_INVALID_ARG;
-if (ledArrLen > ANIM_STANDARD_ARRAY_SIZE) return ESP_ERR_INVALID_SIZE;
-if (coordsLen > ANIM_STANDARD_ARRAY_SIZE) return ESP_ERR_INVALID_SIZE;
-if (ledArrLen != coordsLen) return ESP_ERR_INVALID_SIZE;
-/* copy coordinate pairs */
-for (int32_t i = 0; i < coordsLen; i++)
-{
-coordPairs[i].ledNum = i + 1;
-coordPairs[i].coord = coords[i];
-}
-/* sort based on distances */
-qsort(coordPairs, coordsLen, sizeof(struct LEDCoordPair), compDistFromCurvedLineSouth);
-/* copy results */
-for (int32_t i = 0; i < coordsLen; i++)
-{
-ledArr[i] = coordPairs[i].ledNum;
-}
-return ESP_OK;
+    struct LEDCoordPair coordPairs[ANIM_STANDARD_ARRAY_SIZE];
+    /* input guards */
+    if (ledArr == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (coords == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (ledArrLen > ANIM_STANDARD_ARRAY_SIZE) THROW_ERR(ESP_ERR_INVALID_SIZE);
+    if (coordsLen > ANIM_STANDARD_ARRAY_SIZE) THROW_ERR(ESP_ERR_INVALID_SIZE);
+    if (ledArrLen != coordsLen) THROW_ERR(ESP_ERR_INVALID_SIZE);
+    /* copy coordinate pairs */
+    for (int32_t i = 0; i < coordsLen; i++)
+    {
+        coordPairs[i].ledNum = i + 1;
+        coordPairs[i].coord = coords[i];
+    }
+    /* sort based on distances */
+    qsort(coordPairs, coordsLen, sizeof(struct LEDCoordPair), compDistFromCurvedLineSouth);
+    /* copy results */
+    for (int32_t i = 0; i < coordsLen; i++)
+    {
+        ledArr[i] = coordPairs[i].ledNum;
+    }
+    return ESP_OK;
 }

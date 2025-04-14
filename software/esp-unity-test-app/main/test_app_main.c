@@ -16,6 +16,8 @@
 #include "nvs_flash.h"
 
 #include "wifi.h"
+#include "pinout.h"
+#include "refresh.h"
 
 #define API_METHOD HTTP_METHOD_GET
 #define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
@@ -71,7 +73,24 @@ void app_main(void)
 
     err = establishWifiConnection();
     TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    /* initialize components */
     
+
+#if CONFIG_HARDWARE_VERSION == 1
+    err = matInitialize(I2C_PORT, SDA_PIN, SCL_PIN);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+#elif CONFIG_HARDWARE_VERSION == 2
+    err = matInitializeBus1(I2C1_PORT, SDA1_PIN, SCL1_PIN);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = matInitializeBus2(I2C2_PORT, SDA2_PIN, SCL2_PIN);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+#else
+#error "Hardware version unsupported!"
+#endif
+    err = initRefresh()
+    
+    /* run unit tests */
     unity_run_all_tests();
     UNITY_END();
     unity_run_menu();

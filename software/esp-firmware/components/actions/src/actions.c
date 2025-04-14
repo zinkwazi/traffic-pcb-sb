@@ -55,8 +55,8 @@ size_t getCheckOTAAvailableTimesSize(void)
     return CHECK_OTA_AVAILABLE_TIMES_SIZE;
 }
 
-static esp_err_t handleActionUpdateData(ErrorResources *errRes);
-static esp_err_t handleActionQueryOTA(ErrorResources *errRes);
+static esp_err_t handleActionUpdateData(void);
+static esp_err_t handleActionQueryOTA(void);
 
 /**
  * @brief Performs the given action.
@@ -67,23 +67,23 @@ static esp_err_t handleActionQueryOTA(ErrorResources *errRes);
  * ESP_ERR_NOT_FOUND if the action handler was not registered in the function.
  * ESP_FAIL if the action failed.
  */
-esp_err_t handleAction(Action action, ErrorResources *errRes)
+esp_err_t handleAction(Action action)
 {
     switch (action)
     {
         case ACTION_UPDATE_DATA:
             ESP_LOGI(TAG, "Performing Action: ACTION_UPDATE_DATA");
-            return handleActionUpdateData(errRes);
+            return handleActionUpdateData();
         case ACTION_QUERY_OTA:
             ESP_LOGI(TAG, "Performing Action: ACTION_QUERY_OTA");
-            return handleActionQueryOTA(errRes);
+            return handleActionQueryOTA();
         default:
             return ESP_ERR_NOT_FOUND;
     }
     return ESP_ERR_NOT_FOUND;
 }
 
-static esp_err_t handleActionUpdateData(ErrorResources *errRes)
+static esp_err_t handleActionUpdateData()
 {
     esp_err_t err;
     esp_http_client_handle_t client;
@@ -92,18 +92,18 @@ static esp_err_t handleActionUpdateData(ErrorResources *errRes)
 
     /* query typical data from server, falling back to nvs if necessary */
     client = initHttpClient();
-    err = refreshData(northData, client, NORTH, LIVE, errRes);
+    err = refreshData(northData, client, NORTH, LIVE);
     if (err != ESP_OK)
     {
         err = esp_http_client_cleanup(client);
-        if (err != ESP_OK) throwFatalError(errRes, false);
+        if (err != ESP_OK) throwFatalError();
         return ESP_FAIL;
     }
-    err = refreshData(southData, client, SOUTH, LIVE, errRes);
+    err = refreshData(southData, client, SOUTH, LIVE);
     if (err != ESP_OK)
     {
         err = esp_http_client_cleanup(client);
-        if (err != ESP_OK) throwFatalError(errRes, false);
+        if (err != ESP_OK) throwFatalError();
         return ESP_FAIL;
     }
 
@@ -120,7 +120,7 @@ static esp_err_t handleActionUpdateData(ErrorResources *errRes)
     return ESP_OK;
 }
 
-static esp_err_t handleActionQueryOTA(ErrorResources *errRes)
+static esp_err_t handleActionQueryOTA()
 {
     /* query most recent server firmware version and indicate if an update is available */
     #if CONFIG_HARDWARE_VERSION == 1

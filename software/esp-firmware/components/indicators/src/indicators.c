@@ -49,7 +49,12 @@
  */
 esp_err_t indicateWifiConnected(void)
 {
-    return gpio_set_level(WIFI_LED_PIN, 1);
+    esp_err_t err;
+    err = gpio_set_direction(WIFI_LED_PIN, GPIO_MODE_OUTPUT);
+    if (err != ESP_OK) THROW_ERR(err);
+    err = gpio_set_level(WIFI_LED_PIN, 1);
+    if (err != ESP_OK) THROW_ERR(err);
+    return ESP_OK;
 }
 
 /**
@@ -66,7 +71,10 @@ esp_err_t indicateWifiConnected(void)
  */
 esp_err_t indicateWifiNotConnected(void)
 {
-    return gpio_set_level(WIFI_LED_PIN, 0);
+    esp_err_t err;
+    err = gpio_set_level(WIFI_LED_PIN, 0);
+    if (err != ESP_OK) THROW_ERR(err);
+    return ESP_OK;
 }
 
 /**
@@ -111,7 +119,7 @@ esp_err_t indicateOTAUpdate(void)
  * 
  * @returns ESP_OK if successful.
  */
-esp_err_t indicateOTAFailure(ErrorResources *errRes, int32_t delay)
+esp_err_t indicateOTAFailure(int32_t delay)
 {
     esp_err_t err;
     err = gpio_set_level(LED_NORTH_PIN, 0);
@@ -123,9 +131,9 @@ esp_err_t indicateOTAFailure(ErrorResources *errRes, int32_t delay)
     err = gpio_set_level(LED_WEST_PIN, 0);
     if (err != ESP_OK) return err;
 
-    throwHandleableError(errRes, false);
+    throwHandleableError();
     vTaskDelay(pdMS_TO_TICKS(delay));
-    resolveHandleableError(errRes, true, false);
+    resolveHandleableError(true);
     return ESP_OK;
 }
 
@@ -252,6 +260,8 @@ esp_err_t indicateDirection(Direction dir)
 esp_err_t indicateWifiConnected(void)
 {
     esp_err_t err;
+    err = matSetScaling(WIFI_LED_NUM, 0xFF, 0xFF, 0xFF);
+    if (err != ESP_OK) return err;
     err = matSetColor(WIFI_LED_NUM, 
                       V2_0_WIFI_CONNECTED_COLOR_RED,
                       V2_0_WIFI_CONNECTED_COLOR_GREEN,
@@ -361,7 +371,7 @@ esp_err_t indicateOTAUpdate(void)
  * @returns ESP_OK if successful, otherwise OTA LED may be unregistered from
  *          strobe task and LED scaling may be incorrect.
  */
-esp_err_t indicateOTAFailure(ErrorResources *errRes, int32_t delay)
+esp_err_t indicateOTAFailure(int32_t delay)
 {
     esp_err_t err;
     err = strobeUnregisterLED(OTA_LED_NUM); // strobe task will handle this

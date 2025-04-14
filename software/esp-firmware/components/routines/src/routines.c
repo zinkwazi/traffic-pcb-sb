@@ -14,8 +14,11 @@
 #include "freertos/projdefs.h"
 #include "freertos/task.h"
 
+#include "app_err.h"
 #include "led_matrix.h"
 #include "pinout.h"
+
+#define TAG "routines"
 
 static void timerFlashDirCallback(void *params);
 static void dirButtonISR(void *params);
@@ -29,15 +32,15 @@ static void refreshTimerCallback(void *params);
  * @param toggle A pointer to a bool that is passed to dirButtonISR. The bool
  *               should be in-scope for the duration of use of dirButtonISR.
  * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
+ * @returns ESP_OK if successful.
+ * ESP_ERR_INVALID_ARG if toggle is NULL.
+ * ESP_FAIL otherwise.
  */
 esp_err_t initDirectionButton(bool *toggle) {
   static DirButtonISRParams params;
   static TickType_t lastTickISR;
   /* input guards */
-  if (toggle == NULL) {
-    return ESP_FAIL;
-  }
+  if (toggle == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
   /* copy parameters */
   lastTickISR = false;
   params.mainTask = xTaskGetCurrentTaskHandle();
@@ -49,7 +52,7 @@ esp_err_t initDirectionButton(bool *toggle) {
       gpio_isr_handler_add(T_SW_PIN, dirButtonISR, &params) != ESP_OK ||
       gpio_intr_enable(T_SW_PIN) != ESP_OK)
   {
-    return ESP_FAIL;
+    THROW_ERR(ESP_FAIL);
   }
   return ESP_OK;
 }
@@ -84,22 +87,22 @@ esp_err_t disableDirectionButtonIntr(void) {
  */
 esp_err_t initIOButton(TaskHandle_t otaTask) {
   if (gpio_set_pull_mode(IO_SW_PIN, GPIO_PULLUP_ONLY) != ESP_OK) {
-    return ESP_FAIL;
+    THROW_ERR(ESP_FAIL);
   }
   if (gpio_pullup_en(IO_SW_PIN) != ESP_OK) {
-    return ESP_FAIL;
+    THROW_ERR(ESP_FAIL);
   }
   if (gpio_set_direction(IO_SW_PIN, GPIO_MODE_INPUT) != ESP_OK) {
-    return ESP_FAIL;
+    THROW_ERR(ESP_FAIL);
   }
   if (gpio_set_intr_type(IO_SW_PIN, GPIO_INTR_NEGEDGE) != ESP_OK) {
-    return ESP_FAIL;
+    THROW_ERR(ESP_FAIL);
   }
   if (gpio_isr_handler_add(IO_SW_PIN, otaButtonISR, otaTask) != ESP_OK) {
-    return ESP_FAIL;
+    THROW_ERR(ESP_FAIL);
   }
   if (gpio_intr_enable(IO_SW_PIN) != ESP_OK) {
-    return ESP_FAIL;
+    THROW_ERR(ESP_FAIL);
   }
   return ESP_OK;
 }

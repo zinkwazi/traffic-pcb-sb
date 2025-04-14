@@ -19,7 +19,7 @@ esp_err_t indicateWifiConnected(void);
 esp_err_t indicateWifiNotConnected(void);
 esp_err_t indicateOTAAvailable(void);
 esp_err_t indicateOTAUpdate(void);
-esp_err_t indicateOTAFailure(ErrorResources *errRes, int32_t delay);
+esp_err_t indicateOTAFailure(int32_t delay);
 esp_err_t indicateOTASuccess(int32_t delay);
 esp_err_t indicateNorthbound(void);
 esp_err_t indicateSouthbound(void);

@@ -47,24 +47,4 @@
 #define FAST_GREEN (0x00)
 #define FAST_BLUE (0x10)
 
-/**
- * @brief Throws a fatal error if err is not ESP_OK.
- * 
- * @param x A value of type esp_err_t.
- * @param errResources A pointer to an ErrorResources holding global error
- *                     handling resources.
- */
-#define FATAL_IF_ERR(x, errResources) \
-      if (x != ESP_OK) { ESP_LOGE(UTIL_TAG, "err: %d", x); esp_backtrace_print(5); throwFatalError(errResources, false); }
-
-/**
- * @brief Throws a fatal error if x is not true.
- * 
- * @param x A bool.
- * @param errResources A pointer to an ErrorResources holding global error
- *                     handling resources.
- */
-#define FATAL_IF_FALSE(x, errResources) \
-      if (!x) { esp_backtrace_print(5); throwFatalError(errResources, false); } 
-
 #endif /* UTILITIES_H_ */

@@ -373,10 +373,12 @@ esp_err_t openServerFile(int64_t *contentLength,
         {
             ESP_LOGE(TAG, "status code is %d", status);
             /* flush internal response buffer and close client */
-            do {
-                bytesFlushed = esp_http_client_read(client, buf, flushBufSize);
-                if (bytesFlushed < 0 && bytesFlushed != -ESP_ERR_HTTP_EAGAIN) return ESP_FAIL;
-            } while (bytesFlushed != 0);
+            err = esp_http_client_flush_response(client, &bytesFlushed);
+            ESP_LOGW(TAG, "flushed %d bytes", bytesFlushed);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "failed to flush response");
+                return ESP_FAIL;
+            }
 
             err = esp_http_client_close(client);
             if (err != ESP_OK) {

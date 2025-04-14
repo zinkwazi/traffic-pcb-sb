@@ -21,13 +21,13 @@
 
 #include "animations.h"
 #include "api_connect.h"
+#include "app_err.h"
 #include "app_errors.h"
 #include "app_nvs.h"
 #include "strobe.h"
 #include "led_coordinates.h"
 #include "led_matrix.h"
 #include "led_registers.h"
-#include "mat_err.h"
 #include "pinout.h"
 #include "main_types.h"
 #include "utilities.h"
@@ -100,10 +100,14 @@ static bool contains(const int32_t *arr, int32_t arrLen, int32_t ele);
  * @brief Initializes refresh functionality, including initialization of
  * data from the server or non-volatile storage.
  * 
+ * @requires:
+ * - app_errors component initialized.
+ * 
  * @returns ESP_OK if successful.
- * ESP_ERR_INVALID_ARG if invalid arguments.
+ * ESP_ERR_INVALID_STATE if requirement 1 is not met.
+ * Other error codes.
  */
-esp_err_t initRefresh(ErrorResources *errRes)
+esp_err_t initRefresh(void)
 {
     LEDData northData[MAX_NUM_LEDS_REG];
     LEDData southData[MAX_NUM_LEDS_REG];
@@ -111,8 +115,7 @@ esp_err_t initRefresh(ErrorResources *errRes)
     esp_err_t err;
 
     /* input guards */
-    if (errRes == NULL) return ESP_ERR_INVALID_ARG;
-    if (errRes->errMutex == NULL) return ESP_ERR_INVALID_ARG;
+    if (getAppErrorsStatus() != ESP_OK) THROW_ERR(ESP_ERR_INVALID_STATE);
 
     /* initialize static traffic data */
     err = initTrafficData();
@@ -121,9 +124,9 @@ esp_err_t initRefresh(ErrorResources *errRes)
     /* query typical data from server, falling back to nvs if necessary */
     client = initHttpClient();
     if (client == NULL) return ESP_FAIL;
-    err = refreshData(northData, client, NORTH, TYPICAL, errRes);
+    err = refreshData(northData, client, NORTH, TYPICAL);
     if (err != ESP_OK) return err;
-    err = refreshData(southData, client, SOUTH, TYPICAL, errRes);
+    err = refreshData(southData, client, SOUTH, TYPICAL);
     if (err != ESP_OK) return err;
 
     /* update typical static traffic data */
@@ -139,9 +142,9 @@ esp_err_t initRefresh(ErrorResources *errRes)
     /* query current data from server, falling back to nvs if necessary */
     client = initHttpClient();
     if (client == NULL) return ESP_FAIL;
-    err = refreshData(northData, client, NORTH, LIVE, errRes);
+    err = refreshData(northData, client, NORTH, LIVE);
     if (err != ESP_OK) return err;
-    err = refreshData(southData, client, SOUTH, LIVE, errRes);
+    err = refreshData(southData, client, SOUTH, LIVE);
     if (err != ESP_OK) return err;
 
     /* update current static traffic data */
@@ -198,7 +201,7 @@ esp_http_client_handle_t initHttpClient(void)
  *          ESP_ERR_INVALID_ARG if invalid argument.
  *          ESP_FAIL if something unexpected occurred.
  */
-esp_err_t refreshData(LEDData data[static MAX_NUM_LEDS_REG], esp_http_client_handle_t client, Direction dir, SpeedCategory category, ErrorResources *errRes)
+esp_err_t refreshData(LEDData data[static MAX_NUM_LEDS_REG], esp_http_client_handle_t client, Direction dir, SpeedCategory category)
 {
     esp_err_t err;
     char *url;
@@ -220,10 +223,10 @@ esp_err_t refreshData(LEDData data[static MAX_NUM_LEDS_REG], esp_http_client_han
     if (err != ESP_OK)
     {
         ESP_LOGW(TAG, "searching nvs for data");
-        throwNoConnError(errRes, false);
+        throwNoConnError();
         return refreshSpeedsFromNVS(data, dir, category);
     }
-    resolveNoConnError(errRes, true, false);
+    resolveNoConnError(true);
     return err;
 }
 
@@ -246,10 +249,7 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
     int32_t ledOrder[MAX_NUM_LEDS_REG];
     esp_err_t err;
     /* check for a task notification */
-    if (mustAbort())
-    {
-        return REFRESH_ABORT_NO_CLEAR;
-    }
+    if (mustAbort()) return REFRESH_ABORT_NO_CLEAR; // not an error
 
     /* generate correct ordering */
     err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, anim, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
@@ -488,7 +488,6 @@ esp_err_t quickClearBoard(__unused Direction dir)
  */
 esp_err_t clearBoard(Direction dir, bool quick) {
     esp_err_t err;
-    mat_err_t mat_err;
     TickType_t prevWake;
     int32_t ledOrder[MAX_NUM_LEDS_REG];
 
@@ -515,19 +514,15 @@ esp_err_t clearBoard(Direction dir, bool quick) {
             
             for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
             {
-                mat_err = matSetColor(ndx, 0x00, 0x00, 0x00);
-                if (mat_err == ESP_OK) break;
+                err = matSetColor(ndx, 0x00, 0x00, 0x00);
+                if (err == ESP_OK) break;
             }
-            if (mat_err != ESP_OK) {
+            if (err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to set matrix color for led: %ld", ndx);
                 return ESP_FAIL;
             }
 
-            if (mustAbort())
-            {
-                return REFRESH_ABORT;
-            }
-
+            if (mustAbort()) return REFRESH_ABORT;
             if (!quick)
             {
                 vTaskDelayUntil(&prevWake, pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
@@ -552,19 +547,15 @@ esp_err_t clearBoard(Direction dir, bool quick) {
 
             for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
             {
-                mat_err = matSetColor(ndx, 0x00, 0x00, 0x00);
-                if (mat_err == ESP_OK) break;
+                err = matSetColor(ndx, 0x00, 0x00, 0x00);
+                if (err == ESP_OK) break;
             }
-            if (mat_err != ESP_OK) {
+            if (err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to set matrix color for led: %ld", ndx);
                 return ESP_FAIL;
             }
 
-            if (mustAbort())
-            {
-                return REFRESH_ABORT;
-            }
-
+            if (mustAbort()) return REFRESH_ABORT;
             if (!quick)
             {
                 vTaskDelayUntil(&prevWake, pdMS_TO_TICKS(CONFIG_LED_CLEAR_PERIOD));
@@ -591,6 +582,7 @@ esp_err_t clearBoard(Direction dir, bool quick) {
  */
 esp_err_t quickClearBoard(Direction dir)
 {
+    ESP_LOGI(TAG, "quick clearing");
     return clearBoard(dir, true);
 }
 
@@ -620,26 +612,26 @@ static void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t percen
 }
 
 static esp_err_t updateLED(uint16_t ledNum, uint8_t percentFlow, bool setScaling) {
-    mat_err_t mat_err;
+    esp_err_t err;
     uint8_t red, green, blue;
 
     /* determine and update color */
     setColor(&red, &green, &blue, percentFlow);
     for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
     {
-        mat_err = matSetColor(ledNum, red, green, blue);
-        if (mat_err == ESP_OK) break;
+        err = matSetColor(ledNum, red, green, blue);
+        if (err == ESP_OK) break;
     }
-    if (mat_err != ESP_OK) return mat_err;
+    if (err != ESP_OK) return err;
     if (!setScaling) return ESP_OK;
 
     /* set scaling if requested */
     for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
     {
-        mat_err = matSetScaling(ledNum, DEFAULT_SCALE, DEFAULT_SCALE, DEFAULT_SCALE);
-        if (mat_err == ESP_OK) break;
+        err = matSetScaling(ledNum, DEFAULT_SCALE, DEFAULT_SCALE, DEFAULT_SCALE);
+        if (err == ESP_OK) break;
     }
-    if (mat_err != ESP_OK) return ESP_FAIL;    
+    if (err != ESP_OK) return ESP_FAIL;    
     return ESP_OK;
 }
 
@@ -701,10 +693,7 @@ static bool contains(const int32_t *arr, int32_t arrLen, int32_t ele)
 {
     for (int32_t i = 0; i < arrLen; i++)
     {
-        if (arr[i] == ele)
-        {   
-            return true;
-        }
+        if (arr[i] == ele) return true;
     }
     return false;
 }

@@ -24,7 +24,7 @@ esp_err_t storeNvsSettings(nvs_handle_t nvsHandle, UserSettings settings);
 esp_err_t removeExtraMainNvsEntries(nvs_handle_t nvsHandle);
 esp_err_t removeExtraWorkerNvsEntries(nvs_handle_t nvsHandle);
 esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle);
-void updateNvsSettings(nvs_handle_t nvsHandle, ErrorResources *errResources);
+void updateNvsSettings(nvs_handle_t nvsHandle);
 esp_err_t refreshSpeedsFromNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction dir, SpeedCategory category);
 esp_err_t storeSpeedsToNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction dir, SpeedCategory category);
 

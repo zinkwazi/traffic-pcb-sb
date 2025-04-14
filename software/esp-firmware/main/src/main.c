@@ -21,9 +21,9 @@
 
 #include "animations.h"
 #include "api_connect.h"
+#include "app_err.h"
 #include "app_errors.h"
 #include "led_registers.h"
-
 #include "indicators.h"
 #include "main_types.h"
 #include "refresh.h"
@@ -47,11 +47,9 @@
 static esp_err_t mainRefresh(MainTaskState *state, MainTaskResources *res, LEDData typicalNorth[static MAX_NUM_LEDS_REG], LEDData typicalSouth[static MAX_NUM_LEDS_REG]) {
   esp_err_t err;
   /* input guards */
-  if (state == NULL ||
-      res == NULL)
-  {
-    return ESP_ERR_INVALID_ARG;
-  }
+  if (state == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
+  if (res == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
+
   /* handle toggle button press */
   if (state->toggle) {
     state->toggle = false;
@@ -79,8 +77,7 @@ static esp_err_t mainRefresh(MainTaskState *state, MainTaskResources *res, LEDDa
       err = refreshBoard(SOUTH, CURVED_LINE_SOUTH);
       break;
     default:
-      err = ESP_FAIL;
-      break;
+      THROW_ERR(ESP_FAIL);
   }
   return err;
 }
@@ -134,49 +131,43 @@ void app_main(void)
     vTaskPrioritySet(NULL, CONFIG_MAIN_PRIO);
     /* print firmware information */
     err = initializeLogChannel();
-    FATAL_IF_ERR(err, res.errRes);
+    if (err != ESP_OK) throwFatalError();
     ESP_LOGE(TAG, "Hardware Version: " HARDWARE_VERSION_STR);
     ESP_LOGE(TAG, "Firmware Version: " FIRMWARE_VERSION_STR);
     ESP_LOGE(TAG, "OTA binary: " FIRMWARE_UPGRADE_URL);
-    /* initialize application */
-    err = initializeMatrices();
-    FATAL_IF_ERR(err, res.errRes);
-    /* quick clear LEDs, maybe leftover from reboot */
-    (void) quickClearBoard(SOUTH); // let this fail, refresh will occur after
-    err = initializeIndicatorLEDs();
-    FATAL_IF_ERR(err, res.errRes);
     err = initializeApplication(&state, &res);
-    FATAL_IF_ERR(err, res.errRes);
+    if (err != ESP_OK) throwFatalError(); // if app_errors component uninitialized, this still traps
     
     /* handle requests to update all LEDs */
     err = enableDirectionButtonIntr();
-    FATAL_IF_ERR(err, res.errRes);
+    if (err != ESP_OK) throwFatalError();
     while (true) {
       err = mainRefresh(&state, &res, typicalNorthSpeeds, typicalSouthSpeeds); // never consumes task notifications, only checks them
       (void) mainWaitForTaskNotification(&res); // extremely noticeable error, allows clearing after notification recieved
       if (err == REFRESH_ABORT)
       {
         err = quickClearBoard(state.dir);
-        FATAL_IF_ERR(err, res.errRes);
+        if (err != ESP_OK && err != REFRESH_ABORT) throwFatalError();
       } else if (err == REFRESH_ABORT_NO_CLEAR)
       {
         /* do nothing, improves efficiency slightly */
-      } else {
+      } else if (err == ESP_OK)
+      {
         err = clearBoard(state.dir, false);
         if (err == REFRESH_ABORT)
         {
           err = quickClearBoard(state.dir);
-          FATAL_IF_ERR(err, res.errRes);
+          if (err != ESP_OK && err != REFRESH_ABORT) throwFatalError();
           // consume this task notification
           (void) ulTaskNotifyTake(pdTRUE, 0);
         }
-        FATAL_IF_ERR(err, res.errRes);
+        if (err != ESP_OK) throwFatalError();
+      } else {
+        /* mainRefresh returned bad error code */
+        throwFatalError();
       }
     }
     /* This task has nothing left to do, but should not exit */
     ESP_LOGE(TAG, "Main task is exiting!");
-    throwFatalError(res.errRes, false);
-    for (;;) {
-      vTaskDelay(INT_MAX);
-    }
+    throwFatalError();
 }

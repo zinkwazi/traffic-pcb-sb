@@ -82,20 +82,12 @@ static esp_timer_handle_t nextActionTimer = NULL;
  *                       
  * @returns ESP_OK if the task was created successfully, otherwise ESP_FAIL.
  */
-esp_err_t createActionTask(TaskHandle_t *handle, const ErrorResources *errRes)
+esp_err_t createActionTask(TaskHandle_t *handle)
 {
-    static ErrorResources taskErrorResources;
     BaseType_t success;
-    /* input guards */
-    if (errRes == NULL) return ESP_FAIL;
-    if (errRes->errMutex == NULL) return ESP_FAIL;
-    /* copy parameters */
-    taskErrorResources.err = errRes->err;
-    taskErrorResources.errMutex = errRes->errMutex;
-    taskErrorResources.errTimer = errRes->errTimer;
     /* create OTA task */
     success = xTaskCreate(vActionTask, "ActionTask", CONFIG_ACTION_STACK,
-                          &taskErrorResources, CONFIG_ACTION_PRIO, handle);
+                          NULL, CONFIG_ACTION_PRIO, handle);
     return (success == pdPASS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -112,36 +104,31 @@ esp_err_t createActionTask(TaskHandle_t *handle, const ErrorResources *errRes)
 static void vActionTask(void *pvParams)
 {
     BaseType_t success;
-    ErrorResources *errRes = (ErrorResources *) pvParams;
     esp_err_t err;
-
-    /* input gaurds */
-    if (errRes == NULL) throwFatalError(NULL, false);
-    if (errRes->errMutex == NULL) throwFatalError(NULL, false);
 
     /* initialization */
     sActionQueue = xQueueCreate(ACTION_QUEUE_LEN, sizeof(Action));
-    if (sActionQueue == NULL) throwFatalError(errRes, false);
-    if (initActions() != ESP_OK) throwFatalError(errRes, false);
+    if (sActionQueue == NULL) throwFatalError();
+    if (initActions() != ESP_OK) throwFatalError();
 
     /* wait for actions off queue */
     while (true)
     {
         Action currAction;
         success = xQueueReceive(sActionQueue, &currAction, portMAX_DELAY);
-        if (success != pdTRUE) throwFatalError(errRes, false);
+        if (success != pdTRUE) throwFatalError();
         /* handle action */
-        (void) handleAction(currAction, errRes);
+        (void) handleAction(currAction);
         /* restart action timer */
         if (currAction == ACTION_UPDATE_DATA) continue;
         
         int64_t nextActionSecs = secsUntilNextAction();
         ESP_LOGI(TAG, "action timer set for %lld seconds from now", nextActionSecs);
         err = esp_timer_start_once(nextActionTimer, nextActionSecs * 1000000);
-        if (err != ESP_OK) throwFatalError(errRes, false);
+        if (err != ESP_OK) throwFatalError();
     }
     ESP_LOGE(TAG, "Action task is exiting!");
-    throwFatalError(errRes, false);
+    throwFatalError();
 }
 
 /**
@@ -274,7 +261,6 @@ static esp_err_t sendAction(Action action)
 {
     BaseType_t success;
     if (sActionQueue == NULL) return ESP_FAIL;
-    ESP_LOGI(TAG, "sending action %d", action);
     success = xQueueSend(sActionQueue, &action, portMAX_DELAY);
     if (success != pdTRUE) return ESP_FAIL;
     return ESP_OK;

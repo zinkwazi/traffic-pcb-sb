@@ -14,13 +14,14 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "sdkconfig.h"
 
 #include "led_matrix.h"
-
 #include "pinout.h"
 
+#include "app_err.h"
 
 #define TAG "app_error"
 
@@ -30,59 +31,74 @@
 
 #define BACKTRACE_DEPTH (5)
 
+/**
+ * @brief Describes the combination of errors currently being handled.
+ */
+enum AppError {
+    NO_ERR,
+    NO_SERVER_CONNECT_ERR,
+    HANDLEABLE_ERR,
+    HANDLEABLE_AND_NO_SERVER_CONNECT_ERR,
+    FATAL_ERR,
+};
+
+typedef enum AppError AppError;
+
+/* Indicates the errors currently being handled by the application. This should
+only be modified after errMutex is obtained.*/
+static AppError sErrState = FATAL_ERR;
+
+/* A timer that flashes the error LED if active. This should only be modified 
+after errMutex is obtained. */
+static esp_timer_handle_t sErrTimer = NULL;
+
+/* A mutex that guards access to errState and errTimer */
+static SemaphoreHandle_t sErrMutex = NULL;
+
+static void startErrorFlashing(void);
+static void stopErrorFlashing(void);
+static void timerFlashErrCallback(void *params);
 static inline void indicateError(void);
 static inline void indicateNoError(void);
-static void startErrorFlashing(ErrorResources *errRes, bool callerHasErrMutex);
-static void stopErrorFlashing(ErrorResources *errRes, bool callerHasErrMutex);
-static void timerFlashErrCallback(void *params);
-
-#if CONFIG_HARDWARE_VERSION == 1
 
 /**
- * @brief Indicates to the user that an error is present.
+ * @brief Initializes the app errors component, which allows use of app_errors.h
+ * functions.
+ * 
+ * @requires:
+ * - led_matrix component initialized.
+ * 
+ * @returns ESP_OK if successful.
+ * ESP_ERR_INVALID_STATE if the component is already initialized.
+ * ESP_FAIL if an unexpected error occurred.
  */
-static inline void indicateError(void)
+esp_err_t initAppErrors(void)
 {
-  /* intentionally ignoring error codes because 
-     this is a best effort function */
-  (void) gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);
-  (void) gpio_set_level(ERR_LED_PIN, 1);
+    /* check that component dependencies are initialized */
+    if (getAppErrorsStatus() == ESP_OK) THROW_ERR((esp_err_t) ESP_ERR_INVALID_STATE);
+    
+    /* check that led_matrix component is already initialized */
+    if (getLedMatrixStatus() != ESP_OK) THROW_ERR(ESP_FAIL);
+
+    /* initialize static variables */
+    sErrState = NO_ERR;
+    sErrTimer = NULL;
+    sErrMutex = xSemaphoreCreateMutex();
+    if (sErrMutex == NULL) THROW_ERR(ESP_FAIL);
+
+    return (esp_err_t) ESP_OK;
 }
 
 /**
- * @brief Indicates to the user that no error is present.
+ * @brief Returns whether the app_errors component is already initialized
+ * via initAppErrors.
+ * 
+ * @returns ESP_OK if initialized, otherwise ESP_FAIL.
  */
-static inline void indicateNoError(void)
+esp_err_t getAppErrorsStatus(void)
 {
-  /* intentionally ignoring error codes because 
-     this is a best effort function */
-  (void) gpio_set_level(ERR_LED_PIN, 0);
+    return (sErrMutex != NULL) ? ESP_OK : ESP_FAIL;
 }
-#elif CONFIG_HARDWARE_VERSION == 2
-
-/**
- * @brief Indicates to the user that an error is present.
- */
-static inline void indicateError(void) 
-{
-  /* intentionally ignoring error codes because 
-     this is a best effort function */
-  (void) matSetColor(ERROR_LED_NUM, ERROR_COLOR_RED, ERROR_COLOR_GREEN, ERROR_COLOR_BLUE);
-}
-
-/**
- * @brief Indicates to the user that no error is present.
- */
-static inline void indicateNoError(void) 
-{
-  /* intentionally ignoring error codes because 
-     this is a best effort function */
-  (void) matSetColor(ERROR_LED_NUM, 0x00, 0x00, 0x00);
-}
-
-#else
-#error "Unsupported hardware version!"
-#endif
 
 /**
  * @brief Moves the error state machine from the NO_ERR state to the
@@ -92,43 +108,53 @@ static inline void indicateNoError(void)
  * @note If the state machine is in the HANDLEABLE_ERR state, then this function
  *       moves the FSM to the HANDLEABLE_AND_NO_SERVER_CONNECT_ERR state.
  * 
+ * @requires:
+ * - app_errors component initialized.
+ * 
  * @param[in] errRes Global error state and task error synchronization 
  *        primitives.
  * @param[in] callerHasErrMutex Whether the caller already has possession of
  *        the error synchronization mutex, in which case the function will not
  *        attempt to take it.
  */
-void throwNoConnError(ErrorResources *errRes, bool callerHasErrMutex) {
-  if (!callerHasErrMutex) {
-    while (xSemaphoreTake(errRes->errMutex, INT_MAX) != pdTRUE) {}
-  }
-  
-  switch (errRes->err) {
-    case NO_ERR:
-      errRes->err = NO_SERVER_CONNECT_ERR;
-      /* falls through */
-    case NO_SERVER_CONNECT_ERR:
-      if (errRes->errTimer == NULL) {
-        startErrorFlashing(errRes, true);
-      }
-      break;
-    case HANDLEABLE_ERR:
-      errRes->err = HANDLEABLE_AND_NO_SERVER_CONNECT_ERR;
-      // do not flash because solid takes priority
-      break;
-    case HANDLEABLE_AND_NO_SERVER_CONNECT_ERR:
-      break;
-    case FATAL_ERR:
-      throwFatalError(errRes, true);
-      break;
-    default:
-      throwFatalError(errRes, true);
-      break;
-  }
+void throwNoConnError(void) {
+    BaseType_t success;
+    TaskHandle_t caller = xTaskGetCurrentTaskHandle();
+    /* input guards */
+    if (getAppErrorsStatus() != ESP_OK) throwFatalError();
 
-  if (!callerHasErrMutex) {
-    xSemaphoreGive(errRes->errMutex);
-  }
+    /* acquire state mutex */
+    if (xSemaphoreGetMutexHolder(sErrMutex) != caller)
+    {
+        success = xSemaphoreTake(sErrMutex, portMAX_DELAY);
+        if (success != pdTRUE) throwFatalError();
+    }
+
+    /* follow state machine */
+    switch (sErrState)
+    {
+        case NO_ERR:
+            sErrState = NO_SERVER_CONNECT_ERR;
+            /* falls through */
+        case NO_SERVER_CONNECT_ERR:
+            if (sErrTimer == NULL) startErrorFlashing();
+            break;
+        case HANDLEABLE_ERR:
+            sErrState = HANDLEABLE_AND_NO_SERVER_CONNECT_ERR;
+            // do not flash bc solid takes priority
+            break;
+        case HANDLEABLE_AND_NO_SERVER_CONNECT_ERR:
+            break;
+        case FATAL_ERR:
+            /* falls through */
+        default:
+            throwFatalError();
+            break;
+    }
+
+    /* release state mutex */
+    success = xSemaphoreGive(sErrMutex);
+    if (success != pdTRUE) throwFatalError();
 }
 
 /**
@@ -147,41 +173,52 @@ void throwNoConnError(ErrorResources *errRes, bool callerHasErrMutex) {
  *        the error synchronization mutex, in which case the function will not
  *        attempt to take it.
  */
-void throwHandleableError(ErrorResources *errRes, bool callerHasErrMutex) {
-  if (!callerHasErrMutex) {
-    while (xSemaphoreTake(errRes->errMutex, INT_MAX) != pdTRUE) {}
-  }
+void throwHandleableError(void) {
+    BaseType_t success;
+    TaskHandle_t caller = xTaskGetCurrentTaskHandle();
+    /* input guards */
+    if (getAppErrorsStatus() != ESP_OK) throwFatalError();
+  
+    /* acquire state mutex */
+    if (xSemaphoreGetMutexHolder(sErrMutex) != caller)
+    {
+        success = xSemaphoreTake(sErrMutex, portMAX_DELAY);
+        if (success != pdTRUE) throwFatalError();
+    }
 
-  if (errRes->errTimer != NULL) {
-    stopErrorFlashing(errRes, true);
-  }
-  indicateError();
-  switch (errRes->err) {
-    case NO_ERR:
-      errRes->err = HANDLEABLE_ERR;
-      break;
-    case NO_SERVER_CONNECT_ERR:
-      errRes->err = HANDLEABLE_AND_NO_SERVER_CONNECT_ERR;
-      break;
-    case HANDLEABLE_ERR:
-      // cannot have multiple handleable errors at once
-      /* falls through */
-    case HANDLEABLE_AND_NO_SERVER_CONNECT_ERR:
-      // cannot have multiple handleable errors at once
-      ESP_LOGE(TAG, "multiple HANDLEABLE_ERR thrown!");
-      /* falls through */
-    case FATAL_ERR:
-      throwFatalError(errRes, true);
-      break;
-    default:
-      throwFatalError(errRes, true);
-      break;
-  }
+    /* indicate error */
+    if (sErrTimer != NULL)
+    {
+        stopErrorFlashing();
+    }
+    indicateError();
 
-  if (!callerHasErrMutex) {
-    ESP_LOGD(TAG, "releasing error semaphore");
-    xSemaphoreGive(errRes->errMutex);
-  }
+    /* modify state */
+    switch (sErrState)
+    {
+        case NO_ERR:
+            sErrState = HANDLEABLE_ERR;
+            break;
+        case NO_SERVER_CONNECT_ERR:
+            sErrState = HANDLEABLE_AND_NO_SERVER_CONNECT_ERR;
+            break;
+        case HANDLEABLE_ERR:
+            // cannot have multiple handleable errors at once
+            /* falls through */
+        case HANDLEABLE_AND_NO_SERVER_CONNECT_ERR:
+            // cannot have mutliple handleable errors at once
+            ESP_LOGE(TAG, "mutliple HANDLEABLE_ERR thrown!");
+            /* falls through */
+        case FATAL_ERR:
+            /* falls through */
+        default:
+            throwFatalError();
+            break;
+    }
+
+    /* release state mutex */
+    success = xSemaphoreGive(sErrMutex);
+    if (success != pdTRUE) throwFatalError();
 }
 
 /**
@@ -196,37 +233,57 @@ void throwHandleableError(ErrorResources *errRes, bool callerHasErrMutex) {
  *        the error synchronization mutex, in which case the function will not
  *        attempt to take it.
  */
-void throwFatalError(ErrorResources *errRes, bool callerHasErrMutex) {
-  ESP_LOGE(TAG, "FATAL_ERR thrown!");
-  (void) esp_backtrace_print(BACKTRACE_DEPTH); // an error already occurred
+void throwFatalError(void) {
+    BaseType_t success;
+    TaskHandle_t caller = xTaskGetCurrentTaskHandle();
 
-  if (errRes == NULL) {
-    indicateError();
-    for (;;) {
-      vTaskDelay(INT_MAX);
+    /* input guards */
+    ESP_LOGE(TAG, "FATAL_ERR thrown!");
+    esp_backtrace_print(BACKTRACE_DEPTH);
+    if (sErrMutex == NULL)
+    {
+        /* best effort to indicate fatal error */
+        indicateError();
+        for (;;) {
+            vTaskDelay(INT_MAX);
+        }
     }
-  }
 
-  if (!callerHasErrMutex) {
-    while (xSemaphoreTake(errRes->errMutex, INT_MAX) != pdTRUE) {}
-  }
-  if (errRes->errTimer != NULL) {
-    stopErrorFlashing(errRes, true);
-  }
-  errRes->err = FATAL_ERR;
-  indicateError();
+    /* acquire error mutex */
+    if (xSemaphoreGetMutexHolder(sErrMutex) != caller)
+    {
+        success = xSemaphoreTake(sErrMutex, portMAX_DELAY);
+        if (success != pdTRUE)
+        {
+            /* best effort to indicate fatal error */
+            indicateError();
+            for (;;)
+            {
+                vTaskDelay(INT_MAX);
+            }
+        }
+    }
+
+    /* indicate fatal error */
+    if (sErrTimer != NULL)
+    {
+        stopErrorFlashing();
+    }
+    sErrState = FATAL_ERR;
+    indicateError();
 
 #if CONFIG_FATAL_CAUSES_REBOOT == true
-  vTaskDelay(pdMS_TO_TICKS(CONFIG_ERROR_PERIOD)); // let the error LED shine for a short time
-  indicateError();
-  esp_restart();
-#endif /* CONFIG_FATAL_CAUSES_REBOOT == true */  
+    vTaskDelay(pdMS_TO_TICKS(CONFIG_ERROR_PERIOD)); // let the error LED shine for a short time
+    indicateError();
+    esp_restart();
+#endif /* CONFIG_FATAL_CAUSES_REBOOT == true */
 
-  xSemaphoreGive(errRes->errMutex); // give up mutex in caller's name
-  /* calling task should not return */
-  for (;;) {
-    vTaskDelay(INT_MAX);
-  }
+    /* release error mutex */
+    (void) xSemaphoreGive(sErrMutex); // best effort
+    for (;;)
+    {
+        vTaskDelay(INT_MAX);
+    }
 }
 
 /**
@@ -245,41 +302,51 @@ void throwFatalError(ErrorResources *errRes, bool callerHasErrMutex) {
  *        the error synchronization mutex, in which case the function will not
  *        attempt to take it.
  */
-void resolveNoConnError(ErrorResources *errRes, bool resolveNone, bool callerHasErrMutex) {
-  if (!callerHasErrMutex) {
-    while (xSemaphoreTake(errRes->errMutex, INT_MAX) != pdTRUE) {}
-  }
+void resolveNoConnError(bool resolveNone) {
+    BaseType_t success;
+    TaskHandle_t caller = xTaskGetCurrentTaskHandle();
+    /* input guards */
+    if (getAppErrorsStatus() != ESP_OK) throwFatalError();
+  
+    /* acquire state mutex */
+    if (xSemaphoreGetMutexHolder(sErrMutex) != caller)
+    {
+        success = xSemaphoreTake(sErrMutex, portMAX_DELAY);
+        if (success != pdTRUE) throwFatalError();
+    }
 
-  ESP_LOGW(TAG, "resolving NO_SERVER_CONNECT_ERR");
-  if (errRes->errTimer != NULL) {
-    stopErrorFlashing(errRes, true);
-    indicateNoError();
-  }
-  switch (errRes->err) {
-    case NO_SERVER_CONNECT_ERR:
-      errRes->err = NO_ERR;
-      break;
-    case HANDLEABLE_AND_NO_SERVER_CONNECT_ERR:
-      errRes->err = HANDLEABLE_ERR;
-      break;
-    case NO_ERR:
-      /* falls through */
-    case HANDLEABLE_ERR:
-      if (resolveNone) {
-        break;
-      }
-      ESP_LOGE(TAG, "resolving NO_SERVER_CONNECT_ERR without its error state");
-      /* falls through */
-    case FATAL_ERR:
-      /* falls through */
-    default:
-      throwFatalError(errRes, true);
-      break;
-  }
+    /* indicate no error, unless solid */
+    ESP_LOGW(TAG, "resolving NO_SERVER_CONNECT_ERR");
+    if (sErrTimer != NULL)
+    {
+        stopErrorFlashing();
+        indicateNoError();
+    }
 
-  if (!callerHasErrMutex) {
-    xSemaphoreGive(errRes->errMutex);
-  }
+    /* modify error state */
+    switch (sErrState) {
+        case NO_SERVER_CONNECT_ERR:
+            sErrState = NO_ERR;
+            break;
+        case HANDLEABLE_AND_NO_SERVER_CONNECT_ERR:
+            sErrState = HANDLEABLE_ERR;
+            break;
+        case NO_ERR:
+            /* falls through */
+        case HANDLEABLE_ERR:
+            if (resolveNone) break;
+            ESP_LOGE(TAG, "resolving NO_SERVER_CONNECT_ERR without its error state");
+            /* falls through */
+        case FATAL_ERR:
+            /* falls through */
+        default:
+            throwFatalError();
+            break;
+    }
+
+    /* release error mutex */
+    success = xSemaphoreGive(sErrMutex);
+    if (success != pdTRUE) throwFatalError();
 }
 
 /**
@@ -295,41 +362,53 @@ void resolveNoConnError(ErrorResources *errRes, bool resolveNone, bool callerHas
  *        the error synchronization mutex, in which case the function will not
  *        attempt to take it.
  */
-void resolveHandleableError(ErrorResources *errRes, bool resolveNone, bool callerHasErrMutex) {
-  if (!callerHasErrMutex) {
-    while (xSemaphoreTake(errRes->errMutex, INT_MAX) != pdTRUE) {}
-  }
+void resolveHandleableError(bool resolveNone) {
+    BaseType_t success;
+    TaskHandle_t caller = xTaskGetCurrentTaskHandle();
+    /* input guards */
+    if (getAppErrorsStatus() != ESP_OK) throwFatalError();
 
-  ESP_LOGW(TAG, "resolving HANDLEABLE_ERR");
-  switch (errRes->err) {
-    case HANDLEABLE_ERR:
-      errRes->err = NO_ERR;
-      indicateNoError();
-      break;
-    case HANDLEABLE_AND_NO_SERVER_CONNECT_ERR:
-      errRes->err = NO_SERVER_CONNECT_ERR;
-      if (errRes->errTimer == NULL) {
-        startErrorFlashing(errRes, true);
-      }
-      break;
-    case NO_ERR:
-      /* falls through */
-    case NO_SERVER_CONNECT_ERR:
-      if (resolveNone) {
-        break;
-      }
-      ESP_LOGE(TAG, "resolving HANDLEABLE_ERR without its error state");
-      /* falls through */
-    case FATAL_ERR:
-      /* falls through */
-    default:
-      throwFatalError(errRes, true);
-      break;
-  }
+    /* acquire state mutex */
+    if (xSemaphoreGetMutexHolder(sErrMutex) != caller)
+    {
+        success = xSemaphoreTake(sErrMutex, portMAX_DELAY);
+        if (success != pdTRUE) throwFatalError();
+    }
 
-  if (!callerHasErrMutex) {
-    xSemaphoreGive(errRes->errMutex);
-  }
+    /* indicate no error, unless solid */
+    ESP_LOGW(TAG, "resolving NO_SERVER_CONNECT_ERR");
+    if (sErrTimer != NULL)
+    {
+        stopErrorFlashing();
+        indicateNoError();
+    }
+
+    /* modify error state */
+    switch (sErrState) {
+        case HANDLEABLE_ERR:
+            sErrState = NO_ERR;
+            indicateNoError();
+            break;
+        case HANDLEABLE_AND_NO_SERVER_CONNECT_ERR:
+            sErrState = NO_SERVER_CONNECT_ERR;
+            if (sErrTimer == NULL) startErrorFlashing();
+            break;
+        case NO_ERR:
+            /* falls through */
+        case NO_SERVER_CONNECT_ERR:
+            if (resolveNone) break;
+            ESP_LOGE(TAG, "resolving HANDLEABLE_ERR that doesn't exist");
+            /* falls through */
+        case FATAL_ERR:
+            /* falls through */
+        default:
+            throwFatalError();
+            break;
+    }
+
+    /* release error mutex */
+    success = xSemaphoreGive(sErrMutex);
+    if (success != pdTRUE) throwFatalError();
 }
 
 /**
@@ -338,59 +417,44 @@ void resolveHandleableError(ErrorResources *errRes, bool resolveNone, bool calle
  * @note Sets a timer that calls timerFlashErrCallback. If a timer could not
  *       be started, then a fatal error is thrown.
  * 
- * @param timer A pointer to a timer handle that will point to the new timer
- *              if successful (ONLY if ESP_OK is returned).
- * @param ledStatus A pointer to an integer that will be used by the timer
- *                   callback. This should not be modified or destroyed until
- *                   the timer is no longer in use.
- * @param errResources A pointer to an ErrorResources holding global error
- *                     handling resources.
+ * @requires:
+ * - caller has sErrMutex.
  */
-static void startErrorFlashing(ErrorResources *errRes, bool callerHasErrMutex) {
+static void startErrorFlashing(void) {
     const esp_timer_create_args_t timerArgs = {
-      .callback = timerFlashErrCallback,
-      .arg = NULL,
-      .dispatch_method = ESP_TIMER_TASK,
-      .name = "errorTimer",
+        .callback = timerFlashErrCallback,
+        .arg = NULL,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "errorTimer",
     };
 
-    if (!callerHasErrMutex) {
-      while (xSemaphoreTake(errRes->errMutex, INT_MAX) != pdTRUE) {}
+    if (esp_timer_create(&timerArgs, &sErrTimer) != ESP_OK)
+    {
+        throwFatalError();
     }
-    if (esp_timer_create(&timerArgs, &(errRes->errTimer)) != ESP_OK) {
-      throwFatalError(errRes, true);
-    }
-    if (esp_timer_start_periodic(errRes->errTimer, CONFIG_ERROR_PERIOD * 1000) != ESP_OK) {
-      esp_timer_delete(errRes->errTimer);
-      errRes->errTimer = NULL;
-      throwFatalError(errRes, true);
-    }
-
-    if (!callerHasErrMutex) {
-      xSemaphoreGive(errRes->errMutex);
+    if (esp_timer_start_periodic(sErrTimer, CONFIG_ERROR_PERIOD * 1000) != ESP_OK)
+    {
+        esp_timer_delete(sErrTimer);
+        sErrTimer = NULL;
+        throwFatalError();
     }
 }
 
 /**
  * @brief Stops the periodic timer that toggles the error LED.
  * 
+ * @requires:
+ * - caller has sErrMutex.
+ * 
  * @param errResources A pointer to an ErrorResources holding global error
  *                     handling resources.
  * 
  * @returns ESP_OK if successful, otherwise ESP_FAIL.
  */
-static void stopErrorFlashing(ErrorResources *errRes, bool callerHasErrMutex) {
-  if (!callerHasErrMutex) {
-    while (xSemaphoreTake(errRes->errMutex, INT_MAX) != pdTRUE) {}
-  }
-
-  esp_timer_stop(errRes->errTimer);
-  esp_timer_delete(errRes->errTimer);
-  errRes->errTimer = NULL;
-
-  if (!callerHasErrMutex) {
-    xSemaphoreGive(errRes->errMutex);
-  }
+static void stopErrorFlashing(void) {
+  (void) esp_timer_stop(sErrTimer);
+  (void) esp_timer_delete(sErrTimer);
+  sErrTimer = NULL;
 }
 
 /**
@@ -412,9 +476,41 @@ static void timerFlashErrCallback(void *params) {
     currentOutput = (currentOutput) ? false : true;
     if (currentOutput)
     {
-      indicateError();
+        indicateError();
     } else 
     {
-      indicateNoError();
+        indicateNoError();
     }
+}
+
+/**
+ * @brief Indicates to the user that an error is present.
+ */
+static inline void indicateError(void)
+{
+    /* intentionally ignoring error codes because 
+    this is a best effort function */
+#if CONFIG_HARDWARE_VERSION == 1
+    (void) gpio_set_direction(ERR_LED_PIN, GPIO_MODE_OUTPUT);
+    (void) gpio_set_level(ERR_LED_PIN, 1);
+#elif CONFIG_HARDWARE_VERSION == 2
+    (void) matSetColor(ERROR_LED_NUM, ERROR_COLOR_RED, ERROR_COLOR_GREEN, ERROR_COLOR_BLUE);
+#else
+#error "Unsupported hardware version!"
+#endif
+}
+
+/**
+ * @brief Indicates to the user that no error is present.
+ */
+static inline void indicateNoError(void)
+{
+    /* best effort function */
+#if CONFIG_HARDWARE_VERSION == 1
+    (void) gpio_set_level(ERR_LED_PIN, 0);
+#elif CONFIG_HARDWARE_VERSION == 2
+    (void) matSetColor(ERROR_LED_NUM, 0x00, 0x00, 0x00);
+#else
+#error "Unsupported hardware version!"
+#endif
 }

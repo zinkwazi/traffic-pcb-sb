@@ -16,6 +16,6 @@
 
 #include "app_errors.h"
 
-esp_err_t createActionTask(TaskHandle_t *handle, const ErrorResources *errRes);
+esp_err_t createActionTask(TaskHandle_t *handle);
 
 #endif /* ACTION_TASK_H_4_9_25 */

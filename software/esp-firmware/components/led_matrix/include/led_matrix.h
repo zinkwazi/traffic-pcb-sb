@@ -16,7 +16,7 @@
 #include "driver/gpio.h"
 #include "esp_err.h"
 
-#include "mat_err.h"
+#include "app_err.h"
 
 enum PWMFrequency {
     TWENTY_NINE_K = 0,
@@ -79,23 +79,25 @@ enum SWXSetting {
     MATRIX_SWXSETTING_MAX = 9, // indicates start of invalid values
 };
 
-mat_err_t matSetOperatingMode(enum Operation setting);
-mat_err_t matSetOpenShortDetection(enum ShortDetectionEnable setting);
-mat_err_t matSetLogicLevel(enum LogicLevel setting);
-mat_err_t matSetSWxSetting(enum SWXSetting setting);
-mat_err_t matSetGlobalCurrentControl(uint8_t value);
-mat_err_t matSetResistorPullupSetting(enum ResistorSetting setting);
-mat_err_t matSetResistorPulldownSetting(enum ResistorSetting setting);
-mat_err_t matSetPWMFrequency(enum PWMFrequency freq);
-mat_err_t matReset(void);
-mat_err_t matSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
-mat_err_t matSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
+esp_err_t initLedMatrix(void);
+esp_err_t getLedMatrixStatus(void);
+esp_err_t matSetOperatingMode(enum Operation setting);
+esp_err_t matSetOpenShortDetection(enum ShortDetectionEnable setting);
+esp_err_t matSetLogicLevel(enum LogicLevel setting);
+esp_err_t matSetSWxSetting(enum SWXSetting setting);
+esp_err_t matSetGlobalCurrentControl(uint8_t value);
+esp_err_t matSetResistorPullupSetting(enum ResistorSetting setting);
+esp_err_t matSetResistorPulldownSetting(enum ResistorSetting setting);
+esp_err_t matSetPWMFrequency(enum PWMFrequency freq);
+esp_err_t matReset(void);
+esp_err_t matSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
+esp_err_t matSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
 
 #if CONFIG_HARDWARE_VERSION == 1
-mat_err_t matInitialize(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
+esp_err_t matInitialize(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
 #elif CONFIG_HARDWARE_VERSION == 2
-mat_err_t matInitializeBus1(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
-mat_err_t matInitializeBus2(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
+esp_err_t matInitializeBus1(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
+esp_err_t matInitializeBus2(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
 #else
 #error "Unsupported hardware version!"
 #endif

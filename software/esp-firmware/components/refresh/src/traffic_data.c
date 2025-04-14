@@ -16,9 +16,12 @@
 #include "freertos/semphr.h"
 
 #include "main_types.h"
+#include "app_err.h"
 #include "api_connect.h"
 #include "led_registers.h"
 #include "app_nvs.h"
+
+#define TAG "traffic_data"
 
 static LEDData sCurrentNorthData[MAX_NUM_LEDS_REG];
 static LEDData sCurrentSouthData[MAX_NUM_LEDS_REG];
@@ -71,22 +74,22 @@ esp_err_t initTrafficData(void)
 esp_err_t borrowTrafficData(SpeedCategory category, TickType_t xTicksToWait)
 {
     BaseType_t success;
-    if (sCurrentDataMutex == NULL) return ESP_ERR_INVALID_STATE;
-    if (sTypicalDataMutex == NULL) return ESP_ERR_INVALID_STATE;
+    if (sCurrentDataMutex == NULL) THROW_ERR(ESP_ERR_INVALID_STATE);
+    if (sTypicalDataMutex == NULL) THROW_ERR(ESP_ERR_INVALID_STATE);
 
     switch (category)
     {
         case LIVE:
             success = xSemaphoreTake(sCurrentDataMutex, xTicksToWait);
+            if (success != pdTRUE) THROW_ERR(ESP_ERR_TIMEOUT);
             break;
         case TYPICAL:
             success = xSemaphoreTake(sTypicalDataMutex, xTicksToWait);
+            if (success != pdTRUE) THROW_ERR(ESP_ERR_TIMEOUT);
             break;
         default:
-            return ESP_FAIL;
+            THROW_ERR(ESP_FAIL);
     }
-
-    if (success != pdTRUE) return ESP_ERR_TIMEOUT;
     return ESP_OK;
 }
 
@@ -107,8 +110,8 @@ esp_err_t borrowTrafficData(SpeedCategory category, TickType_t xTicksToWait)
 esp_err_t releaseTrafficData(SpeedCategory category)
 {
     BaseType_t success;
-    if (sCurrentDataMutex == NULL) return ESP_ERR_INVALID_STATE;
-    if (sTypicalDataMutex == NULL) return ESP_ERR_INVALID_STATE;
+    if (sCurrentDataMutex == NULL) THROW_ERR(ESP_ERR_INVALID_STATE);
+    if (sTypicalDataMutex == NULL) THROW_ERR(ESP_ERR_INVALID_STATE);
 
     switch (category)
     {
@@ -119,10 +122,10 @@ esp_err_t releaseTrafficData(SpeedCategory category)
             success = xSemaphoreGive(sTypicalDataMutex);
             break;
         default:
-            return ESP_FAIL;
+            THROW_ERR(ESP_FAIL);
     }
 
-    if (success != pdTRUE) return ESP_ERR_NOT_ALLOWED;
+    if (success != pdTRUE) THROW_ERR(ESP_ERR_NOT_ALLOWED);
     return ESP_OK;
 }
 
@@ -149,9 +152,9 @@ esp_err_t updateTrafficData(LEDData data[], size_t dataSize, Direction dir, Spee
     esp_err_t err;
     LEDData *targetArr;
     /* input guards */
-    if (data == NULL) return ESP_ERR_INVALID_ARG;
-    if (dataSize < MAX_NUM_LEDS_REG) return ESP_ERR_INVALID_ARG;
-    if (!accessAllowed(category)) return ESP_ERR_NOT_ALLOWED;
+    if (data == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (dataSize < MAX_NUM_LEDS_REG) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (!accessAllowed(category)) THROW_ERR(ESP_ERR_NOT_ALLOWED);
 
     /* update data */
     targetArr = getTargetArray(dir, category);
@@ -189,9 +192,9 @@ esp_err_t copyTrafficData(LEDData out[], size_t outLen, Direction dir, SpeedCate
 {
     LEDData *targetArr;
     /* input guards */
-    if (out == NULL) return ESP_ERR_INVALID_ARG;
-    if (outLen < MAX_NUM_LEDS_REG) return ESP_ERR_INVALID_ARG;
-    if (!accessAllowed(category)) return ESP_ERR_NOT_ALLOWED;
+    if (out == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (outLen < MAX_NUM_LEDS_REG) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (!accessAllowed(category)) THROW_ERR(ESP_ERR_NOT_ALLOWED);
 
     /* copy data */
     targetArr = getTargetArray(dir, category);

@@ -17,6 +17,6 @@
 QueueHandle_t getStrobeQueue(void);
 esp_err_t acquireStrobeQueueMutex(TickType_t blockTime);
 esp_err_t releaseStrobeQueueMutex(void);
-esp_err_t createStrobeTask(TaskHandle_t *handle, ErrorResources *errorResources);
+esp_err_t createStrobeTask(TaskHandle_t *handle);
 
 #endif /* STROBE_TASK_H_4_5_25 */

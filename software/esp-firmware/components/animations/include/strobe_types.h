@@ -52,12 +52,4 @@ struct StrobeTaskCommand {
 
 typedef struct StrobeTaskCommand StrobeTaskCommand;
 
-/* Holds resources passed to the strobe task during task creation */
-struct StrobeTaskResources {
-    /* error resources necessary for the task to throw application errors */
-    ErrorResources *errRes;
-};
-
-    typedef struct StrobeTaskResources StrobeTaskResources;
-
 #endif /* STROBE_TYPES_H_4_5_25 */

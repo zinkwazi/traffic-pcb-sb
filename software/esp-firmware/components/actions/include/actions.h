@@ -34,6 +34,6 @@ typedef enum Action Action;
 int64_t getUpdateTrafficDataPeriodSec(void);
 const time_t *getCheckOTAAvailableTimes(void);
 size_t getCheckOTAAvailableTimesSize(void);
-esp_err_t handleAction(Action action, ErrorResources *errRes);
+esp_err_t handleAction(Action action);
 
 #endif /* ACTIONS_H_4_7_25 */

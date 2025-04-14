@@ -87,26 +87,25 @@ static uint getFirmwarePatchVersion(void);
  *       this type of task will be created; any additional tasks will have 
  *       pointers to the same location in static memory.
  * 
+ * @requires:
+ * - app_errors component intialized.
+ * 
  * @param handle A pointer to a handle which will refer to the created task
  *               if successful.
  * @param errorResources A pointer to an ErrorResources object. A deep copy
  *                       of the object will be created in static memory.
  *                       
- * @returns ESP_OK if the task was created successfully, otherwise ESP_FAIL.
+ * @returns ESP_OK if the task was created successfully.
+ * ESP_ERR_INVALID_STATE if requirement 1 is not met.
+ * ESP_FAIL otherwise.
  */
-esp_err_t createOTATask(TaskHandle_t *handle, const ErrorResources *errorResources) {
-    static ErrorResources taskErrorResources;
+esp_err_t createOTATask(TaskHandle_t *handle) {
     BaseType_t success;
     /* input guards */
-    if (errorResources == NULL) return ESP_FAIL;
-    if (errorResources->errMutex == NULL) return ESP_FAIL;
-    /* copy parameters */
-    taskErrorResources.err = errorResources->err;
-    taskErrorResources.errMutex = errorResources->errMutex;
-    taskErrorResources.errTimer = errorResources->errTimer;
+    if (getAppErrorsStatus() != ESP_OK) return ESP_ERR_INVALID_STATE;
     /* create OTA task */
     success = xTaskCreate(vOTATask, "OTATask", CONFIG_OTA_STACK,
-                          &taskErrorResources, CONFIG_OTA_PRIO, handle);
+                          NULL, CONFIG_OTA_PRIO, handle);
     return (success == pdPASS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -125,7 +124,6 @@ void vOTATask(void* pvParameters) {
         .url = FIRMWARE_UPGRADE_URL,
         .crt_bundle_attach = esp_crt_bundle_attach,
     };
-    ErrorResources *errRes = (ErrorResources *) pvParameters;
     esp_err_t err;
 
     /* query most recent server firmware version and indicate if an update is available.
@@ -136,11 +134,11 @@ void vOTATask(void* pvParameters) {
     bool updateAvailable;
 
     (void) queryOTAUpdateAvailable(&updateAvailable); // allow firmware updates even if this
-                                                // function fails in order to fix 
-                                                // potential issues in this function
+                                                      // function fails in order to fix 
+                                                      // potential issues in this function
     if (updateAvailable)
     {
-    indicateOTAAvailable();
+        (void) indicateOTAAvailable(); // allow update away from bad firmware
     }
     #else
     #error "Unsupported hardware version!"
@@ -169,16 +167,12 @@ void vOTATask(void* pvParameters) {
         }
 
         ESP_LOGI(TAG, "did not complete OTA update successfully!");
-        err = indicateOTAFailure(errRes, CONFIG_OTA_LEFT_ON_MS);
-        FATAL_IF_ERR(err, errRes);
-        if (err != ESP_OK)
-        {
-            throwFatalError(errRes, false);
-        }
+        err = indicateOTAFailure(CONFIG_OTA_LEFT_ON_MS);
+        if (err != ESP_OK) throwFatalError();
     }
 
     ESP_LOGE(TAG, "OTA Task is returning!");
-    throwFatalError(errRes, false);
+    throwFatalError();
 }
 
 /**

@@ -56,7 +56,6 @@ struct MainTaskResources {
     nvs_handle_t nvsHandle;
     UserSettings *settings;
     esp_timer_handle_t refreshTimer;
-    ErrorResources *errRes;
 };
 
 typedef struct MainTaskResources MainTaskResources;

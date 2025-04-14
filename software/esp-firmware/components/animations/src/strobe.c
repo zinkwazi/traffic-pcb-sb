@@ -14,8 +14,11 @@
 #include "freertos/projdefs.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-
 #include "esp_err.h"
+
+#include "app_err.h"
+
+#define TAG "strobe"
 
 /**
  * @brief Pauses the strobe task from registering new LEDs from the strobe queue,
@@ -81,7 +84,7 @@ esp_err_t strobeRegisterLED(uint16_t ledNum,
     StrobeTaskCommand command;
     const QueueHandle_t strobeQueue = getStrobeQueue();
 
-    if (strobeQueue == NULL) return ESP_ERR_INVALID_STATE;
+    if (strobeQueue == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
     
     /* create command */
     command.caller = xTaskGetCurrentTaskHandle();
@@ -113,7 +116,7 @@ esp_err_t strobeUnregisterLED(uint16_t ledNum)
     StrobeTaskCommand command;
     const QueueHandle_t strobeQueue = getStrobeQueue();
 
-    if (strobeQueue == NULL) return ESP_ERR_INVALID_STATE;
+    if (strobeQueue == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
     
     /* create command */
     command.caller = xTaskGetCurrentTaskHandle();
@@ -140,7 +143,7 @@ esp_err_t strobeUnregisterAll(void)
     StrobeTaskCommand command;
     const QueueHandle_t strobeQueue = getStrobeQueue();
 
-    if (strobeQueue == NULL) return ESP_ERR_INVALID_STATE;
+    if (strobeQueue == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
     
     /* create command */
     command.caller = xTaskGetCurrentTaskHandle();

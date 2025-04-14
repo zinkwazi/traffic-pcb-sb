@@ -69,7 +69,6 @@ static void initializeMainState(MainTaskState *state);
 esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
 {
     /* global resources */
-    static ErrorResources errRes;
     static UserSettings settings;
 
     /* local variables */
@@ -80,23 +79,19 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     nvs_handle_t workerHandle;
 
     /* input guards */
-    if (state == NULL)
-        return ESP_ERR_INVALID_ARG;
-    if (res == NULL)
-        return ESP_ERR_INVALID_ARG;
+    if (state == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (res == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
 
     /* initialize state and resources to known values */
     initializeMainState(state);
     res->nvsHandle = (nvs_handle_t) NULL;
     res->refreshTimer = NULL;
 
-    /* initialize global resources */
-    errRes.err = NO_ERR;
-    errRes.errTimer = NULL;
-    errRes.errMutex = xSemaphoreCreateMutex();
-    if (errRes.errMutex == NULL)
-        return ESP_ERR_NO_MEM;
-    res->errRes = &errRes;
+    /* initialize components and resources */
+    err = initAppErrors();
+    if (err != ESP_OK) return err;
+    err = initLedMatrix();
+    if (err != ESP_OK) return err;
 
     settings.wifiSSID = NULL;
     settings.wifiSSIDLen = 0;
@@ -104,51 +99,55 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     settings.wifiPassLen = 0;
     res->settings = &settings;
 
+    /* initialize indicator LEDs */
+    err = initializeIndicatorLEDs();
+    if (err != ESP_OK) return err;
+
     /* initialize and cleanup non-volatile storage */
     err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
         ESP_LOGE(TAG, "no free pages in nvs, need to erase nvs partition with parttool.py.");
     }
-    FATAL_IF_ERR(err, res->errRes);
+    if (err != ESP_OK) THROW_ERR(err);
 
     res->nvsHandle = openMainNvs();
-    FATAL_IF_FALSE((res->nvsHandle != (nvs_handle_t) NULL), res->errRes);
+    if (res->nvsHandle == (nvs_handle_t) NULL) THROW_ERR(ESP_FAIL);
     err = removeExtraMainNvsEntries(res->nvsHandle); // keep handle open
-    FATAL_IF_ERR(err, res->errRes);
+    if (err != ESP_OK) return err;
 
     workerHandle = openWorkerNvs();
-    FATAL_IF_FALSE((workerHandle != (nvs_handle_t) NULL), res->errRes);
+    if (workerHandle == (nvs_handle_t) NULL) THROW_ERR(ESP_FAIL);
     err = removeExtraWorkerNvsEntries(workerHandle); // keep handle open
-    FATAL_IF_ERR(err, res->errRes);
+    if (err != ESP_OK) return err;
 
     /* check if a settings update is requested or necessary */
     err = gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT); // pin has external pullup
-    FATAL_IF_ERR(err, res->errRes);
+    if (err != ESP_OK) THROW_ERR(ESP_FAIL);
     err = retrieveNvsEntries(res->nvsHandle, &settings);
     if (gpio_get_level(T_SW_PIN) == 0 || err != ESP_OK)
     {
         ESP_LOGI(TAG, "updating settings, err: %d", err);
-        updateNvsSettings(res->nvsHandle, res->errRes);
+        updateNvsSettings(res->nvsHandle);
     }
 
     /* retrieve nvs settings */
     err = nvsEntriesExist(res->nvsHandle);
-    FATAL_IF_ERR(err, res->errRes);
+    if (err != ESP_OK) return err;
     err = retrieveNvsEntries(res->nvsHandle, &settings);
-    FATAL_IF_ERR(err, res->errRes);
+    if (err != ESP_OK) return err;
 
     /* initialize tcp/ip stack */
     err = esp_netif_init();
-    FATAL_IF_ERR(err, res->errRes);
+    if (err != ESP_OK) return err;
     err = esp_event_loop_create_default();
-    FATAL_IF_ERR(err, res->errRes);
+    if (err != ESP_OK) return err;
     (void) esp_netif_create_default_wifi_sta(); // don't need result
 
     /* establish wifi connection & tls */
     err = esp_wifi_init(&default_wifi_cfg);
-    FATAL_IF_ERR(err, res->errRes);
+    if (err != ESP_OK) return err;
     err = initWifi(res->settings->wifiSSID, res->settings->wifiPass);
-    FATAL_IF_ERR(err, res->errRes);
+    if (err != ESP_OK) return err;
     err = establishWifiConnection();
     while (err == ESP_ERR_NVS_NOT_ENOUGH_SPACE) {
         /* nvs does not have enough space for wifi. I conclude this is due
@@ -158,19 +157,13 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
         operation here by deleting stored data */
         ESP_LOGE(TAG, "erasing nvs");
         err = nvs_erase_all(res->nvsHandle); // keep handle open
-        if (err != ESP_OK)
-        {
-            FATAL_IF_ERR(err, res->errRes);
-        }
+        if (err != ESP_OK) return err;
         err = nvs_erase_all(workerHandle); // close handle
-        if (err != ESP_OK)
-        {
-            FATAL_IF_ERR(err, res->errRes);
-        }
+        if (err != ESP_OK) return err;
 
         ESP_LOGE(TAG, "rewriting user settings to nvs");
         err = storeNvsSettings(res->nvsHandle, *res->settings);
-        FATAL_IF_ERR(err, res->errRes);
+        if (err != ESP_OK) return err;
 
         esp_restart();
     } // ignore other error codes
@@ -180,18 +173,16 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
         return ESP_ERR_NO_MEM;
 
     /* initialize data */
-    err = initRefresh(res->errRes);
-    FATAL_IF_ERR(err, res->errRes);
+    err = initRefresh();
+    if (err != ESP_OK) return err;
 
     /* create tasks */
-    err = createStrobeTask(NULL, res->errRes);
-    FATAL_IF_ERR(err, res->errRes);
-    err = createActionTask(NULL, res->errRes);
-    FATAL_IF_ERR(err, res->errRes);
-    err = createOTATask(&otaTask, res->errRes);
-    FATAL_IF_ERR(err, res->errRes);
-    if (otaTask == NULL)
-        return ESP_FAIL;
+    err = createStrobeTask(NULL);
+    if (err != ESP_OK) return err;
+    err = createActionTask(NULL);
+    if (err != ESP_OK) return err;
+    err = createOTATask(&otaTask);
+    if (err != ESP_OK) return err;
 
     /* create refresh timer */
     state->toggle = false;
@@ -200,28 +191,16 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
 
     /* initialize buttons */
     err = gpio_install_isr_service(0);
-    FATAL_IF_ERR(err, res->errRes);
+    if (err != ESP_OK) THROW_ERR(err);
     err = initIOButton(otaTask);
-    FATAL_IF_ERR(err, res->errRes);
+    if (err != ESP_OK) return err;
     err = initDirectionButton(&(state->toggle));
-    FATAL_IF_ERR(err, res->errRes);
+    if (err != ESP_OK) return err;
 
     return ESP_OK;
 }
 
 #if CONFIG_HARDWARE_VERSION == 1
-
-/**
- * @brief Initializes I2C bus to communicate with LED matrices.
- *
- * @returns ESP_OK if successful.
- */
-esp_err_t initializeMatrices(void)
-{
-    esp_err_t err;
-    err = matInitialize(I2C_PORT, SDA_PIN, SCL_PIN);
-    return err;
-}
 
 /**
  * @brief Initializes communication through the USB connector.
@@ -295,27 +274,6 @@ esp_err_t initializeIndicatorLEDs(void)
 #elif CONFIG_HARDWARE_VERSION == 2
 
 /**
- * @brief Initializes I2C buses to communicate with LED matrices.
- *
- * @returns ESP_OK if successful.
- */
-esp_err_t initializeMatrices(void)
-{
-    esp_err_t err;
-
-    err = matInitializeBus1(I2C1_PORT, SDA1_PIN, SCL1_PIN);
-    if (err != ESP_OK)
-        return err;
-    err = matInitializeBus2(I2C2_PORT, SDA2_PIN, SCL2_PIN);
-    err = matReset();
-    if (err != ESP_OK) return err;
-    err = matSetGlobalCurrentControl(CONFIG_GLOBAL_LED_CURRENT);
-    if (err != ESP_OK) return err;
-    err = matSetOperatingMode(NORMAL_OPERATION);
-    return err;
-}
-
-/**
  * @brief Initializes communication through the USB connector. Required for
  *        logging with ESP_LOG family functions.
  *
@@ -338,7 +296,7 @@ esp_err_t initializeLogChannel(void)
  * @brief Initializes indicator LEDs to off state.
  *
  * @requires:
- * - initializeMatrices executed.
+ * - led_matrix component initialized.
  *
  * @returns ESP_OK if successful.
  */
@@ -346,56 +304,39 @@ esp_err_t initializeIndicatorLEDs(void)
 {
     esp_err_t err;
     err = matSetScaling(OTA_LED_NUM, 0xFF, 0xFF, 0xFF);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     err = matSetColor(OTA_LED_NUM, 0x00, 0x00, 0x00);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     err = matSetScaling(WIFI_LED_NUM, 0xFF, 0xFF, 0xFF);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     err = matSetColor(WIFI_LED_NUM, 0x00, 0x00, 0x00);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     err = matSetScaling(ERROR_LED_NUM, 0xFF, 0xFF, 0xFF);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     err = matSetColor(ERROR_LED_NUM, 0x00, 0x00, 0x00);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     err = matSetScaling(NORTH_LED_NUM, 0xFF, 0xFF, 0xFF);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     err = matSetColor(NORTH_LED_NUM, 0x00, 0x00, 0x00);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     err = matSetScaling(EAST_LED_NUM, 0xFF, 0xFF, 0xFF);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     err = matSetColor(EAST_LED_NUM, 0x00, 0x00, 0x00);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     err = matSetScaling(WEST_LED_NUM, 0xFF, 0xFF, 0xFF);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     err = matSetColor(WEST_LED_NUM, 0x00, 0x00, 0x00);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     err = matSetScaling(SOUTH_LED_NUM, 0xFF, 0xFF, 0xFF);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     err = matSetColor(SOUTH_LED_NUM, 0x00, 0x00, 0x00);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     err = initLEDLegendLight(FAST_RED, FAST_GREEN, FAST_BLUE);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     err = initLEDLegendMedium(MEDIUM_RED, MEDIUM_GREEN, MEDIUM_BLUE);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     err = initLEDLegendHeavy(SLOW_RED, SLOW_GREEN, SLOW_BLUE);
-    if (err != ESP_OK)
-        return err;
+    if (err != ESP_OK) return err;
     return err;
 }
 
@@ -403,7 +344,7 @@ esp_err_t initializeIndicatorLEDs(void)
  * @brief Initializes the Heavy LED in the legend to the provided color.
  *
  * @requires:
- * - initializeMatrices executed.
+ * - led_matrix component initialized.
  *
  * @param[in] red The red component of the color to set the LED.
  * @param[in] green The green component of the color to set the LED.
@@ -425,7 +366,7 @@ esp_err_t initLEDLegendHeavy(uint8_t red, uint8_t green, uint8_t blue)
  * @brief Initializes the Medium LED in the legend to the provided color.
  *
  * @requires:
- * - initializeMatrices executed.
+ * - led_matrix component initialized.
  *
  * @param[in] red The red component of the color to set the LED.
  * @param[in] green The green component of the color to set the LED.
@@ -447,7 +388,7 @@ esp_err_t initLEDLegendMedium(uint8_t red, uint8_t green, uint8_t blue)
  * @brief Initializes the Light LED in the legend to the provided color.
  *
  * @requires:
- * - initializeMatrices executed.
+ * - led_matrix component initialized.
  *
  * @param[in] red The red component of the color to set the LED.
  * @param[in] green The green component of the color to set the LED.

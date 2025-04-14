@@ -62,8 +62,8 @@ static SemaphoreHandle_t strobeQueueMutex = NULL;
 
 static void vStrobeTask(void *pvParameters);
 static int findStrobeLED(const StrobeLED strobeInfo[], int strobeInfoLen, uint16_t targetLED);
-static void receiveCommand(StrobeLED strobeInfo[], int *strobeInfoLen, const StrobeTaskCommand *command, ErrorResources *errRes);
-static void strobeLEDs(StrobeLED strobeInfo[], const int strobeInfoLen, ErrorResources *errRes);
+static void receiveCommand(StrobeLED strobeInfo[], int *strobeInfoLen, const StrobeTaskCommand *command);
+static void strobeLEDs(StrobeLED strobeInfo[], const int strobeInfoLen);
 
 /**
  * @brief Returns a copy of the strobeQueue handle. The strobeQueue holds
@@ -103,29 +103,27 @@ esp_err_t releaseStrobeQueueMutex(void)
  *       this type of task will be created; any additional tasks will have 
  *       pointers to the same location in static memory.
  * 
+ * @requires:
+ * - app_errors component initialized.
+ * 
  * @param[out] handle A pointer to a handle which will refer to the created task
  *        if successful. Optional--can be set to NULL.       
  * @param[in] errorResources A pointer to an ErrorResources object. A deep copy
  *        of the object will be created in static memory.
  *                       
  * @returns ESP_OK if the task was created successfully.
- *          ESP_ERR_INVALID_ARG if invalid argument.
- *          ESP_ERR_NO_MEM if not enough freeRTOS dynamic memory was allocated.
- *          ESP_FAIL if createStrobeTask was already called. In this case,
- *          recovery is not possible and the device must be restarted.
+ * ESP_ERR_INVALID_ARG if invalid argument.
+ * ESP_ERR_INVALID_STATE if requirement 1 is not met.
+ * ESP_ERR_NO_MEM if not enough freeRTOS dynamic memory was allocated.
+ * ESP_FAIL if createStrobeTask was already called. In this case, recovery is 
+ * not possible and the device must be restarted.
  */
-esp_err_t createStrobeTask(TaskHandle_t *handle,
-                           ErrorResources *errorResources)
+esp_err_t createStrobeTask(TaskHandle_t *handle)
 {
-    static StrobeTaskResources resources;
     BaseType_t success;
 
     /* input guards */
-    if (errorResources == NULL) return ESP_ERR_INVALID_ARG;
-    if (errorResources->errMutex == NULL) return ESP_ERR_INVALID_ARG;
-
-    /* copy arguments */
-    resources.errRes = errorResources;
+    if (getAppErrorsStatus() != ESP_OK) THROW_ERR(ESP_ERR_INVALID_STATE);
 
     /* initialize command queue */
     if (strobeQueue != NULL) return ESP_FAIL; // already initialized
@@ -136,8 +134,9 @@ esp_err_t createStrobeTask(TaskHandle_t *handle,
 
     /* create OTA task */
     success = xTaskCreate(vStrobeTask, "StrobeTask", CONFIG_STROBE_STACK,
-                            &resources, CONFIG_STROBE_PRIO, handle);
-    return (success == pdPASS) ? ESP_OK : ESP_ERR_NO_MEM;
+                            NULL, CONFIG_STROBE_PRIO, handle);
+    if (success != pdPASS) THROW_ERR(ESP_ERR_NO_MEM);
+    return ESP_OK;
 }
 
 /**
@@ -152,7 +151,6 @@ esp_err_t createStrobeTask(TaskHandle_t *handle,
  */
 static void vStrobeTask(void *pvParameters)
 {
-    ErrorResources *const errRes = ((StrobeTaskResources *) pvParameters)->errRes;
     const QueueHandle_t strobeQueue = getStrobeQueue();
     BaseType_t success;
     TickType_t prevWake;
@@ -161,42 +159,37 @@ static void vStrobeTask(void *pvParameters)
     int strobeInfoLen = 0;
 
     /* verify arguments */
-    if (errRes == NULL || errRes->errMutex == NULL)
-    {
-        ESP_LOGE(TAG, "strobeTask provided NULL errRes!");
-        throwFatalError(NULL, false);
-    }
     if (strobeQueue == NULL)
     {
         ESP_LOGE(TAG, "strobeTask was not created by createStrobeTask function!");
-        throwFatalError(errRes, false);
+        throwFatalError();
     }
-    
-    
+
     while (true)
     {
         /* wait for and handle commands */
         if (strobeInfoLen == 0)
         {
-            /* block on the queue. Blocking on the mutex is not possible here,
-            so there special handling here of when the queue is paused.*/
+            /* not currently strobing anything; block on the queue. Blocking on 
+            the mutex is not possible here, so there special handling here of 
+            when the queue is paused. */
             do {
                 success = xQueueReceive(strobeQueue, &command, INT_MAX);
-                receiveCommand(strobeInfo, &strobeInfoLen, &command, errRes);
+                receiveCommand(strobeInfo, &strobeInfoLen, &command);
             } while (success != pdTRUE);
 
             /* check if the queue is currently paused. If so, wait, then
             take the rest of the information from the queue */
             success = xSemaphoreTake(strobeQueueMutex, portMAX_DELAY);
-            if (success != pdTRUE) throwFatalError(errRes, false);
+            if (success != pdTRUE) throwFatalError();
             success = xSemaphoreGive(strobeQueueMutex);
-            if (success != pdTRUE) throwFatalError(errRes, false);
+            if (success != pdTRUE) throwFatalError();
             /* now queue is resumed */
 
             prevWake = xTaskGetTickCount(); // start counting deadlines
         } else 
         {
-            /* check for a paused queue */
+            /* currently strobing things; check for a paused queue */
             success = xSemaphoreTake(strobeQueueMutex, 0);
             if (success)
             {
@@ -205,19 +198,19 @@ static void vStrobeTask(void *pvParameters)
                     success = xQueueReceive(strobeQueue, &command, 0);
                     if (success) // item received from queue
                     {
-                        receiveCommand(strobeInfo, &strobeInfoLen, &command, errRes);
+                        receiveCommand(strobeInfo, &strobeInfoLen, &command);
                     }
                     
                 } while (success != pdFALSE);
 
                 /* release mutex */
                 success = xSemaphoreGive(strobeQueueMutex);
-                if (success != pdTRUE) throwFatalError(errRes, false);
+                if (success != pdTRUE) throwFatalError();
             }
         }
 
         /* strobe LEDs */
-        strobeLEDs(strobeInfo, strobeInfoLen, errRes);
+        strobeLEDs(strobeInfo, strobeInfoLen);
         success = xTaskDelayUntil(&prevWake, pdMS_TO_TICKS(STROBE_PERIOD));
         if (!success)
         {
@@ -225,9 +218,8 @@ static void vStrobeTask(void *pvParameters)
             ESP_LOGW(TAG, "Missed strobe deadline!");
         }
     }
-
     ESP_LOGE(TAG, "strobe task is exiting!");
-    throwFatalError(errRes, false); // this task should never exit
+    throwFatalError(); // this task should never exit
 }
 
 /**
@@ -269,17 +261,16 @@ static int findStrobeLED(const StrobeLED strobeInfo[],
  */
 static void receiveCommand(StrobeLED strobeInfo[], 
                            int *strobeInfoLen, 
-                           const StrobeTaskCommand *command, 
-                           ErrorResources *errRes)
+                           const StrobeTaskCommand *command)
 {
     int ndx;
 
     /* input guards */
-    if (strobeInfo == NULL) throwFatalError(errRes, false);
-    if (strobeInfoLen == NULL) throwFatalError(errRes, false);
-    if (command == NULL) throwFatalError(errRes, false);
-    if (command->caller == NULL) throwFatalError(errRes, false);
-    if (*strobeInfoLen == MAX_STROBE_LEDS && command->registerLED) throwFatalError(errRes, false);
+    if (strobeInfo == NULL) throwFatalError();
+    if (strobeInfoLen == NULL) throwFatalError();
+    if (command == NULL) throwFatalError();
+    if (command->caller == NULL) throwFatalError();
+    if (*strobeInfoLen == MAX_STROBE_LEDS && command->registerLED) throwFatalError();
 
     /* interpret command and modify strobeInfo */
     if (command->ledNum == UINT16_MAX) // indicates unregister all command
@@ -353,14 +344,13 @@ static void receiveCommand(StrobeLED strobeInfo[],
  * @param[in] strobeInfoLen The length of strobeInfo.
  * @param[in] errRes Error resources for throwing application errors.
  */
-static void strobeLEDs(StrobeLED strobeInfo[], const int strobeInfoLen, ErrorResources *errRes)
+static void strobeLEDs(StrobeLED strobeInfo[], const int strobeInfoLen)
 {
     esp_err_t err;
     int ndx;
 
     /* input guards */
-    if (errRes == NULL) throwFatalError(NULL, false);
-    if (strobeInfo == NULL) throwFatalError(errRes, false);
+    if (strobeInfo == NULL) throwFatalError();
 
     /* strobe LEDs */
     for (ndx = 0; ndx < strobeInfoLen; ndx++)
