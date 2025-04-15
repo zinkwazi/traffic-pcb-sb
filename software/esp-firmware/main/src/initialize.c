@@ -47,18 +47,26 @@
 
 #define TAG "init"
 
+/* loading animation callback period in millseconds */
+#define V1_0_LOADING_ANIM_PERIOD (300)
+
 #define USB_SERIAL_BUF_SIZE (1024)
 
-static void initializeMainState(MainTaskState *state);
-
 #if CONFIG_HARDWARE_VERSION == 1
-/* no version specific functions */
+
+static esp_timer_handle_t loadingAnimTimer;
+
 #elif CONFIG_HARDWARE_VERSION == 2
-static esp_err_t beginLoadingAnimation(void);
-static esp_err_t endLoadingAnimation(void);
+
+/* no static variables */
+
 #else
 #error "Unsupported hardware version!"
 #endif
+
+static void initializeMainState(MainTaskState *state);
+static esp_err_t beginLoadingAnimation(void);
+static esp_err_t endLoadingAnimation(void);
 
 /**
  * @brief Initializes global static resources, software components, and fields
@@ -122,15 +130,9 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     if (err != ESP_OK) return err;
 #endif
 
-#if CONFIG_HARDWARE_VERSION == 1
-    /* loading animation unsupported */
-#elif CONFIG_HARDWARE_VERSION == 2
     /* begin loading animation */
     err = beginLoadingAnimation();
     if (err != ESP_OK) return err;
-#else
-#error "Unsupported hardware version!"
-#endif
 
     /* initialize and cleanup non-volatile storage */
     err = nvs_flash_init();
@@ -219,15 +221,9 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     err = initDirectionButton(&(state->toggle));
     if (err != ESP_OK) return err;
 
-#if CONFIG_HARDWARE_VERSION == 1
-    /* loading animation unsupported */
-#elif CONFIG_HARDWARE_VERSION == 2
     /* end loading animation */
     err = endLoadingAnimation();
     if (err != ESP_OK) return err;
-#else
-#error "Unsupported hardware version!"
-#endif
 
     return ESP_OK;
 }
@@ -460,7 +456,30 @@ static void initializeMainState(MainTaskState *state)
 
 #if CONFIG_HARDWARE_VERSION == 1
 
-/* no version specific functions */
+
+
+static esp_err_t beginLoadingAnimation(void)
+{
+    esp_err_t err;
+    loadingAnimTimer = createLoadingAnimTimer();
+    if (loadingAnimTimer == NULL) THROW_ERR(ESP_FAIL);
+
+    err = esp_timer_start_periodic(loadingAnimTimer, V1_0_LOADING_ANIM_PERIOD * 1000);
+    if (err != ESP_OK) THROW_ERR(err);
+    return ESP_OK;
+}
+
+
+static esp_err_t endLoadingAnimation(void)
+{
+    esp_err_t err;
+    err = esp_timer_stop(loadingAnimTimer);
+    if (err != ESP_OK) THROW_ERR(err);
+    err = esp_timer_delete(loadingAnimTimer);
+    if (err != ESP_OK) THROW_ERR(err);
+
+    return ESP_OK;
+}
 
 #elif CONFIG_HARDWARE_VERSION == 2
 

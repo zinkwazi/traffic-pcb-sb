@@ -48,7 +48,14 @@ esp_err_t enableDirectionButtonIntr(void);
 esp_err_t disableDirectionButtonIntr(void);
 esp_err_t initIOButton(TaskHandle_t otaTask);
 esp_timer_handle_t createRefreshTimer(TaskHandle_t mainTask, bool *toggle);
+
+#if CONFIG_HARDWARE_VERSION == 1
 esp_timer_handle_t createDirectionFlashTimer(void);
 esp_timer_handle_t createLoadingAnimTimer(void);
+#elif CONFIG_HARDWARE_VERSION == 2
+/* no verison specific functions */
+#else
+#error "Unsupported hardware version!"
+#endif /* CONFIG_HARDWARE_VERSION == 1 */
 
 #endif /* ROUTINES_H_ */

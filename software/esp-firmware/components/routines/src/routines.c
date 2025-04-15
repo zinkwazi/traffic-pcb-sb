@@ -25,6 +25,14 @@ static void dirButtonISR(void *params);
 static void otaButtonISR(void *params);
 static void refreshTimerCallback(void *params);
 
+#if CONFIG_HARDWARE_VERSION == 1
+static void timerLoadingAnimCallback(void *params);
+#elif CONFIG_HARDWARE_VERSION == 2
+/* no version specific functions */
+#else
+#error "Unsupported hardware version!"
+#endif
+
 /**
  * @brief Initializes the direction button and attaches dirButtonISR to a 
  *        negative edge of the GPIO pin.
@@ -142,6 +150,8 @@ esp_timer_handle_t createRefreshTimer(TaskHandle_t mainTask, bool *toggle) {
   return ret;
 }
 
+#if CONFIG_HARDWARE_VERSION == 1
+
 /**
  * @brief Creates a timer that periodically calls timerFlashDirCallback,
  *        which flashes the direction LEDs.
@@ -165,6 +175,27 @@ esp_timer_handle_t createDirectionFlashTimer(void) {
   }
   return ret;
 }
+
+esp_timer_handle_t createLoadingAnimTimer(void)
+{
+  static int currLED;
+  esp_timer_create_args_t timerArgs;
+  esp_timer_handle_t ret;
+  /* create timer */
+  currLED = 0; // north
+  timerArgs.callback = timerLoadingAnimCallback;
+  timerArgs.arg = &currLED;
+  timerArgs.dispatch_method = ESP_TIMER_TASK;
+  timerArgs.name = "loadingTimer";
+  if (esp_timer_create(&timerArgs, &ret) != ESP_OK) return NULL;
+  return ret;
+}
+
+#elif CONFIG_HARDWARE_VERSION == 2
+/* no version specific functions */
+#else
+#error "Unsupported hardware version!"
+#endif
 
 /**
  * @brief Callback that periodically sends a task notification to the main task.
@@ -255,6 +286,36 @@ static void timerFlashDirCallback(void *params) {
   gpio_set_level(LED_WEST_PIN, *currentOutput);
   gpio_set_level(LED_SOUTH_PIN, *currentOutput);
 }
+
+static void timerLoadingAnimCallback(void *params)
+{
+  int *currLED = (int *) params; // points to static variable, started at 0.
+  
+  /* turn everything off */
+  (void) gpio_set_level(LED_NORTH_PIN, 0);
+  (void) gpio_set_level(LED_EAST_PIN, 0);
+  (void) gpio_set_level(LED_SOUTH_PIN, 0);
+  (void) gpio_set_level(LED_WEST_PIN, 0);
+
+  /* light up correct LED */
+  if (*currLED == 0)
+  {
+    (void) gpio_set_level(LED_NORTH_PIN, 1);
+  } else if (*currLED == 1)
+  {
+    (void) gpio_set_level(LED_EAST_PIN, 1);
+  } else if (*currLED == 2)
+  {
+    (void) gpio_set_level(LED_SOUTH_PIN, 1);
+  } else
+  {
+    (void) gpio_set_level(LED_WEST_PIN, 1);
+  }
+
+  /* update currLED */
+  *currLED = ((*currLED) + 1) % 4;
+}
+
 #elif CONFIG_HARDWARE_VERSION == 2
 /**
  * @brief Callback that toggles all the direction LEDs.
