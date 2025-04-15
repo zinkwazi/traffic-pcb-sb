@@ -402,7 +402,6 @@ esp_err_t clearBoard(Direction dir, bool quick) {
                 if (err == ESP_OK) break; 
             }
             if (err != ESP_OK) {
-                ESP_LOGE(TAG, "failed to set matrix color for led: %ld", ndx);
                 return ESP_FAIL;
             }
 
@@ -428,7 +427,6 @@ esp_err_t clearBoard(Direction dir, bool quick) {
                 if (err == ESP_OK) break;
             }
             if (err != ESP_OK) {
-                ESP_LOGE(TAG, "failed to set matrix color for led: %ld", ndx);
                 return ESP_FAIL;
             }
 

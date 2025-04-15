@@ -171,6 +171,5 @@ void app_main(void)
       }
     }
     /* This task has nothing left to do, but should not exit */
-    ESP_LOGE(TAG, "Main task is exiting!");
     throwFatalError();
 }

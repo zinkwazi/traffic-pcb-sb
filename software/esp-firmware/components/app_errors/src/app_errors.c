@@ -207,7 +207,7 @@ void throwHandleableError(void) {
             /* falls through */
         case HANDLEABLE_AND_NO_SERVER_CONNECT_ERR:
             // cannot have mutliple handleable errors at once
-            ESP_LOGE(TAG, "mutliple HANDLEABLE_ERR thrown!");
+            ESP_LOGW(TAG, "mutliple HANDLEABLE_ERR thrown!");
             /* falls through */
         case FATAL_ERR:
             /* falls through */
@@ -238,7 +238,7 @@ void throwFatalError(void) {
     TaskHandle_t caller = xTaskGetCurrentTaskHandle();
 
     /* input guards */
-    ESP_LOGE(TAG, "FATAL_ERR thrown!");
+    ESP_LOGW(TAG, "FATAL_ERR thrown!");
     esp_backtrace_print(BACKTRACE_DEPTH);
     if (sErrMutex == NULL)
     {
@@ -335,7 +335,7 @@ void resolveNoConnError(bool resolveNone) {
             /* falls through */
         case HANDLEABLE_ERR:
             if (resolveNone) break;
-            ESP_LOGE(TAG, "resolving NO_SERVER_CONNECT_ERR without its error state");
+            ESP_LOGW(TAG, "resolving NO_SERVER_CONNECT_ERR without its error state");
             /* falls through */
         case FATAL_ERR:
             /* falls through */
@@ -397,7 +397,7 @@ void resolveHandleableError(bool resolveNone) {
             /* falls through */
         case NO_SERVER_CONNECT_ERR:
             if (resolveNone) break;
-            ESP_LOGE(TAG, "resolving HANDLEABLE_ERR that doesn't exist");
+            ESP_LOGW(TAG, "resolving HANDLEABLE_ERR that doesn't exist");
             /* falls through */
         case FATAL_ERR:
             /* falls through */

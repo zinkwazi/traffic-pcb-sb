@@ -362,7 +362,7 @@ esp_err_t openServerFile(int64_t *contentLength,
             ESP_LOGW(TAG, "contentLength <= 0");
             if (esp_http_client_close(client) != ESP_OK)
             {
-                ESP_LOGE(TAG, "failed to close client");
+                ESP_LOGW(TAG, "failed to close client");
                 return ESP_FAIL;
             }
             retryNum--;
@@ -371,18 +371,18 @@ esp_err_t openServerFile(int64_t *contentLength,
         int status = esp_http_client_get_status_code(client);
         if (esp_http_client_get_status_code(client) != 200)
         {
-            ESP_LOGE(TAG, "status code is %d", status);
+            ESP_LOGW(TAG, "status code is %d", status);
             /* flush internal response buffer and close client */
             err = esp_http_client_flush_response(client, &bytesFlushed);
             ESP_LOGW(TAG, "flushed %d bytes", bytesFlushed);
             if (err != ESP_OK) {
-                ESP_LOGE(TAG, "failed to flush response");
+                ESP_LOGW(TAG, "failed to flush response");
                 return ESP_FAIL;
             }
 
             err = esp_http_client_close(client);
             if (err != ESP_OK) {
-                ESP_LOGE(TAG, "failed to close client");
+                ESP_LOGW(TAG, "failed to close client");
                 return ESP_FAIL;
             }
             retryNum--;
@@ -523,7 +523,7 @@ esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[],
         /* close connection to allow next connection to work properly */
         if (esp_http_client_close(client) != ESP_OK)
         {
-            ESP_LOGE(TAG, "failed to close client");
+            ESP_LOGW(TAG, "failed to close client");
             return ESP_FAIL;
         }
     }
@@ -673,7 +673,7 @@ esp_err_t getServerSpeedsNoAddendums(LEDData ledSpeeds[],
 
     if (esp_http_client_close(client) != ESP_OK) 
     {
-        ESP_LOGE(TAG, "failed to close client");
+        ESP_LOGW(TAG, "failed to close client");
         return ESP_FAIL;
     }
     return err;

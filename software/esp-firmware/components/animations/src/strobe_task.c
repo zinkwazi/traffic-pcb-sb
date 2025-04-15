@@ -180,7 +180,7 @@ static void vStrobeTask(void *pvParameters)
     /* verify arguments */
     if (strobeQueue == NULL)
     {
-        ESP_LOGE(TAG, "strobeTask was not created by createStrobeTask function!");
+        ESP_LOGW(TAG, "strobeTask was not created by createStrobeTask function!");
         throwFatalError();
     }
 
@@ -248,7 +248,7 @@ static void vStrobeTask(void *pvParameters)
             ESP_LOGW(TAG, "Missed strobe deadline!");
         }
     }
-    ESP_LOGE(TAG, "strobe task is exiting!");
+    ESP_LOGW(TAG, "strobe task is exiting!");
     throwFatalError(); // this task should never exit
 }
 

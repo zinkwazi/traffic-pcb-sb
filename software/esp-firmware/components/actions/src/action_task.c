@@ -127,7 +127,7 @@ static void vActionTask(void *pvParams)
         err = esp_timer_start_once(nextActionTimer, nextActionSecs * 1000000);
         if (err != ESP_OK) throwFatalError();
     }
-    ESP_LOGE(TAG, "Action task is exiting!");
+    ESP_LOGW(TAG, "Action task is exiting!");
     throwFatalError();
 }
 
@@ -205,12 +205,12 @@ static int64_t secsUntilNextAction(void)
     /* get current time */
     if (time(&currTime) == -1)
     {
-        ESP_LOGE(TAG, "failed to get time");
+        ESP_LOGW(TAG, "failed to get time");
         return -1;
     }
     if (localtime_r(&currTime, &localTime) == NULL)
     {
-        ESP_LOGE(TAG, "failed to get current time of day");
+        ESP_LOGW(TAG, "failed to get current time of day");
         return -1;
     }
 
@@ -271,7 +271,7 @@ static void actionTimerCallback(void *arg)
     ESP_LOGI(TAG, "Action timer expired...");
     if (sendAction(ACTION_QUERY_OTA) != ESP_OK)
     {
-        ESP_LOGE(TAG, "failed to send action");
+        ESP_LOGW(TAG, "failed to send action");
     }
 }
 
@@ -280,7 +280,7 @@ static void updateDataTimerCallback(void *arg)
     ESP_LOGI(TAG, "Data timer expired...");
     if (sendAction(ACTION_UPDATE_DATA) != ESP_OK)
     {
-        ESP_LOGE(TAG, "failed to send action");
+        ESP_LOGW(TAG, "failed to send action");
     }
 }
 

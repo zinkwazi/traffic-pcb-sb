@@ -134,9 +134,6 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
 
     /* initialize and cleanup non-volatile storage */
     err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
-        ESP_LOGE(TAG, "no free pages in nvs, need to erase nvs partition with parttool.py.");
-    }
     if (err != ESP_OK) THROW_ERR(err);
 
     res->nvsHandle = openMainNvs();
@@ -184,13 +181,11 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
         This should really only occur when the user has just changed wifi
         settings, so I don't think there is a risk of killing non-wifi 
         operation here by deleting stored data */
-        ESP_LOGE(TAG, "erasing nvs");
         err = nvs_erase_all(res->nvsHandle); // keep handle open
         if (err != ESP_OK) return err;
         err = nvs_erase_all(workerHandle); // close handle
         if (err != ESP_OK) return err;
 
-        ESP_LOGE(TAG, "rewriting user settings to nvs");
         err = storeNvsSettings(res->nvsHandle, *res->settings);
         if (err != ESP_OK) return err;
 

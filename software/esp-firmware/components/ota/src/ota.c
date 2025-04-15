@@ -171,7 +171,7 @@ void vOTATask(void* pvParameters) {
         if (err != ESP_OK) throwFatalError();
     }
 
-    ESP_LOGE(TAG, "OTA Task is returning!");
+    ESP_LOGW(TAG, "OTA Task is returning!");
     throwFatalError();
 }
 
@@ -404,7 +404,7 @@ esp_err_t processOTAAvailableFile(bool *available,
                 bytesRead = esp_http_client_read(client, buf, OTA_RECV_BUF_SIZE - 1);
             } while (bytesRead == -ESP_ERR_HTTP_EAGAIN);
             if (bytesRead < 0) {
-                ESP_LOGE(TAG, "processOTAAvailableFile esp_http_client_read err: %d", err);
+                ESP_LOGW(TAG, "processOTAAvailableFile esp_http_client_read err: %d", err);
                 return err;
             }
             if (bytesRead == 0) break; // circ buf is empty and nothing else to read
@@ -417,7 +417,7 @@ esp_err_t processOTAAvailableFile(bool *available,
             }
             if (err != ESP_OK)
             {
-                ESP_LOGE(TAG, "processOTAAvailableFile circularBufferStore err: %d", err);
+                ESP_LOGW(TAG, "processOTAAvailableFile circularBufferStore err: %d", err);
                 return err;
             }
 
@@ -619,7 +619,7 @@ esp_err_t queryOTAUpdateAvailable(bool *available)
         client = esp_http_client_init(&https_config);
         if (client == NULL)
         {
-            ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_init error");
+            ESP_LOGW(TAG, "queryOTAUpdateAvailable esp_http_client_init error");
             return ESP_FAIL;
         }
         
@@ -627,7 +627,7 @@ esp_err_t queryOTAUpdateAvailable(bool *available)
         err = esp_http_client_open(client, 0);
         if (err != ESP_OK)
         {
-            ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_open err: %d", err);
+            ESP_LOGW(TAG, "queryOTAUpdateAvailable esp_http_client_open err: %d", err);
             return err;
         }
 
@@ -636,17 +636,17 @@ esp_err_t queryOTAUpdateAvailable(bool *available)
         } while (contentLength == -ESP_ERR_HTTP_EAGAIN);
         if (contentLength <= 0) // null-terminator
         {
-            ESP_LOGE(TAG, "queryOTAUpdateAvailable contentLength: %lld", contentLength);
+            ESP_LOGW(TAG, "queryOTAUpdateAvailable contentLength: %lld", contentLength);
             return ESP_FAIL;
         }
 
         int status = esp_http_client_get_status_code(client);
         if (esp_http_client_get_status_code(client) != 200)
         {
-            ESP_LOGE(TAG, "queryOTAUpdateAvailable status code is %d", status);
+            ESP_LOGW(TAG, "queryOTAUpdateAvailable status code is %d", status);
             err = esp_http_client_cleanup(client);
             if (err != ESP_OK) {
-                ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_cleanup err: %d", err);
+                ESP_LOGW(TAG, "queryOTAUpdateAvailable esp_http_client_cleanup err: %d", err);
                 return ESP_FAIL;
             }
         }
@@ -656,7 +656,7 @@ esp_err_t queryOTAUpdateAvailable(bool *available)
         if (err != ESP_OK)
         {
             *available = false;
-            ESP_LOGE(TAG, "failed to process OTA available file. err: %d", err);
+            ESP_LOGW(TAG, "failed to process OTA available file. err: %d", err);
         }
     }
     ESP_LOGW(TAG, "queryOTAUpdateAvailable max retries exceeded");

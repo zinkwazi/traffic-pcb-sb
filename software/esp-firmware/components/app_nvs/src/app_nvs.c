@@ -58,7 +58,7 @@ nvs_handle_t openMainNvs(void)
     err = nvs_open(NVS_MAIN_NAMESPACE, NVS_READWRITE, &handle);
     if (err != ESP_OK) 
     {
-        ESP_LOGE(TAG, "Failed to open main nvs. err: %d", err);
+        ESP_LOGW(TAG, "Failed to open main nvs. err: %d", err);
         return (nvs_handle_t) NULL;
     }
     return handle;
@@ -77,7 +77,7 @@ nvs_handle_t openWorkerNvs(void)
     err = nvs_open(NVS_WORKER_NAMESPACE, NVS_READWRITE, &handle);
     if (err != ESP_OK)
     {
-        ESP_LOGE(TAG, "Failed to open worker nvs. err: %d", err);
+        ESP_LOGW(TAG, "Failed to open worker nvs. err: %d", err);
         return (nvs_handle_t) NULL;
     }
     return handle;
