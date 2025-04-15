@@ -39,14 +39,6 @@ struct StrobeLED {
     /* the brightness cutoff at which the step size switches from stepSizeHigh
     to stepSizeLow. */
     uint8_t stepCutoff;
-    /* a callback to perform once minScale is reached. The callback may call
-    any API functions below, such as unregistering the LED or modifying
-    parameters of the strobe state, which will take effect during the next
-    strobe period. Even modifying which callback is performed! Must be NULL
-    if unused. Must be a best-effort function, ie. don't kill the strobe task
-    by delaying forever. Long callbacks may cause the strobe task to miss
-    a deadline. */
-    // void (*doneCallback)(StrobeLED *info);
     /* scaling direction */
     bool scalingUp;
 };

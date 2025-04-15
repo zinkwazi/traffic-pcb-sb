@@ -12,6 +12,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/event_groups.h"
 #include "freertos/queue.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -37,18 +38,6 @@
    literal strobe period, while potentially fixing missed deadlines. */
 #define STROBE_PERIOD (100)
 
-/* The percentage of the way from MIN_SCALE_VAL to MAX_SCALE_VAL
-   that HIGH strobe steps will take effect instead of LOW strobe steps*/
-#define SCALE_CUTOFF_FRAC (1.0 / 4.0)
-
-/* The scaling step size change per period */
-#define STROBE_STEP_UP_HIGH (30)
-#define STROBE_STEP_DOWN_HIGH (30)
-
-#define STROBE_STEP_UP_LOW (1)
-#define STROBE_STEP_DOWN_LOW (1)
-
-
 /* The number of times to retry I2C transactions for scaling */
 #define RETRY_I2C_NUM (5)
 
@@ -63,6 +52,11 @@ static QueueHandle_t strobeQueue = NULL; // holds StrobeTaskCommand
 a block of LEDs that should be strobed starting from particular values in order
 to achieve an animation. The strobe task aquires this when reading from the queue. */
 static SemaphoreHandle_t strobeQueueMutex = NULL;
+
+/* An event group defining various strobe events */
+static EventGroupHandle_t strobeEvents = NULL;
+
+                        
 
 static void vStrobeTask(void *pvParameters);
 static int findStrobeLED(const StrobeLED strobeInfo[], int strobeInfoLen, uint16_t targetLED);
@@ -99,6 +93,25 @@ esp_err_t releaseStrobeQueueMutex(void)
 }
 
 /**
+ * @brief Waits for strobe event group bits.
+ * 
+ * @param[in] bits The bits to wait for.
+ * @param[in] allBits Whether to wait for all bits to be set, or any bit
+ * to be set.
+ * @param[in] blockTime The maximum amount of time to wait for. portMAX_DELAY
+ * to wait forever.
+ * 
+ * @returns ESP_OK if successful and bits were set.
+ * ESP_ERR_TIMEOUT if blockTime expired before bits were set (not thrown).
+ */
+esp_err_t strobeWaitEvent(EventBits_t bits, bool allBits, TickType_t blockTime)
+{
+    EventBits_t found = xEventGroupWaitBits(strobeEvents, bits, pdFALSE, (allBits) ? pdTRUE : pdFALSE, blockTime);
+    if ((found & bits) != bits) return ESP_ERR_TIMEOUT;
+    return ESP_OK;
+}
+
+/**
  * @brief Initializes the over-the-air (OTA) task, which is implemented by
  *        vOTATask.
  * 
@@ -129,12 +142,14 @@ esp_err_t createStrobeTask(TaskHandle_t *handle)
     /* input guards */
     if (getAppErrorsStatus() != ESP_OK) THROW_ERR(ESP_ERR_INVALID_STATE);
 
-    /* initialize command queue */
+    /* initialize static variables */
     if (strobeQueue != NULL) return ESP_FAIL; // already initialized
     strobeQueue = xQueueCreate(STROBE_QUEUE_SIZE, sizeof(StrobeTaskCommand));
     if (strobeQueue == NULL) return ESP_ERR_NO_MEM;
     strobeQueueMutex = xSemaphoreCreateMutex();
     if (strobeQueueMutex == NULL) return ESP_ERR_NO_MEM;
+    strobeEvents = xEventGroupCreate();
+    if (strobeEvents == NULL) return ESP_ERR_NO_MEM;
 
     /* create OTA task */
     success = xTaskCreate(vStrobeTask, "StrobeTask", CONFIG_STROBE_STACK,
@@ -186,6 +201,12 @@ static void vStrobeTask(void *pvParameters)
             take the rest of the information from the queue */
             success = xSemaphoreTake(strobeQueueMutex, portMAX_DELAY);
             if (success != pdTRUE) throwFatalError();
+
+            /* momentarily set queue processed event bit. If the waiting
+            task misses this event, they can catch it in the next period. */
+            (void) xEventGroupSetBits(strobeEvents, STROBE_QUEUE_PROCESSED_EVENT_BIT);
+            (void) xEventGroupClearBits(strobeEvents, STROBE_QUEUE_PROCESSED_EVENT_BIT);
+
             success = xSemaphoreGive(strobeQueueMutex);
             if (success != pdTRUE) throwFatalError();
             /* now queue is resumed */
@@ -206,6 +227,11 @@ static void vStrobeTask(void *pvParameters)
                     }
                     
                 } while (success != pdFALSE);
+
+                /* momentarily set queue processed event bit. If the waiting
+                task misses this event, they can catch it in the next period. */
+                (void) xEventGroupSetBits(strobeEvents, STROBE_QUEUE_PROCESSED_EVENT_BIT);
+                (void) xEventGroupClearBits(strobeEvents, STROBE_QUEUE_PROCESSED_EVENT_BIT);
 
                 /* release mutex */
                 success = xSemaphoreGive(strobeQueueMutex);
@@ -367,14 +393,23 @@ static void strobeLEDs(StrobeLED strobeInfo[], const int strobeInfoLen)
         if (strobeInfo[ndx].currScale > strobeInfo[ndx].stepCutoff)
         {
             strobeStep = strobeInfo[ndx].stepSizeHigh;
-        } else 
+        } else if (strobeInfo[ndx].currScale < strobeInfo[ndx].stepCutoff) 
         {
             strobeStep = strobeInfo[ndx].stepSizeLow;
+        } else
+        {
+            /* currScale == stepCutoff, choose step depending on direction */
+            if (strobeInfo[ndx].scalingUp)
+            {
+                strobeStep = strobeInfo[ndx].stepSizeHigh;
+            } else
+            {
+                strobeStep = strobeInfo[ndx].stepSizeLow;
+            }
         }
         /* calculate new scaling value */
         if (strobeInfo[ndx].scalingUp)
         {
-            
             if (strobeInfo[ndx].currScale + strobeStep < strobeInfo[ndx].currScale ||
                 strobeInfo[ndx].currScale + strobeStep >= strobeInfo[ndx].maxScale)
             {
@@ -393,11 +428,6 @@ static void strobeLEDs(StrobeLED strobeInfo[], const int strobeInfoLen)
                 /* minval or underflow would occur, cap at minval and change dir */
                 strobeInfo[ndx].currScale = strobeInfo[ndx].minScale;
                 strobeInfo[ndx].scalingUp = true;
-                // /* execute callback, if it exists */
-                // if (strobeInfo[ndx].doneCallback != NULL)
-                // {
-                //     strobeInfo[ndx].doneCallback(&strobeInfo[ndx]);
-                // }
             } else
             {
                 strobeInfo[ndx].currScale -= strobeStep;

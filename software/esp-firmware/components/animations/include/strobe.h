@@ -42,14 +42,6 @@ struct StrobeTaskCommand {
     /* the brightness cutoff at which the step size switches from stepSizeHigh
     to stepSizeLow. */
     uint8_t stepCutoff;
-    /* a callback to perform once minScale is reached. The callback may call
-    any API functions below, such as unregistering the LED or modifying
-    parameters of the strobe state, which will take effect during the next
-    strobe period. Even modifying which callback is performed! Must be NULL
-    if unused. Must be a best-effort function, ie. don't kill the strobe task
-    by delaying forever. Long callbacks may cause the strobe task to miss
-    a deadline. */
-    // void (*doneCallback)(StrobeLED *info);
     /* whether to register or unregister strobing on the LED */
     bool registerLED; // ignored. This is populated by the API.
 };
@@ -59,6 +51,7 @@ typedef struct StrobeTaskCommand StrobeTaskCommand;
 int getStrobeTaskPeriod(void);
 esp_err_t pauseStrobeRegisterLEDs(TickType_t blockTime);
 esp_err_t resumeStrobeRegisterLEDs(void);
+esp_err_t strobeWaitQueueProcessed(TickType_t blockTime);
 esp_err_t strobeRegisterLED(StrobeTaskCommand strobeCommand);
 esp_err_t strobeUnregisterLED(uint16_t ledNum);
 esp_err_t strobeUnregisterAll(void);

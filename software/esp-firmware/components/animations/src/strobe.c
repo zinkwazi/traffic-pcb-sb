@@ -24,6 +24,22 @@
 #ifdef CONFIG_SUPPORT_STROBING
 
 /**
+ * @brief Waits for the strobe task to process the items off the queue. This
+ * can be necessary to avoid race conditions where it should be known for
+ * certain that the strobe task will no longer modify an LED scale.
+ * 
+ * @param[in] blockTime The maximum amount of time to wait for the strobe
+ * task to clear the command queue. portMAX_DELAY indicates wait forever.
+ * 
+ * @return ESP_OK if successful.
+ * ESP_ERR_TIMEOUT if blockTime passed before the queue was processed (not thrown).
+ */
+esp_err_t strobeWaitQueueProcessed(TickType_t blockTime)
+{
+    return strobeWaitEvent(STROBE_QUEUE_PROCESSED_EVENT_BIT, true, blockTime);
+}
+
+/**
  * @brief Pauses the strobe task from registering new LEDs from the strobe queue,
  * which allows tasks to add LEDs to the queue in chunks at a time. This removes
  * the potential for the chunk of LEDs to desync their strobing.
@@ -35,9 +51,13 @@
  * - The caller must call resumeRegisteringLEDs when done registering a chunk
  * of LEDs that must have in-sync strobing.
  * 
+ * @param[in] blockTime The maximum amount of time to wait to pause the queue,
+ * which may take some time if the strobe task is processing the queue or another
+ * task has paused the queue already.
+ * 
  * @returns ESP_OK if successful, otherwise ESP_FAIL. If ESP_FAIL, another
  * task has likely paused the queue already, in which case an indefinite block
- * time with portMAX_DELAY.
+ * time with portMAX_DELAY is recommended.
  */
 esp_err_t pauseStrobeRegisterLEDs(TickType_t blockTime)
 {
@@ -90,7 +110,7 @@ esp_err_t strobeRegisterLED(StrobeTaskCommand command)
 
     /* send command */
     do {
-        success = xQueueSend(strobeQueue, &command, INT_MAX); // shallow copy of command
+        success = xQueueSend(strobeQueue, &command, portMAX_DELAY); // shallow copy of command
     } while (success != pdPASS);
     return ESP_OK;
 }
@@ -119,7 +139,7 @@ esp_err_t strobeUnregisterLED(uint16_t ledNum)
 
     /* send command */
     do {
-        success = xQueueSend(strobeQueue, &command, INT_MAX);
+        success = xQueueSend(strobeQueue, &command, portMAX_DELAY);
     } while (success != pdPASS);
     return ESP_OK;
 }
@@ -146,7 +166,7 @@ esp_err_t strobeUnregisterAll(void)
 
     /* send command */
     do {
-        success = xQueueSend(strobeQueue, &command, INT_MAX);
+        success = xQueueSend(strobeQueue, &command, portMAX_DELAY);
     } while (success != pdPASS);
     return ESP_OK;
 }

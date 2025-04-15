@@ -97,7 +97,7 @@ void led_color_test(void) {
     ESP_LOGI(TAG, "\nPress \"Toggle\" to verify, \"OTA\" to fail:\n");
     for (int i = 1; i <= MAX_NUM_LEDS_REG; i++) {
         if (i == 294) {
-            LEDReg reg = LEDNumToReg[i];
+            LEDReg reg = LEDNumToReg[i - 1];
             TEST_ASSERT_EQUAL(ESP_OK, matSetScaling(i, 0xFF, 0xFF, 0xFF));
 
             TEST_ASSERT_EQUAL(ESP_OK, matSetColor(i, 0xFF, 0x00, 0x00));
@@ -141,7 +141,8 @@ void led_color_test(void) {
     TEST_ASSERT_EQUAL(ESP_OK, matSetOperatingMode(NORMAL_OPERATION));
     ESP_LOGI(TAG, "\nPress \"Toggle\" to verify, \"OTA\" to fail:\n");
     for (int i = 1; i <= MAX_NUM_LEDS_REG; i++) {
-        LEDReg reg = LEDNumToReg[i];
+        if (i != 294) continue;
+        LEDReg reg = LEDNumToReg[i - 1];
         if (reg.matrix == MAT_NONE) {
             ESP_LOGI(TAG, "LED %d", i);
             assertHumanVerifies("Verify No LED...", true, res);

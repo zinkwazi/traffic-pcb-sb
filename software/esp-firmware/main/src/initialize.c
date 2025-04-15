@@ -49,10 +49,16 @@
 
 #define USB_SERIAL_BUF_SIZE (1024)
 
-// static void loadingAnimStrobeCallback(StrobeLED *info);
-// static esp_err_t beginLoadingAnimation(void);
-// static esp_err_t endLoadingAnimation(void);
 static void initializeMainState(MainTaskState *state);
+
+#if CONFIG_HARDWARE_VERSION == 1
+/* no version specific functions */
+#elif CONFIG_HARDWARE_VERSION == 2
+static esp_err_t beginLoadingAnimation(void);
+static esp_err_t endLoadingAnimation(void);
+#else
+#error "Unsupported hardware version!"
+#endif
 
 /**
  * @brief Initializes global static resources, software components, and fields
@@ -116,8 +122,15 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     if (err != ESP_OK) return err;
 #endif
 
-    // err = beginLoadingAnimation();
-    // if (err != ESP_OK) return err;
+#if CONFIG_HARDWARE_VERSION == 1
+    /* loading animation unsupported */
+#elif CONFIG_HARDWARE_VERSION == 2
+    /* begin loading animation */
+    err = beginLoadingAnimation();
+    if (err != ESP_OK) return err;
+#else
+#error "Unsupported hardware version!"
+#endif
 
     /* initialize and cleanup non-volatile storage */
     err = nvs_flash_init();
@@ -211,9 +224,15 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     err = initDirectionButton(&(state->toggle));
     if (err != ESP_OK) return err;
 
+#if CONFIG_HARDWARE_VERSION == 1
+    /* loading animation unsupported */
+#elif CONFIG_HARDWARE_VERSION == 2
     /* end loading animation */
-    // err = endLoadingAnimation();
-    // if (err != ESP_OK) return err;
+    err = endLoadingAnimation();
+    if (err != ESP_OK) return err;
+#else
+#error "Unsupported hardware version!"
+#endif
 
     return ESP_OK;
 }
@@ -444,53 +463,159 @@ static void initializeMainState(MainTaskState *state)
 #endif
 }
 
-
-
 #if CONFIG_HARDWARE_VERSION == 1
-// static void loadingAnimStrobeCallback(StrobeLED *info)
-// {
-//     /* unsupported */
-// }
 
-// static esp_err_t beginLoadingAnimation(void)
-// {
-//     /* unsupported */
-//     return ESP_OK;
-// }
+/* no version specific functions */
 
-// static esp_err_t endLoadingAnimation(void)
-// {
-//     /* unsupported */
-//     return ESP_OK;
-// }
 #elif CONFIG_HARDWARE_VERSION == 2
 
-// static void loadingAnimStrobeCallback(StrobeLED *info)
-// {
+/**
+ * @brief Begins the loading animation by registering strobing on the direction
+ * LEDs, with staggered starting values.
+ * 
+ * @requires:
+ * - strobe task created.
+ * - led_matrix component initialized.
+ * 
+ * @returns ESP_OK if successful.
+ * ESP_ERR_INVALID_STATE if any requirements are unmet.
+ * ESP_ERR_TIMEOUT if an I2C transaction failed.
+ * ESP_ERR_INVALID_RESPONSE if a matrix page could not be set.
+ * APP_ERR_MUTEX_RELEASE if a mutex failed to release (reboot recommended).
+ * ESP_FAIL if an unexpected error occurred.
+ */
+static esp_err_t beginLoadingAnimation(void)
+{
+    StrobeTaskCommand strobeCommand = {
+        .ledNum = NORTH_LED_NUM,
+        .initScale = 0xF0,
+        .initStrobeUp = false,
+        .maxScale = 0xF0,
+        .minScale = 0x08,
+        .stepSizeHigh = 0x30,
+        .stepSizeLow = 0x0C,
+        .stepCutoff = 0x30 // stepLow when decreasing, stepHigh when increasing
+    };
+    esp_err_t err;
+    ESP_LOGI(TAG, "Starting loading animation...");
 
-// }
+    err = matSetColor(NORTH_LED_NUM, CONFIG_WHITE_RED_COMPONENT + 0x20, CONFIG_WHITE_GREEN_COMPONENT, CONFIG_WHITE_BLUE_COMPONENT);
+    if (err == APP_ERR_INVALID_PAGE) return ESP_FAIL;
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+    if (err != ESP_OK) return err;
+    err = matSetColor(EAST_LED_NUM, CONFIG_WHITE_RED_COMPONENT + 0x20, CONFIG_WHITE_GREEN_COMPONENT, CONFIG_WHITE_BLUE_COMPONENT);
+    if (err == APP_ERR_INVALID_PAGE) return ESP_FAIL;
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+    if (err != ESP_OK) return err;
+    err = matSetColor(SOUTH_LED_NUM, CONFIG_WHITE_RED_COMPONENT + 0x20, CONFIG_WHITE_GREEN_COMPONENT, CONFIG_WHITE_BLUE_COMPONENT);
+    if (err == APP_ERR_INVALID_PAGE) return ESP_FAIL;
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+    if (err != ESP_OK) return err;
+    err = matSetColor(WEST_LED_NUM, CONFIG_WHITE_RED_COMPONENT + 0x20, CONFIG_WHITE_GREEN_COMPONENT, CONFIG_WHITE_BLUE_COMPONENT);
+    if (err == APP_ERR_INVALID_PAGE) return ESP_FAIL;
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+    if (err != ESP_OK) return err;
 
-// static esp_err_t beginLoadingAnimation(void)
-// {
-//     const StrobeTaskCommand strobeCommand = {
-//         .ledNum = NORTH_LED_NUM,
-//         .initScale = 0x09,
-//         .initStrobeUp = true,
-//         .maxScale = 0x70,
-//         .minScale = 0x08,
-//         .stepSizeHigh = 10,
-//         .stepSizeLow = 10,
-//         .stepCutoff = 0x30,
-//         // .doneCallback = loadingAnimStrobeCallback,
-//     }
-
+    err = pauseStrobeRegisterLEDs(portMAX_DELAY);
+    if (err != ESP_OK) return err;
     
-// }
+    err = strobeRegisterLED(strobeCommand);
+    if (err != ESP_OK) return err;
+    
+    strobeCommand.ledNum = EAST_LED_NUM;
+    strobeCommand.initScale = 0x30;
+    strobeCommand.initStrobeUp = true;
+    err = strobeRegisterLED(strobeCommand);
+    if (err != ESP_OK)
+    {
+        if (strobeUnregisterAll() != ESP_OK) ESP_LOGE(TAG, "Failed to unregister strobing!");
+        return err;
+    }
 
-// static esp_err_t endLoadingAnimation(void)
-// {
+    strobeCommand.ledNum = SOUTH_LED_NUM;
+    strobeCommand.initScale = 0x00;
+    strobeCommand.initStrobeUp = true;
+    err = strobeRegisterLED(strobeCommand);
+    if (err != ESP_OK)
+    {
+        if (strobeUnregisterAll() != ESP_OK) ESP_LOGE(TAG, "Failed to unregister strobing!");
+        return err;
+    }
 
-// }
+    strobeCommand.ledNum = WEST_LED_NUM;
+    strobeCommand.initScale = 0x30;
+    strobeCommand.initStrobeUp = false;
+    err = strobeRegisterLED(strobeCommand);
+    if (err != ESP_OK)
+    {
+        if (strobeUnregisterAll() != ESP_OK) ESP_LOGE(TAG, "Failed to unregister strobing!");
+        return err;
+    }
+
+    err = resumeStrobeRegisterLEDs();
+    if (err != ESP_OK) return err;
+
+    return ESP_OK;
+}
+
+/**
+ * @brief Ends the loading animation by unregistering strobing on direction LEDs
+ * and setting scaling to normal.
+ * 
+ * @requires:
+ * - strobe task created.
+ * - led_matrix component initialized.
+ * 
+ * @returns ESP_OK if successful.
+ * ESP_ERR_INVALID_STATE if any requirement is unmet.
+ * ESP_ERR_TIMEOUT if an I2C transaction failed.
+ * ESP_ERR_INVALID_RESPONSE if a matrix page could not be set.
+ * APP_ERR_MUTEX_RELEASE if a mutex failed to release (reboot recommended).
+ * ESP_FAIL if an unexpected error occurred.
+ */
+static esp_err_t endLoadingAnimation(void)
+{
+    esp_err_t err;
+    ESP_LOGI(TAG, "Ending loading animation...");
+    err = pauseStrobeRegisterLEDs(portMAX_DELAY);
+    if (err != ESP_OK) return err;
+
+    err = strobeUnregisterLED(NORTH_LED_NUM);
+    if (err != ESP_OK) return err;
+    err = strobeUnregisterLED(EAST_LED_NUM);
+    if (err != ESP_OK) return err;
+    err = strobeUnregisterLED(SOUTH_LED_NUM);
+    if (err != ESP_OK) return err;
+    err = strobeUnregisterLED(WEST_LED_NUM);
+    if (err != ESP_OK) return err;
+
+    err = resumeStrobeRegisterLEDs();
+    if (err != ESP_OK) return err;
+
+    /* wait for commands to be processed to avoid race conditions */
+    err = strobeWaitQueueProcessed(portMAX_DELAY);
+    if (err != ESP_OK) THROW_ERR(ESP_FAIL); // ESP_ERR_TIMEOUT (not thrown)
+
+    /* set scaling to regular value */
+    err = matSetScaling(NORTH_LED_NUM, 0xFF, 0xFF, 0xFF);
+    if (err == APP_ERR_INVALID_PAGE) return ESP_FAIL;
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+    if (err != ESP_OK) return err;
+    err = matSetScaling(EAST_LED_NUM, 0xFF, 0xFF, 0xFF);
+    if (err == APP_ERR_INVALID_PAGE) return ESP_FAIL;
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+    if (err != ESP_OK) return err;
+    err = matSetScaling(SOUTH_LED_NUM, 0xFF, 0xFF, 0xFF);
+    if (err == APP_ERR_INVALID_PAGE) return ESP_FAIL;
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+    if (err != ESP_OK) return err;
+    err = matSetScaling(WEST_LED_NUM, 0xFF, 0xFF, 0xFF);
+    if (err == APP_ERR_INVALID_PAGE) return ESP_FAIL;
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+    if (err != ESP_OK) return err;
+
+    return ESP_OK;
+}
 
 #else
 #error "Unsupported hardware version!"
