@@ -44,7 +44,7 @@
  * 
  * @returns ESP_OK if successful.
  */
-static esp_err_t mainRefresh(MainTaskState *state, MainTaskResources *res, LEDData typicalNorth[static MAX_NUM_LEDS_REG], LEDData typicalSouth[static MAX_NUM_LEDS_REG]) {
+static esp_err_t mainRefresh(MainTaskState *state, MainTaskResources *res) {
   esp_err_t err;
   /* input guards */
   if (state == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
@@ -125,8 +125,6 @@ void app_main(void)
     MainTaskResources res;
     MainTaskState state;
     esp_err_t err;
-    LEDData typicalNorthSpeeds[MAX_NUM_LEDS_REG];
-    LEDData typicalSouthSpeeds[MAX_NUM_LEDS_REG];
     /* set task priority */
     vTaskPrioritySet(NULL, CONFIG_MAIN_PRIO);
     /* print firmware information */
@@ -142,7 +140,7 @@ void app_main(void)
     err = enableDirectionButtonIntr();
     if (err != ESP_OK) throwFatalError();
     while (true) {
-      err = mainRefresh(&state, &res, typicalNorthSpeeds, typicalSouthSpeeds); // never consumes task notifications, only checks them
+      err = mainRefresh(&state, &res); // never consumes task notifications, only checks them
       (void) mainWaitForTaskNotification(&res); // extremely noticeable error, allows clearing after notification recieved
       if (err == REFRESH_ABORT)
       {
