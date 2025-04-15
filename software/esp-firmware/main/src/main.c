@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "esp_mac.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -125,6 +126,7 @@ void app_main(void)
     MainTaskResources res;
     MainTaskState state;
     esp_err_t err;
+    uint8_t mac[6];
     /* set task priority */
     vTaskPrioritySet(NULL, CONFIG_MAIN_PRIO);
     /* print firmware information */
@@ -132,7 +134,10 @@ void app_main(void)
     if (err != ESP_OK) throwFatalError();
     ESP_LOGE(TAG, "Hardware Version: " HARDWARE_VERSION_STR);
     ESP_LOGE(TAG, "Firmware Version: " FIRMWARE_VERSION_STR);
-    ESP_LOGE(TAG, "OTA binary: " FIRMWARE_UPGRADE_URL);
+    ESP_LOGE(TAG, "OTA Binary: " FIRMWARE_UPGRADE_URL);
+    err = esp_base_mac_addr_get(mac);
+    if (err != ESP_OK) throwFatalError();
+    ESP_LOGE(TAG, "Base MAC Address: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     err = initializeApplication(&state, &res);
     if (err != ESP_OK) throwFatalError(); // if app_errors component uninitialized, this still traps
     
