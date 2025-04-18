@@ -18,6 +18,8 @@
 #include "esp_log.h"
 #include "esp_http_client.h"
 
+#include "utilities.h"
+
 #include "api_connect.h"
 
 extern esp_http_client_handle_t client;
@@ -34,10 +36,12 @@ TEST_CASE("processOTAAvailableFile_inputGuards", "[ota]")
     char *URL;
     esp_err_t err;
     bool available;
+    bool patch;
     int64_t contentLen;
     int bytes;
     char buf[10];
 
+    setUpgradeVersionURL(FIRMWARE_UPGRADE_VERSION_URL);
     setHardwareVersion(2);
     setHardwareRevision(0);
     setFirmwareMajorVersion(0);
@@ -45,14 +49,18 @@ TEST_CASE("processOTAAvailableFile_inputGuards", "[ota]")
     setFirmwarePatchVersion(0);
 
     available = true;
-    err = processOTAAvailableFile(&available, NULL);
+    patch = false;
+    err = processOTAAvailableFile(&available, &patch, NULL);
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
     TEST_ASSERT_EQUAL(true, available);
+    TEST_ASSERT_EQUAL(false, patch);
 
     available = false;
-    err = processOTAAvailableFile(&available, NULL);
+    patch = false;
+    err = processOTAAvailableFile(&available, &patch, NULL);
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
     TEST_ASSERT_EQUAL(false, available);
+    TEST_ASSERT_EQUAL(false, patch);
     
     contentLen = -1;
     URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_typical1.json";
@@ -72,7 +80,7 @@ TEST_CASE("processOTAAvailableFile_inputGuards", "[ota]")
     TEST_ASSERT_GREATER_THAN(0, contentLen);
 
     /* test that client is not read */
-    err = processOTAAvailableFile(NULL, client);
+    err = processOTAAvailableFile(NULL, NULL, client);
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
     do {
         bytes = esp_http_client_read(client, buf, 9);
@@ -95,8 +103,10 @@ TEST_CASE("processOTAAvailableFile_typical", "[ota]")
     char *URL;
     esp_err_t err;
     bool available;
+    bool patch;
     int64_t contentLen;
 
+    setUpgradeVersionURL(FIRMWARE_UPGRADE_VERSION_URL);
     setHardwareVersion(2);
     setHardwareRevision(0);
     setFirmwareMajorVersion(0);
@@ -118,9 +128,12 @@ TEST_CASE("processOTAAvailableFile_typical", "[ota]")
     err = openServerFile(&contentLen, client, URL, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = processOTAAvailableFile(&available, client);
+    available = false;
+    patch = false;
+    err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(true, available);
+    TEST_ASSERT_EQUAL(true, patch);
 
     err = esp_http_client_close(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -146,9 +159,12 @@ TEST_CASE("processOTAAvailableFile_typical", "[ota]")
     err = openServerFile(&contentLen, client, URL, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = processOTAAvailableFile(&available, client);
+    available = true;
+    patch = true;
+    err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(false, available);
+    TEST_ASSERT_EQUAL(false, patch);
 
     err = esp_http_client_close(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -174,9 +190,12 @@ TEST_CASE("processOTAAvailableFile_typical", "[ota]")
     err = openServerFile(&contentLen, client, URL, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = processOTAAvailableFile(&available, client);
+    available = false;
+    patch = false;
+    err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(true, available);
+    TEST_ASSERT_EQUAL(true, patch);
 
     err = esp_http_client_close(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -193,8 +212,10 @@ TEST_CASE("processOTAAvailableFile_comments", "[ota]")
     char *URL;
     esp_err_t err;
     bool available;
+    bool patch;
     int64_t contentLen;
 
+    setUpgradeVersionURL(FIRMWARE_UPGRADE_VERSION_URL);
     setHardwareVersion(2);
     setHardwareRevision(0);
     setFirmwareMajorVersion(0);
@@ -217,9 +238,12 @@ TEST_CASE("processOTAAvailableFile_comments", "[ota]")
     err = openServerFile(&contentLen, client, URL, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = processOTAAvailableFile(&available, client);
+    available = false;
+    patch = false;
+    err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(true, available);
+    TEST_ASSERT_EQUAL(true, patch);
 
     err = esp_http_client_close(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -241,9 +265,12 @@ TEST_CASE("processOTAAvailableFile_comments", "[ota]")
     err = openServerFile(&contentLen, client, URL, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = processOTAAvailableFile(&available, client);
+    available = false;
+    patch = false;
+    err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(true, available);
+    TEST_ASSERT_EQUAL(true, patch);
 
     err = esp_http_client_close(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -263,9 +290,12 @@ TEST_CASE("processOTAAvailableFile_comments", "[ota]")
     err = openServerFile(&contentLen, client, URL, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = processOTAAvailableFile(&available, client);
+    available = false;
+    patch = false;
+    err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(true, available);
+    TEST_ASSERT_EQUAL(true, patch);
 
     err = esp_http_client_close(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -286,9 +316,12 @@ TEST_CASE("processOTAAvailableFile_comments", "[ota]")
     err = openServerFile(&contentLen, client, URL, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = processOTAAvailableFile(&available, client);
+    available = false;
+    patch = false;
+    err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(true, available);
+    TEST_ASSERT_EQUAL(true, patch);
 
     err = esp_http_client_close(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -305,8 +338,10 @@ TEST_CASE("processOTAAvailableFile_unordered", "[ota]")
     char *URL;
     esp_err_t err;
     bool available;
+    bool patch;
     int64_t contentLen;
 
+    setUpgradeVersionURL(FIRMWARE_UPGRADE_VERSION_URL);
     setHardwareVersion(2);
     setHardwareRevision(0);
     setFirmwareMajorVersion(0);
@@ -328,9 +363,12 @@ TEST_CASE("processOTAAvailableFile_unordered", "[ota]")
     err = openServerFile(&contentLen, client, URL, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = processOTAAvailableFile(&available, client);
+    available = false;
+    patch = false;
+    err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(true, available);
+    TEST_ASSERT_EQUAL(true, patch);
 
     err = esp_http_client_close(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -348,8 +386,10 @@ TEST_CASE("processOTAAvailableFile_invalid", "[ota]")
     char *URL;
     esp_err_t err;
     bool available;
+    bool patch;
     int64_t contentLen;
 
+    setUpgradeVersionURL(FIRMWARE_UPGRADE_VERSION_URL);
     setHardwareVersion(2);
     setHardwareRevision(0);
     setFirmwareMajorVersion(0);
@@ -371,9 +411,8 @@ TEST_CASE("processOTAAvailableFile_invalid", "[ota]")
     err = openServerFile(&contentLen, client, URL, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = processOTAAvailableFile(&available, client);
+    err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_NOT_EQUAL(ESP_OK, err);
-    TEST_ASSERT_EQUAL(false, available);
 
     err = esp_http_client_close(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -393,9 +432,9 @@ TEST_CASE("processOTAAvailableFile_invalid", "[ota]")
     err = openServerFile(&contentLen, client, URL, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = processOTAAvailableFile(&available, client);
+
+    err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_NOT_EQUAL(ESP_OK, err);
-    TEST_ASSERT_EQUAL(false, available);
 
     err = esp_http_client_close(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -415,9 +454,8 @@ TEST_CASE("processOTAAvailableFile_invalid", "[ota]")
     err = openServerFile(&contentLen, client, URL, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = processOTAAvailableFile(&available, client);
+    err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_NOT_EQUAL(ESP_OK, err);
-    TEST_ASSERT_EQUAL(false, available);
 
     err = esp_http_client_close(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -437,9 +475,8 @@ TEST_CASE("processOTAAvailableFile_invalid", "[ota]")
     err = openServerFile(&contentLen, client, URL, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = processOTAAvailableFile(&available, client);
+    err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_NOT_EQUAL(ESP_OK, err);
-    TEST_ASSERT_EQUAL(false, available);
 
     err = esp_http_client_close(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -461,9 +498,8 @@ TEST_CASE("processOTAAvailableFile_invalid", "[ota]")
     err = openServerFile(&contentLen, client, URL, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = processOTAAvailableFile(&available, client);
+    err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_NOT_EQUAL(ESP_OK, err);
-    TEST_ASSERT_EQUAL(false, available);
 
     err = esp_http_client_close(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -483,9 +519,8 @@ TEST_CASE("processOTAAvailableFile_invalid", "[ota]")
     err = openServerFile(&contentLen, client, URL, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = processOTAAvailableFile(&available, client);
+    err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_NOT_EQUAL(ESP_OK, err);
-    TEST_ASSERT_EQUAL(false, available);
 
     err = esp_http_client_close(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -503,8 +538,10 @@ TEST_CASE("processOTAAvailableFile_ignoresKeys", "[ota]")
     char *URL;
     esp_err_t err;
     bool available;
+    bool patch;
     int64_t contentLen;
 
+    setUpgradeVersionURL(FIRMWARE_UPGRADE_VERSION_URL);
     setHardwareVersion(2);
     setHardwareRevision(0);
     setFirmwareMajorVersion(0);
@@ -528,9 +565,12 @@ TEST_CASE("processOTAAvailableFile_ignoresKeys", "[ota]")
     err = openServerFile(&contentLen, client, URL, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = processOTAAvailableFile(&available, client);
+    available = false;
+    patch = false;
+    err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(true, available);
+    TEST_ASSERT_EQUAL(true, patch);
 
     err = esp_http_client_close(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -550,8 +590,10 @@ TEST_CASE("processOTAAvailableFile_formattingInString", "[ota]")
     char *URL;
     esp_err_t err;
     bool available;
+    bool patch;
     int64_t contentLen;
 
+    setUpgradeVersionURL(FIRMWARE_UPGRADE_VERSION_URL);
     setHardwareVersion(2);
     setHardwareRevision(0);
     setFirmwareMajorVersion(0);
@@ -575,9 +617,10 @@ TEST_CASE("processOTAAvailableFile_formattingInString", "[ota]")
     err = openServerFile(&contentLen, client, URL, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = processOTAAvailableFile(&available, client);
+    err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(true, available);
+    TEST_ASSERT_EQUAL(true, patch);
 
     err = esp_http_client_close(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);

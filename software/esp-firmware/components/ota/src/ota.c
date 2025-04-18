@@ -29,39 +29,36 @@
 #include "wifi.h"
 
 #include "ota_config.h"
+#include "ota_types.h"
 
 #define TAG "ota"
 
-enum VersionType {
-    HARDWARE = 1,
-    REVISION = 2,
-    MAJOR = 3,
-    MINOR = 4,
-    PATCH = 5,
-    VER_TYPE_UNKNOWN = 6, // end of enum bounds
-};
+/* a globally accessible (via getOTATask) handle to the OTA task */
+static TaskHandle_t otaTaskHandle = NULL;
 
-typedef enum VersionType VersionType;
-
+TaskHandle_t getOTATask(void);
 void vOTATask(void* pvParameters);
 esp_err_t versionFromKey(VersionType *verType, const char *str, int strLen);
-bool compareVersions(uint hardVer, uint revVer, uint majorVer, uint minorVer, uint patchVer);
-esp_err_t processOTAAvailableFile(bool *available, esp_http_client_handle_t client);
+UpdateType compareVersions(VersionInfo serverVer);
+esp_err_t processOTAAvailableFile(bool *available, bool *patch, esp_http_client_handle_t client);
 
 #ifndef CONFIG_DISABLE_TESTING_FEATURES
 
+static const char *upgradeVersionURL;
 static uint hardVer;
 static uint hardRev;
 static uint majorVer;
 static uint minorVer;
 static uint patchVer;
 
+void setUpgradeVersionURL(const char *url);
 void setHardwareVersion(uint version);
 void setHardwareRevision(uint version);
 void setFirmwareMajorVersion(uint version);
 void setFirmwareMinorVersion(uint version);
 void setFirmwarePatchVersion(uint version);
 
+const char *getUpgradeVersionURL(void);
 uint getHardwareVersion(void);
 uint getHardwareRevision(void);
 uint getFirmwareMajorVersion(void);
@@ -70,6 +67,7 @@ uint getFirmwarePatchVersion(void);
 
 #else
 
+static const char *getUpgradeVersionURL(void);
 static uint getHardwareVersion(void);
 static uint getHardwareRevision(void);
 static uint getFirmwareMajorVersion(void);
@@ -77,6 +75,15 @@ static uint getFirmwareMinorVersion(void);
 static uint getFirmwarePatchVersion(void);
 
 #endif /* CONFIG_DISABLE_TESTING_FEATURES */
+
+/**
+ * @brief Returns the task handle of the OTA task. If NULL, then the task
+ * has not yet been created.
+ */
+TaskHandle_t getOTATask(void)
+{
+    return otaTaskHandle;
+}
 
 /**
  * @brief Initializes the over-the-air (OTA) task, which is implemented by
@@ -92,8 +99,6 @@ static uint getFirmwarePatchVersion(void);
  * 
  * @param handle A pointer to a handle which will refer to the created task
  *               if successful.
- * @param errorResources A pointer to an ErrorResources object. A deep copy
- *                       of the object will be created in static memory.
  *                       
  * @returns ESP_OK if the task was created successfully.
  * ESP_ERR_INVALID_STATE if requirement 1 is not met.
@@ -106,7 +111,9 @@ esp_err_t createOTATask(TaskHandle_t *handle) {
     /* create OTA task */
     success = xTaskCreate(vOTATask, "OTATask", CONFIG_OTA_STACK,
                           NULL, CONFIG_OTA_PRIO, handle);
-    return (success == pdPASS) ? ESP_OK : ESP_FAIL;
+    if (success != pdPASS) return ESP_FAIL;
+    otaTaskHandle = *handle;
+    return ESP_OK;
 }
 
 /**
@@ -131,11 +138,20 @@ void vOTATask(void* pvParameters) {
     #if CONFIG_HARDWARE_VERSION == 1
     /* feature unsupported */
     #elif CONFIG_HARDWARE_VERSION == 2
-    bool updateAvailable;
+    bool updateAvailable = false;
+    bool patchUpdate = false;
 
-    (void) queryOTAUpdateAvailable(&updateAvailable); // allow firmware updates even if this
+    (void) queryOTAUpdateAvailable(&updateAvailable, &patchUpdate); // allow firmware updates even if this
                                                       // function fails in order to fix 
                                                       // potential issues in this function
+    if (patchUpdate && updateAvailable)
+    {
+        BaseType_t success = xTaskNotify(xTaskGetCurrentTaskHandle(), 0xFF, eSetBits);
+        if (success != pdPASS)
+        {
+            (void) indicateOTAUpdate();
+        }
+    }
     if (updateAvailable)
     {
         (void) indicateOTAAvailable(); // allow update away from bad firmware
@@ -158,7 +174,7 @@ void vOTATask(void* pvParameters) {
             .http_config = &https_config,
         };
         err = esp_https_ota(&ota_config);
-        if (err == ESP_OK) 
+        if (err == ESP_OK)
         {
             ESP_LOGI(TAG, "completed OTA update successfully!");
             (void) indicateOTASuccess(CONFIG_OTA_LEFT_ON_MS); // restart imminent anyway
@@ -281,29 +297,25 @@ esp_err_t versionFromKey(VersionType *verType,
  * @returns True if the image being compared is newer than the currently
  *          installed image.
  */
-bool compareVersions(uint hardVer, 
-                     uint revVer, 
-                     uint majorVer, 
-                     uint minorVer, 
-                     uint patchVer)
+UpdateType compareVersions(VersionInfo serverVer)
 {
 
-    ESP_LOGI(TAG, "server firmware image is V%d_%d v%d.%d.%d", hardVer, revVer, majorVer, minorVer, patchVer);
+    ESP_LOGI(TAG, "server firmware image is V%d_%d v%d.%d.%d", serverVer.hardwareVer, serverVer.revisionVer, serverVer.majorVer, serverVer.minorVer, serverVer.patchVer);
     ESP_LOGI(TAG, "device firmware image is V%d_%d v%d.%d.%d", getHardwareVersion(), getHardwareRevision(), getFirmwareMajorVersion(), getFirmwareMinorVersion(), getFirmwarePatchVersion());
 
     /* compare hadware version */
-    if (hardVer != getHardwareVersion()) return false;
-    if (revVer != getHardwareRevision()) return false;
+    if (serverVer.hardwareVer != getHardwareVersion()) return UPDATE_NONE;
+    if (serverVer.revisionVer != getHardwareRevision()) return UPDATE_NONE;
     /* compare firmware version */
-    if (majorVer > getFirmwareMajorVersion()) return true;
-    if (majorVer < getFirmwareMajorVersion()) return false;
+    if (serverVer.majorVer > getFirmwareMajorVersion()) return UPDATE_MAJOR;
+    if (serverVer.majorVer < getFirmwareMajorVersion()) return UPDATE_NONE;
 
-    if (minorVer > getFirmwareMinorVersion()) return true;
-    if (minorVer < getFirmwareMinorVersion()) return false;
+    if (serverVer.minorVer > getFirmwareMinorVersion()) return UPDATE_MINOR;
+    if (serverVer.minorVer < getFirmwareMinorVersion()) return UPDATE_NONE;
 
-    if (patchVer > getFirmwarePatchVersion()) return true;
-    if (patchVer < getFirmwarePatchVersion()) return false;
-    return false;
+    if (serverVer.patchVer > getFirmwarePatchVersion()) return UPDATE_PATCH;
+    if (serverVer.patchVer < getFirmwarePatchVersion()) return UPDATE_NONE;
+    return UPDATE_NONE;
 }
 
 /**
@@ -322,14 +334,17 @@ bool compareVersions(uint hardVer,
  * @param[out] available The location to place the output of the function,
  *        which is true when a firmware update is available that is a newer
  *        version than that which is currently installed.
+ * @param[out] patch Whether the available update is a patch update and not
+ * a major/minor version update.
  * @param[in] client The client which has been opened to the correct file, such
  *        that esp_http_client_read can be called repeatedly on it.
  * 
  * @returns ESP_OK if successful and available contains true or false.
- *          ESP_ERR_INVALID_ARG if invalid argument and available is unchanged.
+ *          ESP_ERR_INVALID_ARG if invalid argument and available/patch are unchanged.
  *          ESP_FAIL or other codes if an error occurs and available is false.
  */
-esp_err_t processOTAAvailableFile(bool *available, 
+esp_err_t processOTAAvailableFile(bool *available,
+                                  bool *patch,
                                   esp_http_client_handle_t client)
 {
     char buf[OTA_RECV_BUF_SIZE];
@@ -339,12 +354,15 @@ esp_err_t processOTAAvailableFile(bool *available,
     int ndx;
     int value;
     VersionType verType;
+    VersionInfo serverVer = {
+        .hardwareVer = 0,
+        .revisionVer = 0,
+        .majorVer = 0,
+        .minorVer = 0,
+        .patchVer = 0
+    };
+    UpdateType updateType;
     esp_err_t err;
-    uint foundHardVer = 0;
-    uint foundRevVer = 0;
-    uint foundMajorVer = 0;
-    uint foundMinorVer = 0;
-    uint foundPatchVer = 0;
 
     /* parsing state variables */
     bool inKey = false;
@@ -356,9 +374,11 @@ esp_err_t processOTAAvailableFile(bool *available,
 
     /* input guards */
     if (available == NULL) return ESP_ERR_INVALID_ARG;
+    if (patch == NULL) return ESP_ERR_INVALID_ARG;
     if (client == NULL) return ESP_ERR_INVALID_ARG;
 
     *available = false;
+    *patch = false;
 
     /* load initial data into circular buffer */
     do {
@@ -558,19 +578,19 @@ esp_err_t processOTAAvailableFile(bool *available,
                 switch (verType)
                 {
                     case HARDWARE:
-                        foundHardVer = value;
+                        serverVer.hardwareVer = value;
                         break;
                     case REVISION:
-                        foundRevVer = value;
+                        serverVer.revisionVer = value;
                         break;
                     case MAJOR:
-                        foundMajorVer = value;
+                        serverVer.majorVer = value;
                         break;
                     case MINOR:
-                        foundMinorVer = value;
+                        serverVer.minorVer = value;
                         break;
                     case PATCH:
-                        foundPatchVer = value;
+                        serverVer.patchVer = value;
                         break;
                     default:
                         break;
@@ -586,25 +606,46 @@ esp_err_t processOTAAvailableFile(bool *available,
     }
     /* compare versioning information against current version */
 
-    *available = compareVersions(foundHardVer, foundRevVer, foundMajorVer, foundMinorVer, foundPatchVer);
+    updateType = compareVersions(serverVer);
+
+    *patch = false;
+    switch (updateType)
+    {
+        case UPDATE_PATCH:
+            *patch = true;
+            *available = true;
+            /* falls through */
+        case UPDATE_MINOR:
+            *available = true;
+            /* falls through */
+        case UPDATE_MAJOR:
+            *available = true;
+            break;
+        default:
+            *available = false;
+            break;
+    }
     return ESP_OK;
 }
 
 /**
  * @brief Queries the server to ask if a firmware update is available. The
- *        queried file, FIRMWARE_UPGRADE_VERSION_URL, should correspond to
+ *        queried file, getUpgradeVersionURL(), should correspond to
  *        the version of firmware at FIRMWARE_UPGRADE_URL.
  * 
  * @param[out] available The location to place the output of the function,
  *        which is true when a firmware update is available that is a newer
  *        version than that which is currently installed.
+ * @param[out] patch Whether the available firmware update is a patch and
+ * not a change of major or minor version. It is necessary to know this because
+ * patches are mandatory updates, whereas major/minor updates are not.
  * 
  * @returns ESP_OK if successful.
  */
-esp_err_t queryOTAUpdateAvailable(bool *available)
+esp_err_t queryOTAUpdateAvailable(bool *available, bool *patch)
 {
     const esp_http_client_config_t https_config = {
-        .url = FIRMWARE_UPGRADE_VERSION_URL,
+        .url = getUpgradeVersionURL(),
         .crt_bundle_attach = esp_crt_bundle_attach,
     };
     esp_err_t err;
@@ -623,7 +664,7 @@ esp_err_t queryOTAUpdateAvailable(bool *available)
             return ESP_FAIL;
         }
         
-        ESP_LOGI(TAG, "Checking server firmware version: %s", FIRMWARE_UPGRADE_VERSION_URL);
+        ESP_LOGI(TAG, "Checking server firmware version: %s", getUpgradeVersionURL());
         err = esp_http_client_open(client, 0);
         if (err != ESP_OK)
         {
@@ -651,7 +692,7 @@ esp_err_t queryOTAUpdateAvailable(bool *available)
             }
         }
 
-        err = processOTAAvailableFile(available, client);
+        err = processOTAAvailableFile(available, patch, client);
         if (err == ESP_OK) return ESP_OK;
         if (err != ESP_OK)
         {
@@ -665,14 +706,14 @@ esp_err_t queryOTAUpdateAvailable(bool *available)
 
 #ifndef CONFIG_DISABLE_TESTING_FEATURES
 
+void setUpgradeVersionURL(const char *url) { upgradeVersionURL = url; }
 void setHardwareVersion(uint version) { hardVer = version; }
 void setHardwareRevision(uint version) { hardRev = version; }
 void setFirmwareMajorVersion(uint version) { majorVer = version; }
 void setFirmwareMinorVersion(uint version) { minorVer = version; }
 void setFirmwarePatchVersion(uint version) { patchVer = version; }
 
-/* Mocking getter functions that replace __attribute__((weak)) functions */
-
+const char *getUpgradeVersionURL(void) { return upgradeVersionURL; }
 uint getHardwareVersion(void) { return hardVer; }
 uint getHardwareRevision(void) { return hardRev; }
 uint getFirmwareMajorVersion(void) { return majorVer; }
@@ -681,6 +722,7 @@ uint getFirmwarePatchVersion(void) { return patchVer; }
 
 #else
 
+static const char *getUpgradeVersionURL(void) { return FIRMWARE_UPGRADE_VERSION_URL; }
 static uint getHardwareVersion() { return CONFIG_HARDWARE_VERSION; }
 static uint getHardwareRevision() { return CONFIG_HARDWARE_REVISION; }
 static uint getFirmwareMajorVersion() { return CONFIG_FIRMWARE_MAJOR_VERSION; }

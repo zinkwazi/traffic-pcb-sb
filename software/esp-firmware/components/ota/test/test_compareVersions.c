@@ -13,6 +13,9 @@
 #include "sdkconfig.h"
 #include "unity.h"
 
+#include "ota_config.h"
+#include "ota_types.h"
+
 /**
  * Tests edge case values.
  * 
@@ -20,25 +23,50 @@
  */
 TEST_CASE("compareVersions_edgeCases", "[ota]")
 {
-    bool output;
+    VersionInfo in;
+    UpdateType out;
 
-    setHardwareVersion(CONFIG_HARDWARE_VERSION);
-    setHardwareRevision(CONFIG_HARDWARE_REVISION);
-    setFirmwareMajorVersion(CONFIG_FIRMWARE_MAJOR_VERSION);
-    setFirmwareMinorVersion(CONFIG_FIRMWARE_MINOR_VERSION);
-    setFirmwarePatchVersion(CONFIG_FIRMWARE_PATCH_VERSION);
+    setHardwareVersion(2);
+    setHardwareRevision(0);
+    setFirmwareMajorVersion(0);
+    setFirmwareMinorVersion(6);
+    setFirmwarePatchVersion(0);
 
-    output = compareVersions(0, 0, 0, 0, 0);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 0;
+    in.revisionVer = 0;
+    in.majorVer = 0;
+    in.minorVer = 0;
+    in.patchVer = 0;
 
-    output = compareVersions(CONFIG_HARDWARE_VERSION, CONFIG_HARDWARE_REVISION, 0, 0, 0);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 0;
+    in.minorVer = 0;
+    in.patchVer = 0;
 
-    output = compareVersions(CONFIG_HARDWARE_VERSION, CONFIG_HARDWARE_REVISION, UINT_MAX, UINT_MAX, UINT_MAX);
-    TEST_ASSERT_EQUAL(true, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = UINT8_MAX;
+    in.revisionVer = UINT8_MAX;
+    in.majorVer = UINT8_MAX;
+    in.minorVer = UINT8_MAX;
+    in.patchVer = UINT8_MAX;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = UINT8_MAX;
+    in.minorVer = UINT8_MAX;
+    in.patchVer = UINT8_MAX;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_MAJOR, out);
 }
 
 /**
@@ -48,67 +76,82 @@ TEST_CASE("compareVersions_edgeCases", "[ota]")
  */
 TEST_CASE("compareVersions_typical", "[ota]")
 {
-    bool output;
-    setHardwareVersion(CONFIG_HARDWARE_VERSION);
-    setHardwareRevision(CONFIG_HARDWARE_REVISION);
-    setFirmwareMajorVersion(CONFIG_FIRMWARE_MAJOR_VERSION);
-    setFirmwareMinorVersion(CONFIG_FIRMWARE_MINOR_VERSION);
-    setFirmwarePatchVersion(CONFIG_FIRMWARE_PATCH_VERSION);
+    VersionInfo in;
+    UpdateType out;
+
+    setHardwareVersion(2);
+    setHardwareRevision(0);
+    setFirmwareMajorVersion(1);
+    setFirmwareMinorVersion(6);
+    setFirmwarePatchVersion(3);
 
     /* no change in version returns false */
-    output = compareVersions(CONFIG_HARDWARE_VERSION, 
-                             CONFIG_HARDWARE_REVISION, 
-                             CONFIG_FIRMWARE_MAJOR_VERSION,
-                             CONFIG_FIRMWARE_MINOR_VERSION,
-                             CONFIG_FIRMWARE_PATCH_VERSION);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 1;
+    in.minorVer = 6;
+    in.patchVer = 3;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
     /* increased patch version returns true */
-    output = compareVersions(CONFIG_HARDWARE_VERSION, 
-                             CONFIG_HARDWARE_REVISION, 
-                             CONFIG_FIRMWARE_MAJOR_VERSION,
-                             CONFIG_FIRMWARE_MINOR_VERSION,
-                             CONFIG_FIRMWARE_PATCH_VERSION + 1);
-    TEST_ASSERT_EQUAL(true, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 1;
+    in.minorVer = 6;
+    in.patchVer = 4;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_PATCH, out);
 
     /* increased minor version with zeroed patch version */
-    output = compareVersions(CONFIG_HARDWARE_VERSION, 
-                             CONFIG_HARDWARE_REVISION, 
-                             CONFIG_FIRMWARE_MAJOR_VERSION,
-                             CONFIG_FIRMWARE_MINOR_VERSION + 1,
-                             0);
-    TEST_ASSERT_EQUAL(true, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 1;
+    in.minorVer = 7;
+    in.patchVer = 0;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_MINOR, out);
 
     /* increased major version with zeroed minor and patch versions */
-    output = compareVersions(CONFIG_HARDWARE_VERSION, 
-                             CONFIG_HARDWARE_REVISION, 
-                             CONFIG_FIRMWARE_MAJOR_VERSION + 1,
-                             0,
-                             0);
-    TEST_ASSERT_EQUAL(true, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 2;
+    in.minorVer = 0;
+    in.patchVer = 0;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_MAJOR, out);
 
     /* mismatching hardware version returns false */
-    output = compareVersions(CONFIG_HARDWARE_VERSION + 1, 
-                             CONFIG_HARDWARE_REVISION, 
-                             CONFIG_FIRMWARE_MAJOR_VERSION,
-                             CONFIG_FIRMWARE_MINOR_VERSION,
-                             CONFIG_FIRMWARE_PATCH_VERSION);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 3;
+    in.revisionVer = 0;
+    in.majorVer = 1;
+    in.minorVer = 6;
+    in.patchVer = 3;
 
-    output = compareVersions(CONFIG_HARDWARE_VERSION - 1,
-                             CONFIG_HARDWARE_REVISION, 
-                             CONFIG_FIRMWARE_MAJOR_VERSION,
-                             CONFIG_FIRMWARE_MINOR_VERSION,
-                             CONFIG_FIRMWARE_PATCH_VERSION);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    /* mismatching hardware version returns false */
-    output = compareVersions(CONFIG_HARDWARE_VERSION, 
-                             CONFIG_HARDWARE_REVISION + 1, 
-                             CONFIG_FIRMWARE_MAJOR_VERSION,
-                             CONFIG_FIRMWARE_MINOR_VERSION,
-                             CONFIG_FIRMWARE_PATCH_VERSION);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 1;
+    in.revisionVer = 0;
+    in.majorVer = 1;
+    in.minorVer = 6;
+    in.patchVer = 3;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 2;
+    in.revisionVer = 1;
+    in.majorVer = 1;
+    in.minorVer = 6;
+    in.patchVer = 3;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 }
 
 /**
@@ -119,7 +162,8 @@ TEST_CASE("compareVersions_typical", "[ota]")
  */
 TEST_CASE("compareVersions_lower", "[ota]")
 {
-    bool output;
+    VersionInfo in;
+    UpdateType out;
 
     setHardwareVersion(2);
     setHardwareRevision(1);
@@ -127,41 +171,115 @@ TEST_CASE("compareVersions_lower", "[ota]")
     setFirmwareMinorVersion(6);
     setFirmwarePatchVersion(15);
 
-    output = compareVersions(2, 1, 3, 7, 0);
-    TEST_ASSERT_EQUAL(true, output);
+    /* increased minor version, zero patch */
+    in.hardwareVer = 2;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 7;
+    in.patchVer = 0;
 
-    output = compareVersions(2, 1, 3, 7, 15);
-    TEST_ASSERT_EQUAL(true, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_MINOR, out);
 
-    output = compareVersions(2, 1, 3, 7, 16);
-    TEST_ASSERT_EQUAL(true, output);
+    /* increased minor version, no change patch */
+    in.hardwareVer = 2;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 7;
+    in.patchVer = 15;
 
-    output = compareVersions(2, 1, 3, 5, 16);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_MINOR, out);
 
-    output = compareVersions(2, 1, 3, 5, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    /* increased minor version, increased patch */
+    in.hardwareVer = 2;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 7;
+    in.patchVer = 16;
 
-    output = compareVersions(2, 1, 3, 5, 14);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_MINOR, out);
 
-    output = compareVersions(2, 1, 2, 6, 16);
-    TEST_ASSERT_EQUAL(false, output);
+    /* increased minor version, increased patch */
+    in.hardwareVer = 2;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 7;
+    in.patchVer = 16;
 
-    output = compareVersions(2, 1, 2, 6, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_MINOR, out);
 
-    output = compareVersions(2, 1, 2, 6, 14);
-    TEST_ASSERT_EQUAL(false, output);
+    /* decreased minor version, increased patch */
+    in.hardwareVer = 2;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 5;
+    in.patchVer = 16;
 
-    output = compareVersions(2, 1, 2, 7, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(2, 1, 2, 6, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    /* decreased minor version, decreased patch */
+    in.hardwareVer = 2;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 5;
+    in.patchVer = 14;
 
-    output = compareVersions(2, 1, 2, 5, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    /* decreased major version, increased patch */
+    in.hardwareVer = 2;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 16;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    /* decreased major version, no change patch */
+    in.hardwareVer = 2;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    /* decreased major version, decreased patch */
+    in.hardwareVer = 2;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 14;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    /* decreased major version, increased minor */
+    in.hardwareVer = 2;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 7;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    /* decreased major version, decreased minor */
+    in.hardwareVer = 2;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 5;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 }
 
 /**
@@ -171,7 +289,8 @@ TEST_CASE("compareVersions_lower", "[ota]")
  */
 TEST_CASE("compareVersions_mismatch", "[ota]")
 {
-    bool output;
+    VersionInfo in;
+    UpdateType out;
 
     setHardwareVersion(2);
     setHardwareRevision(1);
@@ -179,157 +298,442 @@ TEST_CASE("compareVersions_mismatch", "[ota]")
     setFirmwareMinorVersion(6);
     setFirmwarePatchVersion(15);
 
-    /* test lower revision2*/
+    /* test lower revision */
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 3;
+    in.minorVer = 7;
+    in.patchVer = 0;
 
-    output = compareVersions(2, 0, 3, 7, 0);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(2, 0, 3, 7, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 3;
+    in.minorVer = 7;
+    in.patchVer = 15;
 
-    output = compareVersions(2, 0, 3, 7, 16);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(2, 0, 3, 5, 16);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 3;
+    in.minorVer = 7;
+    in.patchVer = 16;
 
-    output = compareVersions(2, 0, 3, 5, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(2, 0, 3, 5, 14);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 3;
+    in.minorVer = 5;
+    in.patchVer = 16;
 
-    output = compareVersions(2, 0, 2, 6, 16);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(2, 0, 2, 6, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 3;
+    in.minorVer = 5;
+    in.patchVer = 15;
 
-    output = compareVersions(2, 0, 2, 6, 14);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(2, 0, 2, 7, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 3;
+    in.minorVer = 5;
+    in.patchVer = 14;
 
-    output = compareVersions(2, 0, 2, 6, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(2, 0, 2, 5, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 16;
 
-    
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 14;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 2;
+    in.minorVer = 7;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 2;
+    in.revisionVer = 0;
+    in.majorVer = 2;
+    in.minorVer = 5;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
     /* test higher revision  */
 
-    output = compareVersions(2, 2, 3, 7, 0);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 2;
+    in.majorVer = 3;
+    in.minorVer = 7;
+    in.patchVer = 0;
 
-    output = compareVersions(2, 2, 3, 7, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(2, 2, 3, 7, 16);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 2;
+    in.majorVer = 3;
+    in.minorVer = 7;
+    in.patchVer = 15;
 
-    output = compareVersions(2, 2, 3, 5, 16);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(2, 2, 3, 5, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 2;
+    in.majorVer = 3;
+    in.minorVer = 7;
+    in.patchVer = 16;
 
-    output = compareVersions(2, 2, 3, 5, 14);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(2, 2, 2, 6, 16);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 2;
+    in.majorVer = 3;
+    in.minorVer = 5;
+    in.patchVer = 16;
 
-    output = compareVersions(2, 2, 2, 6, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(2, 2, 2, 6, 14);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 2;
+    in.majorVer = 3;
+    in.minorVer = 5;
+    in.patchVer = 15;
 
-    output = compareVersions(2, 2, 2, 7, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(2, 2, 2, 6, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 2;
+    in.revisionVer = 2;
+    in.majorVer = 3;
+    in.minorVer = 5;
+    in.patchVer = 14;
 
-    output = compareVersions(2, 2, 2, 5, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 2;
+    in.revisionVer = 2;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 16;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 2;
+    in.revisionVer = 2;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 2;
+    in.revisionVer = 2;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 14;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 2;
+    in.revisionVer = 2;
+    in.majorVer = 2;
+    in.minorVer = 7;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 2;
+    in.revisionVer = 2;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 2;
+    in.revisionVer = 2;
+    in.majorVer = 2;
+    in.minorVer = 5;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
     /* test lower hardware version  */
 
-    output = compareVersions(1, 1, 3, 7, 0);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 1;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 7;
+    in.patchVer = 0;
 
-    output = compareVersions(1, 1, 3, 7, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(1, 1, 3, 7, 16);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 1;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 7;
+    in.patchVer = 15;
 
-    output = compareVersions(1, 1, 3, 5, 16);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(1, 1, 3, 5, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 1;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 7;
+    in.patchVer = 16;
 
-    output = compareVersions(1, 1, 3, 5, 14);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(1, 1, 2, 6, 16);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 1;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 5;
+    in.patchVer = 16;
 
-    output = compareVersions(1, 1, 2, 6, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(1, 1, 2, 6, 14);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 1;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 5;
+    in.patchVer = 15;
 
-    output = compareVersions(1, 1, 2, 7, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(1, 1, 2, 6, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 1;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 5;
+    in.patchVer = 14;
 
-    output = compareVersions(1, 1, 2, 5, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 1;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 16;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 1;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 1;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 14;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 1;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 7;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 1;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 1;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 5;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
     /* test higher hardware version  */
 
-    output = compareVersions(3, 1, 3, 7, 0);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 3;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 7;
+    in.patchVer = 0;
 
-    output = compareVersions(3, 1, 3, 7, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(3, 1, 3, 7, 16);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 3;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 7;
+    in.patchVer = 15;
 
-    output = compareVersions(3, 1, 3, 5, 16);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(3, 1, 3, 5, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 3;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 7;
+    in.patchVer = 16;
 
-    output = compareVersions(3, 1, 3, 5, 14);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(3, 1, 2, 6, 16);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 3;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 5;
+    in.patchVer = 16;
 
-    output = compareVersions(3, 1, 2, 6, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(3, 1, 2, 6, 14);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 3;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 5;
+    in.patchVer = 15;
 
-    output = compareVersions(3, 1, 2, 7, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 
-    output = compareVersions(3, 1, 2, 6, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    in.hardwareVer = 3;
+    in.revisionVer = 1;
+    in.majorVer = 3;
+    in.minorVer = 5;
+    in.patchVer = 14;
 
-    output = compareVersions(3, 1, 2, 5, 15);
-    TEST_ASSERT_EQUAL(false, output);
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 3;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 16;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 3;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 3;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 14;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 3;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 7;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 3;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 6;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
+
+    in.hardwareVer = 3;
+    in.revisionVer = 1;
+    in.majorVer = 2;
+    in.minorVer = 5;
+    in.patchVer = 15;
+
+    out = compareVersions(in);
+    TEST_ASSERT_EQUAL(UPDATE_NONE, out);
 }
