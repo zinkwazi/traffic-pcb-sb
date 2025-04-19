@@ -1,0 +1,79 @@
+JLCPCB:
+
+QTY 5:
+20 matrices @ 2.23 = $44.60 plus some assembly cost
+PCB + Assembly, roughly $289.06
+Shipping, roughly $51.87
+Total Before Tax: ~$340.92
+Cost Per Board: ~$68.18
+
+QTY 10: 
+40 led matrices @ 2.1525 = $86.10 plus some assembly cost
+$0.576 for resistor that is not in library
+PCB + Assembly, roughly $400
+Shipping, roughly $83
+Total Before Tax: ~$570
+Cost Per Board: ~$57
+
+QTY 20:
+80 led matrices @ 2.1525 = $172.20 plus some assembly cost
+$0.80 for a resistor that is not in library
+PCB + Assembly, roughly $619
+Shipping, roughly $139.67
+Total Before Tax: ~$930
+Cost Per Board: ~$46.50
+
+QTY 30:
+120 led matrices @ 1.9845 = $238.14 plus some assembly cost
+Few extra dollars for missing components (not counted)
+PCB + Assembly, roughly $809.35
+Shipping, roughly $193.57
+Total Before Tax: ~$1,250
+Cost Per Board: ~$41.67
+
+QTY 50:
+200 led matrices @ 1.9845 = $396.90 plus some assembly cost
+Few extra dollars for missing components (not counted)
+PCB + Assembly, roughly $1,215
+Shipping, roughly $315
+Total Before Tax: ~$1,927
+Cost Per Board: ~$38.54
+
+
+PCBWAY: Customs duties/VAT not included
+
+QTY 10:
+PCB Cost: $249.87
+Assembly Service Cost: $471.90
+Shipping: $45
+Discount: $-30
+Total: $737.32
+
+QTY 20:
+PCB Cost: $342.13
+Assembly Service Cost: $471.90
+Shipping: $78.83
+Discount: $-30
+Total: $862.86
+
+QTY 30:
+PCB Cost: $446.07
+Assembly Service Cost: $471.90
+Shipping: 111.89
+Discount: $-30
+Total: $999.86
+
+QTY 40:
+PCB Cost: $551.89
+Assembly Service Cost: $471.90
+Shipping: $141.04
+Discount: $-30
+Total: $1,134.83
+
+QTY 50:
+PCB Cost: $655.86
+Assembly Service Cost: $471.90
+Shipping: $172.77
+Discount: $-30
+Total: $1,270.53
+
