@@ -39,12 +39,12 @@
 #define SLOW_GREEN (0x00)
 #define SLOW_BLUE (0x00)
 
-#define MEDIUM_RED (0x15)
+#define MEDIUM_RED (0x25)
 #define MEDIUM_GREEN (0x09)
 #define MEDIUM_BLUE (0x00)
 
 #define FAST_RED (0x00)
-#define FAST_GREEN (0x00)
-#define FAST_BLUE (0x10)
+#define FAST_GREEN (0x10)
+#define FAST_BLUE (0x00)
 
 #endif /* UTILITIES_H_ */
