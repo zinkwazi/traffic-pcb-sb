@@ -77,8 +77,6 @@ static esp_timer_handle_t nextActionTimer = NULL;
  * 
  * @param[in] handle A pointer to a handle which will refer to the created task
  * if successful.
- * @param[in] errorResources A pointer to an ErrorResources object. A deep copy
- * of the object will be created in static memory.
  *                       
  * @returns ESP_OK if the task was created successfully, otherwise ESP_FAIL.
  */
@@ -98,8 +96,7 @@ esp_err_t createActionTask(TaskHandle_t *handle)
  * @note The avoid runtime errors, the action task should only be created
  * by the createActionTask function.
  * 
- * @param[in] pvParams A pointer to an ErrorResources object which should
- * remain valid through the lifetime of the task.
+ * @param[in] pvParams Unused.
  */
 static void vActionTask(void *pvParams)
 {

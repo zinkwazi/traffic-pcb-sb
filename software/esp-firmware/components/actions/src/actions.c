@@ -4,6 +4,7 @@
  * Contains functions that scheduling jobs and interact with SNTP.
  */
 #include "actions.h"
+#include "actions_pi.h" // contains static function declarations
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -16,6 +17,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "utilities.h"
 #include "main_types.h"
 #include "ota.h"
 #include "indicators.h"
@@ -54,9 +56,6 @@ size_t getCheckOTAAvailableTimesSize(void)
     return CHECK_OTA_AVAILABLE_TIMES_SIZE;
 }
 
-static esp_err_t handleActionUpdateData(void);
-static esp_err_t handleActionQueryOTA(void);
-
 /**
  * @brief Performs the given action.
  * 
@@ -82,7 +81,7 @@ esp_err_t handleAction(Action action)
     return ESP_ERR_NOT_FOUND;
 }
 
-static esp_err_t handleActionUpdateData()
+STATIC_IF_NOT_TEST esp_err_t handleActionUpdateData()
 {
     esp_err_t err;
     esp_http_client_handle_t client;
@@ -119,20 +118,46 @@ static esp_err_t handleActionUpdateData()
     return ESP_OK;
 }
 
-static esp_err_t handleActionQueryOTA()
+/**
+ * @brief Queries the firmware version file to check whether an OTA update is
+ * available or not. If so, indicateOTAUpdate is called.
+ * 
+ * @note If a patch update is available, but not a major/minor version change,
+ * then this function sends a task notification to the OTA task which initiates
+ * a firmware upgrade.
+ * 
+ * @requires:
+ * - OTA task initialized.
+ */
+STATIC_IF_NOT_TEST esp_err_t handleActionQueryOTA()
 {
     /* query most recent server firmware version and indicate if an update is available */
     #if CONFIG_HARDWARE_VERSION == 1
     /* feature unsupported */
     #elif CONFIG_HARDWARE_VERSION == 2
-    bool updateAvailable;
+    bool updateAvailable = false;
+    bool patchUpdate = false;
 
-    (void) queryOTAUpdateAvailable(&updateAvailable); // allow firmware updates even if this
-                                                // function fails in order to fix 
-                                                // potential issues in this function
-    if (updateAvailable)
+    (void) queryOTAUpdateAvailable(&updateAvailable, &patchUpdate); // allow firmware updates even if this
+                                                                    // function fails in order to fix 
+                                                                    // potential issues in this function
+    if (patchUpdate && updateAvailable)
     {
-    indicateOTAAvailable();
+        TaskHandle_t otaTask = getOTATask();
+        if (otaTask == NULL)
+        {
+            (void) indicateOTAUpdate();
+            return ESP_OK;
+        }
+        BaseType_t success = xTaskNotify(otaTask, 0xFF, eSetBits);
+        if (success != pdPASS)
+        {
+            (void) indicateOTAUpdate();
+        }
+
+    } else if (updateAvailable)
+    {
+        (void) indicateOTAUpdate(); // best effort
     }
     #else
     #error "Unsupported hardware version!"

@@ -1,0 +1,15 @@
+menu "Actions Test"
+
+    config ACTIONS_TEST_DATA_SERVER
+        string "Test Data Server"
+        default "https://bearanvil.com"
+        help
+            The server to request updated segment speed data from.
+
+    config ACTIONS_TEST_DATA_BASE_URL
+        string "Test Data Base URL"
+        default "/test_data/test_actions_data"
+        help
+            The base page for the test data files on the test data server.
+
+endmenu

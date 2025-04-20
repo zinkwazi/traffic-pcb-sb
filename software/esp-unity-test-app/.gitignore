@@ -4,3 +4,5 @@
 configurations/sdkconfig.V1_0_test
 configurations/sdkconfig.V2_0_test
 configurations/sdkconfig.test_secrets
+configurations/sdkconfig.V1_0_test.old
+configurations/sdkconfig.V2_0_test.old

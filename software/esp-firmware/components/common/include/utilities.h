@@ -47,4 +47,14 @@
 #define FAST_GREEN (0x00)
 #define FAST_BLUE (0x10)
 
+/* Testing configuration helpers */
+
+#ifndef CONFIG_DISABLE_TESTING_FEATURES
+/* static when not testing */
+#define STATIC_IF_NOT_TEST  
+#else
+/* not static when testing */
+#define STATIC_IF_NOT_TEST static
+#endif
+
 #endif /* UTILITIES_H_ */

@@ -20,6 +20,8 @@
 #include "pinout.h"
 #include "refresh.h"
 #include "wifi.h"
+#include "strobe.h"
+#include "strobe_task.h"
 
 #define API_METHOD HTTP_METHOD_GET
 #define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
@@ -84,6 +86,9 @@ void app_main(void)
 
     
     err = initRefresh();
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    err = createStrobeTask(NULL);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     
     /* run unit tests */
