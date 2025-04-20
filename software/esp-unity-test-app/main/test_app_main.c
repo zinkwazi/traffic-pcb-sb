@@ -88,8 +88,12 @@ void app_main(void)
     err = initRefresh();
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
+#if CONFIG_HARDWARE_VERSION == 1
+    /* feature disabled */
+#elif CONFIG_HARDWARE_VERSION == 2
     err = createStrobeTask(NULL);
     TEST_ASSERT_EQUAL(ESP_OK, err);
+#endif
     
     /* run unit tests */
     unity_run_all_tests();

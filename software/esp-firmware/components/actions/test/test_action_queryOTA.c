@@ -43,6 +43,7 @@ static void vSendsNotifOTAMock(void *pvParams)
     vTaskDelete(NULL);
 }
 
+#if CONFIG_HARDWARE_VERSION != 1 // specification does not include this for V1_X due to memory constraints
 /**
  * @brief Tests that queryOTA action sends a task notification to the OTA
  * task only if a patch update is available.
@@ -122,3 +123,4 @@ TEST_CASE("queryOTA_sendsNotif", "[actions]")
     vTaskDelete(otaMockTask);
     vSemaphoreDelete(sema);
 }
+#endif
