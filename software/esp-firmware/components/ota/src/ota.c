@@ -47,6 +47,8 @@ static uint8_t hardRev;
 static uint8_t majorVer;
 static uint8_t minorVer;
 static uint8_t patchVer;
+static SemaphoreHandle_t performedUpdateSema;
+static bool testUpdateWillFail;
 
 #endif
 
@@ -145,21 +147,35 @@ STATIC_IF_NOT_TEST void vOTATask(void* pvParameters) {
 
         (void) indicateOTAUpdate(); // allow update away from bad firmware
         
+#ifdef CONFIG_DISABLE_TESTING_FEATURES
         esp_https_ota_config_t ota_config = {
             .http_config = &https_config,
         };
+
         err = esp_https_ota(&ota_config);
+#else /* testing replacement for actual ota update */
+        xSemaphoreGive(performedUpdateSema);
+        err = (testUpdateWillFail) ? ESP_FAIL : ESP_OK;
+#endif
         if (err == ESP_OK)
         {
             ESP_LOGI(TAG, "completed OTA update successfully!");
             (void) indicateOTASuccess(CONFIG_OTA_LEFT_ON_MS); // restart imminent anyway
             unregisterWifiHandler();
+#ifdef CONFIG_DISABLE_TESTING_FEATURES
             esp_restart();
+#else /* testing replacement for actual restart */
+            vTaskDelete(NULL);
+#endif
         }
 
         ESP_LOGI(TAG, "did not complete OTA update successfully!");
         err = indicateOTAFailure(CONFIG_OTA_LEFT_ON_MS);
         if (err != ESP_OK) throwFatalError();
+
+#ifndef CONFIG_DISABLE_TESTING_FEATURES
+        vTaskDelete(NULL);
+#endif
     }
 
     ESP_LOGE(TAG, "OTA Task is returning!");
@@ -229,6 +245,7 @@ esp_err_t queryOTAUpdateAvailable(bool *available, bool *patch)
                 ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_cleanup err: %d", err);
                 return ESP_FAIL;
             }
+            return ESP_FAIL;
         }
 
         err = processOTAAvailableFile(available, patch, client);
@@ -688,6 +705,7 @@ uint8_t getHardwareRevision(void) { return hardRev; }
 uint8_t getFirmwareMajorVersion(void) { return majorVer; }
 uint8_t getFirmwareMinorVersion(void) { return minorVer; }
 uint8_t getFirmwarePatchVersion(void) { return patchVer; }
+SemaphoreHandle_t getPerformedUpdateSema(void) { return performedUpdateSema; }
 
 void setOTATask(TaskHandle_t handle) { otaTaskHandle = handle; }
 void setUpgradeVersionURL(const char *url) { upgradeVersionURL = url; }
@@ -696,6 +714,12 @@ void setHardwareRevision(uint8_t version) { hardRev = version; }
 void setFirmwareMajorVersion(uint8_t version) { majorVer = version; }
 void setFirmwareMinorVersion(uint8_t version) { minorVer = version; }
 void setFirmwarePatchVersion(uint8_t version) { patchVer = version; }
+esp_err_t initPerformedUpdateSema(void)
+{
+    performedUpdateSema = xSemaphoreCreateBinary();
+    return (performedUpdateSema != NULL) ? ESP_OK : ESP_FAIL;
+}
+void setUpdateFails(bool fails) { testUpdateWillFail = fails; }
 
 #else
 

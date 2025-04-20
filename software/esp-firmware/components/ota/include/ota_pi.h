@@ -35,6 +35,8 @@ STATIC_IF_NOT_TEST uint8_t getFirmwarePatchVersion(void);
 
 #ifndef CONFIG_DISABLE_TESTING_FEATURES
 
+SemaphoreHandle_t getPerformedUpdateSema(void);
+
 void setOTATask(TaskHandle_t handle);
 void setUpgradeVersionURL(const char *url);
 void setHardwareVersion(uint8_t version);
@@ -42,6 +44,9 @@ void setHardwareRevision(uint8_t version);
 void setFirmwareMajorVersion(uint8_t version);
 void setFirmwareMinorVersion(uint8_t version);
 void setFirmwarePatchVersion(uint8_t version);
+esp_err_t initPerformedUpdateSema(void);
+void setUpdateFails(bool fails);
+
 
 #endif /* CONFIG_DISABLE_TESTING_FEATURES */
 
