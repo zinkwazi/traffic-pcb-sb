@@ -203,28 +203,34 @@ esp_err_t queryOTAUpdateAvailable(bool *available, bool *patch)
         .url = getUpgradeVersionURL(),
         .crt_bundle_attach = esp_crt_bundle_attach,
     };
-    esp_err_t err;
+    esp_err_t err, ret;
     esp_http_client_handle_t client;
     int64_t contentLength;
+    int i;
 
+    /* input guards */
     if (available == NULL) return ESP_ERR_INVALID_ARG;
 
-    for (int i = 0; i < RETRY_CONNECT_OTA_AVAILABLE; i++)
+    /* initialize client */
+    client = esp_http_client_init(&https_config);
+    if (client == NULL)
     {
-        /* connect to server and query file */
-        client = esp_http_client_init(&https_config);
-        if (client == NULL)
-        {
-            ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_init error");
-            return ESP_FAIL;
-        }
-        
+        ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_init error");
+        ret = ESP_FAIL;
+        return ESP_FAIL; // no need to free memory
+    }
+
+    ret = ESP_FAIL;
+    for (i = 0; i < RETRY_CONNECT_OTA_AVAILABLE; i++)
+    {
+        /* connect to server and query file */        
         ESP_LOGI(TAG, "Checking server firmware version: %s", getUpgradeVersionURL());
         err = esp_http_client_open(client, 0);
         if (err != ESP_OK)
         {
             ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_open err: %d", err);
-            return err;
+            ret = ESP_FAIL;
+            break;
         }
 
         do {
@@ -233,31 +239,45 @@ esp_err_t queryOTAUpdateAvailable(bool *available, bool *patch)
         if (contentLength <= 0) // null-terminator
         {
             ESP_LOGE(TAG, "queryOTAUpdateAvailable contentLength: %lld", contentLength);
-            return ESP_FAIL;
+            ret = ESP_FAIL;
+            break;
         }
 
         int status = esp_http_client_get_status_code(client);
         if (esp_http_client_get_status_code(client) != 200)
         {
             ESP_LOGE(TAG, "queryOTAUpdateAvailable status code is %d", status);
-            err = esp_http_client_cleanup(client);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_cleanup err: %d", err);
-                return ESP_FAIL;
-            }
-            return ESP_FAIL;
+            ret = ESP_FAIL;
+            break;
         }
 
         err = processOTAAvailableFile(available, patch, client);
-        if (err == ESP_OK) return ESP_OK;
+        if (err == ESP_OK)
+        {
+            /* only positive exit path */
+            ret = ESP_OK;
+            break;
+        }
         if (err != ESP_OK)
         {
             *available = false;
             ESP_LOGE(TAG, "failed to process OTA available file. err: %d", err);
         }
     }
-    ESP_LOGW(TAG, "queryOTAUpdateAvailable max retries exceeded");
-    return ESP_FAIL; // max num retries exceeded
+    if (i == RETRY_CONNECT_OTA_AVAILABLE)
+    {
+        ESP_LOGW(TAG, "queryOTAUpdateAvailable max retries exceeded");
+    }
+    
+    /* close client */
+    err = esp_http_client_cleanup(client);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_cleanup err: %d", err);
+        throwFatalError(); // this is a memory leak, expose it directly
+    }
+    
+    return ret; // max num retries exceeded
 }
 
 /**
