@@ -132,11 +132,15 @@ esp_err_t initializeVerificationButtons(VerificationResources *resources) {
  *        a toggle button press is expected or an OTA button press.
  * @param[in] res Resources that are shared between this program and the button
  *        interrupts to enable communication across them.
+ * 
+ * @returns ESP_OK if human verified, otherwise ESP_FAIL if human stated verification
+ * failed.
  */
-void assertHumanVerifies(char *message, bool expected, VerificationResources res) {
+esp_err_t humanVerifies(char *message, bool expected, VerificationResources res) {
     ESP_LOGI(TAG, "%s", message);
     *(res.waiting) = true;
     while (xSemaphoreTake(res.sema, INT_MAX) != pdTRUE) {}
-    TEST_ASSERT_NOT_EQUAL(true, *(res.waiting));
-    TEST_ASSERT_EQUAL(expected, *(res.correct));
+    if (*(res.waiting) == true) return ESP_FAIL;
+    if (*(res.correct) != expected) return ESP_FAIL;
+    return ESP_OK;
 }

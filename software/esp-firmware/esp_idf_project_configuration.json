@@ -117,6 +117,96 @@
       "postFlash": ""
     }
   },
+  "test_manual_V1_0": {
+    "build": {
+      "compileArgs": [],
+      "ninjaArgs": [],
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\test_manual_V1_0",
+      "sdkconfigDefaults": [
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\secrets\\sdkconfig.test_secrets",
+        ".\\configurations\\sdkconfig.test",
+        ".\\configurations\\sdkconfig.V1_0_default"
+      ],
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.test_manual_V1_0"
+    },
+    "env": {
+      "executable": "test_manual"
+    },
+    "flashBaudRate": "",
+    "monitorBaudRate": "",
+    "openOCD": {
+      "debugLevel": 0,
+      "configs": [],
+      "args": []
+    },
+    "tasks": {
+      "preBuild": "",
+      "preFlash": "",
+      "postBuild": "",
+      "postFlash": ""
+    }
+  },
+  "test_manual_V2_0": {
+    "build": {
+      "compileArgs": [],
+      "ninjaArgs": [],
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\test_manual_V2_0",
+      "sdkconfigDefaults": [
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\secrets\\sdkconfig.test_secrets",
+        ".\\configurations\\sdkconfig.test",
+        ".\\configurations\\sdkconfig.V2_0_default"
+      ],
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.test_manual_V2_0"
+    },
+    "env": {
+      "executable": "test_manual"
+    },
+    "flashBaudRate": "",
+    "monitorBaudRate": "",
+    "openOCD": {
+      "debugLevel": 0,
+      "configs": [],
+      "args": []
+    },
+    "tasks": {
+      "preBuild": "",
+      "preFlash": "",
+      "postBuild": "",
+      "postFlash": ""
+    }
+  },
+  "test_nonmock": {
+    "build": {
+      "compileArgs": [],
+      "ninjaArgs": [],
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\test_nonmock",
+      "sdkconfigDefaults": [
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\secrets\\sdkconfig.test_secrets",
+        ".\\configurations\\sdkconfig.test",
+        ".\\configurations\\sdkconfig.V2_0_default"
+      ],
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.test_nonmock"
+    },
+    "env": {
+      "executable": "test_nonmock"
+    },
+    "flashBaudRate": "",
+    "monitorBaudRate": "",
+    "openOCD": {
+      "debugLevel": 0,
+      "configs": [],
+      "args": []
+    },
+    "tasks": {
+      "preBuild": "",
+      "preFlash": "",
+      "postBuild": "",
+      "postFlash": ""
+    }
+  },
   "test_ota": {
     "build": {
       "compileArgs": [],

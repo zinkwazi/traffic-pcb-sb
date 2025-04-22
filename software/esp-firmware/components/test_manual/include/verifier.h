@@ -22,6 +22,6 @@ struct VerificationResources {
 typedef struct VerificationResources VerificationResources;
 
 esp_err_t initializeVerificationButtons(VerificationResources *resources);
-void assertHumanVerifies(char *message, bool expected, VerificationResources res);
+esp_err_t humanVerifies(char *message, bool expected, VerificationResources res);
 
 #endif /* VERIFIER_H_ */

@@ -4,16 +4,24 @@ if ("$ENV{executable}" STREQUAL "main")
              "src/initialize.c")
     set(includes "include")
 elseif ("$ENV{executable}" STREQUAL "test_ota")
-    set(srcs "src/test_ota_main.c"
+    set(srcs "src/tests/test_ota_main.c"
+             "src/initialize.c")
+    set(includes "include")
+elseif ("$ENV{executable}" STREQUAL "test_nonmock")
+    set(srcs "src/tests/test_nonmock_main.c"
+             "src/initialize.c")
+    set(includes "include")
+elseif ("$ENV{executable}" STREQUAL "test_manual")
+    set(srcs "src/tests/test_manual_main.c"
              "src/initialize.c")
     set(includes "include")
 else()
-    message(FATAL_ERROR "Value of executable environment variable $ENV{executable} is not known!")
+    message(FATAL_ERROR "Value of executable environment variable \"$ENV{executable}\" is not known!")
 endif()
 
 set(requires unity
-             cmock
             common
+            test_manual
             led_matrix
             actions
             animations
