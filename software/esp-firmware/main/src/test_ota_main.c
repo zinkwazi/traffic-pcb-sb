@@ -6,6 +6,7 @@
 
 #include "unity.h"
 
+#include "cmock.h"
 #include "esp_crt_bundle.h"
 #include "esp_err.h"
 #include "esp_http_client.h"
@@ -14,6 +15,7 @@
 #include "esp_tls.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
+#include "sdkconfig.h"
 
 #include "app_errors.h"
 #include "led_matrix.h"
@@ -22,6 +24,10 @@
 #include "wifi.h"
 #include "strobe.h"
 #include "strobe_task.h"
+
+#if CONFIG_MOCK_INDICATORS
+#include "Mockindicators.h"
+#endif
 
 #define API_METHOD HTTP_METHOD_GET
 #define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
@@ -55,6 +61,20 @@ void app_main(void)
 {
     esp_err_t err;
     UNITY_BEGIN();
+
+#if CONFIG_MOCK_INDICATORS
+    /* ignore indicator mocks until actual test */
+    Mockindicators_Init();
+    indicateWifiConnected_IgnoreAndReturn(ESP_OK);
+    indicateWifiNotConnected_IgnoreAndReturn(ESP_OK);
+    indicateOTAAvailable_IgnoreAndReturn(ESP_OK);
+    indicateOTAUpdate_IgnoreAndReturn(ESP_OK);
+    indicateOTAFailure_IgnoreAndReturn(ESP_OK);
+    indicateOTASuccess_IgnoreAndReturn(ESP_OK);
+    indicateNorthbound_IgnoreAndReturn(ESP_OK);
+    indicateSouthbound_IgnoreAndReturn(ESP_OK);
+    indicateDirection_IgnoreAndReturn(ESP_OK);
+#endif
     
     /* initialize non-volatile storage */
     err = nvs_flash_init();

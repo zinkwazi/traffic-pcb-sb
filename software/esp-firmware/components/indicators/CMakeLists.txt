@@ -4,10 +4,12 @@ set(include_dirs "include")
 set(requires common app_errors animations)
 
 if (CONFIG_MOCK_INDICATORS)
-    set(srcs "mock/src/mock_indicators.c")
-    list(APPEND include_dirs "mock/include")
+    set(srcs "mocks/Mockindicators.c")
+    list(APPEND include_dirs "mocks")
+    # set(requires common app_errors animations cmock)
+    # list(APPEND requires cmock)
 endif ()
 
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS ${include_dirs}
-                    REQUIRES ${requires})
+                    REQUIRES common app_errors animations cmock)

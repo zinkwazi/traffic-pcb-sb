@@ -16,7 +16,7 @@
 
 #include "ota.h"
 #include "ota_pi.h"
-#include "mock_indicators.h"
+#include "Mockindicators.h"
 
 #define TAG "test"
 
@@ -74,6 +74,18 @@ TEST_CASE("vOTATask_indicatesCorrectly", "[ota]")
     BaseType_t success;
     TaskHandle_t otaTask;
 
+    /* stop ignoring indicator mocks */
+    indicateWifiConnected_StopIgnore();
+    indicateWifiNotConnected_StopIgnore();
+    indicateOTAAvailable_StopIgnore();
+    indicateOTAUpdate_StopIgnore();
+    indicateOTAFailure_StopIgnore();
+    indicateOTASuccess_StopIgnore();
+    indicateNorthbound_StopIgnore();
+    indicateSouthbound_StopIgnore();
+    indicateDirection_StopIgnore();
+    Mockindicators_Destroy(); // reinitialized later
+
     /* indicateOTAUpdateAvailable is called when an update is available */
     setUpgradeVersionURL(URL_BASE "/vOTATask_indicatesCorrectly1.json"); // V2_0 v0.7.5
     setHardwareVersion(2);
@@ -83,7 +95,11 @@ TEST_CASE("vOTATask_indicatesCorrectly", "[ota]")
     setFirmwarePatchVersion(0);
     TEST_ASSERT_EQUAL(ESP_OK, initPerformedUpdateSema()); // unused
     setUpdateFails(true); // don't expect to update anything, set for reproducibility
-    TEST_ASSERT_EQUAL(ESP_OK, mockIndicatorsStartRecording(2)); // expect 1 calls
+    
+    /* setup indicators mock */
+    Mockindicators_Init();
+    indicateOTAAvailable_ExpectAndReturn(ESP_OK);
+
     TEST_ASSERT_GREATER_THAN(1, CONFIG_OTA_PRIO); // need to let this task's prio be less than ota task
     vTaskPrioritySet(NULL, CONFIG_OTA_PRIO - 1);
     TEST_ASSERT_EQUAL(ESP_OK, createOTATask(&otaTask));
@@ -91,10 +107,10 @@ TEST_CASE("vOTATask_indicatesCorrectly", "[ota]")
     after the OTA task is done initializing and is waiting for a task notification.
     If not, then something has gone wrong in the OTA task and this is blocked forever. */
     vTaskDelay(pdMS_TO_TICKS(1000)); // TODO: don't wait, its bad design for a test
-    TEST_ASSERT_EQUAL(false, mockIndicatorsRecordingOverflowed());
-    TEST_ASSERT_EQUAL(INDICATE_OTA_AVAILABLE, mockIndicatorsGetRecording(0));
-    TEST_ASSERT_EQUAL(INDICATE_RECORDING_END, mockIndicatorsGetRecording(1));
     vTaskDelete(otaTask);
+
+    Mockindicators_Verify();
+    Mockindicators_Destroy();
 #else
 #error "Unsupported hardware version!"
 #endif /* CONFIG_HARDWARE_VERSION */

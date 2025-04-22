@@ -12,6 +12,7 @@ else()
 endif()
 
 set(requires unity
+             cmock
             common
             led_matrix
             actions
