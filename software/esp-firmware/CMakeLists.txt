@@ -3,4 +3,10 @@
 cmake_minimum_required(VERSION 3.16)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+
+message(STATUS "executable: $ENV{executable}")
+if ("$ENV{executable}" STREQUAL "test_ota")
+    set(TEST_COMPONENTS "ota")
+endif()
+
 project(esp-firmware)

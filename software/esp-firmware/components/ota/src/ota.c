@@ -120,8 +120,10 @@ STATIC_IF_NOT_TEST void vOTATask(void* pvParameters) {
     (void) queryOTAUpdateAvailable(&updateAvailable, &patchUpdate); // allow firmware updates even if this
                                                       // function fails in order to fix 
                                                       // potential issues in this function
+    ESP_LOGI(TAG, "returned");
     if (patchUpdate && updateAvailable)
     {
+        ESP_LOGI(TAG, "patch update");
         BaseType_t success = xTaskNotify(xTaskGetCurrentTaskHandle(), 0xFF, eSetBits);
         if (success != pdPASS)
         {
@@ -130,8 +132,10 @@ STATIC_IF_NOT_TEST void vOTATask(void* pvParameters) {
     }
     if (updateAvailable)
     {
+        ESP_LOGI(TAG, "update available");
         (void) indicateOTAAvailable(); // allow update away from bad firmware
     }
+    ESP_LOGI(TAG, "waiting for ota button");
     #else
     #error "Unsupported hardware version!"
     #endif

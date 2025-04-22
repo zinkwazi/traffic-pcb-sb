@@ -10,9 +10,11 @@
         ".\\configurations\\sdkconfig.V1_0_default",
         ".\\configurations\\sdkconfig.V1_0_dev"
       ],
-      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig.dev_V1_0"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.dev_V1_0"
     },
-    "env": {},
+    "env": {
+      "executable": "main"
+    },
     "flashBaudRate": "",
     "monitorBaudRate": "",
     "openOCD": {
@@ -37,9 +39,11 @@
         ".\\configurations\\sdkconfig.develop",
         ".\\configurations\\sdkconfig.V2_0_default"
       ],
-      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig.dev_V2_0"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.dev_V2_0"
     },
-    "env": {},
+    "env": {
+      "executable": "main"
+    },
     "flashBaudRate": "",
     "monitorBaudRate": "",
     "openOCD": {
@@ -65,9 +69,11 @@
         ".\\configurations\\sdkconfig.V1_0_default",
         ".\\configurations\\sdkconfig.V1_0_prod"
       ],
-      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig.prod_V1_0"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.prod_V1_0"
     },
-    "env": {},
+    "env": {
+      "executable": "main"
+    },
     "flashBaudRate": "",
     "monitorBaudRate": "",
     "openOCD": {
@@ -92,9 +98,42 @@
         ".\\configurations\\sdkconfig.production",
         ".\\configurations\\sdkconfig.V2_0_default"
       ],
-      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\sdkconfig.prod_V2_0"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.prod_V2_0"
     },
-    "env": {},
+    "env": {
+      "executable": "main"
+    },
+    "flashBaudRate": "",
+    "monitorBaudRate": "",
+    "openOCD": {
+      "debugLevel": 0,
+      "configs": [],
+      "args": []
+    },
+    "tasks": {
+      "preBuild": "",
+      "preFlash": "",
+      "postBuild": "",
+      "postFlash": ""
+    }
+  },
+  "test_ota": {
+    "build": {
+      "compileArgs": [],
+      "ninjaArgs": [],
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\test_ota",
+      "sdkconfigDefaults": [
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\secrets\\sdkconfig.test_secrets",
+        ".\\configurations\\sdkconfig.test",
+        ".\\components\\ota\\test\\sdkconfig.test_ota",
+        ".\\configurations\\sdkconfig.V2_0_default"
+      ],
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.test_ota"
+    },
+    "env": {
+      "executable": "test_ota"
+    },
     "flashBaudRate": "",
     "monitorBaudRate": "",
     "openOCD": {

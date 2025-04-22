@@ -25,16 +25,4 @@ esp_err_t indicateNorthbound(void);
 esp_err_t indicateSouthbound(void);
 esp_err_t indicateDirection(Direction dir);
 
-#if CONFIG_HARDWARE_VERSION == 1
-
-/* no hardware specific functions */
-
-#elif CONFIG_HARDWARE_VERSION == 2
-
-esp_err_t indicateOTAAvailable(void);
-
-#else
-#error "Unsupported hardware version!"
-#endif
-
 #endif /* INDICATORS_H_ */

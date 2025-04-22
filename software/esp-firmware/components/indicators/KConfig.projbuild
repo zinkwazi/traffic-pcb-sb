@@ -1,5 +1,12 @@
 menu "Indicators"
 
+    config MOCK_INDICATORS
+        bool "Mock Indicators Component"
+        default false
+        help
+            Whether to use a mock implementation of the indicators component
+            or not.
+
     config WHITE_RED_COMPONENT
         int "White Red Component"
         default 32

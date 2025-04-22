@@ -1,5 +1,12 @@
 menu "Main Application"
 
+    config EXECUTABLE_MAIN
+        string "Executable Main"
+        default "main"
+        help
+            The executable component holding the app_main function for the given
+            build configuration.
+
     config HARDWARE_VERSION
         int "PCB Hardware Version"
         default 1
