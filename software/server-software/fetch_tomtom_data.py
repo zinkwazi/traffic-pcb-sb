@@ -18,9 +18,11 @@ USE_RANDOM_DATA = False
 USE_FAKE_KEY = False
 
 DOMAIN_NAME = "https://bearanvil.com"
-DOMAIN_PATH = ""
 
-# output folder path relative to domain path
+# the home path of the output, which is typically the server path of where the domain lives
+OUTPUT_PATH = "C:/Users/bapti/Documents/traffic-pcb-sb/software/server-software"
+
+# output folder path relative to output home
 OUTPUT_FOLDER_RELPATH = "output"
 
 # output file paths relative to output folder
@@ -53,8 +55,8 @@ class SpeedType(Enum):
 LED_NUM_KEY = "LED Number"
 FREEWAY_KEY = "Freeway"
 DIRECTION_KEY = "Direction"
-LONGITUDE_KEY = "Longitude"
 LATITUDE_KEY = "Latitude"
+LONGITUDE_KEY = "Longitude"
 TILE_KEY = "Tile"
 OPENLR_CODE_KEY = "openLr Code"
 FREE_FLOW_SPEED_KEY = "Free Flow Speed"
@@ -155,11 +157,11 @@ def requestSegmentData(entry, speed_type, api_key):
         return random.randint(20, 75)
 
     # perform API request
-    longitude, latitude = entry[LONGITUDE_KEY], entry[LATITUDE_KEY]
-    log(f"Requesting segment data for coordinates ({longitude}, {latitude})...")
+    latitude, longitude = entry[LATITUDE_KEY], entry[LONGITUDE_KEY]
+    log(f"Requesting segment data for coordinates ({latitude}, {longitude})...")
     try:
         response = requests.get(
-            f"https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json?key={api_key}&point={longitude},{latitude}&unit=mph&openLr=true"
+            f"https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json?key={api_key}&point={latitude},{longitude}&unit=mph&openLr=true"
         )
     except:
         log(f"request failed.")
@@ -532,7 +534,7 @@ def main(speed_type, direction, api_key, csv_filename, output_relpath, output_2_
         return False
     
     # build filepaths
-    output_folder_filepath = DOMAIN_PATH + "/" + OUTPUT_FOLDER_RELPATH
+    output_folder_filepath = OUTPUT_PATH + "/" + OUTPUT_FOLDER_RELPATH
     output_filepath = output_folder_filepath + "/" + output_relpath
     output_addendum_folder = output_folder_filepath + "/" + output_relpath + "_add"
     addendum_V2_0_0_prevURL = DOMAIN_NAME + "/" + OUTPUT_FOLDER_RELPATH + "/" + output_relpath
