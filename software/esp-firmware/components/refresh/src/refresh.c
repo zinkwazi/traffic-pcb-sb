@@ -328,7 +328,6 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
             (void) updateLED(ledNum, 0, true); // intentional best effort
 
             err = strobeRegisterLED(strobeCommand);
-            vTaskDelay(pdMS_TO_TICKS(100)); // TEMPORARY: delay to force race condition to show
             if (err != ESP_OK) ESP_LOGW(TAG, "failed to register strobing on LED %d", ledNum);
         } else
         {
