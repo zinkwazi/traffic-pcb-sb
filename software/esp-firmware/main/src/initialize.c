@@ -116,22 +116,6 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     err = initializeIndicatorLEDs();
     if (err != ESP_OK) return err;
 
-    /* begin loading animation */
-#ifdef CONFIG_SUPPORT_STROBING
-    err = createStrobeTask(NULL); // need this task to start early
-    if (err != ESP_OK) return err;
-#endif
-
-#if CONFIG_HARDWARE_VERSION == 1
-    /* loading animation unsupported */
-#elif CONFIG_HARDWARE_VERSION == 2
-    /* begin loading animation */
-    err = beginLoadingAnimation();
-    if (err != ESP_OK) return err;
-#else
-#error "Unsupported hardware version!"
-#endif
-
     /* initialize and cleanup non-volatile storage */
     err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
@@ -164,6 +148,22 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     if (err != ESP_OK) return err;
     err = retrieveNvsEntries(res->nvsHandle, &settings);
     if (err != ESP_OK) return err;
+
+    /* begin loading animation */
+#ifdef CONFIG_SUPPORT_STROBING
+    err = createStrobeTask(NULL); // need this task to start early
+    if (err != ESP_OK) return err;
+#endif
+
+#if CONFIG_HARDWARE_VERSION == 1
+    /* loading animation unsupported */
+#elif CONFIG_HARDWARE_VERSION == 2
+    /* begin loading animation */
+    err = beginLoadingAnimation();
+    if (err != ESP_OK) return err;
+#else
+#error "Unsupported hardware version!"
+#endif
 
     /* initialize tcp/ip stack */
     err = esp_netif_init();
