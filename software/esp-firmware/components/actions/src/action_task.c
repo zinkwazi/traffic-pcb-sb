@@ -44,6 +44,7 @@ static esp_err_t initActions(void);
 static int64_t secsUntilNextAction(void);
 static esp_err_t sendAction(Action action);
 static void actionTimerCallback(void *arg);
+static void updateBrightnessTimerCallback(void *arg);
 static void updateDataTimerCallback(void *arg);
 
 /* A queue on which actions will be sent to the action task */
@@ -57,6 +58,15 @@ static const esp_timer_create_args_t updateTrafficTimerCfg = {
 };
 
 static esp_timer_handle_t updateTrafficTimer = NULL;
+
+static const esp_timer_create_args_t updateBrightnessTimerCfg = {
+    .callback = updateBrightnessTimerCallback,
+    .arg = NULL,
+    .dispatch_method = ESP_TIMER_TASK,
+    .name = "brightnessTimer",
+};
+
+static esp_timer_handle_t updateBrightnessTimer = NULL;
 
 static const esp_timer_create_args_t nextActionTimerCfg = {
     .callback = actionTimerCallback,
@@ -118,6 +128,7 @@ static void vActionTask(void *pvParams)
         (void) handleAction(currAction);
         /* restart action timer */
         if (currAction == ACTION_UPDATE_DATA) continue;
+        if (currAction == ACTION_UPDATE_BRIGHTNESS) continue;
         
         int64_t nextActionSecs = secsUntilNextAction();
         ESP_LOGI(TAG, "action timer set for %lld seconds from now", nextActionSecs);
@@ -164,12 +175,17 @@ static esp_err_t initActions(void)
     /* initialize timers */
     err = esp_timer_create(&updateTrafficTimerCfg, &updateTrafficTimer);
     if (err != ESP_OK) return err;
+    err = esp_timer_create(&updateBrightnessTimerCfg, &updateBrightnessTimer);
+    if (err != ESP_OK) return err;
     err = esp_timer_create(&nextActionTimerCfg, &nextActionTimer);
     if (err != ESP_OK) return err;
 
     /* start timers */
     ESP_LOGI(TAG, "traffic timer set for %lld seconds from now", getUpdateTrafficDataPeriodSec());
     err = esp_timer_start_periodic(updateTrafficTimer, getUpdateTrafficDataPeriodSec() * 1000000);
+    if (err != ESP_OK) return err;
+    ESP_LOGI(TAG, "brightness timer set for %lld seconds from now", getUpdateBrightnessPeriodSec());
+    err = esp_timer_start_periodic(updateBrightnessTimer, getUpdateBrightnessPeriodSec() * 1000000);
     if (err != ESP_OK) return err;
     
     /* set a timer that goes off at next job */
@@ -267,6 +283,15 @@ static void actionTimerCallback(void *arg)
 {
     ESP_LOGI(TAG, "Action timer expired...");
     if (sendAction(ACTION_QUERY_OTA) != ESP_OK)
+    {
+        ESP_LOGE(TAG, "failed to send action");
+    }
+}
+
+static void updateBrightnessTimerCallback(void *arg)
+{
+    ESP_LOGI(TAG, "Brightness timer expired...");
+    if (sendAction(ACTION_UPDATE_BRIGHTNESS) != ESP_OK)
     {
         ESP_LOGE(TAG, "failed to send action");
     }

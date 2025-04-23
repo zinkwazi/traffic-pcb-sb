@@ -12,6 +12,7 @@
 #include "utilities.h"
 
 STATIC_IF_NOT_TEST esp_err_t handleActionUpdateData(void);
+STATIC_IF_NOT_TEST esp_err_t handleActionUpdateBrightness(void);
 STATIC_IF_NOT_TEST esp_err_t handleActionQueryOTA(void);
 
 #endif /* ACTIONS_PI_H_4_19_25 */

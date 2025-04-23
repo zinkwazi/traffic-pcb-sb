@@ -25,6 +25,7 @@
 
 enum Action {
     ACTION_UPDATE_DATA,
+    ACTION_UPDATE_BRIGHTNESS,
     ACTION_QUERY_OTA,
 };
 
@@ -32,6 +33,7 @@ typedef enum Action Action;
 
 /* used by action task */
 int64_t getUpdateTrafficDataPeriodSec(void);
+int64_t getUpdateBrightnessPeriodSec(void);
 const time_t *getCheckOTAAvailableTimes(void);
 size_t getCheckOTAAvailableTimesSize(void);
 esp_err_t handleAction(Action action);

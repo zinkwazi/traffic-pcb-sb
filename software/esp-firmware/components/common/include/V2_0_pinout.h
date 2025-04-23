@@ -48,6 +48,10 @@
 #define SCL2_PIN         GPIO_NUM_18
 #define SDA2_PIN         GPIO_NUM_8
 
+/* Photoresistor pin */
+#define PHOTO_PIN        GPIO_NUM_4
+#define PHOTO_ADC_CHAN   (3)
+
 /* USB Pins */
 #define USB_MINUS        GPIO_NUM_19
 #define USB_PLUS         GPIO_NUM_20
