@@ -1,5 +1,5 @@
 # Traffic PCB SB
-This project is a decorative and interactive display piece that shows the current traffic in the greater Los Angeles area. It sources data from [TomTom's](https://www.tomtom.com) traffic APIs, which supplies real-time traffic data. Each LED corresponds to an OpenLR road segment and data is queried from TomTom when traffic is likely to change significantly: 12am, 7am, 8am, 9am, 10am, 11am, 12pm, 1pm, 2pm, 3pm, 4pm, 5pm, 6pm, 7pm, 9pm PST. The way data is retrieved is likely to improve in the future. The device uses an ESP32S3 to control LEDs and refreshes the display every 5 minutes, during which LED colors will update if a change in road speed occurs. Please
+This project is a decorative and interactive display piece that shows the current traffic in the greater Los Angeles area. It sources data from [TomTom's](https://www.tomtom.com) traffic APIs, which supplies real-time traffic data. Each LED corresponds to an OpenLR road segment and data is queried from TomTom every hour. The way data is retrieved is likely to improve in the future. The device uses an ESP32S3 to control LEDs and refreshes the display every 5 minutes, during which LED colors will update if a change in road speed occurs. Please
 reference the User Guide below to understand how to configure the device and interpret indicator lights. Enjoy!
 
 # Features
