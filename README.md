@@ -14,7 +14,7 @@ In order to start using your board, you must first configure it to connect to a 
 red if unsucessful.
 
 ### Board Anatomy
-![fullboardv1rev1](https://github.com/user-attachments/assets/be1016b3-02a1-47e9-b4da-ed9a18e2df38)
+![Screenshot 2025-04-24 090856](https://github.com/user-attachments/assets/5863596d-bd36-408d-bebf-51cfdbc5067a)
 
 In the lower left corner of the board is the control panel and above that is the direction panel. The three chips located throughout the board are LED matrix drivers which receive commands via I2C from the ESP32S3. The control panel contains the USB-C connector, which communicates with the ESP32S3 via UART at 115200 baud; the 'Update' button, which initiates an over the air update; the 'Restart' button, which reboots the ESP32S3; and status LED indicators. The direction panel contains the 'Toggle' button and LED indicators that show the current traffic direction being displayed — either Southeast or Northwest.
 
