@@ -120,10 +120,8 @@ STATIC_IF_NOT_TEST void vOTATask(void* pvParameters) {
     (void) queryOTAUpdateAvailable(&updateAvailable, &patchUpdate); // allow firmware updates even if this
                                                       // function fails in order to fix 
                                                       // potential issues in this function
-    ESP_LOGI(TAG, "returned");
     if (patchUpdate && updateAvailable)
     {
-        ESP_LOGI(TAG, "patch update");
         BaseType_t success = xTaskNotify(xTaskGetCurrentTaskHandle(), 0xFF, eSetBits);
         if (success != pdPASS)
         {
@@ -132,10 +130,8 @@ STATIC_IF_NOT_TEST void vOTATask(void* pvParameters) {
     }
     if (updateAvailable)
     {
-        ESP_LOGI(TAG, "update available");
         (void) indicateOTAAvailable(); // allow update away from bad firmware
     }
-    ESP_LOGI(TAG, "waiting for ota button");
     #else
     #error "Unsupported hardware version!"
     #endif
@@ -181,8 +177,6 @@ STATIC_IF_NOT_TEST void vOTATask(void* pvParameters) {
         vTaskDelete(NULL);
 #endif
     }
-
-    ESP_LOGE(TAG, "OTA Task is returning!");
     throwFatalError();
 }
 
@@ -219,7 +213,6 @@ esp_err_t queryOTAUpdateAvailable(bool *available, bool *patch)
     client = esp_http_client_init(&https_config);
     if (client == NULL)
     {
-        ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_init error");
         ret = ESP_FAIL;
         return ESP_FAIL; // no need to free memory
     }
@@ -232,7 +225,6 @@ esp_err_t queryOTAUpdateAvailable(bool *available, bool *patch)
         err = esp_http_client_open(client, 0);
         if (err != ESP_OK)
         {
-            ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_open err: %d", err);
             ret = ESP_FAIL;
             break;
         }
@@ -242,15 +234,13 @@ esp_err_t queryOTAUpdateAvailable(bool *available, bool *patch)
         } while (contentLength == -ESP_ERR_HTTP_EAGAIN);
         if (contentLength <= 0) // null-terminator
         {
-            ESP_LOGE(TAG, "queryOTAUpdateAvailable contentLength: %lld", contentLength);
             ret = ESP_FAIL;
             break;
         }
 
         int status = esp_http_client_get_status_code(client);
-        if (esp_http_client_get_status_code(client) != 200)
+        if (status != 200)
         {
-            ESP_LOGE(TAG, "queryOTAUpdateAvailable status code is %d", status);
             ret = ESP_FAIL;
             break;
         }
@@ -265,7 +255,6 @@ esp_err_t queryOTAUpdateAvailable(bool *available, bool *patch)
         if (err != ESP_OK)
         {
             *available = false;
-            ESP_LOGE(TAG, "failed to process OTA available file. err: %d", err);
         }
     }
     if (i == RETRY_CONNECT_OTA_AVAILABLE)
@@ -277,7 +266,6 @@ esp_err_t queryOTAUpdateAvailable(bool *available, bool *patch)
     err = esp_http_client_cleanup(client);
     if (err != ESP_OK)
     {
-        ESP_LOGE(TAG, "queryOTAUpdateAvailable esp_http_client_cleanup err: %d", err);
         throwFatalError(); // this is a memory leak, expose it directly
     }
     

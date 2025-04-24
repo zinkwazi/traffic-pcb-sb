@@ -23,6 +23,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "sdkconfig.h"
 
 #include "app_errors.h"
 
@@ -44,11 +45,29 @@ static esp_err_t initActions(void);
 static int64_t secsUntilNextAction(void);
 static esp_err_t sendAction(Action action);
 static void actionTimerCallback(void *arg);
-static void updateBrightnessTimerCallback(void *arg);
 static void updateDataTimerCallback(void *arg);
+
+#if CONFIG_HARDWARE_VERSION == 1
+/* features unsupported */
+#elif CONFIG_HARDWARE_VERSION == 2
+static void updateBrightnessTimerCallback(void *arg);
+#else
+#error "Unsupported hardware version!"
+#endif
 
 /* A queue on which actions will be sent to the action task */
 static QueueHandle_t sActionQueue = NULL; // holds Action objects
+
+static const esp_timer_create_args_t nextActionTimerCfg = {
+    .callback = actionTimerCallback,
+    .arg = NULL,
+    .dispatch_method = ESP_TIMER_TASK,
+    .name = "jobTimer",
+};
+
+static esp_timer_handle_t nextActionTimer = NULL;
+
+
 
 static const esp_timer_create_args_t updateTrafficTimerCfg = {
     .callback = updateDataTimerCallback,
@@ -59,6 +78,10 @@ static const esp_timer_create_args_t updateTrafficTimerCfg = {
 
 static esp_timer_handle_t updateTrafficTimer = NULL;
 
+#if CONFIG_HARDWARE_VERSION == 1
+/* no other static vars */
+#elif CONFIG_HARDWARE_VERSION == 2
+
 static const esp_timer_create_args_t updateBrightnessTimerCfg = {
     .callback = updateBrightnessTimerCallback,
     .arg = NULL,
@@ -68,14 +91,9 @@ static const esp_timer_create_args_t updateBrightnessTimerCfg = {
 
 static esp_timer_handle_t updateBrightnessTimer = NULL;
 
-static const esp_timer_create_args_t nextActionTimerCfg = {
-    .callback = actionTimerCallback,
-    .arg = NULL,
-    .dispatch_method = ESP_TIMER_TASK,
-    .name = "jobTimer",
-};
-
-static esp_timer_handle_t nextActionTimer = NULL;
+#else
+#error "Unsupported hardware version!"
+#endif
 
 /**
  * @brief Initializes the action task, which is implemented by vActionTask.
@@ -124,18 +142,32 @@ static void vActionTask(void *pvParams)
         Action currAction;
         success = xQueueReceive(sActionQueue, &currAction, portMAX_DELAY);
         if (success != pdTRUE) throwFatalError();
+
         /* handle action */
         (void) handleAction(currAction);
+
         /* restart action timer */
         if (currAction == ACTION_UPDATE_DATA) continue;
+#if CONFIG_HARDWARE_VERSION == 1
+        /* feature unsupported */
+#elif CONFIG_HARDWARE_VERSION == 2
         if (currAction == ACTION_UPDATE_BRIGHTNESS) continue;
-        
+#else
+#error "Unsupported hardware version!"   
+#endif
+
+        /* restart action timer */
         int64_t nextActionSecs = secsUntilNextAction();
+        if (nextActionSecs <= 0)
+        {
+            ESP_LOGW(TAG, "Got %lld seconds until next action.", nextActionSecs);
+            continue;
+        }
         ESP_LOGI(TAG, "action timer set for %lld seconds from now", nextActionSecs);
         err = esp_timer_start_once(nextActionTimer, nextActionSecs * 1000000);
         if (err != ESP_OK) throwFatalError();
     }
-    ESP_LOGE(TAG, "Action task is exiting!");
+    ESP_LOGW(TAG, "Action task is exiting!");
     throwFatalError();
 }
 
@@ -175,8 +207,16 @@ static esp_err_t initActions(void)
     /* initialize timers */
     err = esp_timer_create(&updateTrafficTimerCfg, &updateTrafficTimer);
     if (err != ESP_OK) return err;
+
+#if CONFIG_HARDWARE_VERSION == 1
+    /* feature unsupported */
+#elif CONFIG_HARDWARE_VERSION == 2
     err = esp_timer_create(&updateBrightnessTimerCfg, &updateBrightnessTimer);
     if (err != ESP_OK) return err;
+#else
+#error "Unsupported hardware version!"
+#endif
+
     err = esp_timer_create(&nextActionTimerCfg, &nextActionTimer);
     if (err != ESP_OK) return err;
 
@@ -184,12 +224,24 @@ static esp_err_t initActions(void)
     ESP_LOGI(TAG, "traffic timer set for %lld seconds from now", getUpdateTrafficDataPeriodSec());
     err = esp_timer_start_periodic(updateTrafficTimer, getUpdateTrafficDataPeriodSec() * 1000000);
     if (err != ESP_OK) return err;
+
+#if CONFIG_HARDWARE_VERSION == 1
+    /* feature unsupported */
+#elif CONFIG_HARDWARE_VERSION == 2
     ESP_LOGI(TAG, "brightness timer set for %lld seconds from now", getUpdateBrightnessPeriodSec());
     err = esp_timer_start_periodic(updateBrightnessTimer, getUpdateBrightnessPeriodSec() * 1000000);
     if (err != ESP_OK) return err;
-    
+#else
+#error "Unsupported hardware version!"
+#endif
+
     /* set a timer that goes off at next job */
     nextJobSecs = secsUntilNextAction();
+    if (nextJobSecs <= 0)
+    {
+        ESP_LOGW(TAG, "Got %lld seconds until next action.", nextJobSecs);
+        return ESP_OK;
+    }
     ESP_LOGI(TAG, "job timer set for %lld seconds from now", nextJobSecs);
     err = esp_timer_start_once(nextActionTimer, nextJobSecs * 1000000);
     if (err != ESP_OK) return err;
@@ -218,12 +270,12 @@ static int64_t secsUntilNextAction(void)
     /* get current time */
     if (time(&currTime) == -1)
     {
-        ESP_LOGE(TAG, "failed to get time");
+        ESP_LOGW(TAG, "failed to get time");
         return -1;
     }
     if (localtime_r(&currTime, &localTime) == NULL)
     {
-        ESP_LOGE(TAG, "failed to get current time of day");
+        ESP_LOGW(TAG, "failed to get current time of day");
         return -1;
     }
 
@@ -288,15 +340,6 @@ static void actionTimerCallback(void *arg)
     }
 }
 
-static void updateBrightnessTimerCallback(void *arg)
-{
-    ESP_LOGI(TAG, "Brightness timer expired...");
-    if (sendAction(ACTION_UPDATE_BRIGHTNESS) != ESP_OK)
-    {
-        ESP_LOGE(TAG, "failed to send action");
-    }
-}
-
 static void updateDataTimerCallback(void *arg)
 {
     ESP_LOGI(TAG, "Data timer expired...");
@@ -306,3 +349,17 @@ static void updateDataTimerCallback(void *arg)
     }
 }
 
+#if CONFIG_HARDWARE_VERSION == 1
+/* no other static functions */
+#elif CONFIG_HARDWARE_VERSION == 2
+static void updateBrightnessTimerCallback(void *arg)
+{
+    ESP_LOGI(TAG, "Brightness timer expired...");
+    if (sendAction(ACTION_UPDATE_BRIGHTNESS) != ESP_OK)
+    {
+        ESP_LOGE(TAG, "failed to send action");
+    }
+}
+#else
+#error "Unsupported hardware version!"
+#endif

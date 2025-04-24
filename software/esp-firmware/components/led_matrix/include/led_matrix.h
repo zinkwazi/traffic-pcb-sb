@@ -98,6 +98,7 @@ esp_err_t matInitialize(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPi
 #elif CONFIG_HARDWARE_VERSION == 2
 esp_err_t matInitializeBus1(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
 esp_err_t matInitializeBus2(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
+esp_err_t matSetGCCByAmbientLight(void);
 #else
 #error "Unsupported hardware version!"
 #endif

@@ -13,11 +13,13 @@
 
 #include "driver/i2c_master.h"
 #include "driver/i2c_types.h"
+#include "esp_adc/adc_oneshot.h"
 #include "esp_debug_helpers.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "hal/adc_types.h"
 #include "sdkconfig.h"
 
 #include "pinout.h"
@@ -28,7 +30,12 @@
 
 #define TAG "led_matrix"
 
+/* The time to wait for a response on an I2C bus */
 #define I2C_TIMEOUT_MS 100
+/* The time between sampling the photoresistor pin voltage during averaging */
+#define UPDATE_BRIGHTNESS_WAIT_MS 5
+/* the maximum ADC value expected from the photoresistor, which is absolute darkness*/
+#define MAX_BRIGHTNESS_LEVEL (4000)
 
 #if CONFIG_HARDWARE_VERSION == 1
 #define MAT1_ADDR 0b0110000
@@ -198,7 +205,14 @@ esp_err_t initLedMatrix(void)
     /* reset devices */
     err = matReset();
     if (err != ESP_OK) THROW_ERR(ESP_FAIL);
+
+#if CONFIG_HARDWARE_VERSION == 1
     err = matSetGlobalCurrentControl(CONFIG_GLOBAL_LED_CURRENT);
+#elif CONFIG_HARDWARE_VERSION == 2
+    err = matSetGCCByAmbientLight();
+#else
+#error "Unsupported hardware version!"
+#endif
     if (err != ESP_OK) THROW_ERR(ESP_FAIL);
     err = matSetOperatingMode(NORMAL_OPERATION);
     if (err != ESP_OK) THROW_ERR(ESP_FAIL);
@@ -549,6 +563,80 @@ esp_err_t matInitializeBus2(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t s
     if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
 
     return (esp_err_t) ESP_OK;
+}
+
+/**
+ * @brief Sets the global current control of each matrix based on the current
+ * ambient light level.
+ */
+esp_err_t matSetGCCByAmbientLight(void)
+{
+    esp_err_t err;
+    const int readingsLen = 5;
+    int readings[readingsLen]; // reading multiple times for averaging
+    readings[0] = 0;
+    readings[1] = 0;
+    readings[2] = 0;
+    readings[3] = 0;
+    readings[4] = 0;
+    int64_t ambientLevel;
+    uint8_t currentValue;
+
+    /* read ambient brightness level */
+    adc_oneshot_unit_handle_t adc_handle;
+    adc_oneshot_unit_init_cfg_t adc_cfg = {
+        .unit_id = ADC_UNIT_1, // contains GPIO4
+        .clk_src = 0, // default clock source
+        .ulp_mode = ADC_ULP_MODE_DISABLE,
+    };
+
+    err = adc_oneshot_new_unit(&adc_cfg, &adc_handle);
+    if (err != ESP_OK) THROW_ERR(err);
+
+    adc_oneshot_chan_cfg_t adc_chan_cfg = {
+        .atten = ADC_ATTEN_DB_0,
+        .bitwidth = ADC_BITWIDTH_DEFAULT,
+    };
+
+    err = adc_oneshot_config_channel(adc_handle, PHOTO_ADC_CHAN, &adc_chan_cfg);
+    if (err != ESP_OK)
+    {
+        (void) adc_oneshot_del_unit(adc_handle);
+        THROW_ERR(err);
+    }
+
+    for (int i = 0; i < readingsLen; i++)
+    {
+        err = adc_oneshot_read(adc_handle, PHOTO_ADC_CHAN, &(readings[i]));
+        if (err != ESP_OK)
+        {
+            (void) adc_oneshot_del_unit(adc_handle);
+            THROW_ERR(err);
+        }
+        vTaskDelay(pdMS_TO_TICKS(UPDATE_BRIGHTNESS_WAIT_MS));
+    }
+
+    ambientLevel = (readings[0] + readings[1] + readings[2] + readings[3] + readings[4]) / readingsLen;
+    ESP_LOGI(TAG, "ambient brightness level: %lld", ambientLevel);
+
+    /* clamp ambient level */
+    ambientLevel = (ambientLevel > MAX_BRIGHTNESS_LEVEL) ? MAX_BRIGHTNESS_LEVEL : ambientLevel;
+
+    ESP_LOGI(TAG, "brightness percent: %f", ((double) (MAX_BRIGHTNESS_LEVEL - ambientLevel) / MAX_BRIGHTNESS_LEVEL));
+    currentValue = (uint8_t) (CONFIG_GLOBAL_LED_CURRENT * ((double) (MAX_BRIGHTNESS_LEVEL - ambientLevel) / MAX_BRIGHTNESS_LEVEL));
+
+    /* clamp min current value */
+    currentValue = (currentValue < 0x10) ? 0x10 : currentValue;
+    err = matSetGlobalCurrentControl(currentValue);
+    if (err != ESP_OK)
+    {
+        (void) adc_oneshot_del_unit(adc_handle);
+        THROW_ERR(err);
+    }
+
+    err = adc_oneshot_del_unit(adc_handle);
+    if (err != ESP_OK) THROW_ERR(err);
+    return ESP_OK;
 }
 #else
 #error "Unsupported hardware version!"

@@ -11,13 +11,12 @@
 #include <stdint.h>
 #include <time.h>
 
-#include "esp_adc/adc_oneshot.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_http_client.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "hal/adc_types.h"
+#include "sdkconfig.h"
 
 #include "led_matrix.h"
 #include "utilities.h"
@@ -39,10 +38,6 @@
 
 /* The number of seconds between checking the ambient brightness level */
 #define UPDATE_BRIGHTNESS_PERIOD_SEC 2
-/* The time between sampling the photoresistor pin voltage during averaging */
-#define UPDATE_BRIGHTNESS_WAIT_MS 5
-/* the maximum ADC value expected from the photoresistor, which is absolute darkness*/
-#define MAX_BRIGHTNESS_LEVEL (4000)
 
 /* The times of day to check whether an OTA update is available */
 #define CHECK_OTA_AVAILABLE_TIMES_SIZE (sizeof(checkOTAAvailableTimes) / sizeof(time_t))
@@ -88,18 +83,26 @@ esp_err_t handleAction(Action action)
         case ACTION_UPDATE_DATA:
             ESP_LOGI(TAG, "Performing Action: ACTION_UPDATE_DATA");
             return handleActionUpdateData();
+#if CONFIG_HARDWARE_VERSION == 2
         case ACTION_UPDATE_BRIGHTNESS:
             ESP_LOGI(TAG, "Performing Action: ACTION_UPDATE_BRIGHTNESS");
             return handleActionUpdateBrightness();
         case ACTION_QUERY_OTA:
             ESP_LOGI(TAG, "Performing Action: ACTION_QUERY_OTA");
             return handleActionQueryOTA();
+#endif /* CONFIG_HARDWARE_VERSION */
         default:
             return ESP_ERR_NOT_FOUND;
     }
     return ESP_ERR_NOT_FOUND;
 }
 
+/**
+ * @brief Updates road segment data by querying all data files from the server.
+ * This happens here because it is a low priority action.
+ * 
+ * @returns ESP_OK if successful.
+ */
 STATIC_IF_NOT_TEST esp_err_t handleActionUpdateData(void)
 {
     esp_err_t err;
@@ -137,70 +140,24 @@ STATIC_IF_NOT_TEST esp_err_t handleActionUpdateData(void)
     return ESP_OK;
 }
 
+#if CONFIG_HARDWARE_VERSION == 1
+    /* feature unsupported */
+#elif CONFIG_HARDWARE_VERSION == 2
+
+/**
+ * @brief Updates global LED brightness based on the current ambient light
+ * level as determined by the photoresistor.
+ * 
+ * @requires:
+ * - led_matrix component initialized.
+ * 
+ * @returns ESP_OK if successful.
+ */
 STATIC_IF_NOT_TEST esp_err_t handleActionUpdateBrightness(void)
 {
-    esp_err_t err;
-    const int readingsLen = 5;
-    int readings[readingsLen]; // reading multiple times for averaging
-    readings[0] = 0;
-    readings[1] = 0;
-    readings[2] = 0;
-    readings[3] = 0;
-    readings[4] = 0;
-    int64_t ambientLevel;
-    uint8_t currentValue;
-
-    /* read ambient brightness level */
-    adc_oneshot_unit_handle_t adc_handle;
-    adc_oneshot_unit_init_cfg_t adc_cfg = {
-        .unit_id = ADC_UNIT_1, // contains GPIO4
-        .clk_src = 0, // default clock source
-        .ulp_mode = ADC_ULP_MODE_DISABLE,
-    };
-
-    err = adc_oneshot_new_unit(&adc_cfg, &adc_handle);
-    if (err != ESP_OK) THROW_ERR(err);
-
-    adc_oneshot_chan_cfg_t adc_chan_cfg = {
-        .atten = ADC_ATTEN_DB_0,
-        .bitwidth = ADC_BITWIDTH_DEFAULT,
-    };
-
-    err = adc_oneshot_config_channel(adc_handle, PHOTO_ADC_CHAN, &adc_chan_cfg);
-    if (err != ESP_OK)
-    {
-        (void) adc_oneshot_del_unit(adc_handle);
-        THROW_ERR(err);
-    }
-
-    for (int i = 0; i < readingsLen; i++)
-    {
-        err = adc_oneshot_read(adc_handle, PHOTO_ADC_CHAN, &(readings[i]));
-        if (err != ESP_OK)
-        {
-            (void) adc_oneshot_del_unit(adc_handle);
-            THROW_ERR(err);
-        }
-        vTaskDelay(pdMS_TO_TICKS(UPDATE_BRIGHTNESS_WAIT_MS));
-    }
-
-    ambientLevel = (readings[0] + readings[1] + readings[2] + readings[3] + readings[4]) / readingsLen;
-    ESP_LOGI(TAG, "ambient brightness level: %lld", ambientLevel);
-
-    /* clamp ambient level */
-    ambientLevel = (ambientLevel > MAX_BRIGHTNESS_LEVEL) ? MAX_BRIGHTNESS_LEVEL : ambientLevel;
-
-    ESP_LOGI(TAG, "brightness percent: %f", ((double) (MAX_BRIGHTNESS_LEVEL - ambientLevel) / MAX_BRIGHTNESS_LEVEL));
-    currentValue = (uint8_t) (CONFIG_GLOBAL_LED_CURRENT * ((double) (MAX_BRIGHTNESS_LEVEL - ambientLevel) / MAX_BRIGHTNESS_LEVEL));
-
-    /* clamp min current value */
-    currentValue = (currentValue < 0x10) ? 0x10 : currentValue;
-    err = matSetGlobalCurrentControl(currentValue);
-
-    err = adc_oneshot_del_unit(adc_handle);
-    if (err != ESP_OK) THROW_ERR(err);
-    return ESP_OK;
+    return matSetGCCByAmbientLight();
 }
+
 
 /**
  * @brief Queries the firmware version file to check whether an OTA update is
@@ -250,5 +207,7 @@ STATIC_IF_NOT_TEST esp_err_t handleActionQueryOTA(void)
     return ESP_OK;
 }
 
-
+#else
+#error "Unsupported hardware version!"
+#endif /* CONFIG_HARDWARE_VERSION */
 
