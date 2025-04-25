@@ -1,15 +1,19 @@
 /**
  * ota_config.h
  * 
- * Contains configuration macros for over-the-air updates.
+ * Contains macro configuration options for ota.c, with the option to
+ * use extern variables instead of macros by defining CONFIG_EXTERN_REFRESH_CONFIG.
+ * This replacement is useful for testing with different values of configuration
+ * macros while maintaining the benefits of static configuration options.
  */
 
 #ifndef OTA_CONFIG_H_3_27_25
 #define OTA_CONFIG_H_3_27_25
 
-/*******************************************/
-/*              DEFINITIONS                */
-/*******************************************/
+/**
+ * Default definitions of macros, which add a layer of indirection allowing
+ * extern macro replacements to be set to the value that the macro would be.
+ */
 
 #define DEF_RETRY_CONNECT_OTA_AVAILABLE (5)
 #define DEF_OTA_RECV_BUF_SIZE (128)
@@ -28,6 +32,10 @@
 
 #ifndef CONFIG_OTA_EXTERN_MACROS
 
+/**
+ * Macro configuration options, set by the default macros above.
+ */
+
 #define RETRY_CONNECT_OTA_AVAILABLE DEF_RETRY_CONNECT_OTA_AVAILABLE
 #define OTA_RECV_BUF_SIZE DEF_OTA_RECV_BUF_SIZE
 
@@ -44,6 +52,11 @@
 #define FIRMWARE_PATCH_KEY DEF_FIRMWARE_PATCH_KEY
 
 #else /* CONFIG_OTA_EXTERN_MACROS */
+
+/**
+ * Extern definitions of configuration options, which replace macros to allow
+ * testing with multiple values of macros.
+ */
 
 #include <stdint.h>
 

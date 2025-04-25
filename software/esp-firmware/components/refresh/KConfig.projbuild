@@ -6,4 +6,10 @@ menu "Refresh"
         help
             Whether to mock the refresh component or not.
 
+    config EXTERN_REFRESH_CONFIG
+        bool "Use Extern refresh_config Macros"
+        default false
+        help
+            Whether to use extern variables instead of macros in refresh_config.h
+
 endmenu

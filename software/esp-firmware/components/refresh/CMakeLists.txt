@@ -7,6 +7,10 @@ if (CONFIG_MOCK_REFRESH)
     list(APPEND include_dirs "mocks")
 endif ()
 
+if (CONFIG_EXTERN_REFRESH_CONFIG)
+    list(APPEND srcs "src/extern_refresh_config.c")
+endif ()
+
 # non-mockable source files
 list(APPEND srcs "src/traffic_data.c")
 

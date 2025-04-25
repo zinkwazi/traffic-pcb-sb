@@ -6,6 +6,7 @@
  */
 
 #include "refresh.h"
+#include "refresh_config.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -35,30 +36,6 @@
 #include "traffic_data.h"
 
 #define TAG "refresh"
-
-/* The URL of server data */
-#define URL_DATA_FILE_TYPE ".csv"
-
-#define URL_DATA_CURRENT_NORTH CONFIG_DATA_SERVER "/current_data/data_north_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
-#define URL_DATA_CURRENT_SOUTH CONFIG_DATA_SERVER "/current_data/data_south_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
-#define URL_DATA_TYPICAL_NORTH CONFIG_DATA_SERVER "/current_data/typical_north_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
-#define URL_DATA_TYPICAL_SOUTH CONFIG_DATA_SERVER "/current_data/typical_south_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
-
-/* TomTom HTTPS configuration */
-#define API_METHOD HTTP_METHOD_GET
-#define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
-
-#define API_RETRY_CONN_NUM 5
-
-#define MATRIX_RETRY_NUM 15
-
-#define DEFAULT_SCALE (0xFF)
-
-#ifdef CONFIG_SUPPORT_STROBING
-#define STROBE_LOW_SCALE (0x20)
-#define STROBE_STEP_HIGH (10)
-#define STROBE_STEP_LOW (10)
-#endif
 
 #if CONFIG_HARDWARE_VERSION == 1
 
