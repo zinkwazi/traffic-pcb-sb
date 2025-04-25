@@ -11,6 +11,7 @@
 
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_http_client.h"
 
 #define TAG "circBuffer"
 
@@ -167,6 +168,28 @@ circ_err_t circularBufferStore(CircularBuffer *buf, char *str, uint32_t len) {
     }
     return CIRC_OK;
 }
+
+// /**
+//  * @brief Reads at most maxLen bytes from the client using esp_http_client_read
+//  * and stores them in the circular buffer.
+//  * 
+//  * @param[in] buf The circular buffer to store read data in.
+//  * @param[in] client The client to read data from. This function does not
+//  * cleanup the client.
+//  * @param[in] maxLen The maximum number of bytes to read from the client. If 
+//  * UINT32_MAX, then enough bytes will be read to fill the buffer up to the
+//  * bookmark or until the client is empty.
+//  * 
+//  * @requires:
+//  * - client is initialized and esp_http_client_read can be called on it.
+//  * 
+//  * @returns ESP_OK if successful.
+//  * 
+//  */
+// circ_err_t circularBufferStoreFromClient(CircularBuffer *buf, esp_http_client_handle_t client, uint32_t maxLen)
+// {
+
+// }
 
 /**
  * @brief Creates a bookmark from which circularBufferReadFromMark can be

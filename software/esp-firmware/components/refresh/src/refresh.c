@@ -38,6 +38,7 @@
 
 /* The URL of server data */
 #define URL_DATA_FILE_TYPE ".csv"
+
 #define URL_DATA_CURRENT_NORTH CONFIG_DATA_SERVER "/current_data/data_north_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
 #define URL_DATA_CURRENT_SOUTH CONFIG_DATA_SERVER "/current_data/data_south_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
 #define URL_DATA_TYPICAL_NORTH CONFIG_DATA_SERVER "/current_data/typical_north_" SERVER_VERSION_STR URL_DATA_FILE_TYPE
@@ -206,7 +207,7 @@ esp_http_client_handle_t initHttpClient(void)
  *          ESP_ERR_INVALID_ARG if invalid argument.
  *          ESP_FAIL if something unexpected occurred.
  */
-esp_err_t refreshData(LEDData data[static MAX_NUM_LEDS_REG], esp_http_client_handle_t client, Direction dir, SpeedCategory category)
+esp_err_t refreshData(LEDData data[], esp_http_client_handle_t client, Direction dir, SpeedCategory category)
 {
     esp_err_t err;
     char *url;

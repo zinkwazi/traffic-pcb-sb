@@ -30,11 +30,11 @@ enum UpdateType {
 typedef enum UpdateType UpdateType;
 
 struct VersionInfo {
-    uint8_t hardwareVer;
-    uint8_t revisionVer;
-    uint8_t majorVer;
-    uint8_t minorVer;
-    uint8_t patchVer;
+    uint32_t hardwareVer;
+    uint32_t revisionVer;
+    uint32_t majorVer;
+    uint32_t minorVer;
+    uint32_t patchVer;
 };
 
 typedef struct VersionInfo VersionInfo;

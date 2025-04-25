@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "esp_crt_bundle.h"
 #include "esp_err.h"
@@ -41,12 +42,6 @@ static TaskHandle_t otaTaskHandle = NULL;
 
 /* mocking variables */
 
-static const char *upgradeVersionURL;
-static uint8_t hardVer;
-static uint8_t hardRev;
-static uint8_t majorVer;
-static uint8_t minorVer;
-static uint8_t patchVer;
 static SemaphoreHandle_t performedUpdateSema;
 static bool testUpdateWillFail;
 
@@ -103,10 +98,6 @@ esp_err_t createOTATask(TaskHandle_t *handle) {
  *                     remain valid through the lifetime of the task.
  */
 STATIC_IF_NOT_TEST void vOTATask(void* pvParameters) {
-    const esp_http_client_config_t https_config = {
-        .url = FIRMWARE_UPGRADE_URL,
-        .crt_bundle_attach = esp_crt_bundle_attach,
-    };
     esp_err_t err;
 
     /* query most recent server firmware version and indicate if an update is available.
@@ -148,6 +139,11 @@ STATIC_IF_NOT_TEST void vOTATask(void* pvParameters) {
         (void) indicateOTAUpdate(); // allow update away from bad firmware
         
 #ifdef CONFIG_DISABLE_TESTING_FEATURES
+        const esp_http_client_config_t https_config = {
+            .url = FIRMWARE_UPGRADE_URL,
+            .crt_bundle_attach = esp_crt_bundle_attach,
+        };
+
         esp_https_ota_config_t ota_config = {
             .http_config = &https_config,
         };
@@ -196,9 +192,9 @@ STATIC_IF_NOT_TEST void vOTATask(void* pvParameters) {
  */
 esp_err_t queryOTAUpdateAvailable(bool *available, bool *patch)
 {
-    ESP_LOGI(TAG, "Upgrade Version URL: %s", getUpgradeVersionURL());
+    ESP_LOGI(TAG, "Upgrade Version URL: %s", FIRMWARE_UPGRADE_VERSION_URL);
     const esp_http_client_config_t https_config = {
-        .url = getUpgradeVersionURL(),
+        .url = FIRMWARE_UPGRADE_VERSION_URL,
         .crt_bundle_attach = esp_crt_bundle_attach,
     };
     esp_err_t err, ret;
@@ -221,7 +217,7 @@ esp_err_t queryOTAUpdateAvailable(bool *available, bool *patch)
     for (i = 0; i < RETRY_CONNECT_OTA_AVAILABLE; i++)
     {
         /* connect to server and query file */        
-        ESP_LOGI(TAG, "Checking server firmware version: %s", getUpgradeVersionURL());
+        ESP_LOGI(TAG, "Checking server firmware version: %s", FIRMWARE_UPGRADE_VERSION_URL);
         err = esp_http_client_open(client, 0);
         if (err != ESP_OK)
         {
@@ -296,6 +292,7 @@ STATIC_IF_NOT_TEST esp_err_t versionFromKey(VersionType *verType,
     int currNdx = 0;
     int keyStartNdx = 0; // the beginning of the key, inclusive
     int keyEndNdx = 0; // the end of the key, exclusive
+    int strSize;
 
     /* input guards */
     if (verType == NULL) return ESP_ERR_INVALID_ARG;
@@ -332,31 +329,56 @@ STATIC_IF_NOT_TEST esp_err_t versionFromKey(VersionType *verType,
 
     /* parse and match string */
     *verType = VER_TYPE_UNKNOWN;
-    if (keyEndNdx - keyStartNdx == sizeof(HARDWARE_VERSION_KEY) - 1 &&
-        0 == strncmp(&str[keyStartNdx], HARDWARE_VERSION_KEY, keyEndNdx - keyStartNdx))
+#if CONFIG_OTA_EXTERN_MACROS
+    strSize = (int) strlen(HARDWARE_VERSION_KEY);
+#else
+    strSize = (int) sizeof(HARDWARE_VERSION_KEY) - 1;
+#endif /* CONFIG_OTA_EXTERN_MACROS */
+    if (keyEndNdx - keyStartNdx == strSize &&
+    0 == strncmp(&str[keyStartNdx], HARDWARE_VERSION_KEY, keyEndNdx - keyStartNdx))
     {
         *verType = HARDWARE;
     }
 
-    if (keyEndNdx - keyStartNdx == sizeof(HARDWARE_REVISION_KEY) - 1 &&
+#if CONFIG_OTA_EXTERN_MACROS
+    strSize = (int) strlen(HARDWARE_REVISION_KEY);
+#else
+    strSize = (int) sizeof(HARDWARE_REVISION_KEY) - 1;
+#endif /* CONFIG_OTA_EXTERN_MACROS */
+    if (keyEndNdx - keyStartNdx == strSize &&
         0 == strncmp(&str[keyStartNdx], HARDWARE_REVISION_KEY, keyEndNdx - keyStartNdx))
     {
         *verType = REVISION;
     }
 
-    if (keyEndNdx - keyStartNdx == sizeof(FIRMWARE_MAJOR_KEY) - 1 &&
+#if CONFIG_OTA_EXTERN_MACROS
+    strSize = (int) strlen(FIRMWARE_MAJOR_KEY);
+#else
+    strSize = (int) sizeof(FIRMWARE_MAJOR_KEY) - 1;
+#endif /* CONFIG_OTA_EXTERN_MACROS */
+    if (keyEndNdx - keyStartNdx == strSize &&
         0 == strncmp(&str[keyStartNdx], FIRMWARE_MAJOR_KEY, keyEndNdx - keyStartNdx))
     {
         *verType = MAJOR;
     }
 
-    if (keyEndNdx - keyStartNdx == sizeof(FIRMWARE_MINOR_KEY) - 1 &&
+#if CONFIG_OTA_EXTERN_MACROS
+    strSize = (int) strlen(FIRMWARE_MINOR_KEY);
+#else
+    strSize = (int) sizeof(FIRMWARE_MINOR_KEY) - 1;
+#endif /* CONFIG_OTA_EXTERN_MACROS */
+    if (keyEndNdx - keyStartNdx == strSize &&
         0 == strncmp(&str[keyStartNdx], FIRMWARE_MINOR_KEY, keyEndNdx - keyStartNdx))
     {
         *verType = MINOR;
     }
 
-    if (keyEndNdx - keyStartNdx == sizeof(FIRMWARE_PATCH_KEY) - 1 &&
+#if CONFIG_OTA_EXTERN_MACROS
+    strSize = (int) strlen(FIRMWARE_PATCH_KEY);
+#else
+    strSize = (int) sizeof(FIRMWARE_PATCH_KEY) - 1;
+#endif /* CONFIG_OTA_EXTERN_MACROS */
+    if (keyEndNdx - keyStartNdx == strSize &&
         0 == strncmp(&str[keyStartNdx], FIRMWARE_PATCH_KEY, keyEndNdx - keyStartNdx))
     {
         *verType = PATCH;
@@ -381,21 +403,21 @@ STATIC_IF_NOT_TEST esp_err_t versionFromKey(VersionType *verType,
 STATIC_IF_NOT_TEST UpdateType compareVersions(VersionInfo serverVer)
 {
 
-    ESP_LOGI(TAG, "server firmware image is V%d_%d v%d.%d.%d", serverVer.hardwareVer, serverVer.revisionVer, serverVer.majorVer, serverVer.minorVer, serverVer.patchVer);
-    ESP_LOGI(TAG, "device firmware image is V%d_%d v%d.%d.%d", getHardwareVersion(), getHardwareRevision(), getFirmwareMajorVersion(), getFirmwareMinorVersion(), getFirmwarePatchVersion());
+    ESP_LOGI(TAG, "server firmware image is V%lu_%lu v%lu.%lu.%lu", serverVer.hardwareVer, serverVer.revisionVer, serverVer.majorVer, serverVer.minorVer, serverVer.patchVer);
+    ESP_LOGI(TAG, "device firmware image is V%lu_%lu v%lu.%lu.%lu", OTA_HARDWARE_VERSION, OTA_REVISION_VERSION, OTA_MAJOR_VERSION, OTA_MINOR_VERSION, OTA_PATCH_VERSION);
 
     /* compare hadware version */
-    if (serverVer.hardwareVer != getHardwareVersion()) return UPDATE_NONE;
-    if (serverVer.revisionVer != getHardwareRevision()) return UPDATE_NONE;
+    if (serverVer.hardwareVer != OTA_HARDWARE_VERSION) return UPDATE_NONE;
+    if (serverVer.revisionVer != OTA_REVISION_VERSION) return UPDATE_NONE;
     /* compare firmware version */
-    if (serverVer.majorVer > getFirmwareMajorVersion()) return UPDATE_MAJOR;
-    if (serverVer.majorVer < getFirmwareMajorVersion()) return UPDATE_NONE;
+    if (serverVer.majorVer > OTA_MAJOR_VERSION) return UPDATE_MAJOR;
+    if (serverVer.majorVer < OTA_MAJOR_VERSION) return UPDATE_NONE;
 
-    if (serverVer.minorVer > getFirmwareMinorVersion()) return UPDATE_MINOR;
-    if (serverVer.minorVer < getFirmwareMinorVersion()) return UPDATE_NONE;
+    if (serverVer.minorVer > OTA_MINOR_VERSION) return UPDATE_MINOR;
+    if (serverVer.minorVer < OTA_MINOR_VERSION) return UPDATE_NONE;
 
-    if (serverVer.patchVer > getFirmwarePatchVersion()) return UPDATE_PATCH;
-    if (serverVer.patchVer < getFirmwarePatchVersion()) return UPDATE_NONE;
+    if (serverVer.patchVer > OTA_PATCH_VERSION) return UPDATE_PATCH;
+    if (serverVer.patchVer < OTA_PATCH_VERSION) return UPDATE_NONE;
     return UPDATE_NONE;
 }
 
@@ -711,35 +733,18 @@ STATIC_IF_NOT_TEST esp_err_t processOTAAvailableFile(bool *available,
 
 #ifndef CONFIG_DISABLE_TESTING_FEATURES
 
-const char *getUpgradeVersionURL(void) { return upgradeVersionURL; }
-uint8_t getHardwareVersion(void) { return hardVer; }
-uint8_t getHardwareRevision(void) { return hardRev; }
-uint8_t getFirmwareMajorVersion(void) { return majorVer; }
-uint8_t getFirmwareMinorVersion(void) { return minorVer; }
-uint8_t getFirmwarePatchVersion(void) { return patchVer; }
 SemaphoreHandle_t getPerformedUpdateSema(void) { return performedUpdateSema; }
 
-void setOTATask(TaskHandle_t handle) { otaTaskHandle = handle; }
-void setUpgradeVersionURL(const char *url) { upgradeVersionURL = url; }
-void setHardwareVersion(uint8_t version) { hardVer = version; }
-void setHardwareRevision(uint8_t version) { hardRev = version; }
-void setFirmwareMajorVersion(uint8_t version) { majorVer = version; }
-void setFirmwareMinorVersion(uint8_t version) { minorVer = version; }
-void setFirmwarePatchVersion(uint8_t version) { patchVer = version; }
 esp_err_t initPerformedUpdateSema(void)
 {
     performedUpdateSema = xSemaphoreCreateBinary();
     return (performedUpdateSema != NULL) ? ESP_OK : ESP_FAIL;
 }
+
 void setUpdateFails(bool fails) { testUpdateWillFail = fails; }
 
 #else
 
-static const char *getUpgradeVersionURL(void) { return FIRMWARE_UPGRADE_VERSION_URL; }
-static uint8_t getHardwareVersion() { return CONFIG_HARDWARE_VERSION; }
-static uint8_t getHardwareRevision() { return CONFIG_HARDWARE_REVISION; }
-static uint8_t getFirmwareMajorVersion() { return CONFIG_FIRMWARE_MAJOR_VERSION; }
-static uint8_t getFirmwareMinorVersion() { return CONFIG_FIRMWARE_MINOR_VERSION; }
-static uint8_t getFirmwarePatchVersion() { return CONFIG_FIRMWARE_PATCH_VERSION; }
+/* none */
 
 #endif /* CONFIG_DISABLE_TESTING_FEATURES */

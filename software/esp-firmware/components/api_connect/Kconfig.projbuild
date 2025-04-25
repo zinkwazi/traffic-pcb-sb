@@ -21,4 +21,10 @@ menu "API Connect"
             Whether the TomTom component should simulate API
             data or actually make API calls using the provided API key.
 
+    config MOCK_API_CONNECT
+        bool "Mock api_connect Component"
+        default false
+        help
+            Whether to mock the api_connect component or not.
+
 endmenu

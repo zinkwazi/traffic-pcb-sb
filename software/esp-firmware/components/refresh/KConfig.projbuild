@@ -1,0 +1,9 @@
+menu "Refresh"
+
+    config MOCK_REFRESH
+        bool "Mock Refresh Component"
+        default false
+        help
+            Whether to mock the refresh component or not.
+
+endmenu

@@ -1,0 +1,11 @@
+menu "OTA"
+
+    config OTA_EXTERN_MACROS
+        bool "OTA Extern Macros"
+        default false
+        help 
+            Whether to use extern variables instead of macro definitions for
+            configuration options. This allows runtime modification of these
+            definitions during testing, while reducing overhead in production.
+
+endmenu

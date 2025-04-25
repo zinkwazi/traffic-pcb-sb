@@ -1,6 +1,17 @@
-idf_component_register(SRCS "src/refresh.c"
-                               "src/traffic_data.c"
-                       INCLUDE_DIRS "include"
+
+set(srcs "src/refresh.c")
+set(include_dirs "include")
+
+if (CONFIG_MOCK_REFRESH)
+    set(srcs "mocks/Mockrefresh.c")
+    list(APPEND include_dirs "mocks")
+endif ()
+
+# non-mockable source files
+list(APPEND srcs "src/traffic_data.c")
+
+idf_component_register(SRCS ${srcs}
+                       INCLUDE_DIRS ${include_dirs}
                        REQUIRES common
                                 animations
                                 api_connect
@@ -8,4 +19,5 @@ idf_component_register(SRCS "src/refresh.c"
                                 app_nvs
                                 led_matrix
                                 esp_http_client
-                                mbedtls)
+                                mbedtls
+                                cmock)

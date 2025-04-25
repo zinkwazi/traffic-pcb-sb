@@ -1,2 +1,8 @@
+# macro extern definitions
+CONFIG_OTA_EXTERN_MACROS=y
+CONFIG_UTILS_EXTERN_MACROS=y
+
 # list of mocked components for ota unit tests
 CONFIG_MOCK_INDICATORS=y
+CONFIG_MOCK_APP_ERRORS=y
+CONFIG_MOCK_REFRESH=y # to avoid util extern macro conflicts

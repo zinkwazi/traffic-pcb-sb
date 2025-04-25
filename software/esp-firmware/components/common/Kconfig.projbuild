@@ -181,5 +181,12 @@ menu "Main Application"
             when testing. I have no idea why, nor how to change it, but it is
             actually quite useful here because it is on by default for regular
             builds and off for testing!
+
+    config UTILS_EXTERN_MACROS
+        bool "Utils Extern Macros"
+        default false
+        help
+            Whether utilities.h macros should be extern variables or not, which
+            is useful for modifying macro values during testing.
         
 endmenu
