@@ -18,6 +18,9 @@
 #include "esp_log.h"
 #include "unity.h"
 
+#include "app_err.h"
+#include "circular_buffer.h"
+
 #define RETRY_NUM 5
 
 #define TAG "test"
@@ -58,7 +61,6 @@ TEST_CASE("readServerSpeedDataPreinit_smallFile", "[api_connect]")
 {
     const char *URL = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/readServerSpeedDataPreinit_smallFile.csv";
     esp_err_t err;
-    circ_err_t circ_err;
     CircularBuffer circBuf;
     uint32_t ledSpeedsLen = 5;
     LEDData ledSpeeds[ledSpeedsLen];
@@ -74,14 +76,14 @@ TEST_CASE("readServerSpeedDataPreinit_smallFile", "[api_connect]")
     err = getNextResponseBlock(buffer, &outputLength, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     
-    circ_err = circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
+    err = circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    circ_err = circularBufferStore(&circBuf, buffer, (uint32_t) outputLength);
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
+    err = circularBufferStore(&circBuf, buffer, (uint32_t) outputLength);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    circ_err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
+    err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
 
     err = readServerSpeedDataPreinit(&circBuf, ledSpeeds, ledSpeedsLen, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -99,7 +101,6 @@ TEST_CASE("readServerSpeedDataPreinit_typical", "[api_connect]")
 {
     const char *URL = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
     esp_err_t err;
-    circ_err_t circ_err;
     CircularBuffer circBuf;
     uint32_t ledSpeedsLen = 326;
     int64_t contentLength;
@@ -115,14 +116,14 @@ TEST_CASE("readServerSpeedDataPreinit_typical", "[api_connect]")
     err = getNextResponseBlock(buffer, &outputLength, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     
-    circ_err = circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
+    err = circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    circ_err = circularBufferStore(&circBuf, buffer, (uint32_t) outputLength);
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
+    err = circularBufferStore(&circBuf, buffer, (uint32_t) outputLength);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    circ_err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
+    err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
 
     err = readServerSpeedDataPreinit(&circBuf, ledSpeeds, ledSpeedsLen, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
@@ -140,7 +141,6 @@ TEST_CASE("readServerSpeedDataPreinit_memoryCorruption", "[api_connect]")
 {
     const char *URL = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
     esp_err_t err;
-    circ_err_t circ_err;
     CircularBuffer circBuf;
     uint32_t ledSpeedsLen = 5;
     int64_t contentLength;
@@ -156,14 +156,14 @@ TEST_CASE("readServerSpeedDataPreinit_memoryCorruption", "[api_connect]")
     err = getNextResponseBlock(buffer, &outputLength, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     
-    circ_err = circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
+    err = circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    circ_err = circularBufferStore(&circBuf, buffer, (uint32_t) outputLength);
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
+    err = circularBufferStore(&circBuf, buffer, (uint32_t) outputLength);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    circ_err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
+    err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
 
     err = readServerSpeedDataPreinit(&circBuf, ledSpeeds, ledSpeedsLen, client);
     TEST_ASSERT_EQUAL(ESP_OK, err);

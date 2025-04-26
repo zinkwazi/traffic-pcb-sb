@@ -11,6 +11,7 @@ list(APPEND srcs "src/wifi.c")
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        REQUIRES common
+                                circular_buffer
                                 app_errors
                                 indicators
                                 esp_wifi

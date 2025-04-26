@@ -144,7 +144,7 @@ esp_err_t getNextResponseBlock(char *output,
  * 
  * @returns ESP_OK if successful.
  *          ESP_ERR_INVALID_ARG if invalid arguments.
- *          CIRC_UNINITIALIZED if circBuf is uninitialized.
+ *          APP_ERR_UNINITIALIZED if circBuf is uninitialized.
  *          ESP_ERR_NOT_FOUND if no data was found.
  *          ESP_ERR_INVALID_RESPONSE if the server returned -1 speed.
  *          ESP_FAIL otherwise and the circular buffer mark is unmodified,
@@ -155,7 +155,7 @@ esp_err_t nextCSVEntryFromMark(LEDData *data,
                                char *buf, 
                                uint32_t bufSize)
 {
-    circ_err_t circ_err;
+    esp_err_t err;
     int bufferLen = 0;
     int bytesRead = 0;
     int commaNdx = 0;
@@ -170,8 +170,8 @@ esp_err_t nextCSVEntryFromMark(LEDData *data,
 
     /* retrieve data from circular buffer */
     bufferLen = circularBufferReadFromMark(circBuf, buf, bufSize - 1);
-    if (bufferLen < 0) return (esp_err_t) bufferLen; // bufferLen is an error 
-                                                     // code if faiure
+    if (bufferLen < 0) return (esp_err_t) -bufferLen; // -bufferLen is an error 
+                                                      // code if faiure
     /* parse CSV data from linear buffer */
     int i = 0;
     if (buf[i] == '\n')
@@ -212,8 +212,8 @@ esp_err_t nextCSVEntryFromMark(LEDData *data,
     if (entrySpeed == -INT64_MAX) return ESP_ERR_NOT_FOUND;
 
     /* remark circular buffer and return data */
-    circ_err = circularBufferMark(circBuf, bytesRead, FROM_PREV_MARK);
-    if (circ_err != CIRC_OK) return ESP_FAIL;
+    err = circularBufferMark(circBuf, bytesRead, FROM_PREV_MARK);
+    if (err != ESP_OK) return ESP_FAIL;
 
     data->ledNum = entryLEDNum;
     data->speed = entrySpeed;
@@ -253,7 +253,6 @@ esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf,
                                      uint32_t ledSpeedsLen, 
                                      esp_http_client_handle_t client)
 {
-    circ_err_t circ_err;
     esp_err_t err;
     char buffer[RESPONSE_BLOCK_SIZE];
     int len;
@@ -292,8 +291,8 @@ esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf,
         if (err == ESP_ERR_NOT_FOUND) return ESP_OK; // only success exit case
         if (err != ESP_OK) return ESP_FAIL;
 
-        circ_err = circularBufferStore(circBuf, buffer, (uint32_t) len);
-        if (circ_err != CIRC_OK) return ESP_FAIL;
+        err = circularBufferStore(circBuf, buffer, (uint32_t) len);
+        if (err != ESP_OK) return ESP_FAIL;
 
     } while (len > 0);
 
@@ -429,7 +428,6 @@ esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[],
     char metadata[META_SIZE];
     char circBufBacking[CIRC_BUF_SIZE];
     esp_err_t err;
-    circ_err_t circ_err;
     CircularBuffer circBuf;
     int64_t contentLen;
     int blockLen;
@@ -487,30 +485,30 @@ esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[],
         }
 
         /* load circular buffer with the rest of the data */
-        circ_err = circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
-        if (circ_err != CIRC_OK) {
-            ESP_LOGW(TAG, "circularBufferInit failed: err: %d", circ_err);
-            return (esp_err_t) circ_err;
+        err = circularBufferInit(&circBuf, circBufBacking, CIRC_BUF_SIZE);
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "circularBufferInit failed: err: %d", err);
+            return err;
         }
 
         len = blockLen - (dataStart - block);
         if (len > 0)
         {
-            circ_err = circularBufferStore(&circBuf, dataStart, len);
+            err = circularBufferStore(&circBuf, dataStart, len);
         } else
         {
             /* nothing leftover, load a '\n' into buffer */
-            circ_err = circularBufferStore(&circBuf, "\n", 1);
+            err = circularBufferStore(&circBuf, "\n", 1);
         }
-        if (circ_err != CIRC_OK) {
-            ESP_LOGW(TAG, "circularBufferStore failed: err: %d", circ_err);
-            return (esp_err_t) circ_err;
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "circularBufferStore failed: err: %d", err);
+            return err;
         }
 
-        circ_err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
-        if (circ_err != CIRC_OK) {
-            ESP_LOGW(TAG, "circularBufferMark failed: err: %d", circ_err);
-            return (esp_err_t) circ_err;
+        err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "circularBufferMark failed: err: %d", err);
+            return err;
         }
         
         /* parse CSV data from preinitialized circular buffer */

@@ -7,6 +7,7 @@ endif()
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS "include"
                        REQUIRES common
+                                circular_buffer
                                 api_connect
                                 app_errors
                                 indicators

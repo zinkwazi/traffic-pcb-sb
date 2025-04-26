@@ -5,6 +5,7 @@
  */
 
 #include "circular_buffer.h"
+#include "circular_buffer_pi.h" // contains static declarations
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -13,92 +14,33 @@
 #include "esp_log.h"
 #include "esp_http_client.h"
 
+#include "app_err.h"
+#include "utilities.h"
+
 #define TAG "circBuffer"
 
 /**
- * @brief Calculates (a - b) (mod N).
- * 
- * @note C does not behave as expected with the naive % operator. This function
- * takes care of issues arising from negative values with the % operator and
- * from intermediate values not being representable by a uint32_t.
- * 
- * @param[in] a additive operand.
- * @param[in] b subtractive operand.
- * @param[in] N The modulus, which should not be 0.
- * 
- * @returns Result of (a - b) (mod N) if successful.
- *          UINT32_MAX if N is 0; Note that UINT32_MAX is not a possible
- *          return value in normal operation because N is capped by UINT32_MAX
- *          and the modular arithmetic cannot result in values of N.
- */
-uint32_t modularSubtraction(uint32_t a, uint32_t b, uint32_t N) {
-    int64_t val64;
-    /* input guards */
-    if (N == 0) {
-        return UINT32_MAX;
-    }
-    /* calculate value */
-    val64 = ((int64_t) a) - ((int64_t) b); // careful with uint32_t
-    val64 = val64 % ((int64_t) N); // will be negative if val64 < 0
-    if (val64 < 0) {
-        // negative operand in % does not follow expected mod result
-        val64 = N + val64;
-    }
-    return (uint32_t) val64; // val64 fits in uint32_t by % backingSize
-}
-
-/**
- * @brief Calculates (a + b) (mod N).
- * 
- * @note C does not behave as expected with the naive % operator. This function
- * takes care of issues arising from negative values with the % operator and
- * from intermediate values not being representable by a uint32_t.
- * 
- * @param[in] a additive operand.
- * @param[in] b additive operand.
- * @param[in] N The modulus, which should not be 0.
- * 
- * @returns Result of (a + b) (mod N) if successful.
- *          UINT32_MAX if N is 0; Note that UINT32_MAX is not a possible
- *          return value in normal operation because N is capped by UINT32_MAX
- *          and the modular arithmetic cannot result in values of N.
- */
-uint32_t modularAddition(uint32_t a, uint32_t b, uint32_t N) {
-    int64_t val64;
-    /* input guards */
-    if (N == 0) {
-        return UINT32_MAX;
-    }
-    /* calculate value */
-    val64 = ((int64_t) a) + ((int64_t) b); // careful with uint32_t
-    val64 = val64 % ((int64_t) N); // result cannot be negative bc addition
-    return (uint32_t) val64; // val64 fits in uint32_t by % backingSize
-}
-
-/**
  * @brief Initializes the circular buffer to use backing (of length len) as the
- *        datastructure's underlying array.
+ * datastructure's underlying array.
  * 
  * @param[in] buf The circular buffer being initialized.
  * @param[in] backing The underlying array to use in the data structure.
  * @param[in] len The length of the backing array.
  * 
- * @returns CIRC_OK if successful, otherwise CIRC_INVALID_ARG.
+ * @returns ESP_OK if successful.
+ * ESP_ERR_INVALID_ARG if invalid arguments.
  */
-circ_err_t circularBufferInit(CircularBuffer *buf, char* backing, uint32_t len) {
-    if (buf == NULL || 
-        backing == NULL || 
-        len == 0) 
-    {
-        return CIRC_INVALID_ARG;
-    }
+esp_err_t circularBufferInit(CircularBuffer *buf, char* backing, uint32_t len) {
+    if (buf == NULL) return ESP_ERR_INVALID_ARG;
+    if (backing == NULL) return ESP_ERR_INVALID_ARG;
+    if (len == 0) return ESP_ERR_INVALID_ARG;
 
     buf->backing = backing;
     buf->backingSize = len;
     buf->end = 0;
     buf->len = 0;
     buf->mark = UINT32_MAX;
-    return CIRC_OK;
+    return ESP_OK;
 }
 
 /**
@@ -107,34 +49,25 @@ circ_err_t circularBufferInit(CircularBuffer *buf, char* backing, uint32_t len) 
  * @param[in] buf The circular buffer to place elements into.
  * @param[in] str The location to retrieve elements from.
  * @param[in] len The number of elements to retrieve from str; must not be
- *        greater than the size of the buffer.
+ * greater than the size of the buffer.
  * 
- * @returns CIRC_OK if successful.
- *          CIRC_LOST_MARK if successful but the mark was overwritten.
- *          CIRC_INVALID_ARG if invalid argument.
- *          CIRC_UNINITIALIZED if buf is uninitialized or was illegally modified.
- *          CIRC_INVALID_SIZE if len is larger than the size of the buffer.
- *          
+ * @returns ESP_OK if successful.
+ * ESP_ERR_INVALID_ARG if invalid arguments.
+ * APP_ERR_UNINITIALIZED if circular buffer is uninitialized.
+ * ESP_ERR_INVALID_SIZE if len is larger than the buffer size.  
  */
-circ_err_t circularBufferStore(CircularBuffer *buf, char *str, uint32_t len) {
+esp_err_t circularBufferStore(CircularBuffer *buf, char *str, uint32_t len) {
     uint64_t len64;
     uint32_t curr, endPrime;
     bool lostMark;
+
     /* input guards */
-    if (buf == NULL ||
-        str == NULL ||
-        len == 0) 
-    {
-        return CIRC_INVALID_ARG;
-    }
-    if (buf->backing == NULL)
-    {
-        return CIRC_UNINITIALIZED;
-    }
-    if (len > buf->backingSize)
-    {
-        return CIRC_INVALID_SIZE;
-    }
+    if (buf == NULL) return ESP_ERR_INVALID_ARG;
+    if (str == NULL) return ESP_ERR_INVALID_ARG;
+    if (len == 0) return ESP_ERR_INVALID_ARG;
+    if (buf->backing == NULL) return APP_ERR_UNINITIALIZED;
+    if (len > buf->backingSize) return ESP_ERR_INVALID_SIZE;
+
     /* check for bookmark destruction */
     lostMark = false;
     if (buf->mark != UINT32_MAX) {
@@ -151,7 +84,7 @@ circ_err_t circularBufferStore(CircularBuffer *buf, char *str, uint32_t len) {
         buf->backing[buf->end] = str[curr];
         buf->end = modularAddition(buf->end, 1, buf->backingSize);
         if (buf->end == UINT32_MAX) {
-            return CIRC_UNINITIALIZED;
+            return APP_ERR_UNINITIALIZED;
         }
     }
     /* update and clamp buffer length */
@@ -164,9 +97,9 @@ circ_err_t circularBufferStore(CircularBuffer *buf, char *str, uint32_t len) {
     /* remove bookmark if it is destroyed */
     if (lostMark) {
         buf->mark = UINT32_MAX; // denotes no bookmark
-        return CIRC_LOST_MARK;
+        return APP_ERR_LOST_MARK;
     }
-    return CIRC_OK;
+    return ESP_OK;
 }
 
 // /**
@@ -204,65 +137,54 @@ circ_err_t circularBufferStore(CircularBuffer *buf, char *str, uint32_t len) {
  * @param[in] setting Determines how dist is used in calculating the position
  *        of the bookmark.
  * 
- * @returns CIRC_OK if successful; mark is unchanged if not CIRC_OK.
- *          CIRC_INVALID_ARG if invalid argument.
- *          CIRC_UNINITIALIZED if buf is uninitialized or was illegally modified.
- *          CIRC_LOST_MARK if dist is calculated from the previous mark, but no
- *          mark is present in the buffer.
- *          CIRC_INVALID_SIZE if the bookmark would be outside the length of the
- *          buffer.
+ * @returns ESP_OK if successful; mark is unchanged if not CIRC_OK.
+ * ESP_ERR_INVALID_ARG if invalid argument.
+ * APP_ERR_UNINITIALIZED if buf is uninitialized or was illegally modified.
+ * APP_ERR_LOST_MARK if dist is calculated from the previous mark, but no
+ * mark is present in the buffer.
+ * ESP_ERR_INVALID_SIZE if the bookmark would be outside the length of the
+ * buffer.
  */
-circ_err_t circularBufferMark(CircularBuffer *buf, uint32_t dist, enum CircDistanceSetting setting) {
+esp_err_t circularBufferMark(CircularBuffer *buf, uint32_t dist, enum CircDistanceSetting setting) {
     uint32_t ndx, prevMarkDist;
+    
     /* input guards */
-    if (buf == NULL)
-    {
-        return CIRC_INVALID_ARG;
-    }
-    if (buf->backing == NULL)
-    {
-        return CIRC_UNINITIALIZED;
-    }
+    if (buf == NULL) return ESP_ERR_INVALID_ARG;
+    if (buf->backing == NULL) return APP_ERR_UNINITIALIZED;
+
     /* calculate bookmark position */
     ndx = UINT32_MAX;
     switch (setting) {
         case FROM_PREV_MARK:
             if (buf->mark == UINT32_MAX) {
-                return CIRC_LOST_MARK;
+                return APP_ERR_LOST_MARK;
             }
             /* determine if new mark is beyond most recent char */
             prevMarkDist = modularSubtraction(buf->end, buf->mark, buf->backingSize) - 1;
-            if (dist > prevMarkDist) {
-                return CIRC_INVALID_SIZE;
-            }
+            if (dist > prevMarkDist) return ESP_ERR_INVALID_SIZE;
             /* (buf->mark + dist) (mod buf->backingSize) */
             ndx = modularAddition(buf->mark, dist, buf->backingSize);
             break;
         case FROM_RECENT_CHAR:
-            if (dist >= buf->len) {
-                return CIRC_INVALID_SIZE;
-            }
+            if (dist >= buf->len) return ESP_ERR_INVALID_SIZE;
             /* (buf->end - dist - 1) (mod buf->backingSize) */
             ndx = modularSubtraction(buf->end, dist, buf->backingSize);
             ndx = modularSubtraction(ndx, 1, buf->backingSize);
             break;
         case FROM_OLDEST_CHAR:
-            if (dist >= buf->len) {
-                return CIRC_INVALID_SIZE;
-            }
+            if (dist >= buf->len) return ESP_ERR_INVALID_SIZE;
             /* (buf->end - buf->len + dist) (mod buf->backingSize) */
             ndx = modularSubtraction(buf->end, buf->len, buf->backingSize);
             ndx = modularAddition(ndx, dist, buf->backingSize);
             break;
         default:
-            return CIRC_INVALID_ARG;
+            return APP_ERR_UNINITIALIZED;
     }
+    
     /* create bookmark */
-    if (ndx == UINT32_MAX) {
-        return CIRC_UNINITIALIZED;
-    }
+    if (ndx == UINT32_MAX) return APP_ERR_UNINITIALIZED;
     buf->mark = ndx;
-    return CIRC_OK;
+    return ESP_OK;
 }
 
 /**
@@ -275,40 +197,31 @@ circ_err_t circularBufferMark(CircularBuffer *buf, uint32_t dist, enum CircDista
  *        the null-terminator.
  * 
  * @returns number of chars read if successful. 
- *          CIRC_INVALID_ARG if invalid argument.
- *          CIRC_INVALID_SIZE if len is larger than the length of data in the buffer.
- *          CIRC_UNINITIALIZED if buf is uninitialized or was illegally modified.
+ * -ESP_ERR_INVALID_ARG if invalid argument.
+ * -ESP_ERR_INVALID_SIZE if len is larger than the length of data in the buffer.
+ * -APP_ERR_UNINITIALIZED if buf is uninitialized or was illegally modified.
  */
 int circularBufferRead(const CircularBuffer *buf, char *strOut, uint32_t len) {
     uint32_t curr, start, ndx;
+    
     /* input guards */
-    if (buf == NULL ||
-        strOut == NULL ||
-        len == 0)
-    {
-        return CIRC_INVALID_ARG;
-    }
-    if (buf->backing == NULL)
-    {
-        return CIRC_UNINITIALIZED;
-    }
-    if (len > buf->len)
-    {
-        return CIRC_INVALID_SIZE;
-    }
+    if (buf == NULL) return -ESP_ERR_INVALID_ARG;
+    if (strOut == NULL) return -ESP_ERR_INVALID_ARG;
+    if (len == 0) return -ESP_ERR_INVALID_ARG;
+    if (buf->backing == NULL) return -APP_ERR_UNINITIALIZED;
+    if (len > buf->len) return -ESP_ERR_INVALID_SIZE;
+
     /* calculate starting position of data */
     start = modularSubtraction(buf->end, len, buf->backingSize);
-    if (start == UINT32_MAX) {
-        return CIRC_UNINITIALIZED;
-    }
+    if (start == UINT32_MAX) return -APP_ERR_UNINITIALIZED;
+
     /* read data */
     for (curr = 0; curr < len; curr++) {
         ndx = modularAddition(start, curr, buf->backingSize);
-        if (ndx == UINT32_MAX) {
-            return CIRC_UNINITIALIZED;
-        }
+        if (ndx == UINT32_MAX) return -APP_ERR_UNINITIALIZED;
         strOut[curr] = buf->backing[ndx];
     }
+
     /* append null-terminator */
     strOut[len] = '\0';
     return len;
@@ -316,37 +229,29 @@ int circularBufferRead(const CircularBuffer *buf, char *strOut, uint32_t len) {
 
 /**
  * @brief Retrieves at most maxLen elements starting from the bookmark in the 
- *        buffer and stores them in strOut. Appends a null-terminator at
- *        strOut[len]. Does not modify the circular buffer.
+ * buffer and stores them in strOut. Appends a null-terminator at strOut[len].
  * 
  * @param[in] buf The circular buffer to retrieve elements from.
  * @param[out] strOut The location to write elements to, null-terminated.
  * @param[in] maxLen The maximum number of elements to retrieve from the buffer,
- *        not including the appended null-terminator.
+ * not including the appended null-terminator.
  * 
  * @returns number of chars read if successful.
- *          CIRC_INVALID_ARG if invalid argument.
- *          CIRC_UNINITIALIZED if buf is uninitialized or was illegally modified.
- *          CIRC_LOST_MARK if the buffer contains no mark.
+ * -ESP_ERR_INVALID_ARG if invalid argument.
+ * -APP_ERR_UNINITIALIZED if buf is uninitialized or was illegally modified.
+ * -APP_ERR_LOST_MARK if the buffer contains no mark.
  */
 int circularBufferReadFromMark(const CircularBuffer *buf, char *strOut, uint32_t maxLen) {
     uint32_t strOutNdx = 0;
     uint32_t bufNdx;
+
     /* input guards */
-    if (buf == NULL ||
-        strOut == NULL ||
-        maxLen == 0)
-    {
-        return CIRC_INVALID_ARG;
-    }
-    if (buf->backing == NULL)
-    {
-        return CIRC_UNINITIALIZED;
-    }
-    if (buf->mark == UINT32_MAX)
-    {
-        return CIRC_LOST_MARK;
-    }
+    if (buf == NULL) return -ESP_ERR_INVALID_ARG;
+    if (strOut == NULL) return -ESP_ERR_INVALID_ARG;
+    if (maxLen == 0) return -ESP_ERR_INVALID_ARG;
+    if (buf->backing == NULL) return -APP_ERR_UNINITIALIZED;
+    if (buf->mark == UINT32_MAX) return -APP_ERR_LOST_MARK;
+
     /* read data */
     bufNdx = buf->mark;
     while (strOutNdx < maxLen) {
@@ -354,7 +259,7 @@ int circularBufferReadFromMark(const CircularBuffer *buf, char *strOut, uint32_t
         strOutNdx++;
         bufNdx = modularAddition(bufNdx, 1, buf->backingSize);
         if (bufNdx == UINT32_MAX) {
-            return CIRC_UNINITIALIZED;
+            return -APP_ERR_UNINITIALIZED;
         }
         if (bufNdx == buf->end) { // must be AFTER logic bc buf->mark may equal buf->end
             break; // reached end of data
@@ -363,4 +268,60 @@ int circularBufferReadFromMark(const CircularBuffer *buf, char *strOut, uint32_t
     /* append null-terminator */
     strOut[strOutNdx] = '\0';
     return strOutNdx;
+}
+
+/**
+ * @brief Calculates (a - b) (mod N).
+ * 
+ * @note C does not behave as expected with the naive % operator. This function
+ * takes care of issues arising from negative values with the % operator and
+ * from intermediate values not being representable by a uint32_t.
+ * 
+ * @param[in] a additive operand.
+ * @param[in] b subtractive operand.
+ * @param[in] N The modulus, which should not be 0.
+ * 
+ * @returns Result of (a - b) (mod N) if successful.
+ * UINT32_MAX if N is 0; Note that UINT32_MAX is not a possible
+ * return value in normal operation because N is capped by UINT32_MAX
+ * and the modular arithmetic cannot result in values of N.
+ */
+STATIC_IF_NOT_TEST uint32_t modularSubtraction(uint32_t a, uint32_t b, uint32_t N) {
+    int64_t val64;
+    /* input guards */
+    if (N == 0) UINT32_MAX;
+    /* calculate value */
+    val64 = ((int64_t) a) - ((int64_t) b); // careful with uint32_t
+    val64 = val64 % ((int64_t) N); // will be negative if val64 < 0
+    if (val64 < 0) {
+        // negative operand in % does not follow expected mod result
+        val64 = N + val64;
+    }
+    return (uint32_t) val64; // val64 fits in uint32_t by % backingSize
+}
+
+/**
+ * @brief Calculates (a + b) (mod N).
+ * 
+ * @note C does not behave as expected with the naive % operator. This function
+ * takes care of issues arising from negative values with the % operator and
+ * from intermediate values not being representable by a uint32_t.
+ * 
+ * @param[in] a additive operand.
+ * @param[in] b additive operand.
+ * @param[in] N The modulus, which should not be 0.
+ * 
+ * @returns Result of (a + b) (mod N) if successful.
+ *          UINT32_MAX if N is 0; Note that UINT32_MAX is not a possible
+ *          return value in normal operation because N is capped by UINT32_MAX
+ *          and the modular arithmetic cannot result in values of N.
+ */
+STATIC_IF_NOT_TEST uint32_t modularAddition(uint32_t a, uint32_t b, uint32_t N) {
+    int64_t val64;
+    /* input guards */
+    if (N == 0) UINT32_MAX;
+    /* calculate value */
+    val64 = ((int64_t) a) + ((int64_t) b); // careful with uint32_t
+    val64 = val64 % ((int64_t) N); // result cannot be negative bc addition
+    return (uint32_t) val64; // val64 fits in uint32_t by % backingSize
 }

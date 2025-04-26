@@ -29,6 +29,7 @@
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 
+#include "indicators_config.h"
 #include "animations.h"
 #include "led_matrix.h"
 #include "pinout.h"
@@ -499,19 +500,19 @@ static esp_err_t beginLoadingAnimation(void)
     esp_err_t err;
     ESP_LOGI(TAG, "Starting loading animation...");
 
-    err = matSetColor(NORTH_LED_NUM, CONFIG_WHITE_RED_COMPONENT + 0x20, CONFIG_WHITE_GREEN_COMPONENT, CONFIG_WHITE_BLUE_COMPONENT);
+    err = matSetColor(NORTH_LED_NUM, WHITE_RED_COMPONENT + 0x20, WHITE_GREEN_COMPONENT, WHITE_BLUE_COMPONENT);
     if (err == APP_ERR_INVALID_PAGE) return ESP_FAIL;
     if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
     if (err != ESP_OK) return err;
-    err = matSetColor(EAST_LED_NUM, CONFIG_WHITE_RED_COMPONENT + 0x20, CONFIG_WHITE_GREEN_COMPONENT, CONFIG_WHITE_BLUE_COMPONENT);
+    err = matSetColor(EAST_LED_NUM, WHITE_RED_COMPONENT + 0x20, WHITE_GREEN_COMPONENT, WHITE_BLUE_COMPONENT);
     if (err == APP_ERR_INVALID_PAGE) return ESP_FAIL;
     if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
     if (err != ESP_OK) return err;
-    err = matSetColor(SOUTH_LED_NUM, CONFIG_WHITE_RED_COMPONENT + 0x20, CONFIG_WHITE_GREEN_COMPONENT, CONFIG_WHITE_BLUE_COMPONENT);
+    err = matSetColor(SOUTH_LED_NUM, WHITE_RED_COMPONENT + 0x20, WHITE_GREEN_COMPONENT, WHITE_BLUE_COMPONENT);
     if (err == APP_ERR_INVALID_PAGE) return ESP_FAIL;
     if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
     if (err != ESP_OK) return err;
-    err = matSetColor(WEST_LED_NUM, CONFIG_WHITE_RED_COMPONENT + 0x20, CONFIG_WHITE_GREEN_COMPONENT, CONFIG_WHITE_BLUE_COMPONENT);
+    err = matSetColor(WEST_LED_NUM, WHITE_RED_COMPONENT + 0x20, WHITE_GREEN_COMPONENT, WHITE_BLUE_COMPONENT);
     if (err == APP_ERR_INVALID_PAGE) return ESP_FAIL;
     if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
     if (err != ESP_OK) return err;

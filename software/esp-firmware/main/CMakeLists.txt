@@ -7,6 +7,9 @@ elseif ("$ENV{executable}" STREQUAL "test_ota")
     set(srcs "../components/ota/test/test_ota_main.c"
              "src/initialize.c")
     set(includes "include")
+elseif ("$ENV{executable}" STREQUAL "test_actions")
+    set(srcs "../components/actions/test/test_actions_main.c")
+    set(includes "include")
 elseif ("$ENV{executable}" STREQUAL "test_nonmock")
     set(srcs "src/tests/test_nonmock_main.c"
              "src/initialize.c")

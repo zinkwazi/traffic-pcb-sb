@@ -24,6 +24,7 @@
 #include "freertos/task.h"
 #include "sdkconfig.h"
 
+#include "app_err.h"
 #include "app_errors.h"
 #include "circular_buffer.h"
 #include "indicators.h"
@@ -404,7 +405,7 @@ STATIC_IF_NOT_TEST UpdateType compareVersions(VersionInfo serverVer)
 {
 
     ESP_LOGI(TAG, "server firmware image is V%lu_%lu v%lu.%lu.%lu", serverVer.hardwareVer, serverVer.revisionVer, serverVer.majorVer, serverVer.minorVer, serverVer.patchVer);
-    ESP_LOGI(TAG, "device firmware image is V%lu_%lu v%lu.%lu.%lu", OTA_HARDWARE_VERSION, OTA_REVISION_VERSION, OTA_MAJOR_VERSION, OTA_MINOR_VERSION, OTA_PATCH_VERSION);
+    ESP_LOGI(TAG, "device firmware image is V%lu_%lu v%lu.%lu.%lu", (uint32_t) OTA_HARDWARE_VERSION, (uint32_t) OTA_REVISION_VERSION, (uint32_t) OTA_MAJOR_VERSION, (uint32_t) OTA_MINOR_VERSION, (uint32_t) OTA_PATCH_VERSION);
 
     /* compare hadware version */
     if (serverVer.hardwareVer != OTA_HARDWARE_VERSION) return UPDATE_NONE;
@@ -532,8 +533,8 @@ STATIC_IF_NOT_TEST esp_err_t processOTAAvailableFile(bool *available,
             }
             if (bytesRead == 0) break; // circ buf is empty and nothing else to read
         
-            err = (esp_err_t) circularBufferStore(&circBuf, buf, bytesRead);
-            if (err == (esp_err_t) CIRC_LOST_MARK)
+            err = circularBufferStore(&circBuf, buf, bytesRead);
+            if (err == APP_ERR_LOST_MARK)
             {
                 ESP_LOGW(TAG, "JSON contains fields that are too large to parse");
                 return ESP_FAIL;
@@ -605,8 +606,8 @@ STATIC_IF_NOT_TEST esp_err_t processOTAAvailableFile(bool *available,
                 /* a formatting character that is not in
                 a comment or string has been found */
                 foundFormattingChar = true;
-                err = (esp_err_t) circularBufferMark(&circBuf, ndx, FROM_PREV_MARK);
-                if (err != (esp_err_t) CIRC_OK) 
+                err = circularBufferMark(&circBuf, ndx, FROM_PREV_MARK);
+                if (err != ESP_OK) 
                 {
                     return err;
                 }
@@ -742,6 +743,11 @@ esp_err_t initPerformedUpdateSema(void)
 }
 
 void setUpdateFails(bool fails) { testUpdateWillFail = fails; }
+
+void setOTATask(TaskHandle_t task)
+{
+    otaTaskHandle = task;
+}
 
 #else
 

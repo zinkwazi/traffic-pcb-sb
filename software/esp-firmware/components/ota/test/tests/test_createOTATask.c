@@ -89,8 +89,6 @@ TEST_CASE("vOTATask_indicatesCorrectly", "[ota]")
 #if CONFIG_HARDWARE_VERSION == 1
     /* indication unsupported */
 #elif CONFIG_HARDWARE_VERSION == 2
-    esp_err_t err;
-    BaseType_t success;
     TaskHandle_t otaTask;
 
     /* indicateOTAUpdateAvailable is called when an update is available */

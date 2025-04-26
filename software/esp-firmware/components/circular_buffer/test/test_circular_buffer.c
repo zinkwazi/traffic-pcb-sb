@@ -15,6 +15,8 @@
 #include "esp_err.h"
 #include "esp_log.h"
 
+#include "app_err.h"
+
 #define TAG "test"
 
 /**
@@ -27,20 +29,20 @@ TEST_CASE("circularBufferInit", "[circular_buffer]")
     char backing[backingLen];
     
     circ_err_t err = circularBufferInit(&buffer, backing, backingLen);
-    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(backingLen, buffer.backingSize);
     TEST_ASSERT_EQUAL(0, buffer.len);
     TEST_ASSERT_EQUAL(UINT32_MAX, buffer.mark);
     TEST_ASSERT_EQUAL(backing, buffer.backing);
 
     err = circularBufferInit(&buffer, NULL, backingLen);
-    TEST_ASSERT_EQUAL(CIRC_INVALID_ARG, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 
     err = circularBufferInit(&buffer, backing, 0);
-    TEST_ASSERT_EQUAL(CIRC_INVALID_ARG, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 
     err = circularBufferInit(NULL, backing, backingLen);
-    TEST_ASSERT_EQUAL(CIRC_INVALID_ARG, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 }
 
 /**
@@ -78,12 +80,12 @@ TEST_CASE("circularBufferStore", "[circular_buffer]")
     char backing[backingLen];
 
     circ_err_t err = circularBufferInit(&buffer, backing, backingLen);
-    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
 
     /* test direct string, no overflow to ndx 0 */
     char *msg = "Hello, World!"; // len 13
     err = circularBufferStore(&buffer, msg, (uint32_t) strlen(msg));
-    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL((uint32_t) strlen(msg), buffer.end);
     TEST_ASSERT_EQUAL((uint32_t) strlen(msg), buffer.len);
     for (uint32_t i = 0; i < (uint32_t) strlen(msg); i++) {
@@ -93,7 +95,7 @@ TEST_CASE("circularBufferStore", "[circular_buffer]")
     /* test negative buffer->end - buffer->len */
     char *msg2 = "second msg"; // len 10
     err = circularBufferStore(&buffer, msg2, (uint32_t) strlen(msg2));
-    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(buffer.backingSize, buffer.len);
     TEST_ASSERT_EQUAL(3, buffer.end);
     char *expectedBacking = "msglo, World!second ";
@@ -108,14 +110,14 @@ TEST_CASE("circularBufferStore", "[circular_buffer]")
 
     /* test input guards */
     err = circularBufferStore(&buffer, NULL, 10);
-    TEST_ASSERT_EQUAL(CIRC_INVALID_ARG, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
     err = circularBufferStore(&buffer, msg, 50);
-    TEST_ASSERT_EQUAL(CIRC_INVALID_SIZE, err); // function assumes this is a logic error
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_SIZE, err); // function assumes this is a logic error
     err = circularBufferStore(NULL, msg, (uint32_t) strlen(msg));
-    TEST_ASSERT_EQUAL(CIRC_INVALID_ARG, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
     buffer.backing = NULL;
     err = circularBufferStore(&buffer, msg, (uint32_t) strlen(msg));
-    TEST_ASSERT_EQUAL(CIRC_UNINITIALIZED, err);
+    TEST_ASSERT_EQUAL(APP_ERR_UNINITIALIZED, err);
 }
 
 /**
@@ -132,12 +134,12 @@ TEST_CASE("circularBufferRead", "[circular_buffer]")
     char canary2;
     
     circ_err_t err = circularBufferInit(&buffer, backing, backingLen);
-    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
 
     /* test direct string, no overflow to ndx 0 */
     char *msg = "Hello, World!"; // len 13
     err = circularBufferStore(&buffer, msg, (uint32_t) strlen(msg));
-    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL((uint32_t) strlen(msg), buffer.len);
     err = circularBufferRead(&buffer, strOut, 13);
     TEST_ASSERT_EQUAL(13, err);
@@ -147,7 +149,7 @@ TEST_CASE("circularBufferRead", "[circular_buffer]")
     uint32_t prevEnd = buffer.end;
     uint32_t prevLen = buffer.len;
     err = circularBufferRead(&buffer, strOut, 14);
-    TEST_ASSERT_EQUAL(CIRC_INVALID_SIZE, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_SIZE, err);
     TEST_ASSERT_EQUAL_STRING(msg, strOut);
     TEST_ASSERT_EQUAL(prevEnd, buffer.end);
     TEST_ASSERT_EQUAL(prevLen, buffer.len);
@@ -155,7 +157,7 @@ TEST_CASE("circularBufferRead", "[circular_buffer]")
     /* test negative buffer->end - buffer->len */
     char *msg2 = "second msg"; // len 10
     err = circularBufferStore(&buffer, msg2, (uint32_t) strlen(msg2));
-    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(buffer.backingSize, buffer.len);
     TEST_ASSERT_EQUAL(3, buffer.end);
     char *expected = "World!second msg";
@@ -170,19 +172,19 @@ TEST_CASE("circularBufferRead", "[circular_buffer]")
     prevEnd = buffer.end;
     prevLen = buffer.len;
     err = circularBufferRead(&buffer, NULL, 10);
-    TEST_ASSERT_EQUAL(CIRC_INVALID_ARG, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
     TEST_ASSERT_EQUAL(prevEnd, buffer.end);
     TEST_ASSERT_EQUAL(prevLen, buffer.len);
     TEST_ASSERT_EQUAL_STRING(expected, strOut);
 
     err = circularBufferRead(NULL, strOut, 10);
-    TEST_ASSERT_EQUAL(CIRC_INVALID_ARG, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
     TEST_ASSERT_EQUAL_STRING(expected, strOut);
 
     prevEnd = buffer.end;
     prevLen = buffer.len;
     err = circularBufferRead(&buffer, strOut, 0);
-    TEST_ASSERT_EQUAL(CIRC_INVALID_ARG, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
     TEST_ASSERT_EQUAL(prevEnd, buffer.end);
     TEST_ASSERT_EQUAL(prevLen, buffer.len);
     TEST_ASSERT_EQUAL_STRING(expected, strOut);
@@ -190,7 +192,7 @@ TEST_CASE("circularBufferRead", "[circular_buffer]")
     prevEnd = buffer.end;
     prevLen = buffer.len;
     err = circularBufferRead(&buffer, strOut, backingLen + 1);
-    TEST_ASSERT_EQUAL(CIRC_INVALID_SIZE, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_SIZE, err);
     TEST_ASSERT_EQUAL(prevEnd, buffer.end);
     TEST_ASSERT_EQUAL(prevLen, buffer.len);
     TEST_ASSERT_EQUAL_STRING(expected, strOut);
@@ -219,12 +221,12 @@ TEST_CASE("circularBufferMark", "[circular_buffer]")
     char strOut[backingLen + 1];
 
     err = circularBufferInit(&buffer, backing, backingLen);
-    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
 
     /* write to buffer */
     char *msg = "Hello, World!"; // len 13
     err = circularBufferStore(&buffer, msg, (uint32_t) strlen(msg));
-    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL((uint32_t) strlen(msg), buffer.len);
     err = circularBufferRead(&buffer, strOut, 13);
     TEST_ASSERT_EQUAL(13, err);
@@ -232,7 +234,7 @@ TEST_CASE("circularBufferMark", "[circular_buffer]")
 
     /* mark ndx 0 from recent char */
     err = circularBufferMark(&buffer, 12, FROM_RECENT_CHAR);
-    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(0, buffer.mark);
 
     /* read from mark at ndx 0 */
@@ -243,7 +245,7 @@ TEST_CASE("circularBufferMark", "[circular_buffer]")
     /* remark from recent mark */
     char *expected = "llo, World!";
     err = circularBufferMark(&buffer, 2, FROM_PREV_MARK);
-    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(2, buffer.mark);
     err = circularBufferReadFromMark(&buffer, strOut, backingLen);
     TEST_ASSERT_EQUAL_STRING(expected, strOut);
@@ -251,7 +253,7 @@ TEST_CASE("circularBufferMark", "[circular_buffer]")
     /* mark beyond most recent char from prev mark */
     expected = "llo, World!";
     err = circularBufferMark(&buffer, 11, FROM_PREV_MARK);
-    TEST_ASSERT_EQUAL(CIRC_INVALID_SIZE, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_SIZE, err);
     err = circularBufferReadFromMark(&buffer, strOut, backingLen);
     TEST_ASSERT_EQUAL(strlen(expected), err);
     TEST_ASSERT_EQUAL_STRING(expected, strOut);
@@ -259,7 +261,7 @@ TEST_CASE("circularBufferMark", "[circular_buffer]")
     /* mark oldest char */
     expected = "o, World!";
     err = circularBufferMark(&buffer, 4, FROM_OLDEST_CHAR);
-    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(4, buffer.mark);
     err = circularBufferReadFromMark(&buffer, strOut, backingLen);
     TEST_ASSERT_EQUAL(strlen(expected), err);
@@ -267,22 +269,22 @@ TEST_CASE("circularBufferMark", "[circular_buffer]")
 
     /* mark beyond most recent char from oldest char */
     err = circularBufferMark(&buffer, 13, FROM_OLDEST_CHAR);
-    TEST_ASSERT_EQUAL(CIRC_INVALID_SIZE, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_SIZE, err);
     TEST_ASSERT_EQUAL(4, buffer.mark);
 
     /* mark from previous mark with no previous mark */
     buffer.mark = UINT32_MAX;
     err = circularBufferMark(&buffer, 2, FROM_PREV_MARK);
-    TEST_ASSERT_EQUAL(CIRC_LOST_MARK, err);
+    TEST_ASSERT_EQUAL(APP_ERR_LOST_MARK, err);
 
     /* wrap buffer around */
     char *msg2 = "second msg";
     /* expected backing is 'msglo, World!second ' */
     expected = "ond msg";
     err = circularBufferStore(&buffer, msg2, strlen(msg2));
-    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     err = circularBufferMark(&buffer, 6, FROM_RECENT_CHAR);
-    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(16, buffer.mark);
     err = circularBufferReadFromMark(&buffer, strOut, backingLen);
     TEST_ASSERT_EQUAL(strlen(expected), err);
@@ -290,7 +292,7 @@ TEST_CASE("circularBufferMark", "[circular_buffer]")
 
     /* mark beyond most recent char after wrap around */
     err = circularBufferMark(&buffer, 6, FROM_PREV_MARK);
-    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_EQUAL(2, buffer.mark);
     err = circularBufferReadFromMark(&buffer, strOut, backingLen);
     TEST_ASSERT_EQUAL(1, err);
@@ -298,14 +300,14 @@ TEST_CASE("circularBufferMark", "[circular_buffer]")
 
     /* test input guards */
     err = circularBufferMark(NULL, 4, FROM_RECENT_CHAR);
-    TEST_ASSERT_EQUAL(CIRC_INVALID_ARG, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
     err = circularBufferMark(&buffer, 0, FROM_RECENT_CHAR);
-    TEST_ASSERT_EQUAL(CIRC_OK, err);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     err = circularBufferMark(&buffer, 4, DIST_SETTING_UNKNOWN);
-    TEST_ASSERT_EQUAL(CIRC_INVALID_ARG, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
     buffer.backing = NULL;
     err = circularBufferMark(&buffer, 4, FROM_RECENT_CHAR);
-    TEST_ASSERT_EQUAL(CIRC_UNINITIALIZED, err);
+    TEST_ASSERT_EQUAL(APP_ERR_UNINITIALIZED, err);
 }  
 
 /**

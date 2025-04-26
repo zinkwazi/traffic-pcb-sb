@@ -1,4 +1,4 @@
-set(srcs "src/circular_buffer.c")
+set(srcs "")
 
 if (CONFIG_UTILS_EXTERN_MACROS)
     list(APPEND srcs "src/extern_utilities.c")

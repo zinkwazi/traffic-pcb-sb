@@ -11,14 +11,6 @@
 
 #include "esp_err.h"
 
-#define CIRC_OK             0
-#define CIRC_FAIL           -1
-#define CIRC_INVALID_ARG    -2
-#define CIRC_INVALID_SIZE   -3
-#define CIRC_LOST_MARK      -4
-#define CIRC_UNINITIALIZED  -5
-
-typedef int circ_err_t;
 
 struct CircularBuffer {
     /* an array of characters used to implement the buffer */
@@ -52,9 +44,11 @@ enum CircDistanceSetting {
     DIST_SETTING_UNKNOWN = 4,
 };
 
-circ_err_t circularBufferInit(CircularBuffer *buffer, char* backing, uint32_t len);
-circ_err_t circularBufferStore(CircularBuffer *buffer, char *str, uint32_t len);
-circ_err_t circularBufferMark(CircularBuffer *buffer, uint32_t dist, enum CircDistanceSetting setting);
+typedef enum CircDistanceSetting CircDistanceSetting;
+
+esp_err_t circularBufferInit(CircularBuffer *buffer, char* backing, uint32_t len);
+esp_err_t circularBufferStore(CircularBuffer *buffer, char *str, uint32_t len);
+esp_err_t circularBufferMark(CircularBuffer *buffer, uint32_t dist, CircDistanceSetting setting);
 int circularBufferRead(const CircularBuffer *buffer, char *strOut, uint32_t len);
 int circularBufferReadFromMark(const CircularBuffer *buffer, char *strOut, uint32_t len);
 

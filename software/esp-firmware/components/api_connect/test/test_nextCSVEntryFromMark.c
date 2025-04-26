@@ -16,6 +16,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 
+#include "app_err.h"
 #include "circular_buffer.h"
 
 #define TAG "test"
@@ -28,7 +29,6 @@
 TEST_CASE("nextCSVEntryFromMark_noDataFound", "[api_connect]")
 {
     esp_err_t err;
-    circ_err_t circ_err;
     char *str = "456\r\n";
     const int testBufSize = 9;
     const int circBackingSize = 3 * testBufSize;
@@ -39,15 +39,15 @@ TEST_CASE("nextCSVEntryFromMark_noDataFound", "[api_connect]")
 
     /* test uninitialized circular buffer */
     err = nextCSVEntryFromMark(&result, &circBuf, buffer, testBufSize);
-    TEST_ASSERT_EQUAL(CIRC_UNINITIALIZED, err);
+    TEST_ASSERT_EQUAL(APP_ERR_UNINITIALIZED, err);
 
     /* load string into circular buffer and mark it */
-    circ_err = circularBufferInit(&circBuf, circBufBacking, circBackingSize);
-    TEST_ASSERT_EQUAL(ESP_OK, circ_err);
-    circ_err = circularBufferStore(&circBuf, str, strlen(str));
-    TEST_ASSERT_EQUAL(ESP_OK, circ_err);
-    circ_err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
-    TEST_ASSERT_EQUAL(ESP_OK, circ_err);
+    err = circularBufferInit(&circBuf, circBufBacking, circBackingSize);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = circularBufferStore(&circBuf, str, strlen(str));
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
 
     /* parse string through circular buffer */
     err = nextCSVEntryFromMark(&result, &circBuf, buffer, testBufSize);
@@ -68,7 +68,6 @@ TEST_CASE("nextCSVEntryFromMark_inputGuards", "[api_connect]")
     char buffer[testBufSize];
     char circBufBacking[circBackingSize];
     CircularBuffer circBuf;
-    circ_err_t circ_err;
     esp_err_t err;
     int numBytes;
     LEDData result;
@@ -79,12 +78,12 @@ TEST_CASE("nextCSVEntryFromMark_inputGuards", "[api_connect]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 
     /* load first response block into circular buffer */
-    circ_err = circularBufferInit(&circBuf, circBufBacking, circBackingSize);
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
-    circ_err = circularBufferStore(&circBuf, str, strlen(str));
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
-    circ_err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
+    err = circularBufferInit(&circBuf, circBufBacking, circBackingSize);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = circularBufferStore(&circBuf, str, strlen(str));
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     expected = "4,71\r\n5";
     numBytes = circularBufferReadFromMark(&circBuf, buffer, testBufSize - 1);
     TEST_ASSERT_EQUAL(strlen(expected), numBytes);
@@ -116,19 +115,18 @@ TEST_CASE("nextCSVEntryFromMark_skipsNewline", "[api_connect]")
     char buffer[testBufSize];
     char circBufBacking[circBackingSize];
     CircularBuffer circBuf;
-    circ_err_t circ_err;
     esp_err_t err;
     int numBytes;
     LEDData result;
     char *expected;
 
     /* load first response block into circular buffer */
-    circ_err = circularBufferInit(&circBuf, circBufBacking, circBackingSize);
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
-    circ_err = circularBufferStore(&circBuf, str, strlen(str));
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
-    circ_err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
+    err = circularBufferInit(&circBuf, circBufBacking, circBackingSize);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = circularBufferStore(&circBuf, str, strlen(str));
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     expected = "\n4,71\r\n5";
     numBytes = circularBufferReadFromMark(&circBuf, buffer, testBufSize - 1);
     TEST_ASSERT_EQUAL(strlen(expected), numBytes);
@@ -141,7 +139,7 @@ TEST_CASE("nextCSVEntryFromMark_skipsNewline", "[api_connect]")
     TEST_ASSERT_EQUAL(71, result.speed);
     /* check that circular buffer mark was modified correctly */
     expected = "\n5";
-    circ_err = circularBufferReadFromMark(&circBuf, buffer, testBufSize - 1);
+    err = circularBufferReadFromMark(&circBuf, buffer, testBufSize - 1);
     TEST_ASSERT_EQUAL_STRING(expected, buffer);
 }
 
@@ -162,7 +160,6 @@ TEST_CASE("nextCSVEntryFromMark_fullFile", "[api_connect]")
     char buffer[testBufSize];
     char circBufBacking[circBackingSize];
     CircularBuffer circBuf;
-    circ_err_t circ_err;
     esp_err_t err;
     int numBytes;
     LEDData result;
@@ -171,12 +168,12 @@ TEST_CASE("nextCSVEntryFromMark_fullFile", "[api_connect]")
     int currLED, currDataNdx;
 
     /* load first response block into circular buffer */
-    circ_err = circularBufferInit(&circBuf, circBufBacking, circBackingSize);
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
-    circ_err = circularBufferStore(&circBuf, (char *) &test_data_start[0], testBufSize);
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
-    circ_err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
-    TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
+    err = circularBufferInit(&circBuf, circBufBacking, circBackingSize);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = circularBufferStore(&circBuf, (char *) &test_data_start[0], testBufSize);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     expected = "1,71\r\n2,71\r";
     numBytes = circularBufferReadFromMark(&circBuf, buffer, testBufSize - 1);
     TEST_ASSERT_EQUAL(testBufSize - 1, numBytes);
@@ -189,18 +186,18 @@ TEST_CASE("nextCSVEntryFromMark_fullFile", "[api_connect]")
     TEST_ASSERT_EQUAL(71, result.speed);
     /* check that circular buffer mark was modified correctly */
     expected = "\n2,71\r\n";
-    circ_err = circularBufferReadFromMark(&circBuf, buffer, testBufSize - 1);
+    err = circularBufferReadFromMark(&circBuf, buffer, testBufSize - 1);
     TEST_ASSERT_EQUAL_STRING(expected, buffer);
     /* store and retrieve the rest of the file */
     currLED = 2;
     currDataNdx = testBufSize;
     while (&test_data_start[currDataNdx] + testBufSize < test_data_end) {
         /* load next response block into circular buffer */
-        circ_err = circularBufferStore(&circBuf, (char *) &test_data_start[currDataNdx], testBufSize);
-        if (circ_err == CIRC_LOST_MARK) {
+        err = circularBufferStore(&circBuf, (char *) &test_data_start[currDataNdx], testBufSize);
+        if (err == APP_ERR_LOST_MARK) {
             ESP_LOGI(TAG, "lost mark after ledNum: %u", expectedLED.ledNum);
         }
-        TEST_ASSERT_EQUAL(CIRC_OK, circ_err);
+        TEST_ASSERT_EQUAL(ESP_OK, err);
         /* read next entry from circular buffer */
         numBytes = circularBufferReadFromMark(&circBuf, buffer, testBufSize - 1);
         TEST_ASSERT_EQUAL(testBufSize - 1, numBytes);

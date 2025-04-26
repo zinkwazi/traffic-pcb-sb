@@ -237,5 +237,36 @@
       "postBuild": "",
       "postFlash": ""
     }
+  },
+  "test_actions": {
+    "build": {
+      "compileArgs": [],
+      "ninjaArgs": [],
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\test_actions",
+      "sdkconfigDefaults": [
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\secrets\\sdkconfig.test_secrets",
+        ".\\configurations\\sdkconfig.test",
+        ".\\components\\actions\\test\\sdkconfig.test_actions",
+        ".\\configurations\\sdkconfig.V2_0_default"
+      ],
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.test_actions"
+    },
+    "env": {
+      "executable": "test_actions"
+    },
+    "flashBaudRate": "",
+    "monitorBaudRate": "",
+    "openOCD": {
+      "debugLevel": 0,
+      "configs": [],
+      "args": []
+    },
+    "tasks": {
+      "preBuild": "",
+      "preFlash": "",
+      "postBuild": "",
+      "postFlash": ""
+    }
   }
 }

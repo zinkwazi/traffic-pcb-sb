@@ -13,6 +13,8 @@
 
 #include "esp_err.h"
 #include "esp_http_client.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #include "ota_types.h"
 #include "utilities.h"
@@ -29,6 +31,8 @@ STATIC_IF_NOT_TEST esp_err_t processOTAAvailableFile(bool *available, bool *patc
 SemaphoreHandle_t getPerformedUpdateSema(void);
 esp_err_t initPerformedUpdateSema(void);
 void setUpdateFails(bool fails);
+
+void setOTATask(TaskHandle_t task);
 
 #endif /* CONFIG_DISABLE_TESTING_FEATURES */
 

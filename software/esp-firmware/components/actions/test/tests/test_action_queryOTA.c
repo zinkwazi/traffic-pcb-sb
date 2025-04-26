@@ -15,12 +15,18 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "sdkconfig.h"
 
 #include "actions.h"
 #include "actions_pi.h"
 #include "ota_pi.h"
+#include "ota_config.h"
+#include "utilities.h"
+#include "Mockindicators.h"
 
 #define URL_BASE CONFIG_ACTIONS_TEST_DATA_SERVER CONFIG_ACTIONS_TEST_DATA_BASE_URL
+
+#if CONFIG_HARDWARE_VERSION != 1 // specification does not include this for V1_X due to memory constraints
 
 /**
  * @brief A mock OTA task implementation that sets its parameter to true
@@ -43,7 +49,6 @@ static void vSendsNotifOTAMock(void *pvParams)
     vTaskDelete(NULL);
 }
 
-#if CONFIG_HARDWARE_VERSION != 1 // specification does not include this for V1_X due to memory constraints
 /**
  * @brief Tests that queryOTA action sends a task notification to the OTA
  * task only if a patch update is available.
@@ -55,12 +60,18 @@ TEST_CASE("queryOTA_sendsNotif", "[actions]")
     BaseType_t success;
 
     /* test that patch update sends task notification */
-    setUpgradeVersionURL(URL_BASE "/queryOTA_sendsNotif1.json"); // patch = 1
-    setHardwareVersion(2);
-    setHardwareRevision(0);
-    setFirmwareMajorVersion(0);
-    setFirmwareMinorVersion(2);
-    setFirmwarePatchVersion(0);
+    FIRMWARE_UPGRADE_VERSION_URL = URL_BASE "/queryOTA_sendsNotif1.json"; // patch = 1
+    OTA_HARDWARE_VERSION = 2;
+    OTA_REVISION_VERSION = 0;
+    OTA_MAJOR_VERSION = 0;
+    OTA_MINOR_VERSION = 2;
+    OTA_PATCH_VERSION = 0;
+    
+    Mockindicators_Init();
+    indicateOTAAvailable_IgnoreAndReturn(ESP_OK);
+    indicateOTAUpdate_IgnoreAndReturn(ESP_OK);
+    indicateOTASuccess_IgnoreAndReturn(ESP_OK);
+    indicateOTAFailure_IgnoreAndReturn(ESP_OK);
 
     sema = xSemaphoreCreateBinary();
 
@@ -78,12 +89,12 @@ TEST_CASE("queryOTA_sendsNotif", "[actions]")
     vSemaphoreDelete(sema);
 
     /* test that minor updates does not send task notification */
-    setUpgradeVersionURL(URL_BASE "/queryOTA_sendsNotif2.json"); // minor = 3
-    setHardwareVersion(2);
-    setHardwareRevision(0);
-    setFirmwareMajorVersion(0);
-    setFirmwareMinorVersion(2);
-    setFirmwarePatchVersion(0);
+    FIRMWARE_UPGRADE_VERSION_URL = URL_BASE "/queryOTA_sendsNotif2.json"; // minor = 3
+    OTA_HARDWARE_VERSION = 2;
+    OTA_REVISION_VERSION = 0;
+    OTA_MAJOR_VERSION = 0;
+    OTA_MINOR_VERSION = 2;
+    OTA_PATCH_VERSION = 0;
 
     sema = xSemaphoreCreateBinary();
 
@@ -101,12 +112,12 @@ TEST_CASE("queryOTA_sendsNotif", "[actions]")
     vSemaphoreDelete(sema);
 
     /* test that major updates does not send task notification */
-    setUpgradeVersionURL(URL_BASE "/queryOTA_sendsNotif3.json"); // major = 1, minor = 0
-    setHardwareVersion(2);
-    setHardwareRevision(0);
-    setFirmwareMajorVersion(0);
-    setFirmwareMinorVersion(2);
-    setFirmwarePatchVersion(0);
+    FIRMWARE_UPGRADE_VERSION_URL = URL_BASE "/queryOTA_sendsNotif3.json"; // major = 1, minor = 0
+    OTA_HARDWARE_VERSION = 2;
+    OTA_REVISION_VERSION = 0;
+    OTA_MAJOR_VERSION = 0;
+    OTA_MINOR_VERSION = 2;
+    OTA_PATCH_VERSION = 0;
 
     sema = xSemaphoreCreateBinary();
 
@@ -123,4 +134,5 @@ TEST_CASE("queryOTA_sendsNotif", "[actions]")
     vTaskDelete(otaMockTask);
     vSemaphoreDelete(sema);
 }
-#endif
+
+#endif /* CONFIG_HARDWARE_VERSION != 1 */

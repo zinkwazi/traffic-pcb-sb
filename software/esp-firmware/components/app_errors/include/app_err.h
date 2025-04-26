@@ -44,6 +44,10 @@
 #define APP_ERR_MUTEX_RELEASE (APP_ERR_BASE + 4)
 /* The error code was unhandled when defined handling is required */
 #define APP_ERR_UNHANDLED (APP_ERR_BASE + 5)
+/* The circular buffer bookmark would be/was destroyed */
+#define APP_ERR_LOST_MARK (APP_ERR_BASE + 6)
+/* An argument was uninitialized */
+#define APP_ERR_UNINITIALIZED (APP_ERR_BASE + 7)
 
 /* The backtrace depth to be printed during a bottom-level app error */
 #define APP_ERR_BACKTRACE_DEPTH (5)

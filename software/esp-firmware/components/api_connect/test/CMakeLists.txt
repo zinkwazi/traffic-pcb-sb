@@ -4,6 +4,7 @@ idf_component_register(SRC_DIRS "."
                                    test_data/data_north_V1_0_3.dat
                        REQUIRES unity
                                 api_connect
+                                app_errors
                                 common
                                 esp_wifi
                                 esp_http_client
