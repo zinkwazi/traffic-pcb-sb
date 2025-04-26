@@ -8,8 +8,8 @@
 
 #include <stdint.h>
 
-#include "sdkconfig.h"
 #include "esp_err.h"
+#include "sdkconfig.h"
 
 #include "app_errors.h"
 #include "led_matrix.h"
@@ -17,23 +17,9 @@
 #include "main_types.h"
 #include "strobe.h"
 
-#define TAG "indicators"
+#include "indicators_config.h"
 
-#define V2_0_WIFI_CONNECTED_COLOR_RED (CONFIG_WHITE_RED_COMPONENT)
-#define V2_0_WIFI_CONNECTED_COLOR_GREEN (CONFIG_WHITE_GREEN_COMPONENT)
-#define V2_0_WIFI_CONNECTED_COLOR_BLUE (CONFIG_WHITE_BLUE_COMPONENT)
-
-#define V2_0_OTA_UPDATE_COLOR_RED (CONFIG_WHITE_RED_COMPONENT)
-#define V2_0_OTA_UPDATE_COLOR_GREEN (CONFIG_WHITE_GREEN_COMPONENT)
-#define V2_0_OTA_UPDATE_COLOR_BLUE (CONFIG_WHITE_BLUE_COMPONENT)
-
-#define V2_0_NORTHBOUND_COLOR_RED (CONFIG_WHITE_RED_COMPONENT)
-#define V2_0_NORTHBOUND_COLOR_GREEN (CONFIG_WHITE_GREEN_COMPONENT)
-#define V2_0_NORTHBOUND_COLOR_BLUE (CONFIG_WHITE_BLUE_COMPONENT)
-
-#define V2_0_SOUTHBOUND_COLOR_RED (CONFIG_WHITE_RED_COMPONENT)
-#define V2_0_SOUTHBOUND_COLOR_GREEN (CONFIG_WHITE_GREEN_COMPONENT)
-#define V2_0_SOUTHBOUND_COLOR_BLUE (CONFIG_WHITE_BLUE_COMPONENT)
+#define TAG "indicators" 
 
 #if CONFIG_HARDWARE_VERSION == 1
 
@@ -297,9 +283,9 @@ esp_err_t indicateOTAAvailable(void)
     err = matSetScaling(OTA_LED_NUM, 0x00, 0x00, 0x00); // let strobe task handle this
     if (err != ESP_OK) return err;
     err = matSetColor(OTA_LED_NUM,
-                        CONFIG_V2_0_OTA_AVAILABLE_RED_COMPONENT,
-                        CONFIG_V2_0_OTA_AVAILABLE_GREEN_COMPONENT,
-                        CONFIG_V2_0_OTA_AVAILABLE_BLUE_COMPONENT);
+                      V2_0_OTA_AVAILABLE_RED_COMPONENT,
+                      V2_0_OTA_AVAILABLE_GREEN_COMPONENT,
+                      V2_0_OTA_AVAILABLE_BLUE_COMPONENT);
     if (err != ESP_OK) return err;
     err = strobeRegisterLED(strobeCommand);
     return err;
@@ -373,9 +359,9 @@ esp_err_t indicateOTAFailure(int32_t delay)
     err = matSetScaling(OTA_LED_NUM, 0xFF, 0xFF, 0xFF);
     if (err != ESP_OK) return err;
     err = matSetColor(OTA_LED_NUM,
-                      CONFIG_V2_0_OTA_FAILURE_RED_COMPONENT,
-                      CONFIG_V2_0_OTA_FAILURE_GREEN_COMPONENT,
-                      CONFIG_V2_0_OTA_FAILURE_BLUE_COMPONENT);
+                      V2_0_OTA_FAILURE_RED_COMPONENT,
+                      V2_0_OTA_FAILURE_GREEN_COMPONENT,
+                      V2_0_OTA_FAILURE_BLUE_COMPONENT);
     if (err != ESP_OK) return err;
     vTaskDelay(pdMS_TO_TICKS(delay));
     err = matSetColor(OTA_LED_NUM, 0x00, 0x00, 0x00);
@@ -412,9 +398,9 @@ esp_err_t indicateOTASuccess(int32_t delay)
     err = matSetScaling(OTA_LED_NUM, 0xFF, 0xFF, 0xFF);
     if (err != ESP_OK) return err;
     err = matSetColor(OTA_LED_NUM,
-                      CONFIG_V2_0_OTA_SUCCESS_RED_COMPONENT,
-                      CONFIG_V2_0_OTA_SUCCESS_GREEN_COMPONENT,
-                      CONFIG_V2_0_OTA_SUCCESS_BLUE_COMPONENT);
+                      V2_0_OTA_SUCCESS_RED_COMPONENT,
+                      V2_0_OTA_SUCCESS_GREEN_COMPONENT,
+                      V2_0_OTA_SUCCESS_BLUE_COMPONENT);
     if (err != ESP_OK) return err;
     vTaskDelay(pdMS_TO_TICKS(delay));
     err = matSetColor(OTA_LED_NUM, 0x00, 0x00, 0x00);
