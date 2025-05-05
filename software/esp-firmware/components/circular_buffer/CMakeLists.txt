@@ -1,4 +1,4 @@
-set(srcs "src/circular_buffer.c")
+set(srcs "src/circular_buffer.c" "src/http_wrap.c")
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS "include"

@@ -102,27 +102,103 @@ esp_err_t circularBufferStore(CircularBuffer *buf, char *str, uint32_t len) {
     return ESP_OK;
 }
 
-// /**
-//  * @brief Reads at most maxLen bytes from the client using esp_http_client_read
-//  * and stores them in the circular buffer.
-//  * 
-//  * @param[in] buf The circular buffer to store read data in.
-//  * @param[in] client The client to read data from. This function does not
-//  * cleanup the client.
-//  * @param[in] maxLen The maximum number of bytes to read from the client. If 
-//  * UINT32_MAX, then enough bytes will be read to fill the buffer up to the
-//  * bookmark or until the client is empty.
-//  * 
-//  * @requires:
-//  * - client is initialized and esp_http_client_read can be called on it.
-//  * 
-//  * @returns ESP_OK if successful.
-//  * 
-//  */
-// circ_err_t circularBufferStoreFromClient(CircularBuffer *buf, esp_http_client_handle_t client, uint32_t maxLen)
-// {
+/**
+ * @brief Helps circularBufferStoreFromClient, particularly to reduce boilerplate
+ * and allow quick 'mocking' of esp_http_client_read when testing.
+ */
+static int readHttpClientHelper(esp_http_client_handle_t client, char *buffer, int len)
+{
+    
+}
 
-// }
+/**
+ * @brief Reads at most maxLen bytes from the client using esp_http_client_read
+ * and stores them in the circular buffer.
+ * 
+ * @param[in] buf The circular buffer to store read data in.
+ * @param[in] client The client to read data from. This function does not
+ * cleanup the client.
+ * @param[in] maxLen The maximum number of bytes to read from the client. If 0,
+ * then enough bytes will be read to fill the buffer up to the bookmark or 
+ * until the client is empty.
+ * 
+ * @requires:
+ * - client is initialized and esp_http_client_read can be called on it.
+ * 
+ * @returns ESP_OK if successful.
+ * ESP_ERR_INVALID_ARG if invalid arguments.
+ * APP_ERR_UNINITIALIZED if buf is uninitialized or illegally modified.
+ * ESP_FAIL if an unexpected error occurred.
+ */
+esp_err_t circularBufferStoreFromClient(CircularBuffer *buf, esp_http_client_handle_t client, uint32_t maxLen)
+{
+    int bytesRead;
+    esp_err_t err;
+    uint32_t startReadNdx, endReadNdx; // start-inclusive, end-exclusive
+
+    /* input guards */
+    if (buf == NULL) return ESP_ERR_INVALID_ARG;
+    if (client == NULL) return ESP_ERR_INVALID_ARG;
+    if (buf->backing == NULL) return APP_ERR_UNINITIALIZED;
+    if (maxLen > buf->backingSize) return ESP_ERR_INVALID_SIZE;
+
+    /* handle zero size circbuf case */
+    if (buf->len == 0)
+    {
+        bytesRead = readHttpClientHelper(client, buf->backing, maxLen);
+        if (bytesRead < 0) THROW_ERR(ESP_FAIL); // error code
+        if (bytesRead > maxLen) THROW_ERR(ESP_FAIL);
+        return ESP_OK;
+    }
+
+    /* determine reading indices for back of buffer */
+    startReadNdx = buf->end + 1;
+    if (buf->mark != UINT32_MAX && buf->mark > buf->end)
+    {
+        endReadNdx = buf->mark;
+    } else
+    {
+        endReadNdx = buf->backingSize - 1;
+    }
+
+    /* read into back end of buffer */
+    if (maxLen != 0 && endReadNdx - startReadNdx >= maxLen)
+    {
+        /* will not need to read into front of buffer */
+        bytesRead = readHttpClientHelper(client, &(buf->backing[startReadNdx]), maxLen);
+        if (bytesRead < 0) THROW_ERR(ESP_FAIL);
+        if (bytesRead > maxLen) THROW_ERR(ESP_FAIL);
+        buf->len += bytesRead;
+        if (buf->len > buf->backingSize) THROW_ERR(ESP_FAIL); // unexpected
+        buf->end += bytesRead; // will not be OOB
+        return ESP_OK;
+    }
+
+    if (startReadNdx < buf->backingSize) // potentially OOB if buf->end == buf->backingSize - 1
+    {
+        bytesRead = readHttpClientHelper(client, &(buf->backing[startReadNdx]), endReadNdx - startReadNdx);
+        if (bytesRead < 0) THROW_ERR(ESP_FAIL);
+        if (bytesRead > maxLen) THROW_ERR(ESP_FAIL);
+        buf->len += bytesRead;
+        buf->end = modularAddition(buf->end, bytesRead, buf->backingSize);
+        if (bytesRead < endReadNdx - startReadNdx) return ESP_OK; // reached end of client
+        maxLen -= bytesRead;
+    }
+
+    /* determine reading indices for front of buffer */
+    if (buf->end != buf->backingSize - 1) THROW_ERR(ESP_FAIL); // expected this to be true
+    endReadNdx = (buf->mark < buf->end) ? buf->mark : buf->end;
+    if (endReadNdx >= maxLen) endReadNdx = maxLen; // won't fill buffer entirely
+
+    /* read into front end of buffer */
+    bytesRead = readHttpClientHelper(client, buf->backing, endReadNdx);
+    if (bytesRead < 0) THROW_ERR(ESP_FAIL);
+    if (bytesRead > endReadNdx) THROW_ERR(ESP_FAIL);
+    buf->len += bytesRead;
+    if (buf->len > buf->backingSize) THROW_ERR(ESP_FAIL); // unexpected
+    buf->end += bytesRead; // will not be OOB
+    return ESP_OK;
+}
 
 /**
  * @brief Creates a bookmark from which circularBufferReadFromMark can be
