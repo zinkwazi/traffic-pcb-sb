@@ -3,7 +3,7 @@ set(includes "include")
 
 if (CONFIG_MOCK_HTTP_WRAP)
     list(APPEND srcs "mock/Mockhttp_wrap.c")
-    list(APPEND includes "mock")
+    list(APPEND includes "mocks")
 else ()
     list(APPEND srcs "src/http_wrap.c")
 endif ()

@@ -15,6 +15,7 @@
 #include "esp_http_client.h"
 
 #include "app_err.h"
+#include "http_wrap.h"
 #include "utilities.h"
 
 #define TAG "circBuffer"
@@ -103,15 +104,6 @@ esp_err_t circularBufferStore(CircularBuffer *buf, char *str, uint32_t len) {
 }
 
 /**
- * @brief Helps circularBufferStoreFromClient, particularly to reduce boilerplate
- * and allow quick 'mocking' of esp_http_client_read when testing.
- */
-static int readHttpClientHelper(esp_http_client_handle_t client, char *buffer, int len)
-{
-    
-}
-
-/**
  * @brief Reads at most maxLen bytes from the client using esp_http_client_read
  * and stores them in the circular buffer.
  * 
@@ -133,7 +125,6 @@ static int readHttpClientHelper(esp_http_client_handle_t client, char *buffer, i
 esp_err_t circularBufferStoreFromClient(CircularBuffer *buf, esp_http_client_handle_t client, uint32_t maxLen)
 {
     int bytesRead;
-    esp_err_t err;
     uint32_t startReadNdx, endReadNdx; // start-inclusive, end-exclusive
 
     /* input guards */
@@ -145,7 +136,7 @@ esp_err_t circularBufferStoreFromClient(CircularBuffer *buf, esp_http_client_han
     /* handle zero size circbuf case */
     if (buf->len == 0)
     {
-        bytesRead = readHttpClientHelper(client, buf->backing, maxLen);
+        bytesRead = wrap_http_client_read(client, buf->backing, maxLen);
         if (bytesRead < 0) THROW_ERR(ESP_FAIL); // error code
         if (bytesRead > maxLen) THROW_ERR(ESP_FAIL);
         return ESP_OK;
@@ -165,7 +156,7 @@ esp_err_t circularBufferStoreFromClient(CircularBuffer *buf, esp_http_client_han
     if (maxLen != 0 && endReadNdx - startReadNdx >= maxLen)
     {
         /* will not need to read into front of buffer */
-        bytesRead = readHttpClientHelper(client, &(buf->backing[startReadNdx]), maxLen);
+        bytesRead = wrap_http_client_read(client, &(buf->backing[startReadNdx]), maxLen);
         if (bytesRead < 0) THROW_ERR(ESP_FAIL);
         if (bytesRead > maxLen) THROW_ERR(ESP_FAIL);
         buf->len += bytesRead;
@@ -176,7 +167,7 @@ esp_err_t circularBufferStoreFromClient(CircularBuffer *buf, esp_http_client_han
 
     if (startReadNdx < buf->backingSize) // potentially OOB if buf->end == buf->backingSize - 1
     {
-        bytesRead = readHttpClientHelper(client, &(buf->backing[startReadNdx]), endReadNdx - startReadNdx);
+        bytesRead = wrap_http_client_read(client, &(buf->backing[startReadNdx]), endReadNdx - startReadNdx);
         if (bytesRead < 0) THROW_ERR(ESP_FAIL);
         if (bytesRead > maxLen) THROW_ERR(ESP_FAIL);
         buf->len += bytesRead;
@@ -191,7 +182,7 @@ esp_err_t circularBufferStoreFromClient(CircularBuffer *buf, esp_http_client_han
     if (endReadNdx >= maxLen) endReadNdx = maxLen; // won't fill buffer entirely
 
     /* read into front end of buffer */
-    bytesRead = readHttpClientHelper(client, buf->backing, endReadNdx);
+    bytesRead = wrap_http_client_read(client, buf->backing, endReadNdx);
     if (bytesRead < 0) THROW_ERR(ESP_FAIL);
     if (bytesRead > endReadNdx) THROW_ERR(ESP_FAIL);
     buf->len += bytesRead;

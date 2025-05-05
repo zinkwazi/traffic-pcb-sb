@@ -18,6 +18,7 @@
 #include "freertos/task.h"
 #include "sdkconfig.h"
 
+#include "http_wrap.h"
 #include "led_matrix.h"
 #include "utilities.h"
 #include "main_types.h"
@@ -115,14 +116,14 @@ STATIC_IF_NOT_TEST esp_err_t handleActionUpdateData(void)
     err = refreshData(northData, client, NORTH, LIVE);
     if (err != ESP_OK)
     {
-        err = esp_http_client_cleanup(client);
+        err = wrap_http_client_cleanup(client);
         if (err != ESP_OK) throwFatalError();
         return ESP_FAIL;
     }
     err = refreshData(southData, client, SOUTH, LIVE);
     if (err != ESP_OK)
     {
-        err = esp_http_client_cleanup(client);
+        err = wrap_http_client_cleanup(client);
         if (err != ESP_OK) throwFatalError();
         return ESP_FAIL;
     }
@@ -137,6 +138,8 @@ STATIC_IF_NOT_TEST esp_err_t handleActionUpdateData(void)
     err = releaseTrafficData(LIVE);
     if (err != ESP_OK) return ESP_FAIL;
     
+    err = wrap_http_client_cleanup(client);
+    if (err != ESP_OK) throwFatalError();
     return ESP_OK;
 }
 

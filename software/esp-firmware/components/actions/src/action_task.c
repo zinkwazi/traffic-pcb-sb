@@ -68,7 +68,6 @@ static const esp_timer_create_args_t nextActionTimerCfg = {
 static esp_timer_handle_t nextActionTimer = NULL;
 
 
-
 static const esp_timer_create_args_t updateTrafficTimerCfg = {
     .callback = updateDataTimerCallback,
     .arg = NULL,
@@ -182,9 +181,13 @@ static void vActionTask(void *pvParams)
  */
 static esp_err_t initActions(void)
 {
-    esp_sntp_config_t sntp_cfg = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
     esp_err_t err;
     int64_t nextJobSecs;
+
+#if CONFIG_HARDWARE_VERSION == 1
+    /* feature unsupported */
+#elif CONFIG_HARDWARE_VERSION == 2
+    esp_sntp_config_t sntp_cfg = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
 
     // Set timezone to Los Angeles time zone (PST/PDT)
     setenv("TZ", "PST8PDT,M3.2.0/2,M11.1.0/2", 1);
@@ -203,6 +206,10 @@ static esp_err_t initActions(void)
     ESP_LOGI(TAG, "SNTP sync complete...");
     err = esp_netif_sntp_start();
     if (err != ESP_OK) return err;
+
+#else
+#error "Unsupported hardware version!"
+#endif
 
     /* initialize timers */
     err = esp_timer_create(&updateTrafficTimerCfg, &updateTrafficTimer);

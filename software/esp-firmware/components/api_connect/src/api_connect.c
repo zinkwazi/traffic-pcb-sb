@@ -15,6 +15,7 @@
 #include "esp_err.h"
 #include "esp_assert.h"
 
+#include "http_wrap.h"
 #include "circular_buffer.h"
 #include "main_types.h"
 
@@ -104,10 +105,7 @@ esp_err_t getNextResponseBlock(char *output,
     /* read block */
     numBytesToRead = ((int32_t) *outputLen) - 2; // preprocessing includes a null-terminator, 
                                                  // and potentially a newline character
-    do
-    {
-        numBytesRead = esp_http_client_read(client, output, numBytesToRead);
-    } while (numBytesRead == -ESP_ERR_HTTP_EAGAIN);
+    numBytesRead = wrap_http_client_read(client, output, numBytesToRead);
     if (numBytesRead < 0) return ESP_FAIL;
     if (numBytesRead == 0) {
         ret = ESP_ERR_NOT_FOUND;
@@ -337,29 +335,28 @@ esp_err_t openServerFile(int64_t *contentLength,
 
     /* clear http buffer if not clear */
     do {
-        bytesFlushed = esp_http_client_read(client, buf, flushBufSize);
-        if (bytesFlushed < 0 && bytesFlushed != -ESP_ERR_HTTP_EAGAIN) return ESP_FAIL;
+        bytesFlushed = wrap_http_client_read(client, buf, flushBufSize);
     } while (bytesFlushed != 0);
 
     /* establish connection and open URL */
     ESP_LOGI(TAG, "retrieving: %s", URL);
     while (retryNum != 0)
     {
-        err = esp_http_client_set_url(client, URL);
+        err = wrap_http_client_set_url(client, URL);
         if (err != ESP_OK) return err; // should always be able to do this
 
-        err = esp_http_client_open(client, 0);
+        err = wrap_http_client_open(client, 0);
         if (err != ESP_OK) return err; // should always be able to do this
 
-        *contentLength = esp_http_client_fetch_headers(client);
+        *contentLength = wrap_http_client_fetch_headers(client);
         while (*contentLength == -ESP_ERR_HTTP_EAGAIN)
         {
-            *contentLength = esp_http_client_fetch_headers(client);
+            *contentLength = wrap_http_client_fetch_headers(client);
         }
         if (*contentLength <= 0)
         {
             ESP_LOGW(TAG, "contentLength <= 0");
-            if (esp_http_client_close(client) != ESP_OK)
+            if (wrap_http_client_close(client) != ESP_OK)
             {
                 ESP_LOGE(TAG, "failed to close client");
                 return ESP_FAIL;
@@ -367,19 +364,19 @@ esp_err_t openServerFile(int64_t *contentLength,
             retryNum--;
             return ESP_ERR_NOT_FOUND;
         }
-        int status = esp_http_client_get_status_code(client);
-        if (esp_http_client_get_status_code(client) != 200)
+        int status = wrap_http_client_get_status_code(client);
+        if (wrap_http_client_get_status_code(client) != 200)
         {
             ESP_LOGE(TAG, "status code is %d", status);
             /* flush internal response buffer and close client */
-            err = esp_http_client_flush_response(client, &bytesFlushed);
+            err = wrap_http_client_flush_response(client, &bytesFlushed);
             ESP_LOGW(TAG, "flushed %d bytes", bytesFlushed);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to flush response");
                 return ESP_FAIL;
             }
 
-            err = esp_http_client_close(client);
+            err = wrap_http_client_close(client);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to close client");
                 return ESP_FAIL;
@@ -519,7 +516,7 @@ esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[],
         }
 
         /* close connection to allow next connection to work properly */
-        if (esp_http_client_close(client) != ESP_OK)
+        if (wrap_http_client_close(client) != ESP_OK)
         {
             ESP_LOGE(TAG, "failed to close client");
             return ESP_FAIL;
@@ -669,7 +666,7 @@ esp_err_t getServerSpeedsNoAddendums(LEDData ledSpeeds[],
 
     err = readServerSpeedData(ledSpeeds, ledSpeedsLen, client);
 
-    if (esp_http_client_close(client) != ESP_OK) 
+    if (wrap_http_client_close(client) != ESP_OK) 
     {
         ESP_LOGE(TAG, "failed to close client");
         return ESP_FAIL;
