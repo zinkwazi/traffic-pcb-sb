@@ -11,6 +11,7 @@
 
 #include "unity.h"
 
+#include "esp_heap_trace.h"
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -19,10 +20,10 @@
 
 #include "actions.h"
 #include "actions_pi.h"
-#include "ota_pi.h"
-#include "ota_config.h"
 #include "utilities.h"
+#include "Mockota.h"
 #include "Mockindicators.h"
+#include "Mockhttp_wrap.h"
 
 #define URL_BASE CONFIG_ACTIONS_TEST_DATA_SERVER CONFIG_ACTIONS_TEST_DATA_BASE_URL
 
@@ -44,6 +45,14 @@ static void vSendsNotifOTAMock(void *pvParams)
         if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) != 0)
         {
             xSemaphoreGive(sema);
+            break;
+        }
+    }
+    while (true)
+    {
+        if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) != 0)
+        {
+            TEST_FAIL_MESSAGE("OTA Mock task received multiple task notifications!");
         }
     }
     vTaskDelete(NULL);
@@ -53,86 +62,215 @@ static void vSendsNotifOTAMock(void *pvParams)
  * @brief Tests that queryOTA action sends a task notification to the OTA
  * task only if a patch update is available.
  */
-TEST_CASE("queryOTA_sendsNotif", "[actions]")
+TEST_CASE("queryOTA_patchUpdateNotif", "[actions]")
 {
+    const int testPrio = uxTaskPriorityGet(NULL);
     SemaphoreHandle_t sema;
     TaskHandle_t otaMockTask;
     BaseType_t success;
 
-    /* test that patch update sends task notification */
-    FIRMWARE_UPGRADE_VERSION_URL = URL_BASE "/queryOTA_sendsNotif1.json"; // patch = 1
-    OTA_HARDWARE_VERSION = 2;
-    OTA_REVISION_VERSION = 0;
-    OTA_MAJOR_VERSION = 0;
-    OTA_MINOR_VERSION = 2;
-    OTA_PATCH_VERSION = 0;
-    
-    Mockindicators_Init();
+    /* setup mock functions */
+    Mockota_Init();
+    bool dummy;
+    queryOTAUpdateAvailable_ExpectAndReturn(&dummy, &dummy, ESP_OK);
+    queryOTAUpdateAvailable_IgnoreArg_available();
+    queryOTAUpdateAvailable_IgnoreArg_patch();
+    bool retAvailable = true;
+    bool retPatch = true;
+    queryOTAUpdateAvailable_ReturnThruPtr_available(&retAvailable);
+    queryOTAUpdateAvailable_ReturnThruPtr_patch(&retPatch);
+
     indicateOTAAvailable_IgnoreAndReturn(ESP_OK);
     indicateOTAUpdate_IgnoreAndReturn(ESP_OK);
     indicateOTASuccess_IgnoreAndReturn(ESP_OK);
     indicateOTAFailure_IgnoreAndReturn(ESP_OK);
 
+    // the vSendsNotifOTAMock is given a higher priority than the test task,
+    // so by the time handleActionQueryOTA returns the task should have set
+    // the binary mutex and returned to sleep.
     sema = xSemaphoreCreateBinary();
 
-    success = xTaskCreate(vSendsNotifOTAMock, "otaMock", 2000, sema, 10, &otaMockTask);
+    success = xTaskCreate(vSendsNotifOTAMock, "otaMock", 2000, sema, testPrio + 1, &otaMockTask);
     TEST_ASSERT_EQUAL(pdPASS, success);
-
-    setOTATask(otaMockTask);
+    getOTATask_IgnoreAndReturn(otaMockTask);
     
+    /* perform test */
     handleActionQueryOTA();
 
-    success = xSemaphoreTake(sema, pdMS_TO_TICKS(1000)); // wait 1 second
+    /* check test results */
+    success = xSemaphoreTake(sema, 0);
     TEST_ASSERT_EQUAL(pdTRUE, success);
 
+    Mockota_Verify();
+    Mockindicators_Verify();
+
+    /* cleanup test resources */
+    Mockota_Destroy();
+
     vTaskDelete(otaMockTask);
     vSemaphoreDelete(sema);
+}
 
-    /* test that minor updates does not send task notification */
-    FIRMWARE_UPGRADE_VERSION_URL = URL_BASE "/queryOTA_sendsNotif2.json"; // minor = 3
-    OTA_HARDWARE_VERSION = 2;
-    OTA_REVISION_VERSION = 0;
-    OTA_MAJOR_VERSION = 0;
-    OTA_MINOR_VERSION = 2;
-    OTA_PATCH_VERSION = 0;
+/**
+ * @brief Tests that queryOTA action does not send a task notification
+ * if a non-patch update is available.
+ */
+TEST_CASE("queryOTA_updateNotif", "[actions]")
+{
+    const int testPrio = uxTaskPriorityGet(NULL);
+    SemaphoreHandle_t sema;
+    TaskHandle_t otaMockTask;
+    BaseType_t success;
 
+    /* setup mock functions */
+    Mockota_Init();
+    bool dummy;
+    queryOTAUpdateAvailable_ExpectAndReturn(&dummy, &dummy, ESP_OK);
+    queryOTAUpdateAvailable_IgnoreArg_available();
+    queryOTAUpdateAvailable_IgnoreArg_patch();
+    bool retAvailable = true;
+    bool retPatch = false;
+    queryOTAUpdateAvailable_ReturnThruPtr_available(&retAvailable);
+    queryOTAUpdateAvailable_ReturnThruPtr_patch(&retPatch);
+
+    indicateOTAAvailable_IgnoreAndReturn(ESP_OK);
+    indicateOTAUpdate_IgnoreAndReturn(ESP_OK);
+    indicateOTASuccess_IgnoreAndReturn(ESP_OK);
+    indicateOTAFailure_IgnoreAndReturn(ESP_OK);
+
+    // the vSendsNotifOTAMock is given a higher priority than the test task,
+    // so by the time handleActionQueryOTA returns the task should have set
+    // the binary mutex and returned to sleep.
     sema = xSemaphoreCreateBinary();
 
-    success = xTaskCreate(vSendsNotifOTAMock, "otaMock", 2000, sema, 10, &otaMockTask);
+    success = xTaskCreate(vSendsNotifOTAMock, "otaMock", 2000, sema, testPrio + 1, &otaMockTask);
     TEST_ASSERT_EQUAL(pdPASS, success);
-
-    setOTATask(otaMockTask);
+    getOTATask_IgnoreAndReturn(otaMockTask);
     
+    /* perform test */
     handleActionQueryOTA();
 
-    success = xSemaphoreTake(sema, pdMS_TO_TICKS(1000)); // wait 1 second
+    /* check test results */
+    success = xSemaphoreTake(sema, 0);
     TEST_ASSERT_EQUAL(pdFALSE, success);
+
+    Mockota_Verify();
+    Mockindicators_Verify();
+
+    /* cleanup test resources */
+    Mockota_Destroy();
 
     vTaskDelete(otaMockTask);
     vSemaphoreDelete(sema);
+}
 
-    /* test that major updates does not send task notification */
-    FIRMWARE_UPGRADE_VERSION_URL = URL_BASE "/queryOTA_sendsNotif3.json"; // major = 1, minor = 0
-    OTA_HARDWARE_VERSION = 2;
-    OTA_REVISION_VERSION = 0;
-    OTA_MAJOR_VERSION = 0;
-    OTA_MINOR_VERSION = 2;
-    OTA_PATCH_VERSION = 0;
+/**
+ * @brief Tests that queryOTA action does not send a task notification
+ * if no update is available
+ */
+TEST_CASE("queryOTA_noUpdateNotif", "[actions]")
+{
+    const int testPrio = uxTaskPriorityGet(NULL);
+    SemaphoreHandle_t sema;
+    TaskHandle_t otaMockTask;
+    BaseType_t success;
 
+    /* setup mock functions */
+    Mockota_Init();
+    bool dummy;
+    queryOTAUpdateAvailable_ExpectAndReturn(&dummy, &dummy, ESP_OK);
+    queryOTAUpdateAvailable_IgnoreArg_available();
+    queryOTAUpdateAvailable_IgnoreArg_patch();
+    bool retAvailable = false;
+    bool retPatch = false;
+    queryOTAUpdateAvailable_ReturnThruPtr_available(&retAvailable);
+    queryOTAUpdateAvailable_ReturnThruPtr_patch(&retPatch);
+
+    indicateOTAAvailable_IgnoreAndReturn(ESP_OK);
+    indicateOTAUpdate_IgnoreAndReturn(ESP_OK);
+    indicateOTASuccess_IgnoreAndReturn(ESP_OK);
+    indicateOTAFailure_IgnoreAndReturn(ESP_OK);
+
+    // the vSendsNotifOTAMock is given a higher priority than the test task,
+    // so by the time handleActionQueryOTA returns the task should have set
+    // the binary mutex and returned to sleep.
     sema = xSemaphoreCreateBinary();
 
-    success = xTaskCreate(vSendsNotifOTAMock, "otaMock", 2000, sema, 10, &otaMockTask);
+    success = xTaskCreate(vSendsNotifOTAMock, "otaMock", 2000, sema, testPrio + 1, &otaMockTask);
     TEST_ASSERT_EQUAL(pdPASS, success);
-
-    setOTATask(otaMockTask);
+    getOTATask_IgnoreAndReturn(otaMockTask);
     
+    /* perform test */
     handleActionQueryOTA();
 
-    success = xSemaphoreTake(sema, pdMS_TO_TICKS(1000)); // wait 1 second
+    /* check test results */
+    success = xSemaphoreTake(sema, 0);
     TEST_ASSERT_EQUAL(pdFALSE, success);
+
+    Mockota_Verify();
+    Mockindicators_Verify();
+
+    /* cleanup test resources */
+    Mockota_Destroy();
 
     vTaskDelete(otaMockTask);
     vSemaphoreDelete(sema);
+}
+
+
+/**
+ * @brief Checks that a memory leak is not present within the function.
+ */
+TEST_CASE("queryOTA_memoryLeak", "[actions]")
+{
+    // TODO: This test does not check the actual heap because dependencies are
+    // mocked.
+
+    const int testPrio = uxTaskPriorityGet(NULL);
+    SemaphoreHandle_t sema;
+    TaskHandle_t otaMockTask;
+    BaseType_t success;
+
+    /* setup mock functions */
+    Mockota_Init();
+    bool dummy;
+    queryOTAUpdateAvailable_ExpectAndReturn(&dummy, &dummy, ESP_OK);
+    queryOTAUpdateAvailable_IgnoreArg_available();
+    queryOTAUpdateAvailable_IgnoreArg_patch();
+    bool retAvailable = false;
+    bool retPatch = false;
+    queryOTAUpdateAvailable_ReturnThruPtr_available(&retAvailable);
+    queryOTAUpdateAvailable_ReturnThruPtr_patch(&retPatch);
+
+    indicateOTAAvailable_IgnoreAndReturn(ESP_OK);
+    indicateOTAUpdate_IgnoreAndReturn(ESP_OK);
+    indicateOTASuccess_IgnoreAndReturn(ESP_OK);
+    indicateOTAFailure_IgnoreAndReturn(ESP_OK);
+
+    // the vSendsNotifOTAMock is given a higher priority than the test task,
+    // so by the time handleActionQueryOTA returns the task should have set
+    // the binary mutex and returned to sleep.
+    sema = xSemaphoreCreateBinary();
+
+    success = xTaskCreate(vSendsNotifOTAMock, "otaMock", 2000, sema, testPrio + 1, &otaMockTask);
+    TEST_ASSERT_EQUAL(pdPASS, success);
+    getOTATask_IgnoreAndReturn(otaMockTask);
+    
+    /* perform test */
+    TEST_ASSERT_EQUAL(ESP_OK, heap_trace_start(HEAP_TRACE_LEAKS));
+    handleActionQueryOTA();
+    TEST_ASSERT_EQUAL(ESP_OK, heap_trace_stop());
+    
+    /* analyze heap */
+    heap_trace_dump();
+
+    /* cleanup test resources */
+    Mockota_Destroy();
+
+    vTaskDelete(otaMockTask);
+    vSemaphoreDelete(sema);
+
+    
 }
 
 #endif /* CONFIG_HARDWARE_VERSION != 1 */

@@ -8,4 +8,10 @@ menu "OTA"
             configuration options. This allows runtime modification of these
             definitions during testing, while reducing overhead in production.
 
+    config MOCK_OTA
+        bool "Mock OTA Component"
+        default false
+        help
+            Whether to mock ota.h or not.
+
 endmenu

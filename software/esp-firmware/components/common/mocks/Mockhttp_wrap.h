@@ -28,6 +28,18 @@ void Mockhttp_wrap_Verify(void);
 
 
 
+#define wrap_http_client_init_Ignore() TEST_FAIL_MESSAGE("wrap_http_client_init requires _IgnoreAndReturn");
+#define wrap_http_client_init_IgnoreAndReturn(cmock_retval) wrap_http_client_init_CMockIgnoreAndReturn(__LINE__, cmock_retval)
+void wrap_http_client_init_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_http_client_handle_t cmock_to_return);
+#define wrap_http_client_init_StopIgnore() wrap_http_client_init_CMockStopIgnore()
+void wrap_http_client_init_CMockStopIgnore(void);
+#define wrap_http_client_init_Expect(config) TEST_FAIL_MESSAGE("wrap_http_client_init requires _ExpectAndReturn");
+#define wrap_http_client_init_ExpectAndReturn(config, cmock_retval) wrap_http_client_init_CMockExpectAndReturn(__LINE__, config, cmock_retval)
+void wrap_http_client_init_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, const esp_http_client_config_t* config, esp_http_client_handle_t cmock_to_return);
+typedef esp_http_client_handle_t (* CMOCK_wrap_http_client_init_CALLBACK)(const esp_http_client_config_t* config, int cmock_num_calls);
+void wrap_http_client_init_AddCallback(CMOCK_wrap_http_client_init_CALLBACK Callback);
+void wrap_http_client_init_Stub(CMOCK_wrap_http_client_init_CALLBACK Callback);
+#define wrap_http_client_init_StubWithCallback wrap_http_client_init_Stub
 #define wrap_http_client_open_Ignore() TEST_FAIL_MESSAGE("wrap_http_client_open requires _IgnoreAndReturn");
 #define wrap_http_client_open_IgnoreAndReturn(cmock_retval) wrap_http_client_open_CMockIgnoreAndReturn(__LINE__, cmock_retval)
 void wrap_http_client_open_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return);
@@ -57,13 +69,73 @@ void wrap_http_client_read_Stub(CMOCK_wrap_http_client_read_CALLBACK Callback);
 void wrap_http_client_set_url_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return);
 #define wrap_http_client_set_url_StopIgnore() wrap_http_client_set_url_CMockStopIgnore()
 void wrap_http_client_set_url_CMockStopIgnore(void);
-#define wrap_http_client_set_url_Expect() TEST_FAIL_MESSAGE("wrap_http_client_set_url requires _ExpectAndReturn");
-#define wrap_http_client_set_url_ExpectAndReturn(cmock_retval) wrap_http_client_set_url_CMockExpectAndReturn(__LINE__, cmock_retval)
-void wrap_http_client_set_url_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return);
-typedef esp_err_t (* CMOCK_wrap_http_client_set_url_CALLBACK)(int cmock_num_calls);
+#define wrap_http_client_set_url_Expect(client, url) TEST_FAIL_MESSAGE("wrap_http_client_set_url requires _ExpectAndReturn");
+#define wrap_http_client_set_url_ExpectAndReturn(client, url, cmock_retval) wrap_http_client_set_url_CMockExpectAndReturn(__LINE__, client, url, cmock_retval)
+void wrap_http_client_set_url_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, esp_http_client_handle_t client, const char* url, esp_err_t cmock_to_return);
+typedef esp_err_t (* CMOCK_wrap_http_client_set_url_CALLBACK)(esp_http_client_handle_t client, const char* url, int cmock_num_calls);
 void wrap_http_client_set_url_AddCallback(CMOCK_wrap_http_client_set_url_CALLBACK Callback);
 void wrap_http_client_set_url_Stub(CMOCK_wrap_http_client_set_url_CALLBACK Callback);
 #define wrap_http_client_set_url_StubWithCallback wrap_http_client_set_url_Stub
+#define wrap_http_client_fetch_headers_Ignore() TEST_FAIL_MESSAGE("wrap_http_client_fetch_headers requires _IgnoreAndReturn");
+#define wrap_http_client_fetch_headers_IgnoreAndReturn(cmock_retval) wrap_http_client_fetch_headers_CMockIgnoreAndReturn(__LINE__, cmock_retval)
+void wrap_http_client_fetch_headers_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, int64_t cmock_to_return);
+#define wrap_http_client_fetch_headers_StopIgnore() wrap_http_client_fetch_headers_CMockStopIgnore()
+void wrap_http_client_fetch_headers_CMockStopIgnore(void);
+#define wrap_http_client_fetch_headers_Expect(client) TEST_FAIL_MESSAGE("wrap_http_client_fetch_headers requires _ExpectAndReturn");
+#define wrap_http_client_fetch_headers_ExpectAndReturn(client, cmock_retval) wrap_http_client_fetch_headers_CMockExpectAndReturn(__LINE__, client, cmock_retval)
+void wrap_http_client_fetch_headers_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, esp_http_client_handle_t client, int64_t cmock_to_return);
+typedef int64_t (* CMOCK_wrap_http_client_fetch_headers_CALLBACK)(esp_http_client_handle_t client, int cmock_num_calls);
+void wrap_http_client_fetch_headers_AddCallback(CMOCK_wrap_http_client_fetch_headers_CALLBACK Callback);
+void wrap_http_client_fetch_headers_Stub(CMOCK_wrap_http_client_fetch_headers_CALLBACK Callback);
+#define wrap_http_client_fetch_headers_StubWithCallback wrap_http_client_fetch_headers_Stub
+#define wrap_http_client_close_Ignore() TEST_FAIL_MESSAGE("wrap_http_client_close requires _IgnoreAndReturn");
+#define wrap_http_client_close_IgnoreAndReturn(cmock_retval) wrap_http_client_close_CMockIgnoreAndReturn(__LINE__, cmock_retval)
+void wrap_http_client_close_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return);
+#define wrap_http_client_close_StopIgnore() wrap_http_client_close_CMockStopIgnore()
+void wrap_http_client_close_CMockStopIgnore(void);
+#define wrap_http_client_close_Expect(client) TEST_FAIL_MESSAGE("wrap_http_client_close requires _ExpectAndReturn");
+#define wrap_http_client_close_ExpectAndReturn(client, cmock_retval) wrap_http_client_close_CMockExpectAndReturn(__LINE__, client, cmock_retval)
+void wrap_http_client_close_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, esp_http_client_handle_t client, esp_err_t cmock_to_return);
+typedef esp_err_t (* CMOCK_wrap_http_client_close_CALLBACK)(esp_http_client_handle_t client, int cmock_num_calls);
+void wrap_http_client_close_AddCallback(CMOCK_wrap_http_client_close_CALLBACK Callback);
+void wrap_http_client_close_Stub(CMOCK_wrap_http_client_close_CALLBACK Callback);
+#define wrap_http_client_close_StubWithCallback wrap_http_client_close_Stub
+#define wrap_http_client_get_status_code_Ignore() TEST_FAIL_MESSAGE("wrap_http_client_get_status_code requires _IgnoreAndReturn");
+#define wrap_http_client_get_status_code_IgnoreAndReturn(cmock_retval) wrap_http_client_get_status_code_CMockIgnoreAndReturn(__LINE__, cmock_retval)
+void wrap_http_client_get_status_code_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, int cmock_to_return);
+#define wrap_http_client_get_status_code_StopIgnore() wrap_http_client_get_status_code_CMockStopIgnore()
+void wrap_http_client_get_status_code_CMockStopIgnore(void);
+#define wrap_http_client_get_status_code_Expect(client) TEST_FAIL_MESSAGE("wrap_http_client_get_status_code requires _ExpectAndReturn");
+#define wrap_http_client_get_status_code_ExpectAndReturn(client, cmock_retval) wrap_http_client_get_status_code_CMockExpectAndReturn(__LINE__, client, cmock_retval)
+void wrap_http_client_get_status_code_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, esp_http_client_handle_t client, int cmock_to_return);
+typedef int (* CMOCK_wrap_http_client_get_status_code_CALLBACK)(esp_http_client_handle_t client, int cmock_num_calls);
+void wrap_http_client_get_status_code_AddCallback(CMOCK_wrap_http_client_get_status_code_CALLBACK Callback);
+void wrap_http_client_get_status_code_Stub(CMOCK_wrap_http_client_get_status_code_CALLBACK Callback);
+#define wrap_http_client_get_status_code_StubWithCallback wrap_http_client_get_status_code_Stub
+#define wrap_http_client_flush_response_Ignore() TEST_FAIL_MESSAGE("wrap_http_client_flush_response requires _IgnoreAndReturn");
+#define wrap_http_client_flush_response_IgnoreAndReturn(cmock_retval) wrap_http_client_flush_response_CMockIgnoreAndReturn(__LINE__, cmock_retval)
+void wrap_http_client_flush_response_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return);
+#define wrap_http_client_flush_response_StopIgnore() wrap_http_client_flush_response_CMockStopIgnore()
+void wrap_http_client_flush_response_CMockStopIgnore(void);
+#define wrap_http_client_flush_response_Expect(client, len) TEST_FAIL_MESSAGE("wrap_http_client_flush_response requires _ExpectAndReturn");
+#define wrap_http_client_flush_response_ExpectAndReturn(client, len, cmock_retval) wrap_http_client_flush_response_CMockExpectAndReturn(__LINE__, client, len, cmock_retval)
+void wrap_http_client_flush_response_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, esp_http_client_handle_t client, int* len, esp_err_t cmock_to_return);
+typedef esp_err_t (* CMOCK_wrap_http_client_flush_response_CALLBACK)(esp_http_client_handle_t client, int* len, int cmock_num_calls);
+void wrap_http_client_flush_response_AddCallback(CMOCK_wrap_http_client_flush_response_CALLBACK Callback);
+void wrap_http_client_flush_response_Stub(CMOCK_wrap_http_client_flush_response_CALLBACK Callback);
+#define wrap_http_client_flush_response_StubWithCallback wrap_http_client_flush_response_Stub
+#define wrap_http_client_cleanup_Ignore() TEST_FAIL_MESSAGE("wrap_http_client_cleanup requires _IgnoreAndReturn");
+#define wrap_http_client_cleanup_IgnoreAndReturn(cmock_retval) wrap_http_client_cleanup_CMockIgnoreAndReturn(__LINE__, cmock_retval)
+void wrap_http_client_cleanup_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return);
+#define wrap_http_client_cleanup_StopIgnore() wrap_http_client_cleanup_CMockStopIgnore()
+void wrap_http_client_cleanup_CMockStopIgnore(void);
+#define wrap_http_client_cleanup_Expect(client) TEST_FAIL_MESSAGE("wrap_http_client_cleanup requires _ExpectAndReturn");
+#define wrap_http_client_cleanup_ExpectAndReturn(client, cmock_retval) wrap_http_client_cleanup_CMockExpectAndReturn(__LINE__, client, cmock_retval)
+void wrap_http_client_cleanup_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, esp_http_client_handle_t client, esp_err_t cmock_to_return);
+typedef esp_err_t (* CMOCK_wrap_http_client_cleanup_CALLBACK)(esp_http_client_handle_t client, int cmock_num_calls);
+void wrap_http_client_cleanup_AddCallback(CMOCK_wrap_http_client_cleanup_CALLBACK Callback);
+void wrap_http_client_cleanup_Stub(CMOCK_wrap_http_client_cleanup_CALLBACK Callback);
+#define wrap_http_client_cleanup_StubWithCallback wrap_http_client_cleanup_Stub
 
 #ifdef __cplusplus
 }
