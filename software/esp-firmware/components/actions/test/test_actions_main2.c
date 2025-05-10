@@ -1,5 +1,6 @@
 /**
- * This app runs typical unit tests that require heavy mocking.
+ * This app runs tests that check for memory leaks, which requires
+ * few mocks.
  */
 
 #include "unity.h"
@@ -17,7 +18,6 @@
 
 #include "app_errors.h"
 #include "led_matrix.h"
-#include "Mockindicators.h"
 #include "ota_config.h"
 #include "utilities.h"
 #include "wifi.h"

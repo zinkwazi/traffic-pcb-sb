@@ -1,5 +1,12 @@
 menu "Actions Test"
 
+    config ACTIONS_MAIN
+        int "Test Actions Main App"
+        default 1
+        help
+            The test_actions_main file used to run the tests, which
+            controls which tests are compiled.
+
     config ACTIONS_TEST_DATA_SERVER
         string "Test Data Server"
         default "https://bearanvil.com"

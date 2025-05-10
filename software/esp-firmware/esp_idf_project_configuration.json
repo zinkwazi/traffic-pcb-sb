@@ -238,7 +238,7 @@
       "postFlash": ""
     }
   },
-  "test_actions": {
+  "test_actions1": {
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
@@ -247,13 +247,44 @@
         ".\\configurations\\sdkconfig.settings",
         ".\\configurations\\secrets\\sdkconfig.test_secrets",
         ".\\configurations\\sdkconfig.test",
-        ".\\components\\actions\\test\\sdkconfig.test_actions",
+        ".\\components\\actions\\test\\sdkconfig.test_actions1",
         ".\\configurations\\sdkconfig.V2_0_default"
       ],
-      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.test_actions"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.test_actions1"
     },
     "env": {
       "executable": "test_actions"
+    },
+    "flashBaudRate": "",
+    "monitorBaudRate": "",
+    "openOCD": {
+      "debugLevel": 0,
+      "configs": [],
+      "args": []
+    },
+    "tasks": {
+      "preBuild": "",
+      "preFlash": "",
+      "postBuild": "",
+      "postFlash": ""
+    }
+  },
+  "test_actions2": {
+    "build": {
+      "compileArgs": [],
+      "ninjaArgs": [],
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\test_actions2",
+      "sdkconfigDefaults": [
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\secrets\\sdkconfig.test_secrets",
+        ".\\configurations\\sdkconfig.test",
+        ".\\components\\actions\\test\\sdkconfig.test_actions2",
+        ".\\configurations\\sdkconfig.V2_0_default"
+      ],
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.test_actions2"
+    },
+    "env": {
+      "executable": "test_actions2"
     },
     "flashBaudRate": "",
     "monitorBaudRate": "",

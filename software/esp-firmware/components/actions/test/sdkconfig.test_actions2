@@ -1,12 +1,8 @@
-# macro extern definitions
-CONFIG_UTILS_EXTERN_MACROS=y
+# controls which tests are compiled
+CONFIG_ACTIONS_MAIN=2
 
 # list of mocked components for action unit tests
 CONFIG_MOCK_HTTP_WRAP=y
-CONFIG_MOCK_OTA=y
-CONFIG_MOCK_INDICATORS=y
-CONFIG_MOCK_APP_ERRORS=y
-CONFIG_MOCK_REFRESH=y # to avoid util extern macro conflicts
 
 #
 # Heap memory debugging

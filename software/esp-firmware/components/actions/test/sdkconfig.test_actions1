@@ -1,0 +1,30 @@
+# controls which tests are compiled
+CONFIG_ACTIONS_MAIN=1
+
+# macro extern definitions
+CONFIG_UTILS_EXTERN_MACROS=y
+
+# list of mocked components for action unit tests
+CONFIG_MOCK_HTTP_WRAP=y
+CONFIG_MOCK_OTA=y
+CONFIG_MOCK_INDICATORS=y
+CONFIG_MOCK_APP_ERRORS=y
+CONFIG_MOCK_REFRESH=y # to avoid util extern macro conflicts
+
+#
+# Heap memory debugging
+#
+# CONFIG_HEAP_POISONING_DISABLED is not set
+# CONFIG_HEAP_POISONING_LIGHT is not set
+CONFIG_HEAP_POISONING_COMPREHENSIVE=y
+# CONFIG_HEAP_TRACING_OFF is not set
+CONFIG_HEAP_TRACING_STANDALONE=y
+# CONFIG_HEAP_TRACING_TOHOST is not set
+CONFIG_HEAP_TRACING=y
+CONFIG_HEAP_TRACING_STACK_DEPTH=2
+# CONFIG_HEAP_USE_HOOKS is not set
+# CONFIG_HEAP_TASK_TRACKING is not set
+# CONFIG_HEAP_TRACE_HASH_MAP is not set
+# CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS is not set
+# CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH is not set
+# end of Heap memory debugging
