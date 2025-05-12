@@ -22,7 +22,7 @@
 #include "esp_vfs_dev.h"
 #include "esp_wifi_default.h"
 #include "esp_wifi.h"
-#include "freertos/freeRTOS.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "nvs.h"

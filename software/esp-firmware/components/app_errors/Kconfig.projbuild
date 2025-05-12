@@ -2,7 +2,7 @@ menu "App Errors"
 
     config FATAL_CAUSES_REBOOT
         bool "Fatal Error Causes Reboot"
-        default true
+        default y
         help
             Whether a fatal error causes a system reboot or not. It is useful
             to turn this off during development, however there will typically

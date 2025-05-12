@@ -10,7 +10,7 @@
 #include <stdbool.h>
 
 #include "esp_err.h"
-#include "freertos/freeRTOS.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 #include "app_errors.h"
