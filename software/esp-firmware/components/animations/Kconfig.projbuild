@@ -2,7 +2,7 @@ menu "Animations"
 
     config SUPPORT_STROBING
         bool "Support Strobing"
-        default false
+        default n
         help
             Whether or not strobing should be enabled. This may be 
             required to be false to meet binary size requirements.

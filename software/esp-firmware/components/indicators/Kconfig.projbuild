@@ -2,14 +2,14 @@ menu "Indicators"
 
     config MOCK_INDICATORS
         bool "Mock Indicators Component"
-        default false
+        default n
         help
             Whether to use a mock implementation of the indicators component
             or not.
 
     config EXTERN_INDICATORS_CONFIG
         bool "Extern Indicators Config"
-        default false
+        default n
         help
             Whether to use extern variables instead of macros for configuration
             options in indicators_config.h, which can be useful for testing.

@@ -2,7 +2,7 @@ menu "OTA"
 
     config OTA_EXTERN_MACROS
         bool "OTA Extern Macros"
-        default false
+        default n
         help 
             Whether to use extern variables instead of macro definitions for
             configuration options. This allows runtime modification of these
@@ -10,7 +10,7 @@ menu "OTA"
 
     config MOCK_OTA
         bool "Mock OTA Component"
-        default false
+        default n
         help
             Whether to mock ota.h or not.
 
