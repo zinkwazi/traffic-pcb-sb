@@ -244,6 +244,13 @@ void throwFatalError(void) {
     {
         /* best effort to indicate fatal error */
         indicateError();
+
+#if CONFIG_FATAL_CAUSES_REBOOT == true
+        vTaskDelay(pdMS_TO_TICKS(CONFIG_ERROR_PERIOD)); // let the error LED shine for a short time
+        indicateError();
+        esp_restart();
+#endif /* CONFIG_FATAL_CAUSES_REBOOT == true */
+
         for (;;) {
             vTaskDelay(INT_MAX);
         }
@@ -257,6 +264,13 @@ void throwFatalError(void) {
         {
             /* best effort to indicate fatal error */
             indicateError();
+
+#if CONFIG_FATAL_CAUSES_REBOOT == true
+            vTaskDelay(pdMS_TO_TICKS(CONFIG_ERROR_PERIOD)); // let the error LED shine for a short time
+            indicateError();
+            esp_restart();
+#endif /* CONFIG_FATAL_CAUSES_REBOOT == true */
+
             for (;;)
             {
                 vTaskDelay(INT_MAX);
