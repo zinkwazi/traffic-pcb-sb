@@ -132,33 +132,37 @@ STATIC_IF_NOT_TEST esp_err_t handleActionUpdateData(void)
 
     /* update static data */
     err = borrowTrafficData(LIVE, portMAX_DELAY);
-    if (err != ESP_OK)
-    {
-        err = wrap_http_client_cleanup(client);
-        if (err != ESP_OK) throwFatalError();
-        return ESP_FAIL;
-    }
+    if (err != ESP_OK) return ESP_FAIL;
+    // if (err != ESP_OK)
+    // {
+    //     err = wrap_http_client_cleanup(client);
+    //     if (err != ESP_OK) throwFatalError();
+    //     return ESP_FAIL;
+    // }
     err = updateTrafficData(northData, MAX_NUM_LEDS_REG, NORTH, LIVE);
-    if (err != ESP_OK)
-    {
-        err = wrap_http_client_cleanup(client);
-        if (err != ESP_OK) throwFatalError();
-        return ESP_FAIL;
-    }
+    if (err != ESP_OK) return ESP_FAIL;
+    // if (err != ESP_OK)
+    // {
+    //     err = wrap_http_client_cleanup(client);
+    //     if (err != ESP_OK) throwFatalError();
+    //     return ESP_FAIL;
+    // }
     err = updateTrafficData(southData, MAX_NUM_LEDS_REG, SOUTH, LIVE);
-    if (err != ESP_OK)
-    {
-        err = wrap_http_client_cleanup(client);
-        if (err != ESP_OK) throwFatalError();
-        return ESP_FAIL;
-    }
+    if (err != ESP_OK) return ESP_FAIL;
+    // if (err != ESP_OK)
+    // {
+    //     err = wrap_http_client_cleanup(client);
+    //     if (err != ESP_OK) throwFatalError();
+    //     return ESP_FAIL;
+    // }
     err = releaseTrafficData(LIVE);
-    if (err != ESP_OK)
-    {
-        err = wrap_http_client_cleanup(client);
-        if (err != ESP_OK) throwFatalError();
-        return ESP_FAIL;
-    }
+    if (err != ESP_OK) return ESP_FAIL;
+    // if (err != ESP_OK)
+    // {
+    //     err = wrap_http_client_cleanup(client);
+    //     if (err != ESP_OK) throwFatalError();
+    //     return ESP_FAIL;
+    // }
     
     err = wrap_http_client_cleanup(client);
     if (err != ESP_OK) throwFatalError();

@@ -3,14 +3,14 @@
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
-      "buildDirectoryPath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/builds/develop_V1_0",
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\develop_V1_0",
       "sdkconfigDefaults": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.settings",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.develop",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.V1_0_default",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.V1_0_dev"
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\sdkconfig.develop",
+        ".\\configurations\\sdkconfig.V1_0_default",
+        ".\\configurations\\sdkconfig.V1_0_dev"
       ],
-      "sdkconfigFilePath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/current/sdkconfig.dev_V1_0"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.dev_V1_0"
     },
     "env": {
       "executable": "main"
@@ -19,9 +19,7 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
-      "configs": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/board/esp32s3-builtin.cfg"
-      ],
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -35,25 +33,22 @@
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
-      "buildDirectoryPath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/builds/develop_V2_0",
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\develop_V2_0",
       "sdkconfigDefaults": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.settings",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.develop",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.V2_0_default"
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\sdkconfig.develop",
+        ".\\configurations\\sdkconfig.V2_0_default"
       ],
-      "sdkconfigFilePath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/current/sdkconfig.dev_V2_0"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.dev_V2_0"
     },
     "env": {
       "executable": "main"
     },
-    "idfTarget": "esp32s3",
     "flashBaudRate": "",
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
-      "configs": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/board/esp32s3-builtin.cfg"
-      ],
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -67,14 +62,14 @@
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
-      "buildDirectoryPath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/builds/production_V1_0",
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\production_V1_0",
       "sdkconfigDefaults": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.settings",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.production",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.V1_0_default",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.V1_0_prod"
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\sdkconfig.production",
+        ".\\configurations\\sdkconfig.V1_0_default",
+        ".\\configurations\\sdkconfig.V1_0_prod"
       ],
-      "sdkconfigFilePath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/current/sdkconfig.prod_V1_0"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.prod_V1_0"
     },
     "env": {
       "executable": "main"
@@ -83,9 +78,7 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
-      "configs": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/board/esp32s3-builtin.cfg"
-      ],
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -99,13 +92,13 @@
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
-      "buildDirectoryPath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/builds/production_V2_0",
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\production_V2_0",
       "sdkconfigDefaults": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.settings",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.production",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.V2_0_default"
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\sdkconfig.production",
+        ".\\configurations\\sdkconfig.V2_0_default"
       ],
-      "sdkconfigFilePath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/current/sdkconfig.prod_V2_0"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.prod_V2_0"
     },
     "env": {
       "executable": "main"
@@ -114,9 +107,7 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
-      "configs": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/board/esp32s3-builtin.cfg"
-      ],
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -130,14 +121,14 @@
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
-      "buildDirectoryPath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/builds/test_manual_V1_0",
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\test_manual_V1_0",
       "sdkconfigDefaults": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.settings",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/secrets/sdkconfig.test_secrets",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.test",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.V1_0_default"
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\secrets\\sdkconfig.test_secrets",
+        ".\\configurations\\sdkconfig.test",
+        ".\\configurations\\sdkconfig.V1_0_default"
       ],
-      "sdkconfigFilePath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/current/sdkconfig.test_manual_V1_0"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.test_manual_V1_0"
     },
     "env": {
       "executable": "test_manual"
@@ -146,9 +137,7 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
-      "configs": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/board/esp32s3-builtin.cfg"
-      ],
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -162,14 +151,14 @@
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
-      "buildDirectoryPath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/builds/test_manual_V2_0",
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\test_manual_V2_0",
       "sdkconfigDefaults": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.settings",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/secrets/sdkconfig.test_secrets",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.test",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.V2_0_default"
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\secrets\\sdkconfig.test_secrets",
+        ".\\configurations\\sdkconfig.test",
+        ".\\configurations\\sdkconfig.V2_0_default"
       ],
-      "sdkconfigFilePath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/current/sdkconfig.test_manual_V2_0"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.test_manual_V2_0"
     },
     "env": {
       "executable": "test_manual"
@@ -178,9 +167,7 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
-      "configs": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/board/esp32s3-builtin.cfg"
-      ],
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -194,14 +181,14 @@
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
-      "buildDirectoryPath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/builds/test_nonmock",
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\test_nonmock",
       "sdkconfigDefaults": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.settings",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/secrets/sdkconfig.test_secrets",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.test",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.V2_0_default"
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\secrets\\sdkconfig.test_secrets",
+        ".\\configurations\\sdkconfig.test",
+        ".\\configurations\\sdkconfig.V2_0_default"
       ],
-      "sdkconfigFilePath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/current/sdkconfig.test_nonmock"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.test_nonmock"
     },
     "env": {
       "executable": "test_nonmock"
@@ -210,9 +197,7 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
-      "configs": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/board/esp32s3-builtin.cfg"
-      ],
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -226,27 +211,24 @@
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
-      "buildDirectoryPath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/builds/test_ota",
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\test_ota",
       "sdkconfigDefaults": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.settings",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/secrets/sdkconfig.test_secrets",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.test",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/components/ota/test/sdkconfig.test_ota",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.V2_0_default"
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\secrets\\sdkconfig.test_secrets",
+        ".\\configurations\\sdkconfig.test",
+        ".\\components\\ota\\test\\sdkconfig.test_ota",
+        ".\\configurations\\sdkconfig.V2_0_default"
       ],
-      "sdkconfigFilePath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/current/sdkconfig.test_ota"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.test_ota"
     },
     "env": {
       "executable": "test_ota"
     },
-    "idfTarget": "esp32s3",
     "flashBaudRate": "",
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
-      "configs": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/board/esp32s3-builtin.cfg"
-      ],
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -260,27 +242,24 @@
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
-      "buildDirectoryPath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/builds/test_actions",
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\test_actions",
       "sdkconfigDefaults": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.settings",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/secrets/sdkconfig.test_secrets",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.test",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/components/actions/test/sdkconfig.test_actions1",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.V2_0_default"
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\secrets\\sdkconfig.test_secrets",
+        ".\\configurations\\sdkconfig.test",
+        ".\\components\\actions\\test\\sdkconfig.test_actions1",
+        ".\\configurations\\sdkconfig.V2_0_default"
       ],
-      "sdkconfigFilePath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/current/sdkconfig.test_actions1"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.test_actions1"
     },
     "env": {
       "executable": "test_actions"
     },
-    "idfTarget": "esp32s3",
     "flashBaudRate": "",
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
-      "configs": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/board/esp32s3-builtin.cfg"
-      ],
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -294,27 +273,24 @@
     "build": {
       "compileArgs": [],
       "ninjaArgs": [],
-      "buildDirectoryPath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/builds/test_actions2",
+      "buildDirectoryPath": "${workspaceFolder}\\builds\\test_actions2",
       "sdkconfigDefaults": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.settings",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/secrets/sdkconfig.test_secrets",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.test",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/components/actions/test/sdkconfig.test_actions2",
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/sdkconfig.V2_0_default"
+        ".\\configurations\\sdkconfig.settings",
+        ".\\configurations\\secrets\\sdkconfig.test_secrets",
+        ".\\configurations\\sdkconfig.test",
+        ".\\components\\actions\\test\\sdkconfig.test_actions2",
+        ".\\configurations\\sdkconfig.V2_0_default"
       ],
-      "sdkconfigFilePath": "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/configurations/current/sdkconfig.test_actions2"
+      "sdkconfigFilePath": "${workspaceFolder}\\configurations\\current\\sdkconfig.test_actions2"
     },
     "env": {
       "executable": "test_actions2"
     },
-    "idfTarget": "esp32s3",
     "flashBaudRate": "",
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
-      "configs": [
-        "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/esp-firmware/board/esp32s3-builtin.cfg"
-      ],
+      "configs": [],
       "args": []
     },
     "tasks": {

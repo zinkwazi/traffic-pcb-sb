@@ -1,0 +1,9 @@
+menu "app_nvs"
+
+    config MOCK_APP_NVS
+        bool "Mock App NVS Component"
+        default n
+        help
+            Whether to mock app_nvs.h or not.
+
+endmenu

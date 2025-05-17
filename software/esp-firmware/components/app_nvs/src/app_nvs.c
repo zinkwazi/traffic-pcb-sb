@@ -333,7 +333,7 @@ void updateNvsSettings(nvs_handle_t nvsHandle) {
  *          Various error codes passed from NVS functions.
  *          ESP_FAIL if something unexpected occurred.
  */
-esp_err_t refreshSpeedsFromNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction dir, SpeedCategory category)
+esp_err_t refreshSpeedsFromNVS(LEDData data[], Direction dir, SpeedCategory category)
 {
     esp_err_t err;
     nvs_handle_t nvsHandle;
@@ -390,7 +390,7 @@ esp_err_t refreshSpeedsFromNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction 
     return ESP_OK;
 }
 
-esp_err_t storeSpeedsToNVS(LEDData data[static MAX_NUM_LEDS_REG], Direction dir, SpeedCategory category)
+esp_err_t storeSpeedsToNVS(LEDData data[], Direction dir, SpeedCategory category)
 {
     esp_err_t err;
     nvs_handle_t nvsHandle;

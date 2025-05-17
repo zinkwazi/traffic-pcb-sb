@@ -38,6 +38,8 @@ typedef struct _CMOCK_clearBoard_CALL_INSTANCE
   esp_err_t ReturnVal;
   Direction Expected_dir;
   bool Expected_quick;
+  char IgnoreArg_dir;
+  char IgnoreArg_quick;
 
 } CMOCK_clearBoard_CALL_INSTANCE;
 
@@ -46,6 +48,7 @@ typedef struct _CMOCK_quickClearBoard_CALL_INSTANCE
   UNITY_LINE_TYPE LineNumber;
   esp_err_t ReturnVal;
   Direction Expected_dir;
+  char IgnoreArg_dir;
 
 } CMOCK_quickClearBoard_CALL_INSTANCE;
 
@@ -57,6 +60,13 @@ typedef struct _CMOCK_refreshData_CALL_INSTANCE
   esp_http_client_handle_t Expected_client;
   Direction Expected_dir;
   SpeedCategory Expected_category;
+  char ReturnThruPtr_data_Used;
+  LEDData const* ReturnThruPtr_data_Val;
+  size_t ReturnThruPtr_data_Size;
+  char IgnoreArg_data;
+  char IgnoreArg_client;
+  char IgnoreArg_dir;
+  char IgnoreArg_category;
 
 } CMOCK_refreshData_CALL_INSTANCE;
 
@@ -66,16 +76,48 @@ typedef struct _CMOCK_refreshBoard_CALL_INSTANCE
   esp_err_t ReturnVal;
   Direction Expected_dir;
   Animation Expected_anim;
+  char IgnoreArg_dir;
+  char IgnoreArg_anim;
 
 } CMOCK_refreshBoard_CALL_INSTANCE;
 
 static struct MockrefreshInstance
 {
+  char initRefresh_IgnoreBool;
+  esp_err_t initRefresh_FinalReturn;
+  char initRefresh_CallbackBool;
+  CMOCK_initRefresh_CALLBACK initRefresh_CallbackFunctionPointer;
+  int initRefresh_CallbackCalls;
   CMOCK_MEM_INDEX_TYPE initRefresh_CallInstance;
+  char initHttpClient_IgnoreBool;
+  esp_http_client_handle_t initHttpClient_FinalReturn;
+  char initHttpClient_CallbackBool;
+  CMOCK_initHttpClient_CALLBACK initHttpClient_CallbackFunctionPointer;
+  int initHttpClient_CallbackCalls;
   CMOCK_MEM_INDEX_TYPE initHttpClient_CallInstance;
+  char clearBoard_IgnoreBool;
+  esp_err_t clearBoard_FinalReturn;
+  char clearBoard_CallbackBool;
+  CMOCK_clearBoard_CALLBACK clearBoard_CallbackFunctionPointer;
+  int clearBoard_CallbackCalls;
   CMOCK_MEM_INDEX_TYPE clearBoard_CallInstance;
+  char quickClearBoard_IgnoreBool;
+  esp_err_t quickClearBoard_FinalReturn;
+  char quickClearBoard_CallbackBool;
+  CMOCK_quickClearBoard_CALLBACK quickClearBoard_CallbackFunctionPointer;
+  int quickClearBoard_CallbackCalls;
   CMOCK_MEM_INDEX_TYPE quickClearBoard_CallInstance;
+  char refreshData_IgnoreBool;
+  esp_err_t refreshData_FinalReturn;
+  char refreshData_CallbackBool;
+  CMOCK_refreshData_CALLBACK refreshData_CallbackFunctionPointer;
+  int refreshData_CallbackCalls;
   CMOCK_MEM_INDEX_TYPE refreshData_CallInstance;
+  char refreshBoard_IgnoreBool;
+  esp_err_t refreshBoard_FinalReturn;
+  char refreshBoard_CallbackBool;
+  CMOCK_refreshBoard_CALLBACK refreshBoard_CallbackFunctionPointer;
+  int refreshBoard_CallbackCalls;
   CMOCK_MEM_INDEX_TYPE refreshBoard_CallInstance;
 } Mock;
 
@@ -85,40 +127,82 @@ void Mockrefresh_Verify(void)
   UNITY_LINE_TYPE cmock_line = TEST_LINE_NUM;
   CMOCK_MEM_INDEX_TYPE call_instance;
   call_instance = Mock.initRefresh_CallInstance;
+  if (Mock.initRefresh_IgnoreBool)
+    call_instance = CMOCK_GUTS_NONE;
   if (CMOCK_GUTS_NONE != call_instance)
   {
     UNITY_SET_DETAIL(CMockString_initRefresh);
     UNITY_TEST_FAIL(cmock_line, CMockStringCalledLess);
   }
+  if (Mock.initRefresh_CallbackFunctionPointer != NULL)
+  {
+    call_instance = CMOCK_GUTS_NONE;
+    (void)call_instance;
+  }
   call_instance = Mock.initHttpClient_CallInstance;
+  if (Mock.initHttpClient_IgnoreBool)
+    call_instance = CMOCK_GUTS_NONE;
   if (CMOCK_GUTS_NONE != call_instance)
   {
     UNITY_SET_DETAIL(CMockString_initHttpClient);
     UNITY_TEST_FAIL(cmock_line, CMockStringCalledLess);
   }
+  if (Mock.initHttpClient_CallbackFunctionPointer != NULL)
+  {
+    call_instance = CMOCK_GUTS_NONE;
+    (void)call_instance;
+  }
   call_instance = Mock.clearBoard_CallInstance;
+  if (Mock.clearBoard_IgnoreBool)
+    call_instance = CMOCK_GUTS_NONE;
   if (CMOCK_GUTS_NONE != call_instance)
   {
     UNITY_SET_DETAIL(CMockString_clearBoard);
     UNITY_TEST_FAIL(cmock_line, CMockStringCalledLess);
   }
+  if (Mock.clearBoard_CallbackFunctionPointer != NULL)
+  {
+    call_instance = CMOCK_GUTS_NONE;
+    (void)call_instance;
+  }
   call_instance = Mock.quickClearBoard_CallInstance;
+  if (Mock.quickClearBoard_IgnoreBool)
+    call_instance = CMOCK_GUTS_NONE;
   if (CMOCK_GUTS_NONE != call_instance)
   {
     UNITY_SET_DETAIL(CMockString_quickClearBoard);
     UNITY_TEST_FAIL(cmock_line, CMockStringCalledLess);
   }
+  if (Mock.quickClearBoard_CallbackFunctionPointer != NULL)
+  {
+    call_instance = CMOCK_GUTS_NONE;
+    (void)call_instance;
+  }
   call_instance = Mock.refreshData_CallInstance;
+  if (Mock.refreshData_IgnoreBool)
+    call_instance = CMOCK_GUTS_NONE;
   if (CMOCK_GUTS_NONE != call_instance)
   {
     UNITY_SET_DETAIL(CMockString_refreshData);
     UNITY_TEST_FAIL(cmock_line, CMockStringCalledLess);
   }
+  if (Mock.refreshData_CallbackFunctionPointer != NULL)
+  {
+    call_instance = CMOCK_GUTS_NONE;
+    (void)call_instance;
+  }
   call_instance = Mock.refreshBoard_CallInstance;
+  if (Mock.refreshBoard_IgnoreBool)
+    call_instance = CMOCK_GUTS_NONE;
   if (CMOCK_GUTS_NONE != call_instance)
   {
     UNITY_SET_DETAIL(CMockString_refreshBoard);
     UNITY_TEST_FAIL(cmock_line, CMockStringCalledLess);
+  }
+  if (Mock.refreshBoard_CallbackFunctionPointer != NULL)
+  {
+    call_instance = CMOCK_GUTS_NONE;
+    (void)call_instance;
   }
 }
 
@@ -140,10 +224,50 @@ esp_err_t initRefresh(void)
   UNITY_SET_DETAIL(CMockString_initRefresh);
   cmock_call_instance = (CMOCK_initRefresh_CALL_INSTANCE*)CMock_Guts_GetAddressFor(Mock.initRefresh_CallInstance);
   Mock.initRefresh_CallInstance = CMock_Guts_MemNext(Mock.initRefresh_CallInstance);
+  if (Mock.initRefresh_IgnoreBool)
+  {
+    UNITY_CLR_DETAILS();
+    if (cmock_call_instance == NULL)
+      return Mock.initRefresh_FinalReturn;
+    memcpy((void*)(&Mock.initRefresh_FinalReturn), (const void*)(&cmock_call_instance->ReturnVal),
+         sizeof(esp_err_t[sizeof(cmock_call_instance->ReturnVal) == sizeof(esp_err_t) ? 1 : -1])); /* add esp_err_t to :treat_as_array if this causes an error */
+    return cmock_call_instance->ReturnVal;
+  }
+  if (!Mock.initRefresh_CallbackBool &&
+      Mock.initRefresh_CallbackFunctionPointer != NULL)
+  {
+    esp_err_t cmock_cb_ret = Mock.initRefresh_CallbackFunctionPointer(Mock.initRefresh_CallbackCalls++);
+    UNITY_CLR_DETAILS();
+    return cmock_cb_ret;
+  }
   UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringCalledMore);
   cmock_line = cmock_call_instance->LineNumber;
+  if (Mock.initRefresh_CallbackFunctionPointer != NULL)
+  {
+    cmock_call_instance->ReturnVal = Mock.initRefresh_CallbackFunctionPointer(Mock.initRefresh_CallbackCalls++);
+  }
   UNITY_CLR_DETAILS();
   return cmock_call_instance->ReturnVal;
+}
+
+void initRefresh_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return)
+{
+  CMOCK_MEM_INDEX_TYPE cmock_guts_index = CMock_Guts_MemNew(sizeof(CMOCK_initRefresh_CALL_INSTANCE));
+  CMOCK_initRefresh_CALL_INSTANCE* cmock_call_instance = (CMOCK_initRefresh_CALL_INSTANCE*)CMock_Guts_GetAddressFor(cmock_guts_index);
+  UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringOutOfMemory);
+  memset(cmock_call_instance, 0, sizeof(*cmock_call_instance));
+  Mock.initRefresh_CallInstance = CMock_Guts_MemChain(Mock.initRefresh_CallInstance, cmock_guts_index);
+  Mock.initRefresh_IgnoreBool = (char)0;
+  cmock_call_instance->LineNumber = cmock_line;
+  cmock_call_instance->ReturnVal = cmock_to_return;
+  Mock.initRefresh_IgnoreBool = (char)1;
+}
+
+void initRefresh_CMockStopIgnore(void)
+{
+  if(Mock.initRefresh_IgnoreBool)
+    Mock.initRefresh_CallInstance = CMock_Guts_MemNext(Mock.initRefresh_CallInstance);
+  Mock.initRefresh_IgnoreBool = (char)0;
 }
 
 void initRefresh_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return)
@@ -153,9 +277,24 @@ void initRefresh_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmoc
   UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringOutOfMemory);
   memset(cmock_call_instance, 0, sizeof(*cmock_call_instance));
   Mock.initRefresh_CallInstance = CMock_Guts_MemChain(Mock.initRefresh_CallInstance, cmock_guts_index);
+  Mock.initRefresh_IgnoreBool = (char)0;
   cmock_call_instance->LineNumber = cmock_line;
   memcpy((void*)(&cmock_call_instance->ReturnVal), (const void*)(&cmock_to_return),
          sizeof(esp_err_t[sizeof(cmock_to_return) == sizeof(esp_err_t) ? 1 : -1])); /* add esp_err_t to :treat_as_array if this causes an error */
+}
+
+void initRefresh_AddCallback(CMOCK_initRefresh_CALLBACK Callback)
+{
+  Mock.initRefresh_IgnoreBool = (char)0;
+  Mock.initRefresh_CallbackBool = (char)1;
+  Mock.initRefresh_CallbackFunctionPointer = Callback;
+}
+
+void initRefresh_Stub(CMOCK_initRefresh_CALLBACK Callback)
+{
+  Mock.initRefresh_IgnoreBool = (char)0;
+  Mock.initRefresh_CallbackBool = (char)0;
+  Mock.initRefresh_CallbackFunctionPointer = Callback;
 }
 
 esp_http_client_handle_t initHttpClient(void)
@@ -165,10 +304,50 @@ esp_http_client_handle_t initHttpClient(void)
   UNITY_SET_DETAIL(CMockString_initHttpClient);
   cmock_call_instance = (CMOCK_initHttpClient_CALL_INSTANCE*)CMock_Guts_GetAddressFor(Mock.initHttpClient_CallInstance);
   Mock.initHttpClient_CallInstance = CMock_Guts_MemNext(Mock.initHttpClient_CallInstance);
+  if (Mock.initHttpClient_IgnoreBool)
+  {
+    UNITY_CLR_DETAILS();
+    if (cmock_call_instance == NULL)
+      return Mock.initHttpClient_FinalReturn;
+    memcpy((void*)(&Mock.initHttpClient_FinalReturn), (const void*)(&cmock_call_instance->ReturnVal),
+         sizeof(esp_http_client_handle_t[sizeof(cmock_call_instance->ReturnVal) == sizeof(esp_http_client_handle_t) ? 1 : -1])); /* add esp_http_client_handle_t to :treat_as_array if this causes an error */
+    return cmock_call_instance->ReturnVal;
+  }
+  if (!Mock.initHttpClient_CallbackBool &&
+      Mock.initHttpClient_CallbackFunctionPointer != NULL)
+  {
+    esp_http_client_handle_t cmock_cb_ret = Mock.initHttpClient_CallbackFunctionPointer(Mock.initHttpClient_CallbackCalls++);
+    UNITY_CLR_DETAILS();
+    return cmock_cb_ret;
+  }
   UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringCalledMore);
   cmock_line = cmock_call_instance->LineNumber;
+  if (Mock.initHttpClient_CallbackFunctionPointer != NULL)
+  {
+    cmock_call_instance->ReturnVal = Mock.initHttpClient_CallbackFunctionPointer(Mock.initHttpClient_CallbackCalls++);
+  }
   UNITY_CLR_DETAILS();
   return cmock_call_instance->ReturnVal;
+}
+
+void initHttpClient_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_http_client_handle_t cmock_to_return)
+{
+  CMOCK_MEM_INDEX_TYPE cmock_guts_index = CMock_Guts_MemNew(sizeof(CMOCK_initHttpClient_CALL_INSTANCE));
+  CMOCK_initHttpClient_CALL_INSTANCE* cmock_call_instance = (CMOCK_initHttpClient_CALL_INSTANCE*)CMock_Guts_GetAddressFor(cmock_guts_index);
+  UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringOutOfMemory);
+  memset(cmock_call_instance, 0, sizeof(*cmock_call_instance));
+  Mock.initHttpClient_CallInstance = CMock_Guts_MemChain(Mock.initHttpClient_CallInstance, cmock_guts_index);
+  Mock.initHttpClient_IgnoreBool = (char)0;
+  cmock_call_instance->LineNumber = cmock_line;
+  cmock_call_instance->ReturnVal = cmock_to_return;
+  Mock.initHttpClient_IgnoreBool = (char)1;
+}
+
+void initHttpClient_CMockStopIgnore(void)
+{
+  if(Mock.initHttpClient_IgnoreBool)
+    Mock.initHttpClient_CallInstance = CMock_Guts_MemNext(Mock.initHttpClient_CallInstance);
+  Mock.initHttpClient_IgnoreBool = (char)0;
 }
 
 void initHttpClient_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, esp_http_client_handle_t cmock_to_return)
@@ -178,9 +357,24 @@ void initHttpClient_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, esp_http_cl
   UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringOutOfMemory);
   memset(cmock_call_instance, 0, sizeof(*cmock_call_instance));
   Mock.initHttpClient_CallInstance = CMock_Guts_MemChain(Mock.initHttpClient_CallInstance, cmock_guts_index);
+  Mock.initHttpClient_IgnoreBool = (char)0;
   cmock_call_instance->LineNumber = cmock_line;
   memcpy((void*)(&cmock_call_instance->ReturnVal), (const void*)(&cmock_to_return),
          sizeof(esp_http_client_handle_t[sizeof(cmock_to_return) == sizeof(esp_http_client_handle_t) ? 1 : -1])); /* add esp_http_client_handle_t to :treat_as_array if this causes an error */
+}
+
+void initHttpClient_AddCallback(CMOCK_initHttpClient_CALLBACK Callback)
+{
+  Mock.initHttpClient_IgnoreBool = (char)0;
+  Mock.initHttpClient_CallbackBool = (char)1;
+  Mock.initHttpClient_CallbackFunctionPointer = Callback;
+}
+
+void initHttpClient_Stub(CMOCK_initHttpClient_CALLBACK Callback)
+{
+  Mock.initHttpClient_IgnoreBool = (char)0;
+  Mock.initHttpClient_CallbackBool = (char)0;
+  Mock.initHttpClient_CallbackFunctionPointer = Callback;
 }
 
 esp_err_t clearBoard(Direction dir, bool quick)
@@ -190,15 +384,37 @@ esp_err_t clearBoard(Direction dir, bool quick)
   UNITY_SET_DETAIL(CMockString_clearBoard);
   cmock_call_instance = (CMOCK_clearBoard_CALL_INSTANCE*)CMock_Guts_GetAddressFor(Mock.clearBoard_CallInstance);
   Mock.clearBoard_CallInstance = CMock_Guts_MemNext(Mock.clearBoard_CallInstance);
+  if (Mock.clearBoard_IgnoreBool)
+  {
+    UNITY_CLR_DETAILS();
+    if (cmock_call_instance == NULL)
+      return Mock.clearBoard_FinalReturn;
+    memcpy((void*)(&Mock.clearBoard_FinalReturn), (const void*)(&cmock_call_instance->ReturnVal),
+         sizeof(esp_err_t[sizeof(cmock_call_instance->ReturnVal) == sizeof(esp_err_t) ? 1 : -1])); /* add esp_err_t to :treat_as_array if this causes an error */
+    return cmock_call_instance->ReturnVal;
+  }
+  if (!Mock.clearBoard_CallbackBool &&
+      Mock.clearBoard_CallbackFunctionPointer != NULL)
+  {
+    esp_err_t cmock_cb_ret = Mock.clearBoard_CallbackFunctionPointer(dir, quick, Mock.clearBoard_CallbackCalls++);
+    UNITY_CLR_DETAILS();
+    return cmock_cb_ret;
+  }
   UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringCalledMore);
   cmock_line = cmock_call_instance->LineNumber;
+  if (!cmock_call_instance->IgnoreArg_dir)
   {
     UNITY_SET_DETAILS(CMockString_clearBoard,CMockString_dir);
     UNITY_TEST_ASSERT_EQUAL_MEMORY((void*)(&cmock_call_instance->Expected_dir), (void*)(&dir), sizeof(Direction), cmock_line, CMockStringMismatch);
   }
+  if (!cmock_call_instance->IgnoreArg_quick)
   {
     UNITY_SET_DETAILS(CMockString_clearBoard,CMockString_quick);
     UNITY_TEST_ASSERT_EQUAL_INT(cmock_call_instance->Expected_quick, quick, cmock_line, CMockStringMismatch);
+  }
+  if (Mock.clearBoard_CallbackFunctionPointer != NULL)
+  {
+    cmock_call_instance->ReturnVal = Mock.clearBoard_CallbackFunctionPointer(dir, quick, Mock.clearBoard_CallbackCalls++);
   }
   UNITY_CLR_DETAILS();
   return cmock_call_instance->ReturnVal;
@@ -209,7 +425,29 @@ void CMockExpectParameters_clearBoard(CMOCK_clearBoard_CALL_INSTANCE* cmock_call
 {
   memcpy((void*)(&cmock_call_instance->Expected_dir), (const void*)(&dir),
          sizeof(Direction[sizeof(dir) == sizeof(Direction) ? 1 : -1])); /* add Direction to :treat_as_array if this causes an error */
+  cmock_call_instance->IgnoreArg_dir = 0;
   cmock_call_instance->Expected_quick = quick;
+  cmock_call_instance->IgnoreArg_quick = 0;
+}
+
+void clearBoard_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return)
+{
+  CMOCK_MEM_INDEX_TYPE cmock_guts_index = CMock_Guts_MemNew(sizeof(CMOCK_clearBoard_CALL_INSTANCE));
+  CMOCK_clearBoard_CALL_INSTANCE* cmock_call_instance = (CMOCK_clearBoard_CALL_INSTANCE*)CMock_Guts_GetAddressFor(cmock_guts_index);
+  UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringOutOfMemory);
+  memset(cmock_call_instance, 0, sizeof(*cmock_call_instance));
+  Mock.clearBoard_CallInstance = CMock_Guts_MemChain(Mock.clearBoard_CallInstance, cmock_guts_index);
+  Mock.clearBoard_IgnoreBool = (char)0;
+  cmock_call_instance->LineNumber = cmock_line;
+  cmock_call_instance->ReturnVal = cmock_to_return;
+  Mock.clearBoard_IgnoreBool = (char)1;
+}
+
+void clearBoard_CMockStopIgnore(void)
+{
+  if(Mock.clearBoard_IgnoreBool)
+    Mock.clearBoard_CallInstance = CMock_Guts_MemNext(Mock.clearBoard_CallInstance);
+  Mock.clearBoard_IgnoreBool = (char)0;
 }
 
 void clearBoard_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, Direction dir, bool quick, esp_err_t cmock_to_return)
@@ -219,10 +457,39 @@ void clearBoard_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, Direction dir, 
   UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringOutOfMemory);
   memset(cmock_call_instance, 0, sizeof(*cmock_call_instance));
   Mock.clearBoard_CallInstance = CMock_Guts_MemChain(Mock.clearBoard_CallInstance, cmock_guts_index);
+  Mock.clearBoard_IgnoreBool = (char)0;
   cmock_call_instance->LineNumber = cmock_line;
   CMockExpectParameters_clearBoard(cmock_call_instance, dir, quick);
   memcpy((void*)(&cmock_call_instance->ReturnVal), (const void*)(&cmock_to_return),
          sizeof(esp_err_t[sizeof(cmock_to_return) == sizeof(esp_err_t) ? 1 : -1])); /* add esp_err_t to :treat_as_array if this causes an error */
+}
+
+void clearBoard_AddCallback(CMOCK_clearBoard_CALLBACK Callback)
+{
+  Mock.clearBoard_IgnoreBool = (char)0;
+  Mock.clearBoard_CallbackBool = (char)1;
+  Mock.clearBoard_CallbackFunctionPointer = Callback;
+}
+
+void clearBoard_Stub(CMOCK_clearBoard_CALLBACK Callback)
+{
+  Mock.clearBoard_IgnoreBool = (char)0;
+  Mock.clearBoard_CallbackBool = (char)0;
+  Mock.clearBoard_CallbackFunctionPointer = Callback;
+}
+
+void clearBoard_CMockIgnoreArg_dir(UNITY_LINE_TYPE cmock_line)
+{
+  CMOCK_clearBoard_CALL_INSTANCE* cmock_call_instance = (CMOCK_clearBoard_CALL_INSTANCE*)CMock_Guts_GetAddressFor(CMock_Guts_MemEndOfChain(Mock.clearBoard_CallInstance));
+  UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringIgnPreExp);
+  cmock_call_instance->IgnoreArg_dir = 1;
+}
+
+void clearBoard_CMockIgnoreArg_quick(UNITY_LINE_TYPE cmock_line)
+{
+  CMOCK_clearBoard_CALL_INSTANCE* cmock_call_instance = (CMOCK_clearBoard_CALL_INSTANCE*)CMock_Guts_GetAddressFor(CMock_Guts_MemEndOfChain(Mock.clearBoard_CallInstance));
+  UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringIgnPreExp);
+  cmock_call_instance->IgnoreArg_quick = 1;
 }
 
 esp_err_t quickClearBoard(Direction dir)
@@ -232,11 +499,32 @@ esp_err_t quickClearBoard(Direction dir)
   UNITY_SET_DETAIL(CMockString_quickClearBoard);
   cmock_call_instance = (CMOCK_quickClearBoard_CALL_INSTANCE*)CMock_Guts_GetAddressFor(Mock.quickClearBoard_CallInstance);
   Mock.quickClearBoard_CallInstance = CMock_Guts_MemNext(Mock.quickClearBoard_CallInstance);
+  if (Mock.quickClearBoard_IgnoreBool)
+  {
+    UNITY_CLR_DETAILS();
+    if (cmock_call_instance == NULL)
+      return Mock.quickClearBoard_FinalReturn;
+    memcpy((void*)(&Mock.quickClearBoard_FinalReturn), (const void*)(&cmock_call_instance->ReturnVal),
+         sizeof(esp_err_t[sizeof(cmock_call_instance->ReturnVal) == sizeof(esp_err_t) ? 1 : -1])); /* add esp_err_t to :treat_as_array if this causes an error */
+    return cmock_call_instance->ReturnVal;
+  }
+  if (!Mock.quickClearBoard_CallbackBool &&
+      Mock.quickClearBoard_CallbackFunctionPointer != NULL)
+  {
+    esp_err_t cmock_cb_ret = Mock.quickClearBoard_CallbackFunctionPointer(dir, Mock.quickClearBoard_CallbackCalls++);
+    UNITY_CLR_DETAILS();
+    return cmock_cb_ret;
+  }
   UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringCalledMore);
   cmock_line = cmock_call_instance->LineNumber;
+  if (!cmock_call_instance->IgnoreArg_dir)
   {
     UNITY_SET_DETAILS(CMockString_quickClearBoard,CMockString_dir);
     UNITY_TEST_ASSERT_EQUAL_MEMORY((void*)(&cmock_call_instance->Expected_dir), (void*)(&dir), sizeof(Direction), cmock_line, CMockStringMismatch);
+  }
+  if (Mock.quickClearBoard_CallbackFunctionPointer != NULL)
+  {
+    cmock_call_instance->ReturnVal = Mock.quickClearBoard_CallbackFunctionPointer(dir, Mock.quickClearBoard_CallbackCalls++);
   }
   UNITY_CLR_DETAILS();
   return cmock_call_instance->ReturnVal;
@@ -247,6 +535,27 @@ void CMockExpectParameters_quickClearBoard(CMOCK_quickClearBoard_CALL_INSTANCE* 
 {
   memcpy((void*)(&cmock_call_instance->Expected_dir), (const void*)(&dir),
          sizeof(Direction[sizeof(dir) == sizeof(Direction) ? 1 : -1])); /* add Direction to :treat_as_array if this causes an error */
+  cmock_call_instance->IgnoreArg_dir = 0;
+}
+
+void quickClearBoard_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return)
+{
+  CMOCK_MEM_INDEX_TYPE cmock_guts_index = CMock_Guts_MemNew(sizeof(CMOCK_quickClearBoard_CALL_INSTANCE));
+  CMOCK_quickClearBoard_CALL_INSTANCE* cmock_call_instance = (CMOCK_quickClearBoard_CALL_INSTANCE*)CMock_Guts_GetAddressFor(cmock_guts_index);
+  UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringOutOfMemory);
+  memset(cmock_call_instance, 0, sizeof(*cmock_call_instance));
+  Mock.quickClearBoard_CallInstance = CMock_Guts_MemChain(Mock.quickClearBoard_CallInstance, cmock_guts_index);
+  Mock.quickClearBoard_IgnoreBool = (char)0;
+  cmock_call_instance->LineNumber = cmock_line;
+  cmock_call_instance->ReturnVal = cmock_to_return;
+  Mock.quickClearBoard_IgnoreBool = (char)1;
+}
+
+void quickClearBoard_CMockStopIgnore(void)
+{
+  if(Mock.quickClearBoard_IgnoreBool)
+    Mock.quickClearBoard_CallInstance = CMock_Guts_MemNext(Mock.quickClearBoard_CallInstance);
+  Mock.quickClearBoard_IgnoreBool = (char)0;
 }
 
 void quickClearBoard_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, Direction dir, esp_err_t cmock_to_return)
@@ -256,10 +565,32 @@ void quickClearBoard_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, Direction 
   UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringOutOfMemory);
   memset(cmock_call_instance, 0, sizeof(*cmock_call_instance));
   Mock.quickClearBoard_CallInstance = CMock_Guts_MemChain(Mock.quickClearBoard_CallInstance, cmock_guts_index);
+  Mock.quickClearBoard_IgnoreBool = (char)0;
   cmock_call_instance->LineNumber = cmock_line;
   CMockExpectParameters_quickClearBoard(cmock_call_instance, dir);
   memcpy((void*)(&cmock_call_instance->ReturnVal), (const void*)(&cmock_to_return),
          sizeof(esp_err_t[sizeof(cmock_to_return) == sizeof(esp_err_t) ? 1 : -1])); /* add esp_err_t to :treat_as_array if this causes an error */
+}
+
+void quickClearBoard_AddCallback(CMOCK_quickClearBoard_CALLBACK Callback)
+{
+  Mock.quickClearBoard_IgnoreBool = (char)0;
+  Mock.quickClearBoard_CallbackBool = (char)1;
+  Mock.quickClearBoard_CallbackFunctionPointer = Callback;
+}
+
+void quickClearBoard_Stub(CMOCK_quickClearBoard_CALLBACK Callback)
+{
+  Mock.quickClearBoard_IgnoreBool = (char)0;
+  Mock.quickClearBoard_CallbackBool = (char)0;
+  Mock.quickClearBoard_CallbackFunctionPointer = Callback;
+}
+
+void quickClearBoard_CMockIgnoreArg_dir(UNITY_LINE_TYPE cmock_line)
+{
+  CMOCK_quickClearBoard_CALL_INSTANCE* cmock_call_instance = (CMOCK_quickClearBoard_CALL_INSTANCE*)CMock_Guts_GetAddressFor(CMock_Guts_MemEndOfChain(Mock.quickClearBoard_CallInstance));
+  UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringIgnPreExp);
+  cmock_call_instance->IgnoreArg_dir = 1;
 }
 
 esp_err_t refreshData(LEDData* data, esp_http_client_handle_t client, Direction dir, SpeedCategory category)
@@ -269,23 +600,53 @@ esp_err_t refreshData(LEDData* data, esp_http_client_handle_t client, Direction 
   UNITY_SET_DETAIL(CMockString_refreshData);
   cmock_call_instance = (CMOCK_refreshData_CALL_INSTANCE*)CMock_Guts_GetAddressFor(Mock.refreshData_CallInstance);
   Mock.refreshData_CallInstance = CMock_Guts_MemNext(Mock.refreshData_CallInstance);
+  if (Mock.refreshData_IgnoreBool)
+  {
+    UNITY_CLR_DETAILS();
+    if (cmock_call_instance == NULL)
+      return Mock.refreshData_FinalReturn;
+    memcpy((void*)(&Mock.refreshData_FinalReturn), (const void*)(&cmock_call_instance->ReturnVal),
+         sizeof(esp_err_t[sizeof(cmock_call_instance->ReturnVal) == sizeof(esp_err_t) ? 1 : -1])); /* add esp_err_t to :treat_as_array if this causes an error */
+    return cmock_call_instance->ReturnVal;
+  }
+  if (!Mock.refreshData_CallbackBool &&
+      Mock.refreshData_CallbackFunctionPointer != NULL)
+  {
+    esp_err_t cmock_cb_ret = Mock.refreshData_CallbackFunctionPointer(data, client, dir, category, Mock.refreshData_CallbackCalls++);
+    UNITY_CLR_DETAILS();
+    return cmock_cb_ret;
+  }
   UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringCalledMore);
   cmock_line = cmock_call_instance->LineNumber;
+  if (!cmock_call_instance->IgnoreArg_data)
   {
     UNITY_SET_DETAILS(CMockString_refreshData,CMockString_data);
     UNITY_TEST_ASSERT_EQUAL_MEMORY((void*)(cmock_call_instance->Expected_data), (void*)(data), sizeof(LEDData), cmock_line, CMockStringMismatch);
   }
+  if (!cmock_call_instance->IgnoreArg_client)
   {
     UNITY_SET_DETAILS(CMockString_refreshData,CMockString_client);
     UNITY_TEST_ASSERT_EQUAL_MEMORY((void*)(&cmock_call_instance->Expected_client), (void*)(&client), sizeof(esp_http_client_handle_t), cmock_line, CMockStringMismatch);
   }
+  if (!cmock_call_instance->IgnoreArg_dir)
   {
     UNITY_SET_DETAILS(CMockString_refreshData,CMockString_dir);
     UNITY_TEST_ASSERT_EQUAL_MEMORY((void*)(&cmock_call_instance->Expected_dir), (void*)(&dir), sizeof(Direction), cmock_line, CMockStringMismatch);
   }
+  if (!cmock_call_instance->IgnoreArg_category)
   {
     UNITY_SET_DETAILS(CMockString_refreshData,CMockString_category);
     UNITY_TEST_ASSERT_EQUAL_MEMORY((void*)(&cmock_call_instance->Expected_category), (void*)(&category), sizeof(SpeedCategory), cmock_line, CMockStringMismatch);
+  }
+  if (Mock.refreshData_CallbackFunctionPointer != NULL)
+  {
+    cmock_call_instance->ReturnVal = Mock.refreshData_CallbackFunctionPointer(data, client, dir, category, Mock.refreshData_CallbackCalls++);
+  }
+  if (cmock_call_instance->ReturnThruPtr_data_Used)
+  {
+    UNITY_TEST_ASSERT_NOT_NULL(data, cmock_line, CMockStringPtrIsNULL);
+    memcpy((void*)data, (const void*)cmock_call_instance->ReturnThruPtr_data_Val,
+      cmock_call_instance->ReturnThruPtr_data_Size);
   }
   UNITY_CLR_DETAILS();
   return cmock_call_instance->ReturnVal;
@@ -295,12 +656,37 @@ void CMockExpectParameters_refreshData(CMOCK_refreshData_CALL_INSTANCE* cmock_ca
 void CMockExpectParameters_refreshData(CMOCK_refreshData_CALL_INSTANCE* cmock_call_instance, LEDData* data, esp_http_client_handle_t client, Direction dir, SpeedCategory category)
 {
   cmock_call_instance->Expected_data = data;
+  cmock_call_instance->IgnoreArg_data = 0;
+  cmock_call_instance->ReturnThruPtr_data_Used = 0;
   memcpy((void*)(&cmock_call_instance->Expected_client), (const void*)(&client),
          sizeof(esp_http_client_handle_t[sizeof(client) == sizeof(esp_http_client_handle_t) ? 1 : -1])); /* add esp_http_client_handle_t to :treat_as_array if this causes an error */
+  cmock_call_instance->IgnoreArg_client = 0;
   memcpy((void*)(&cmock_call_instance->Expected_dir), (const void*)(&dir),
          sizeof(Direction[sizeof(dir) == sizeof(Direction) ? 1 : -1])); /* add Direction to :treat_as_array if this causes an error */
+  cmock_call_instance->IgnoreArg_dir = 0;
   memcpy((void*)(&cmock_call_instance->Expected_category), (const void*)(&category),
          sizeof(SpeedCategory[sizeof(category) == sizeof(SpeedCategory) ? 1 : -1])); /* add SpeedCategory to :treat_as_array if this causes an error */
+  cmock_call_instance->IgnoreArg_category = 0;
+}
+
+void refreshData_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return)
+{
+  CMOCK_MEM_INDEX_TYPE cmock_guts_index = CMock_Guts_MemNew(sizeof(CMOCK_refreshData_CALL_INSTANCE));
+  CMOCK_refreshData_CALL_INSTANCE* cmock_call_instance = (CMOCK_refreshData_CALL_INSTANCE*)CMock_Guts_GetAddressFor(cmock_guts_index);
+  UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringOutOfMemory);
+  memset(cmock_call_instance, 0, sizeof(*cmock_call_instance));
+  Mock.refreshData_CallInstance = CMock_Guts_MemChain(Mock.refreshData_CallInstance, cmock_guts_index);
+  Mock.refreshData_IgnoreBool = (char)0;
+  cmock_call_instance->LineNumber = cmock_line;
+  cmock_call_instance->ReturnVal = cmock_to_return;
+  Mock.refreshData_IgnoreBool = (char)1;
+}
+
+void refreshData_CMockStopIgnore(void)
+{
+  if(Mock.refreshData_IgnoreBool)
+    Mock.refreshData_CallInstance = CMock_Guts_MemNext(Mock.refreshData_CallInstance);
+  Mock.refreshData_IgnoreBool = (char)0;
 }
 
 void refreshData_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, LEDData* data, esp_http_client_handle_t client, Direction dir, SpeedCategory category, esp_err_t cmock_to_return)
@@ -310,10 +696,62 @@ void refreshData_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, LEDData* data,
   UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringOutOfMemory);
   memset(cmock_call_instance, 0, sizeof(*cmock_call_instance));
   Mock.refreshData_CallInstance = CMock_Guts_MemChain(Mock.refreshData_CallInstance, cmock_guts_index);
+  Mock.refreshData_IgnoreBool = (char)0;
   cmock_call_instance->LineNumber = cmock_line;
   CMockExpectParameters_refreshData(cmock_call_instance, data, client, dir, category);
   memcpy((void*)(&cmock_call_instance->ReturnVal), (const void*)(&cmock_to_return),
          sizeof(esp_err_t[sizeof(cmock_to_return) == sizeof(esp_err_t) ? 1 : -1])); /* add esp_err_t to :treat_as_array if this causes an error */
+}
+
+void refreshData_AddCallback(CMOCK_refreshData_CALLBACK Callback)
+{
+  Mock.refreshData_IgnoreBool = (char)0;
+  Mock.refreshData_CallbackBool = (char)1;
+  Mock.refreshData_CallbackFunctionPointer = Callback;
+}
+
+void refreshData_Stub(CMOCK_refreshData_CALLBACK Callback)
+{
+  Mock.refreshData_IgnoreBool = (char)0;
+  Mock.refreshData_CallbackBool = (char)0;
+  Mock.refreshData_CallbackFunctionPointer = Callback;
+}
+
+void refreshData_CMockReturnMemThruPtr_data(UNITY_LINE_TYPE cmock_line, LEDData const* data, size_t cmock_size)
+{
+  CMOCK_refreshData_CALL_INSTANCE* cmock_call_instance = (CMOCK_refreshData_CALL_INSTANCE*)CMock_Guts_GetAddressFor(CMock_Guts_MemEndOfChain(Mock.refreshData_CallInstance));
+  UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringPtrPreExp);
+  cmock_call_instance->ReturnThruPtr_data_Used = 1;
+  cmock_call_instance->ReturnThruPtr_data_Val = data;
+  cmock_call_instance->ReturnThruPtr_data_Size = cmock_size;
+}
+
+void refreshData_CMockIgnoreArg_data(UNITY_LINE_TYPE cmock_line)
+{
+  CMOCK_refreshData_CALL_INSTANCE* cmock_call_instance = (CMOCK_refreshData_CALL_INSTANCE*)CMock_Guts_GetAddressFor(CMock_Guts_MemEndOfChain(Mock.refreshData_CallInstance));
+  UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringIgnPreExp);
+  cmock_call_instance->IgnoreArg_data = 1;
+}
+
+void refreshData_CMockIgnoreArg_client(UNITY_LINE_TYPE cmock_line)
+{
+  CMOCK_refreshData_CALL_INSTANCE* cmock_call_instance = (CMOCK_refreshData_CALL_INSTANCE*)CMock_Guts_GetAddressFor(CMock_Guts_MemEndOfChain(Mock.refreshData_CallInstance));
+  UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringIgnPreExp);
+  cmock_call_instance->IgnoreArg_client = 1;
+}
+
+void refreshData_CMockIgnoreArg_dir(UNITY_LINE_TYPE cmock_line)
+{
+  CMOCK_refreshData_CALL_INSTANCE* cmock_call_instance = (CMOCK_refreshData_CALL_INSTANCE*)CMock_Guts_GetAddressFor(CMock_Guts_MemEndOfChain(Mock.refreshData_CallInstance));
+  UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringIgnPreExp);
+  cmock_call_instance->IgnoreArg_dir = 1;
+}
+
+void refreshData_CMockIgnoreArg_category(UNITY_LINE_TYPE cmock_line)
+{
+  CMOCK_refreshData_CALL_INSTANCE* cmock_call_instance = (CMOCK_refreshData_CALL_INSTANCE*)CMock_Guts_GetAddressFor(CMock_Guts_MemEndOfChain(Mock.refreshData_CallInstance));
+  UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringIgnPreExp);
+  cmock_call_instance->IgnoreArg_category = 1;
 }
 
 esp_err_t refreshBoard(Direction dir, Animation anim)
@@ -323,15 +761,37 @@ esp_err_t refreshBoard(Direction dir, Animation anim)
   UNITY_SET_DETAIL(CMockString_refreshBoard);
   cmock_call_instance = (CMOCK_refreshBoard_CALL_INSTANCE*)CMock_Guts_GetAddressFor(Mock.refreshBoard_CallInstance);
   Mock.refreshBoard_CallInstance = CMock_Guts_MemNext(Mock.refreshBoard_CallInstance);
+  if (Mock.refreshBoard_IgnoreBool)
+  {
+    UNITY_CLR_DETAILS();
+    if (cmock_call_instance == NULL)
+      return Mock.refreshBoard_FinalReturn;
+    memcpy((void*)(&Mock.refreshBoard_FinalReturn), (const void*)(&cmock_call_instance->ReturnVal),
+         sizeof(esp_err_t[sizeof(cmock_call_instance->ReturnVal) == sizeof(esp_err_t) ? 1 : -1])); /* add esp_err_t to :treat_as_array if this causes an error */
+    return cmock_call_instance->ReturnVal;
+  }
+  if (!Mock.refreshBoard_CallbackBool &&
+      Mock.refreshBoard_CallbackFunctionPointer != NULL)
+  {
+    esp_err_t cmock_cb_ret = Mock.refreshBoard_CallbackFunctionPointer(dir, anim, Mock.refreshBoard_CallbackCalls++);
+    UNITY_CLR_DETAILS();
+    return cmock_cb_ret;
+  }
   UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringCalledMore);
   cmock_line = cmock_call_instance->LineNumber;
+  if (!cmock_call_instance->IgnoreArg_dir)
   {
     UNITY_SET_DETAILS(CMockString_refreshBoard,CMockString_dir);
     UNITY_TEST_ASSERT_EQUAL_MEMORY((void*)(&cmock_call_instance->Expected_dir), (void*)(&dir), sizeof(Direction), cmock_line, CMockStringMismatch);
   }
+  if (!cmock_call_instance->IgnoreArg_anim)
   {
     UNITY_SET_DETAILS(CMockString_refreshBoard,CMockString_anim);
     UNITY_TEST_ASSERT_EQUAL_MEMORY((void*)(&cmock_call_instance->Expected_anim), (void*)(&anim), sizeof(Animation), cmock_line, CMockStringMismatch);
+  }
+  if (Mock.refreshBoard_CallbackFunctionPointer != NULL)
+  {
+    cmock_call_instance->ReturnVal = Mock.refreshBoard_CallbackFunctionPointer(dir, anim, Mock.refreshBoard_CallbackCalls++);
   }
   UNITY_CLR_DETAILS();
   return cmock_call_instance->ReturnVal;
@@ -342,8 +802,30 @@ void CMockExpectParameters_refreshBoard(CMOCK_refreshBoard_CALL_INSTANCE* cmock_
 {
   memcpy((void*)(&cmock_call_instance->Expected_dir), (const void*)(&dir),
          sizeof(Direction[sizeof(dir) == sizeof(Direction) ? 1 : -1])); /* add Direction to :treat_as_array if this causes an error */
+  cmock_call_instance->IgnoreArg_dir = 0;
   memcpy((void*)(&cmock_call_instance->Expected_anim), (const void*)(&anim),
          sizeof(Animation[sizeof(anim) == sizeof(Animation) ? 1 : -1])); /* add Animation to :treat_as_array if this causes an error */
+  cmock_call_instance->IgnoreArg_anim = 0;
+}
+
+void refreshBoard_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return)
+{
+  CMOCK_MEM_INDEX_TYPE cmock_guts_index = CMock_Guts_MemNew(sizeof(CMOCK_refreshBoard_CALL_INSTANCE));
+  CMOCK_refreshBoard_CALL_INSTANCE* cmock_call_instance = (CMOCK_refreshBoard_CALL_INSTANCE*)CMock_Guts_GetAddressFor(cmock_guts_index);
+  UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringOutOfMemory);
+  memset(cmock_call_instance, 0, sizeof(*cmock_call_instance));
+  Mock.refreshBoard_CallInstance = CMock_Guts_MemChain(Mock.refreshBoard_CallInstance, cmock_guts_index);
+  Mock.refreshBoard_IgnoreBool = (char)0;
+  cmock_call_instance->LineNumber = cmock_line;
+  cmock_call_instance->ReturnVal = cmock_to_return;
+  Mock.refreshBoard_IgnoreBool = (char)1;
+}
+
+void refreshBoard_CMockStopIgnore(void)
+{
+  if(Mock.refreshBoard_IgnoreBool)
+    Mock.refreshBoard_CallInstance = CMock_Guts_MemNext(Mock.refreshBoard_CallInstance);
+  Mock.refreshBoard_IgnoreBool = (char)0;
 }
 
 void refreshBoard_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, Direction dir, Animation anim, esp_err_t cmock_to_return)
@@ -353,9 +835,38 @@ void refreshBoard_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, Direction dir
   UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringOutOfMemory);
   memset(cmock_call_instance, 0, sizeof(*cmock_call_instance));
   Mock.refreshBoard_CallInstance = CMock_Guts_MemChain(Mock.refreshBoard_CallInstance, cmock_guts_index);
+  Mock.refreshBoard_IgnoreBool = (char)0;
   cmock_call_instance->LineNumber = cmock_line;
   CMockExpectParameters_refreshBoard(cmock_call_instance, dir, anim);
   memcpy((void*)(&cmock_call_instance->ReturnVal), (const void*)(&cmock_to_return),
          sizeof(esp_err_t[sizeof(cmock_to_return) == sizeof(esp_err_t) ? 1 : -1])); /* add esp_err_t to :treat_as_array if this causes an error */
+}
+
+void refreshBoard_AddCallback(CMOCK_refreshBoard_CALLBACK Callback)
+{
+  Mock.refreshBoard_IgnoreBool = (char)0;
+  Mock.refreshBoard_CallbackBool = (char)1;
+  Mock.refreshBoard_CallbackFunctionPointer = Callback;
+}
+
+void refreshBoard_Stub(CMOCK_refreshBoard_CALLBACK Callback)
+{
+  Mock.refreshBoard_IgnoreBool = (char)0;
+  Mock.refreshBoard_CallbackBool = (char)0;
+  Mock.refreshBoard_CallbackFunctionPointer = Callback;
+}
+
+void refreshBoard_CMockIgnoreArg_dir(UNITY_LINE_TYPE cmock_line)
+{
+  CMOCK_refreshBoard_CALL_INSTANCE* cmock_call_instance = (CMOCK_refreshBoard_CALL_INSTANCE*)CMock_Guts_GetAddressFor(CMock_Guts_MemEndOfChain(Mock.refreshBoard_CallInstance));
+  UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringIgnPreExp);
+  cmock_call_instance->IgnoreArg_dir = 1;
+}
+
+void refreshBoard_CMockIgnoreArg_anim(UNITY_LINE_TYPE cmock_line)
+{
+  CMOCK_refreshBoard_CALL_INSTANCE* cmock_call_instance = (CMOCK_refreshBoard_CALL_INSTANCE*)CMock_Guts_GetAddressFor(CMock_Guts_MemEndOfChain(Mock.refreshBoard_CallInstance));
+  UNITY_TEST_ASSERT_NOT_NULL(cmock_call_instance, cmock_line, CMockStringIgnPreExp);
+  cmock_call_instance->IgnoreArg_anim = 1;
 }
 

@@ -28,24 +28,100 @@ void Mockrefresh_Verify(void);
 
 
 
+#define initRefresh_Ignore() TEST_FAIL_MESSAGE("initRefresh requires _IgnoreAndReturn");
+#define initRefresh_IgnoreAndReturn(cmock_retval) initRefresh_CMockIgnoreAndReturn(__LINE__, cmock_retval)
+void initRefresh_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return);
+#define initRefresh_StopIgnore() initRefresh_CMockStopIgnore()
+void initRefresh_CMockStopIgnore(void);
 #define initRefresh_Expect() TEST_FAIL_MESSAGE("initRefresh requires _ExpectAndReturn");
 #define initRefresh_ExpectAndReturn(cmock_retval) initRefresh_CMockExpectAndReturn(__LINE__, cmock_retval)
 void initRefresh_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return);
+typedef esp_err_t (* CMOCK_initRefresh_CALLBACK)(int cmock_num_calls);
+void initRefresh_AddCallback(CMOCK_initRefresh_CALLBACK Callback);
+void initRefresh_Stub(CMOCK_initRefresh_CALLBACK Callback);
+#define initRefresh_StubWithCallback initRefresh_Stub
+#define initHttpClient_Ignore() TEST_FAIL_MESSAGE("initHttpClient requires _IgnoreAndReturn");
+#define initHttpClient_IgnoreAndReturn(cmock_retval) initHttpClient_CMockIgnoreAndReturn(__LINE__, cmock_retval)
+void initHttpClient_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_http_client_handle_t cmock_to_return);
+#define initHttpClient_StopIgnore() initHttpClient_CMockStopIgnore()
+void initHttpClient_CMockStopIgnore(void);
 #define initHttpClient_Expect() TEST_FAIL_MESSAGE("initHttpClient requires _ExpectAndReturn");
 #define initHttpClient_ExpectAndReturn(cmock_retval) initHttpClient_CMockExpectAndReturn(__LINE__, cmock_retval)
 void initHttpClient_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, esp_http_client_handle_t cmock_to_return);
+typedef esp_http_client_handle_t (* CMOCK_initHttpClient_CALLBACK)(int cmock_num_calls);
+void initHttpClient_AddCallback(CMOCK_initHttpClient_CALLBACK Callback);
+void initHttpClient_Stub(CMOCK_initHttpClient_CALLBACK Callback);
+#define initHttpClient_StubWithCallback initHttpClient_Stub
+#define clearBoard_Ignore() TEST_FAIL_MESSAGE("clearBoard requires _IgnoreAndReturn");
+#define clearBoard_IgnoreAndReturn(cmock_retval) clearBoard_CMockIgnoreAndReturn(__LINE__, cmock_retval)
+void clearBoard_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return);
+#define clearBoard_StopIgnore() clearBoard_CMockStopIgnore()
+void clearBoard_CMockStopIgnore(void);
 #define clearBoard_Expect(dir, quick) TEST_FAIL_MESSAGE("clearBoard requires _ExpectAndReturn");
 #define clearBoard_ExpectAndReturn(dir, quick, cmock_retval) clearBoard_CMockExpectAndReturn(__LINE__, dir, quick, cmock_retval)
 void clearBoard_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, Direction dir, bool quick, esp_err_t cmock_to_return);
+typedef esp_err_t (* CMOCK_clearBoard_CALLBACK)(Direction dir, bool quick, int cmock_num_calls);
+void clearBoard_AddCallback(CMOCK_clearBoard_CALLBACK Callback);
+void clearBoard_Stub(CMOCK_clearBoard_CALLBACK Callback);
+#define clearBoard_StubWithCallback clearBoard_Stub
+#define clearBoard_IgnoreArg_dir() clearBoard_CMockIgnoreArg_dir(__LINE__)
+void clearBoard_CMockIgnoreArg_dir(UNITY_LINE_TYPE cmock_line);
+#define clearBoard_IgnoreArg_quick() clearBoard_CMockIgnoreArg_quick(__LINE__)
+void clearBoard_CMockIgnoreArg_quick(UNITY_LINE_TYPE cmock_line);
+#define quickClearBoard_Ignore() TEST_FAIL_MESSAGE("quickClearBoard requires _IgnoreAndReturn");
+#define quickClearBoard_IgnoreAndReturn(cmock_retval) quickClearBoard_CMockIgnoreAndReturn(__LINE__, cmock_retval)
+void quickClearBoard_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return);
+#define quickClearBoard_StopIgnore() quickClearBoard_CMockStopIgnore()
+void quickClearBoard_CMockStopIgnore(void);
 #define quickClearBoard_Expect(dir) TEST_FAIL_MESSAGE("quickClearBoard requires _ExpectAndReturn");
 #define quickClearBoard_ExpectAndReturn(dir, cmock_retval) quickClearBoard_CMockExpectAndReturn(__LINE__, dir, cmock_retval)
 void quickClearBoard_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, Direction dir, esp_err_t cmock_to_return);
+typedef esp_err_t (* CMOCK_quickClearBoard_CALLBACK)(Direction dir, int cmock_num_calls);
+void quickClearBoard_AddCallback(CMOCK_quickClearBoard_CALLBACK Callback);
+void quickClearBoard_Stub(CMOCK_quickClearBoard_CALLBACK Callback);
+#define quickClearBoard_StubWithCallback quickClearBoard_Stub
+#define quickClearBoard_IgnoreArg_dir() quickClearBoard_CMockIgnoreArg_dir(__LINE__)
+void quickClearBoard_CMockIgnoreArg_dir(UNITY_LINE_TYPE cmock_line);
+#define refreshData_Ignore() TEST_FAIL_MESSAGE("refreshData requires _IgnoreAndReturn");
+#define refreshData_IgnoreAndReturn(cmock_retval) refreshData_CMockIgnoreAndReturn(__LINE__, cmock_retval)
+void refreshData_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return);
+#define refreshData_StopIgnore() refreshData_CMockStopIgnore()
+void refreshData_CMockStopIgnore(void);
 #define refreshData_Expect(data, client, dir, category) TEST_FAIL_MESSAGE("refreshData requires _ExpectAndReturn");
 #define refreshData_ExpectAndReturn(data, client, dir, category, cmock_retval) refreshData_CMockExpectAndReturn(__LINE__, data, client, dir, category, cmock_retval)
 void refreshData_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, LEDData* data, esp_http_client_handle_t client, Direction dir, SpeedCategory category, esp_err_t cmock_to_return);
+typedef esp_err_t (* CMOCK_refreshData_CALLBACK)(LEDData* data, esp_http_client_handle_t client, Direction dir, SpeedCategory category, int cmock_num_calls);
+void refreshData_AddCallback(CMOCK_refreshData_CALLBACK Callback);
+void refreshData_Stub(CMOCK_refreshData_CALLBACK Callback);
+#define refreshData_StubWithCallback refreshData_Stub
+#define refreshData_ReturnThruPtr_data(data) refreshData_CMockReturnMemThruPtr_data(__LINE__, data, sizeof(LEDData))
+#define refreshData_ReturnArrayThruPtr_data(data, cmock_len) refreshData_CMockReturnMemThruPtr_data(__LINE__, data, (cmock_len * sizeof(*data)))
+#define refreshData_ReturnMemThruPtr_data(data, cmock_size) refreshData_CMockReturnMemThruPtr_data(__LINE__, data, (cmock_size))
+void refreshData_CMockReturnMemThruPtr_data(UNITY_LINE_TYPE cmock_line, LEDData const* data, size_t cmock_size);
+#define refreshData_IgnoreArg_data() refreshData_CMockIgnoreArg_data(__LINE__)
+void refreshData_CMockIgnoreArg_data(UNITY_LINE_TYPE cmock_line);
+#define refreshData_IgnoreArg_client() refreshData_CMockIgnoreArg_client(__LINE__)
+void refreshData_CMockIgnoreArg_client(UNITY_LINE_TYPE cmock_line);
+#define refreshData_IgnoreArg_dir() refreshData_CMockIgnoreArg_dir(__LINE__)
+void refreshData_CMockIgnoreArg_dir(UNITY_LINE_TYPE cmock_line);
+#define refreshData_IgnoreArg_category() refreshData_CMockIgnoreArg_category(__LINE__)
+void refreshData_CMockIgnoreArg_category(UNITY_LINE_TYPE cmock_line);
+#define refreshBoard_Ignore() TEST_FAIL_MESSAGE("refreshBoard requires _IgnoreAndReturn");
+#define refreshBoard_IgnoreAndReturn(cmock_retval) refreshBoard_CMockIgnoreAndReturn(__LINE__, cmock_retval)
+void refreshBoard_CMockIgnoreAndReturn(UNITY_LINE_TYPE cmock_line, esp_err_t cmock_to_return);
+#define refreshBoard_StopIgnore() refreshBoard_CMockStopIgnore()
+void refreshBoard_CMockStopIgnore(void);
 #define refreshBoard_Expect(dir, anim) TEST_FAIL_MESSAGE("refreshBoard requires _ExpectAndReturn");
 #define refreshBoard_ExpectAndReturn(dir, anim, cmock_retval) refreshBoard_CMockExpectAndReturn(__LINE__, dir, anim, cmock_retval)
 void refreshBoard_CMockExpectAndReturn(UNITY_LINE_TYPE cmock_line, Direction dir, Animation anim, esp_err_t cmock_to_return);
+typedef esp_err_t (* CMOCK_refreshBoard_CALLBACK)(Direction dir, Animation anim, int cmock_num_calls);
+void refreshBoard_AddCallback(CMOCK_refreshBoard_CALLBACK Callback);
+void refreshBoard_Stub(CMOCK_refreshBoard_CALLBACK Callback);
+#define refreshBoard_StubWithCallback refreshBoard_Stub
+#define refreshBoard_IgnoreArg_dir() refreshBoard_CMockIgnoreArg_dir(__LINE__)
+void refreshBoard_CMockIgnoreArg_dir(UNITY_LINE_TYPE cmock_line);
+#define refreshBoard_IgnoreArg_anim() refreshBoard_CMockIgnoreArg_anim(__LINE__)
+void refreshBoard_CMockIgnoreArg_anim(UNITY_LINE_TYPE cmock_line);
 
 #ifdef __cplusplus
 }
