@@ -14,8 +14,8 @@
 #include "esp_http_client.h"
 #include "esp_err.h"
 #include "esp_assert.h"
+#include "wrap_esp_http_client.h"
 
-#include "http_wrap.h"
 #include "circular_buffer.h"
 #include "main_types.h"
 
@@ -105,7 +105,7 @@ esp_err_t getNextResponseBlock(char *output,
     /* read block */
     numBytesToRead = ((int32_t) *outputLen) - 2; // preprocessing includes a null-terminator, 
                                                  // and potentially a newline character
-    numBytesRead = wrap_http_client_read(client, output, numBytesToRead);
+    numBytesRead = ESP_HTTP_CLIENT_READ(client, output, numBytesToRead);
     if (numBytesRead < 0) return ESP_FAIL;
     if (numBytesRead == 0) {
         ret = ESP_ERR_NOT_FOUND;
@@ -335,28 +335,28 @@ esp_err_t openServerFile(int64_t *contentLength,
 
     /* clear http buffer if not clear */
     do {
-        bytesFlushed = wrap_http_client_read(client, buf, flushBufSize);
+        bytesFlushed = ESP_HTTP_CLIENT_READ(client, buf, flushBufSize);
     } while (bytesFlushed != 0);
 
     /* establish connection and open URL */
     ESP_LOGI(TAG, "retrieving: %s", URL);
     while (retryNum != 0)
     {
-        err = wrap_http_client_set_url(client, URL);
+        err = ESP_HTTP_CLIENT_SET_URL(client, URL);
         if (err != ESP_OK) return err; // should always be able to do this
 
-        err = wrap_http_client_open(client, 0);
+        err = ESP_HTTP_CLIENT_OPEN(client, 0);
         if (err != ESP_OK) return err; // should always be able to do this
 
-        *contentLength = wrap_http_client_fetch_headers(client);
+        *contentLength = ESP_HTTP_CLIENT_GET_CONTENT_LENGTH(client);
         while (*contentLength == -ESP_ERR_HTTP_EAGAIN)
         {
-            *contentLength = wrap_http_client_fetch_headers(client);
+            *contentLength = ESP_HTTP_CLIENT_GET_CONTENT_LENGTH(client);
         }
         if (*contentLength <= 0)
         {
             ESP_LOGW(TAG, "contentLength <= 0");
-            if (wrap_http_client_close(client) != ESP_OK)
+            if (ESP_HTTP_CLIENT_CLOSE(client) != ESP_OK)
             {
                 ESP_LOGE(TAG, "failed to close client");
                 return ESP_FAIL;
@@ -364,19 +364,19 @@ esp_err_t openServerFile(int64_t *contentLength,
             retryNum--;
             return ESP_ERR_NOT_FOUND;
         }
-        int status = wrap_http_client_get_status_code(client);
-        if (wrap_http_client_get_status_code(client) != 200)
+        int status = ESP_HTTP_CLIENT_GET_STATUS_CODE(client);
+        if (status != 200)
         {
             ESP_LOGE(TAG, "status code is %d", status);
             /* flush internal response buffer and close client */
-            err = wrap_http_client_flush_response(client, &bytesFlushed);
+            err = ESP_HTTP_CLIENT_FLUSH_RESPONSE(client, &bytesFlushed);
             ESP_LOGW(TAG, "flushed %d bytes", bytesFlushed);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to flush response");
                 return ESP_FAIL;
             }
 
-            err = wrap_http_client_close(client);
+            err = ESP_HTTP_CLIENT_CLOSE(client);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "failed to close client");
                 return ESP_FAIL;
@@ -516,7 +516,7 @@ esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[],
         }
 
         /* close connection to allow next connection to work properly */
-        if (wrap_http_client_close(client) != ESP_OK)
+        if (ESP_HTTP_CLIENT_CLOSE(client) != ESP_OK)
         {
             ESP_LOGE(TAG, "failed to close client");
             return ESP_FAIL;

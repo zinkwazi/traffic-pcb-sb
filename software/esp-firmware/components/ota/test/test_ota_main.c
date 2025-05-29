@@ -12,6 +12,8 @@
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 #include "sdkconfig.h"
+#include "wrap_esp_http_client.h"
+#include "mock_esp_http_client.h"
 
 #include "app_errors.h"
 #include "led_matrix.h"
@@ -40,18 +42,19 @@ void setUp(void)
         .user_data = NULL,
     };
 
-    client = esp_http_client_init(&httpConfig);
-    TEST_ASSERT_NOT_NULL(client);
-
     macroResetOTAConfig();
     macroResetUtils();
+    mock_esp_http_client_setup();
+
+    client = ESP_HTTP_CLIENT_INIT(&httpConfig);
+    TEST_ASSERT_NOT_NULL(client);
 }
 
 void tearDown(void)
 {
     esp_err_t err;
 
-    err = esp_http_client_cleanup(client);
+    err = ESP_HTTP_CLIENT_CLEANUP(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 }
 
@@ -75,23 +78,6 @@ void app_main(void)
     err = esp_event_loop_create_default();
     TEST_ASSERT_EQUAL(ESP_OK, err);
     (void) esp_netif_create_default_wifi_sta();
-
-    /* establish wifi connection & tls */
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    err = esp_wifi_init(&cfg);
-    TEST_ASSERT_EQUAL(ESP_OK, err);
-
-    err = initWifi(CONFIG_TEST_WIFI_SSID, CONFIG_TEST_WIFI_PASSWORD);
-    TEST_ASSERT_EQUAL(ESP_OK, err);
-
-#if CONFIG_MOCK_INDICATORS
-    /* ignore wifi indicator mocks */
-    Mockindicators_Init();
-    indicateWifiConnected_IgnoreAndReturn(ESP_OK);
-    indicateWifiNotConnected_IgnoreAndReturn(ESP_OK);
-#endif
-
-    (void) establishWifiConnection(); // checking this error crashes the program
 
     /* run tests */
     UNITY_BEGIN();

@@ -183,6 +183,8 @@ TEST_CASE("updateData_notSwitched", "[actions]")
 TEST_CASE("updateData_memoryLeak", "[actions]")
 {
     /* setup mocks */
+    Mockhttp_wrap_Init(); // initializes all mocks
+    
 }
 
 #endif /* CONFIG_ACTIONS_MAIN */

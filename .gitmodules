@@ -1,0 +1,3 @@
+[submodule "software/esp-firmware/esp-http-client-mock"]
+	path = software/esp-firmware/esp-http-client-mock
+	url = https://github.com/jdbaptista/esp-http-client-mock

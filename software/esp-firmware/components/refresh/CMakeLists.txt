@@ -22,5 +22,6 @@ idf_component_register(SRCS ${srcs}
                                 app_nvs
                                 led_matrix
                                 esp_http_client
+                                esp_http_client_wrapper
                                 mbedtls
                                 cmock)

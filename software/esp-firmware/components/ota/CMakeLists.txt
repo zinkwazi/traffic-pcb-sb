@@ -20,4 +20,5 @@ idf_component_register(SRCS ${srcs}
                                 app_errors
                                 indicators
                                 esp_http_client
-                                esp_https_ota)
+                                esp_https_ota
+                                esp_http_client_wrapper)

@@ -17,8 +17,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
+#include "wrap_esp_http_client.h"
 
-#include "http_wrap.h"
 #include "led_matrix.h"
 #include "utilities.h"
 #include "main_types.h"
@@ -33,6 +33,7 @@
 
 #define HOURS_TO_SECS(h) (h * 60 * 60)
 #define MINS_TO_SECS(m) (m * 60)
+
 
 /* The number of seconds between updating traffic data from the server */
 #define UPDATE_TRAFFIC_DATA_PERIOD_SEC MINS_TO_SECS(20)
@@ -116,57 +117,27 @@ STATIC_IF_NOT_TEST esp_err_t handleActionUpdateData(void)
     if (client == NULL) THROW_ERR(ESP_FAIL);
 
     err = refreshData(northData, client, NORTH, LIVE);
-    if (err != ESP_OK)
-    {
-        err = wrap_http_client_cleanup(client);
-        if (err != ESP_OK) throwFatalError();
-        return ESP_FAIL;
-    }
+    if (err != ESP_OK) goto handle_error;
     err = refreshData(southData, client, SOUTH, LIVE);
-    if (err != ESP_OK)
-    {
-        err = wrap_http_client_cleanup(client);
-        if (err != ESP_OK) throwFatalError();
-        return ESP_FAIL;
-    }
+    if (err != ESP_OK) goto handle_error;
 
     /* update static data */
     err = borrowTrafficData(LIVE, portMAX_DELAY);
-    if (err != ESP_OK) return ESP_FAIL;
-    // if (err != ESP_OK)
-    // {
-    //     err = wrap_http_client_cleanup(client);
-    //     if (err != ESP_OK) throwFatalError();
-    //     return ESP_FAIL;
-    // }
+    if (err != ESP_OK) goto handle_error;
     err = updateTrafficData(northData, MAX_NUM_LEDS_REG, NORTH, LIVE);
-    if (err != ESP_OK) return ESP_FAIL;
-    // if (err != ESP_OK)
-    // {
-    //     err = wrap_http_client_cleanup(client);
-    //     if (err != ESP_OK) throwFatalError();
-    //     return ESP_FAIL;
-    // }
+    if (err != ESP_OK) goto handle_error;
     err = updateTrafficData(southData, MAX_NUM_LEDS_REG, SOUTH, LIVE);
-    if (err != ESP_OK) return ESP_FAIL;
-    // if (err != ESP_OK)
-    // {
-    //     err = wrap_http_client_cleanup(client);
-    //     if (err != ESP_OK) throwFatalError();
-    //     return ESP_FAIL;
-    // }
+    if (err != ESP_OK) goto handle_error;
     err = releaseTrafficData(LIVE);
-    if (err != ESP_OK) return ESP_FAIL;
-    // if (err != ESP_OK)
-    // {
-    //     err = wrap_http_client_cleanup(client);
-    //     if (err != ESP_OK) throwFatalError();
-    //     return ESP_FAIL;
-    // }
+    if (err != ESP_OK) goto handle_error;
     
-    err = wrap_http_client_cleanup(client);
+    err = ESP_HTTP_CLIENT_CLEANUP(client);
     if (err != ESP_OK) throwFatalError();
     return ESP_OK;
+handle_error:
+    err = ESP_HTTP_CLIENT_CLEANUP(client);
+    if (err != ESP_OK) throwFatalError();
+    return ESP_FAIL;
 }
 
 #if CONFIG_HARDWARE_VERSION == 1

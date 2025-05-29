@@ -188,12 +188,5 @@ menu "Main Application"
         help
             Whether utilities.h macros should be extern variables or not, which
             is useful for modifying macro values during testing.
-
-    config MOCK_HTTP_WRAP
-        bool "Mock http_wrap.h"
-        default false
-        help
-            Whether to mock http_wrap.h, which is helpful to remove the need
-            for an internet connection from unit tests.
         
 endmenu

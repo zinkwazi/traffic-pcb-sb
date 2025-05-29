@@ -3,7 +3,6 @@
 #define _MOCKHTTP_WRAP_H
 
 #include "unity.h"
-#include "http_wrap.h"
 
 /* Ignore the following warnings, since we are copying code */
 #if defined(__GNUC__) && !defined(__ICC) && !defined(__TMS470__)

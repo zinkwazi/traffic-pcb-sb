@@ -19,6 +19,7 @@
 #include "freertos/projdefs.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
+#include "wrap_esp_http_client.h"
 
 #include "animations.h"
 #include "api_connect.h"

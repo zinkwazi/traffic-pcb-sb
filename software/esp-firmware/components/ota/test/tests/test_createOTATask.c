@@ -20,6 +20,8 @@
 #include "ota_pi.h"
 #include "ota_config.h"
 
+#include "resources/createOTATaskResources.h"
+
 #define TAG "test"
 
 #define URL_BASE CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL
@@ -28,6 +30,8 @@ extern esp_http_client_handle_t client;
 
 TEST_CASE("createOTATask_createsTask", "[ota]")
 {
+    MOCK_ENDPOINT(version);
+
     esp_err_t err;
     BaseType_t success;
     SemaphoreHandle_t performedUpdateSema;
@@ -36,19 +40,23 @@ TEST_CASE("createOTATask_createsTask", "[ota]")
     /* setup extern macros */
     RETRY_CONNECT_OTA_AVAILABLE = 5;
     OTA_RECV_BUF_SIZE = 128;
-    FIRMWARE_UPGRADE_VERSION_URL = URL_BASE "/createOTATask_version.json";
+    FIRMWARE_UPGRADE_VERSION_URL = version.url; // V2_0 v0.6.0
     OTA_HARDWARE_VERSION = 2;
     OTA_REVISION_VERSION = 0;
     OTA_MAJOR_VERSION = 0;
-    OTA_MINOR_VERSION = 2;
-    OTA_PATCH_VERSION = 0;
+    OTA_MINOR_VERSION = 6;
+    OTA_PATCH_VERSION = 0; // won't indicateOTAAvailable
 
     HARDWARE_VERSION_KEY = "hardware_version";
     HARDWARE_REVISION_KEY = "hardware_revision";
     FIRMWARE_MAJOR_KEY = "firmware_major_version";
     FIRMWARE_MINOR_KEY = "firmware_minor_version";
     FIRMWARE_PATCH_KEY = "firmware_patch_version";
+
     /* setup mocks */
+    err = mock_esp_http_client_add_endpoint(version);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
     err = initPerformedUpdateSema();
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
@@ -61,9 +69,7 @@ TEST_CASE("createOTATask_createsTask", "[ota]")
     err = createOTATask(&otaTask);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    success = xTaskNotify(otaTask, 0xFF, eSetBits); // during testing, ota task
-                                                    // will delete itself after
-                                                    // handling
+    success = xTaskNotify(otaTask, 0xFF, eSetBits);
     TEST_ASSERT_EQUAL(pdPASS, success);
 
     performedUpdateSema = getPerformedUpdateSema();
@@ -73,6 +79,7 @@ TEST_CASE("createOTATask_createsTask", "[ota]")
     vSemaphoreDelete(performedUpdateSema);
 
     Mockindicators_Verify();
+    Mockindicators_Destroy();
 }
 
 /**
@@ -89,12 +96,15 @@ TEST_CASE("vOTATask_indicatesCorrectly", "[ota]")
 #if CONFIG_HARDWARE_VERSION == 1
     /* indication unsupported */
 #elif CONFIG_HARDWARE_VERSION == 2
+    MOCK_ENDPOINT(indicatesCorrectly);
+
     TaskHandle_t otaTask;
+    esp_err_t err;
 
     /* indicateOTAUpdateAvailable is called when an update is available */
     RETRY_CONNECT_OTA_AVAILABLE = 5;
     OTA_RECV_BUF_SIZE = 128;
-    FIRMWARE_UPGRADE_VERSION_URL = URL_BASE "/vOTATask_indicatesCorrectly1.json"; // V2_0 v0.7.5
+    FIRMWARE_UPGRADE_VERSION_URL = indicatesCorrectly.url; // V2_0 v0.7.5
     OTA_HARDWARE_VERSION = 2;
     OTA_REVISION_VERSION = 0;
     OTA_MAJOR_VERSION = 0;
@@ -109,9 +119,12 @@ TEST_CASE("vOTATask_indicatesCorrectly", "[ota]")
     TEST_ASSERT_EQUAL(ESP_OK, initPerformedUpdateSema()); // unused
     setUpdateFails(true); // don't expect to update anything, set for reproducibility
     
-    /* setup indicators mock */
+    /* setup mocks */
     Mockindicators_Init();
     indicateOTAAvailable_ExpectAndReturn(ESP_OK);
+
+    err = mock_esp_http_client_add_endpoint(indicatesCorrectly);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
 
     TEST_ASSERT_GREATER_THAN(1, CONFIG_OTA_PRIO); // need to let this task's prio be less than ota task
     vTaskPrioritySet(NULL, CONFIG_OTA_PRIO - 1);
@@ -121,6 +134,7 @@ TEST_CASE("vOTATask_indicatesCorrectly", "[ota]")
     If not, then something has gone wrong in the OTA task and this is blocked forever. */
     vTaskDelay(pdMS_TO_TICKS(5000)); // TODO: don't wait, its bad design for a test
     vTaskDelete(otaTask);
+    vSemaphoreDelete(getPerformedUpdateSema());
 
     Mockindicators_Verify();
     Mockindicators_Destroy();

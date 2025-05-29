@@ -16,4 +16,5 @@ idf_component_register(SRCS ${srcs}
                                 indicators
                                 esp_wifi
                                 esp_http_client
+                                esp_http_client_wrapper
                                 esp-tls)

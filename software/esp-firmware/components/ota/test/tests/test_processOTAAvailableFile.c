@@ -17,10 +17,13 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_http_client.h"
+#include "wrap_esp_http_client.h"
+#include "mock_esp_http_client.h"
 
 #include "utilities.h"
-
 #include "api_connect.h"
+
+#include "resources/processOTAAvailableFileResources.h"
 
 extern esp_http_client_handle_t client;
 
@@ -33,7 +36,8 @@ extern esp_http_client_handle_t client;
  */
 TEST_CASE("processOTAAvailableFile_inputGuards", "[ota]")
 {
-    char *URL;
+    MOCK_ENDPOINT(typical1);
+
     esp_err_t err;
     bool available;
     bool patch;
@@ -41,12 +45,17 @@ TEST_CASE("processOTAAvailableFile_inputGuards", "[ota]")
     int bytes;
     char buf[10];
 
+    /* setup mocks */
     OTA_HARDWARE_VERSION = 2;
     OTA_REVISION_VERSION = 0;
     OTA_MAJOR_VERSION = 0;
     OTA_MINOR_VERSION = 6;
     OTA_PATCH_VERSION = 0;
 
+    err = mock_esp_http_client_add_endpoint(typical1);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    /* test 1: NULL client */
     available = true;
     patch = false;
     err = processOTAAvailableFile(&available, &patch, NULL);
@@ -60,35 +69,23 @@ TEST_CASE("processOTAAvailableFile_inputGuards", "[ota]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
     TEST_ASSERT_EQUAL(false, available);
     TEST_ASSERT_EQUAL(false, patch);
-    
+
+    /* test 2: NULL available & patch */
     contentLen = -1;
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_typical1.json";
-    /**
-     * processOTAAvailableFile_typical1.json should contain
-     * 
-     * {
-     *     "hardware_version": 2,
-     *     "hardware_revision": 0,
-     *     "firmware_major_version": 0,
-     *     "firmware_minor_version": 6,
-     *     "firmware_patch_version": 1
-     * }
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    err = openServerFile(&contentLen, client, typical1.url, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_GREATER_THAN(0, contentLen);
 
-    /* test that client is not read */
     err = processOTAAvailableFile(NULL, NULL, client);
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
-    do {
-        bytes = esp_http_client_read(client, buf, 9);
-    } while (bytes == -ESP_ERR_HTTP_EAGAIN);
+
+    // ensure client is not read
+    bytes = ESP_HTTP_CLIENT_READ(client, buf, 9);
     buf[9] = '\0';
     TEST_ASSERT_EQUAL(bytes, 9);
     TEST_ASSERT_EQUAL_STRING("{\n    \"ha", buf);
-
-    err = esp_http_client_close(client);
+    
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 }
 
@@ -99,31 +96,33 @@ TEST_CASE("processOTAAvailableFile_inputGuards", "[ota]")
  */
 TEST_CASE("processOTAAvailableFile_typical", "[ota]")
 {
-    char *URL;
+    MOCK_ENDPOINT(typical1);
+    MOCK_ENDPOINT(typical2);
+    MOCK_ENDPOINT(typical3);
+
     esp_err_t err;
     bool available;
     bool patch;
     int64_t contentLen;
 
+    /* setup mocks */
     OTA_HARDWARE_VERSION = 2;
     OTA_REVISION_VERSION = 0;
     OTA_MAJOR_VERSION = 0;
     OTA_MINOR_VERSION = 6;
     OTA_PATCH_VERSION = 0;
 
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_typical1.json";
-    /**
-     * processOTAAvailableFile_typical1.json should contain
-     * 
-     * {
-     *     "hardware_version": 2,
-     *     "hardware_revision": 0,
-     *     "firmware_major_version": 0,
-     *     "firmware_minor_version": 6,
-     *     "firmware_patch_version": 1
-     * }
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    err = mock_esp_http_client_add_endpoint(typical1);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    err = mock_esp_http_client_add_endpoint(typical2);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    err = mock_esp_http_client_add_endpoint(typical3);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    /* test 1: typical w/ patch update */
+    err = openServerFile(&contentLen, client, typical1.url, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     available = false;
@@ -133,28 +132,11 @@ TEST_CASE("processOTAAvailableFile_typical", "[ota]")
     TEST_ASSERT_EQUAL(true, available);
     TEST_ASSERT_EQUAL(true, patch);
 
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    OTA_HARDWARE_VERSION = 2;
-    OTA_REVISION_VERSION = 0;
-    OTA_MAJOR_VERSION = 0;
-    OTA_MINOR_VERSION = 6;
-    OTA_PATCH_VERSION = 0;
-
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_typical2.json";
-    /**
-     * processOTAvailableFile_typical2.json should contain
-     * 
-     * {
-     *     "hardware_version": 2,
-     *     "hardware_revision": 0,
-     *     "firmware_major_version": 0,
-     *     "firmware_minor_version": 6,
-     *     "firmware_patch_version": 0
-     * }
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    /* test 2: typical w/o patch update */
+    err = openServerFile(&contentLen, client, typical2.url, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     available = true;
@@ -164,28 +146,17 @@ TEST_CASE("processOTAAvailableFile_typical", "[ota]")
     TEST_ASSERT_EQUAL(false, available);
     TEST_ASSERT_EQUAL(false, patch);
 
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
+    /* test 3: typical w/ V1_0 */
     OTA_HARDWARE_VERSION = 1;
     OTA_REVISION_VERSION = 0;
     OTA_MAJOR_VERSION = 0;
     OTA_MINOR_VERSION = 6;
     OTA_PATCH_VERSION = 0;
 
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_typical3.json";
-    /**
-     * processOTAvailableFile_typical2.json should contain
-     * 
-     * {
-     *     "hardware_version": 1,
-     *     "hardware_revision": 0,
-     *     "firmware_major_version": 0,
-     *     "firmware_minor_version": 6,
-     *     "firmware_patch_version": 1
-     * }
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    err = openServerFile(&contentLen, client, typical3.url, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     available = false;
@@ -195,7 +166,7 @@ TEST_CASE("processOTAAvailableFile_typical", "[ota]")
     TEST_ASSERT_EQUAL(true, available);
     TEST_ASSERT_EQUAL(true, patch);
 
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 }
 
@@ -207,32 +178,34 @@ TEST_CASE("processOTAAvailableFile_typical", "[ota]")
  */
 TEST_CASE("processOTAAvailableFile_comments", "[ota]")
 {
-    char *URL;
+    MOCK_ENDPOINT(comments0);
+    MOCK_ENDPOINT(comments1);
+    MOCK_ENDPOINT(comments2);
+    MOCK_ENDPOINT(comments3);
+
     esp_err_t err;
     bool available;
     bool patch;
     int64_t contentLen;
 
+    /* setup mocks */
     OTA_HARDWARE_VERSION = 2;
     OTA_REVISION_VERSION = 0;
     OTA_MAJOR_VERSION = 0;
     OTA_MINOR_VERSION = 6;
     OTA_PATCH_VERSION = 0;
 
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_comments0.json";
-    /**
-     * processOTAAvailableFile_comments0.json should contain
-     * 
-     * # this is a simple comment
-     * {
-     *     "hardware_version": 2,
-     *     "hardware_revision": 0,
-     *     "firmware_major_version": 0,
-     *     "firmware_minor_version": 6,
-     *     "firmware_patch_version": 1
-     * }
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    err = mock_esp_http_client_add_endpoint(comments0);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = mock_esp_http_client_add_endpoint(comments1);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = mock_esp_http_client_add_endpoint(comments2);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = mock_esp_http_client_add_endpoint(comments3);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    /* test */
+    err = openServerFile(&contentLen, client, comments0.url, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     available = false;
@@ -242,24 +215,10 @@ TEST_CASE("processOTAAvailableFile_comments", "[ota]")
     TEST_ASSERT_EQUAL(true, available);
     TEST_ASSERT_EQUAL(true, patch);
 
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_comments1.json";
-    /**
-     * processOTAAvailableFile_comments1.json should contain
-     * 
-     * # this is a simple comment
-     * {
-     *     "hardware_version": 2,
-     *     "hardware_revision": 0,
-     *     "firmware_major_version": 0,
-     *     "firmware_minor_version": 6,
-     *     "firmware_patch_version": 1
-     * }
-     * # this is another comment
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    err = openServerFile(&contentLen, client, comments1.url, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     available = false;
@@ -269,22 +228,10 @@ TEST_CASE("processOTAAvailableFile_comments", "[ota]")
     TEST_ASSERT_EQUAL(true, available);
     TEST_ASSERT_EQUAL(true, patch);
 
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_comments2.json";
-    /**
-     * processOTAAvailableFile_comments2.json should contain
-     * 
-     * {
-     *     "hardware_version": 2, # comment
-     *     "hardware_revision": 0,
-     *     "firmware_major_version": 0, # comment
-     *     "firmware_minor_version": 6,
-     *     "firmware_patch_version": 1
-     * }
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    err = openServerFile(&contentLen, client, comments2.url, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     available = false;
@@ -294,23 +241,10 @@ TEST_CASE("processOTAAvailableFile_comments", "[ota]")
     TEST_ASSERT_EQUAL(true, available);
     TEST_ASSERT_EQUAL(true, patch);
 
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_comments3.json";
-    /**
-     * processOTAAvailableFile_comments3.json should contain
-     * 
-     * # cannot contain strings, "string", as values within {}.
-     * {
-     *     "hardware_version": 2, # ,",{,"}"
-     *     "hardware_revision": 0,
-     *     "firmware_major_version": 0,
-     *     "firmware_minor_version": 6,
-     *     "firmware_patch_version": 1 # ,
-     * }
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    err = openServerFile(&contentLen, client, comments3.url, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     available = false;
@@ -320,7 +254,7 @@ TEST_CASE("processOTAAvailableFile_comments", "[ota]")
     TEST_ASSERT_EQUAL(true, available);
     TEST_ASSERT_EQUAL(true, patch);
 
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 }
 
@@ -332,31 +266,25 @@ TEST_CASE("processOTAAvailableFile_comments", "[ota]")
  */
 TEST_CASE("processOTAAvailableFile_unordered", "[ota]")
 {
-    char *URL;
+    MOCK_ENDPOINT(unordered1);
+
     esp_err_t err;
     bool available;
     bool patch;
     int64_t contentLen;
 
+    /* setup mocks */
     OTA_HARDWARE_VERSION = 2;
     OTA_REVISION_VERSION = 0;
     OTA_MAJOR_VERSION = 0;
     OTA_MINOR_VERSION = 6;
     OTA_PATCH_VERSION = 0;
 
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_unordered1.json";
-    /**
-     * processOTAAvailableFile_unordered1.json should contain
-     * 
-     * {
-     *     "hardware_revision": 0,
-     *     "firmware_patch_version": 1,
-     *     "hardware_version": 2,
-     *     "firmware_minor_version": 6,
-     *     "firmware_major_version": 0
-     * }
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    err = mock_esp_http_client_add_endpoint(unordered1);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    /* test */
+    err = openServerFile(&contentLen, client, unordered1.url, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     available = false;
@@ -366,7 +294,7 @@ TEST_CASE("processOTAAvailableFile_unordered", "[ota]")
     TEST_ASSERT_EQUAL(true, available);
     TEST_ASSERT_EQUAL(true, patch);
 
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 }
 
@@ -379,145 +307,79 @@ TEST_CASE("processOTAAvailableFile_unordered", "[ota]")
  */
 TEST_CASE("processOTAAvailableFile_invalid", "[ota]")
 {
-    char *URL;
+    MOCK_ENDPOINT(invalid1);
+    MOCK_ENDPOINT(invalid2);
+    MOCK_ENDPOINT(invalid3);
+    MOCK_ENDPOINT(invalid4);
+    MOCK_ENDPOINT(invalid5);
+    MOCK_ENDPOINT(invalid6);
+
     esp_err_t err;
     bool available;
     bool patch;
     int64_t contentLen;
 
+    /* setup mocks */
     OTA_HARDWARE_VERSION = 2;
     OTA_REVISION_VERSION = 0;
     OTA_MAJOR_VERSION = 0;
     OTA_MINOR_VERSION = 6;
     OTA_PATCH_VERSION = 0;
 
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_invalid1.json";
-    /**
-     * processOTAAvailableFile_invalid1.json should contain
-     * 
-     * {
-     *     "hardware_version": 2,
-     *     "hardware_revision": 0,
-     *     "firmware_major_version": 0,
-     *     "firmware_minor_version": 6,
-     *     "firmware_patch_version": 1, # trailing comma
-     * }
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    err = mock_esp_http_client_add_endpoint(invalid1);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = mock_esp_http_client_add_endpoint(invalid2);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = mock_esp_http_client_add_endpoint(invalid3);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = mock_esp_http_client_add_endpoint(invalid4);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = mock_esp_http_client_add_endpoint(invalid5);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = mock_esp_http_client_add_endpoint(invalid6);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
+    /* test */
+    err = openServerFile(&contentLen, client, invalid1.url, 5);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
     err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_NOT_EQUAL(ESP_OK, err);
-
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_invalid2.json";
-    /**
-     * processOTAAvailableFile_invalid2.json should contain
-     * 
-     * {
-     *     "hardware_version": 2,
-     *     "hardware_revision": 0,
-     *     "firmware_major_version": 0,
-     *     "firmware_minor_version": 6,
-     *     "firmware_patch_version": 1
-     * # missing end bracket
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    err = openServerFile(&contentLen, client, invalid2.url, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
-
-
     err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_NOT_EQUAL(ESP_OK, err);
-
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_invalid3.json";
-    /**
-     * processOTAAvailableFile_invalid3.json should contain
-     * 
-     * {
-     *     "hardware_version": "str2", # string in value
-     *     "hardware_revision": 0,
-     *     "firmware_major_version": 0,
-     *     "firmware_minor_version": 6,
-     *     "firmware_patch_version": 1
-     * }
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    err = openServerFile(&contentLen, client, invalid3.url, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
-
     err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_NOT_EQUAL(ESP_OK, err);
-
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_invalid4.json";
-    /**
-     * processOTAAvailableFile_invalid4.json should contain
-     * 
-     * {
-     *     hardware_version: 2, # missing quotes in key
-     *     "hardware_revision": 0,
-     *     "firmware_major_version": 0,
-     *     "firmware_minor_version": 6,
-     *     "firmware_patch_version": 1
-     * }
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    err = openServerFile(&contentLen, client, invalid4.url, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
-
     err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_NOT_EQUAL(ESP_OK, err);
-
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = esp_http_client_cancel_request(client);
-    TEST_ASSERT_NOT_EQUAL(ESP_FAIL, err);
-
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_invalid5.json";
-    /**
-     * processOTAAvailableFile_invalid5.json should contain
-     * 
-     *     "hardware_version": 2,
-     *     "hardware_revision": 0,
-     *     "firmware_major_version": 0,
-     *     "firmware_minor_version": 6,
-     *     "firmware_patch_version": 1
-     * }
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    err = openServerFile(&contentLen, client, invalid5.url, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
-
     err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_NOT_EQUAL(ESP_OK, err);
-
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_invalid6.json";
-    /**
-     * processOTAAvailableFile_invalid6.json should contain
-     * # missing single quotation mark
-     * {
-     *     "hardware_version: 2,
-     *     "hardware_revision": 0,
-     *     "firmware_major_version": 0,
-     *     "firmware_minor_version": 6,
-     *     "firmware_patch_version": 1
-     * }
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    err = openServerFile(&contentLen, client, invalid6.url, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
-
     err = processOTAAvailableFile(&available, &patch, client);
     TEST_ASSERT_NOT_EQUAL(ESP_OK, err);
-
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 }
 
@@ -530,33 +392,25 @@ TEST_CASE("processOTAAvailableFile_invalid", "[ota]")
  */
 TEST_CASE("processOTAAvailableFile_ignoresKeys", "[ota]")
 {
-    char *URL;
+    MOCK_ENDPOINT(ignore1);
+
     esp_err_t err;
     bool available;
     bool patch;
     int64_t contentLen;
 
+    /* setup mocks */
     OTA_HARDWARE_VERSION = 2;
     OTA_REVISION_VERSION = 0;
     OTA_MAJOR_VERSION = 0;
     OTA_MINOR_VERSION = 6;
     OTA_PATCH_VERSION = 0;
 
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_ignore1.json";
-    /**
-     * processOTAAvailableFile_ignore1.json should contain
-     * 
-     * {
-     *     "ignore_this_key": 37,
-     *     "firmware_major_version": 0,
-     *     "firmware_minor_version": 6,
-     *     "firmware_patch_version": 1,
-     *     "ignore_key": 7,
-     *     "hardware_version": 2,
-     *     "hardware_revision": 0
-     * }
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    err = mock_esp_http_client_add_endpoint(ignore1);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    /* test */
+    err = openServerFile(&contentLen, client, ignore1.url, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     available = false;
@@ -566,7 +420,7 @@ TEST_CASE("processOTAAvailableFile_ignoresKeys", "[ota]")
     TEST_ASSERT_EQUAL(true, available);
     TEST_ASSERT_EQUAL(true, patch);
 
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 }
 
@@ -581,33 +435,25 @@ TEST_CASE("processOTAAvailableFile_ignoresKeys", "[ota]")
  */
 TEST_CASE("processOTAAvailableFile_formattingInString", "[ota]")
 {
-    char *URL;
+    MOCK_ENDPOINT(string1);
+
     esp_err_t err;
     bool available;
     bool patch;
     int64_t contentLen;
 
+    /* setup tests */
     OTA_HARDWARE_VERSION = 2;
     OTA_REVISION_VERSION = 0;
     OTA_MAJOR_VERSION = 0;
     OTA_MINOR_VERSION = 6;
     OTA_PATCH_VERSION = 0;
 
-    URL = CONFIG_OTA_TEST_DATA_SERVER CONFIG_OTA_TEST_DATA_BASE_URL "/processOTAAvailableFile_string1.json";
-    /**
-     * processOTAAvailableFile_string1.json should contain
-     * 
-     * # escape characters cannot be parsed, ie. "" cannot be used in strings
-     * {
-     *     "hardware_version": 2,
-     *     "hardware_revision": 0,
-     *     ",,{:}:,{ignore}": 234,
-     *     "firmware_major_version": 0,
-     *     "firmware_minor_version": 6,
-     *     "firmware_patch_version": 1
-     * }
-     */
-    err = openServerFile(&contentLen, client, URL, 5);
+    err = mock_esp_http_client_add_endpoint(string1);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    /* test */
+    err = openServerFile(&contentLen, client, string1.url, 5);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     err = processOTAAvailableFile(&available, &patch, client);
@@ -615,6 +461,6 @@ TEST_CASE("processOTAAvailableFile_formattingInString", "[ota]")
     TEST_ASSERT_EQUAL(true, available);
     TEST_ASSERT_EQUAL(true, patch);
 
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 }

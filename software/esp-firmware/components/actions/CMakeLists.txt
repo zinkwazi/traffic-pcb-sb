@@ -10,4 +10,5 @@ idf_component_register(SRCS "src/actions.c"
                                 ota
                                 esp_netif
                                 esp_timer
-                                lwip)
+                                lwip
+                                esp_http_client_wrapper)

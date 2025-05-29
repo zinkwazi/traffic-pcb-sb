@@ -14,7 +14,6 @@
 
 #include "esp_crt_bundle.h"
 #include "esp_err.h"
-#include "esp_http_client.h"
 #include "esp_https_ota.h"
 #include "esp_log.h"
 #include "esp_system.h"
@@ -23,11 +22,11 @@
 #include "freertos/projdefs.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
+#include "wrap_esp_http_client.h"
 
 #include "app_err.h"
 #include "app_errors.h"
 #include "circular_buffer.h"
-#include "http_wrap.h"
 #include "indicators.h"
 #include "utilities.h"
 #include "wifi.h"
@@ -208,19 +207,21 @@ esp_err_t queryOTAUpdateAvailable(bool *available, bool *patch)
     if (available == NULL) return ESP_ERR_INVALID_ARG;
 
     /* initialize client */
-    client = wrap_http_client_init(&https_config);
+    client = ESP_HTTP_CLIENT_INIT(&https_config);
     if (client == NULL)
     {
         ret = ESP_FAIL;
         return ESP_FAIL; // no need to free memory
     }
 
+    *available = false;
+    *patch = false;
     ret = ESP_FAIL;
     for (i = 0; i < RETRY_CONNECT_OTA_AVAILABLE; i++)
     {
         /* connect to server and query file */        
         ESP_LOGI(TAG, "Checking server firmware version: %s", FIRMWARE_UPGRADE_VERSION_URL);
-        err = wrap_http_client_open(client, 0);
+        err = ESP_HTTP_CLIENT_OPEN(client, 0);
         if (err != ESP_OK)
         {
             ret = ESP_FAIL;
@@ -228,7 +229,8 @@ esp_err_t queryOTAUpdateAvailable(bool *available, bool *patch)
         }
 
         do {
-            contentLength = wrap_http_client_fetch_headers(client);
+            // contentLength = wrap_http_client_fetch_headers(client);
+            contentLength = ESP_HTTP_CLIENT_GET_CONTENT_LENGTH(client);
         } while (contentLength == -ESP_ERR_HTTP_EAGAIN);
         if (contentLength <= 0) // null-terminator
         {
@@ -236,7 +238,7 @@ esp_err_t queryOTAUpdateAvailable(bool *available, bool *patch)
             break;
         }
 
-        int status = wrap_http_client_get_status_code(client);
+        int status = ESP_HTTP_CLIENT_GET_STATUS_CODE(client);
         if (status != 200)
         {
             ret = ESP_FAIL;
@@ -261,7 +263,7 @@ esp_err_t queryOTAUpdateAvailable(bool *available, bool *patch)
     }
     
     /* close client */
-    err = wrap_http_client_cleanup(client);
+    err = ESP_HTTP_CLIENT_CLEANUP(client);
     if (err != ESP_OK)
     {
         throwFatalError(); // this is a memory leak, expose it directly
@@ -486,7 +488,7 @@ STATIC_IF_NOT_TEST esp_err_t processOTAAvailableFile(bool *available,
     *patch = false;
 
     /* load initial data into circular buffer */
-    bytesRead = wrap_http_client_read(client, buf, OTA_RECV_BUF_SIZE - 1);
+    bytesRead = ESP_HTTP_CLIENT_READ(client, buf, OTA_RECV_BUF_SIZE - 1);
     if (bytesRead <= 0) return ESP_ERR_NOT_FOUND;
 
     err = (esp_err_t) circularBufferInit(&circBuf, circBacking, 2 * OTA_RECV_BUF_SIZE);
@@ -523,7 +525,7 @@ STATIC_IF_NOT_TEST esp_err_t processOTAAvailableFile(bool *available,
         if (!foundFormattingChar)
         {
             /* circular buffer is missing next formatting char, retrieve more data */
-            bytesRead = wrap_http_client_read(client, buf, OTA_RECV_BUF_SIZE - 1);
+            bytesRead = ESP_HTTP_CLIENT_READ(client, buf, OTA_RECV_BUF_SIZE - 1);
             if (bytesRead < 0) {
                 ESP_LOGE(TAG, "processOTAAvailableFile esp_http_client_read err: %d", err);
                 return err;

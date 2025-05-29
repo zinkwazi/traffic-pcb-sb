@@ -4,9 +4,6 @@
  * Unit tests for actions.c:handleActionQueryOTA.
  * 
  * Test file dependencies: None.
- * 
- * Server file dependencies:
- *     CONFIG_ACTIONS_TEST_DATA_BASE_URL/queryOTA_
  */
 
 #include "unity.h"
@@ -30,8 +27,6 @@
 #elif CONFIG_ACTIONS_MAIN == 2
 #include "Mockhttp_wrap.h"
 #endif
-
-#define URL_BASE CONFIG_ACTIONS_TEST_DATA_SERVER CONFIG_ACTIONS_TEST_DATA_BASE_URL
 
 #if CONFIG_HARDWARE_VERSION != 1 // specification does not include this for V1_X due to memory constraints
 
