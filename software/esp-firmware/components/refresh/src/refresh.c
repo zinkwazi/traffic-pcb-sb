@@ -26,7 +26,6 @@
 #include "app_err.h"
 #include "app_errors.h"
 #include "app_nvs.h"
-#include "http_wrap.h"
 #include "led_coordinates.h"
 #include "led_matrix.h"
 #include "led_registers.h"

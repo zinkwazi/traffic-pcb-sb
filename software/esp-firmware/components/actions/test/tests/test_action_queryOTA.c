@@ -10,6 +10,7 @@
 
 #include "esp_heap_trace.h"
 #include "esp_err.h"
+#include "esp_http_client.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -18,14 +19,17 @@
 #include "actions.h"
 #include "actions_pi.h"
 #include "utilities.h"
-#include "esp_http_client.h"
+#include "ota_config.h"
+#include "mock_esp_http_client.h"
+#include "wrap_esp_http_client.h"
+
+#include "resources/queryOTAResources.h"
 
 #if CONFIG_ACTIONS_MAIN == 1
 #include "Mockota.h"
 #include "Mockindicators.h"
-#include "Mockhttp_wrap.h"
 #elif CONFIG_ACTIONS_MAIN == 2
-#include "Mockhttp_wrap.h"
+/* none */
 #endif
 
 #if CONFIG_HARDWARE_VERSION != 1 // specification does not include this for V1_X due to memory constraints
@@ -266,28 +270,27 @@ esp_err_t httpDestroyCallback(esp_http_client_handle_t client, int cmock_num_cal
  */
 TEST_CASE("queryOTA_memoryLeak", "[actions]")
 {
-    const int testPrio = uxTaskPriorityGet(NULL);
-    SemaphoreHandle_t sema;
-    TaskHandle_t otaMockTask;
-    BaseType_t success;
+    MOCK_ENDPOINT(version1);
+
+    esp_err_t err;
+
+    /* setup extern macros */
+    macroResetUtils();
+    macroResetOTAConfig();
+
+    FIRMWARE_UPGRADE_VERSION_URL = version1.url;
 
     /* initialize mocks */
-    Mockhttp_wrap_Init();
-    wrap_http_client_open_IgnoreAndReturn(ESP_OK);
-    wrap_http_client_read_IgnoreAndReturn(ESP_OK);
-    wrap_http_client_set_url_IgnoreAndReturn(ESP_OK);
-    wrap_http_client_fetch_headers_IgnoreAndReturn(ESP_OK);
-    wrap_http_client_get_status_code_IgnoreAndReturn(200);
-    wrap_http_client_flush_response_IgnoreAndReturn(ESP_OK);
-    
-    wrap_http_client_init_IgnoreAndReturn(NULL);
-    wrap_http_client_cleanup_IgnoreAndReturn(ESP_FAIL);
-    wrap_http_client_init_Stub(httpInitCallback);
-    wrap_http_client_cleanup_Stub(httpDestroyCallback);
+    err = mock_esp_http_client_add_endpoint(version1);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
 
     /* perform test */
     TEST_ASSERT_EQUAL(ESP_OK, heap_trace_start(HEAP_TRACE_LEAKS));
-    handleActionQueryOTA();
+    err = handleActionQueryOTA();
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
     TEST_ASSERT_EQUAL(ESP_OK, heap_trace_stop());
     
     /* analyze heap */

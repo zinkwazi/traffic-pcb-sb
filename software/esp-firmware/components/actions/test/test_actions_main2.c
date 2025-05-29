@@ -28,7 +28,7 @@
 #define API_AUTH_TYPE HTTP_AUTH_TYPE_NONE
 #define RETRY_NUM 5
 
-#define NUM_HEAP_RECORDS 100
+#define NUM_HEAP_RECORDS 300
 
 static heap_trace_record_t traceRecord[NUM_HEAP_RECORDS]; // This buffer must be in internal RAM
 
@@ -45,6 +45,7 @@ void app_main(void)
     esp_err_t err;
 
     UNITY_BEGIN();
+    ESP_LOGE(TAG, "initializing logging");
     TEST_ASSERT_EQUAL(ESP_OK, heap_trace_init_standalone(traceRecord, NUM_HEAP_RECORDS));
 
     /* initialize non-volatile storage */

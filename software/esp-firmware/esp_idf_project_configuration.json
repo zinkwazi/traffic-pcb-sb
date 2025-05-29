@@ -250,6 +250,7 @@
     "env": {
       "executable": "test_actions"
     },
+    "idfTarget": "esp32s3",
     "flashBaudRate": "",
     "monitorBaudRate": "",
     "openOCD": {
@@ -280,6 +281,7 @@
     "env": {
       "executable": "test_actions2"
     },
+    "idfTarget": "esp32s3",
     "flashBaudRate": "",
     "monitorBaudRate": "",
     "openOCD": {
