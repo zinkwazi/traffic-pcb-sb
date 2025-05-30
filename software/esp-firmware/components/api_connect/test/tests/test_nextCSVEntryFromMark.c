@@ -176,7 +176,7 @@ TEST_CASE("nextCSVEntryFromMark_fullFile", "[api_connect]")
     TEST_ASSERT_EQUAL(ESP_OK, err);
     err = circularBufferMark(&circBuf, 0, FROM_OLDEST_CHAR);
     TEST_ASSERT_EQUAL(ESP_OK, err);
-    expected = "1,71\r\n2,71\r";
+    expected = "1,71\n2,71\n3";
     numBytes = circularBufferReadFromMark(&circBuf, buffer, testBufSize - 1);
     TEST_ASSERT_EQUAL(testBufSize - 1, numBytes);
     TEST_ASSERT_EQUAL('\0', buffer[testBufSize - 1]);
@@ -187,7 +187,7 @@ TEST_CASE("nextCSVEntryFromMark_fullFile", "[api_connect]")
     TEST_ASSERT_EQUAL(1, result.ledNum);
     TEST_ASSERT_EQUAL(71, result.speed);
     /* check that circular buffer mark was modified correctly */
-    expected = "\n2,71\r\n";
+    expected = "\n2,71\n3,";
     err = circularBufferReadFromMark(&circBuf, buffer, testBufSize - 1);
     TEST_ASSERT_EQUAL_STRING(expected, buffer);
     /* store and retrieve the rest of the file */

@@ -342,7 +342,7 @@ esp_err_t openServerFile(int64_t *contentLength,
     // } while (bytesFlushed != 0);
 
     /* establish connection and open URL */
-    ESP_LOGE(TAG, "retrieving: %s", URL);
+    ESP_LOGI(TAG, "retrieving: %s", URL);
     while (retryNum != 0)
     {
         err = ESP_HTTP_CLIENT_SET_URL(client, URL);
