@@ -19,6 +19,8 @@
 #include "app_err.h"
 #include "circular_buffer.h"
 
+#include "resources/testApiConnectResources.h"
+
 #define TAG "test"
 
 /**
@@ -148,11 +150,11 @@ TEST_CASE("nextCSVEntryFromMark_skipsNewline", "[api_connect]")
  */
 TEST_CASE("nextCSVEntryFromMark_fullFile", "[api_connect]")
 {
-    extern const uint8_t test_data_start[] asm("_binary_data_north_V1_0_5_csv_start");
-    extern const uint8_t test_data_end[] asm("_binary_data_north_V1_0_5_csv_end");
+    uint8_t *test_data_start = (uint8_t *) data_north_V1_0_5_start;
+    uint8_t *test_data_end = (uint8_t *) data_north_V1_0_5_end;
 
-    extern const uint8_t test_expected_start[] asm("_binary_data_north_V1_0_3_dat_start");
-    extern const uint8_t test_expected_end[] asm("_binary_data_north_V1_0_3_dat_end");
+    uint8_t *test_expected_start = (uint8_t *) data_north_V1_0_3_start;
+    uint8_t *test_expected_end = (uint8_t *) data_north_V1_0_3_end;
 
     /* The maximum size of one test_data entry, including two "\r\n" and one '\0' */
     const int testBufSize = 12;

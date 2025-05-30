@@ -14,7 +14,7 @@
         .url = "https://bearanvil.com/createOTATask_" #name ".json", \
         .responseCode = 200, \
         .response = name##_start, \
-        .contentLen = name##_end - name##_start + 1, \
+        .contentLen = name##_end - name##_start - 1, \
     };
 
 extern const char version_start[] asm("_binary_createOTATask_version_json_start");

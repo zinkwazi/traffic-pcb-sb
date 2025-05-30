@@ -19,6 +19,10 @@
 #include "unity.h"
 #include "sdkconfig.h"
 
+#include "wrap_esp_http_client.h"
+#include "mock_esp_http_client.h"
+#include "resources/testApiConnectResources.h"
+
 extern esp_http_client_handle_t client;
 
 #define TAG "test"
@@ -33,25 +37,28 @@ extern esp_http_client_handle_t client;
  */
 TEST_CASE("getServerSpeedsWithAddendums_inputGuards", "[api_connect]")
 {
-    const char *URL = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
+    DEFINE_DATA_NORTH_V1_0_5_ENDPOINT;
+
     esp_err_t err;
     const uint32_t ledSpeedsLen = 5;
     const int retryNum = 3;
     LEDData ledSpeeds[ledSpeedsLen];
 
-    err = getServerSpeedsWithAddendums(NULL, ledSpeedsLen, client, URL, retryNum);
+    err = mock_esp_http_client_add_endpoint(data_north_V1_0_5);
+
+    err = getServerSpeedsWithAddendums(NULL, ledSpeedsLen, client, data_north_V1_0_5.url, retryNum);
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 
-    err = getServerSpeedsWithAddendums(ledSpeeds, 0, client, URL, retryNum);
+    err = getServerSpeedsWithAddendums(ledSpeeds, 0, client, data_north_V1_0_5.url, retryNum);
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 
-    err = getServerSpeedsWithAddendums(ledSpeeds, ledSpeedsLen, NULL, URL, retryNum);
+    err = getServerSpeedsWithAddendums(ledSpeeds, ledSpeedsLen, NULL, data_north_V1_0_5.url, retryNum);
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 
     err = getServerSpeedsWithAddendums(ledSpeeds, ledSpeedsLen, client, NULL, retryNum);
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 
-    err = getServerSpeedsWithAddendums(ledSpeeds, ledSpeedsLen, client, URL, 0);
+    err = getServerSpeedsWithAddendums(ledSpeeds, ledSpeedsLen, client, data_north_V1_0_5.url, 0);
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 }
 
@@ -65,13 +72,23 @@ TEST_CASE("getServerSpeedsWithAddendums_typical", "[api_connect]")
     extern const uint8_t test_expected_start[] asm("_binary_data_north_V1_0_3_dat_start");
     extern const uint8_t test_expected_end[] asm("_binary_data_north_V1_0_3_dat_end");
 
-    const char *URL = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
+    DEFINE_DATA_NORTH_V1_0_5_ENDPOINT;
+    DEFINE_DATA_NORTH_ADD_V2_0_0_ENDPOINT;
+    DEFINE_DATA_NORTH_ADD_V1_0_5_ENDPOINT;
+
     esp_err_t err;
     const uint32_t ledSpeedsLen = 326;
     const int retryNum = 3;
     LEDData ledSpeeds[ledSpeedsLen];
 
-    err = getServerSpeedsWithAddendums(ledSpeeds, ledSpeedsLen, client, URL, retryNum);
+    err = mock_esp_http_client_add_endpoint(data_north_V1_0_5);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = mock_esp_http_client_add_endpoint(data_north_add_V2_0_0);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    err = mock_esp_http_client_add_endpoint(data_north_add_V1_0_5);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    err = getServerSpeedsWithAddendums(ledSpeeds, ledSpeedsLen, client, data_north_V1_0_5.url, retryNum);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     for (uint32_t ndx = 0; ndx < ledSpeedsLen; ndx++)

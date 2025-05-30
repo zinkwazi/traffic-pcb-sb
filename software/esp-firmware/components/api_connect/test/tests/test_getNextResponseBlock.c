@@ -31,6 +31,10 @@
 
 #include "circular_buffer.h"
 
+#include "wrap_esp_http_client.h"
+#include "mock_esp_http_client.h"
+#include "resources/testApiConnectResources.h"
+
 #define RETRY_NUM 5
 
 extern esp_http_client_handle_t client;
@@ -42,14 +46,19 @@ extern esp_http_client_handle_t client;
  */
 TEST_CASE("getNextResponseBlock_inputGuards", "[api_connect]")
 {
-    const char *URL = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
+    DEFINE_DATA_NORTH_V1_0_5_ENDPOINT;
+
     esp_err_t err;
     int len;
     char buffer[10];
     int64_t contentLen;
 
+    /* setup mocks */
+    err = mock_esp_http_client_add_endpoint(data_north_V1_0_5);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = openServerFile(&contentLen, client, URL, RETRY_NUM);
+    /* tests */
+    err = openServerFile(&contentLen, client, data_north_V1_0_5.url, RETRY_NUM);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     len = 10;
@@ -75,7 +84,7 @@ TEST_CASE("getNextResponseBlock_inputGuards", "[api_connect]")
     err = getNextResponseBlock(buffer, &len, NULL);
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 }
 
@@ -86,14 +95,18 @@ TEST_CASE("getNextResponseBlock_inputGuards", "[api_connect]")
  */
 TEST_CASE("getNextResponseBlock_typical", "[api_connect]")
 {
-    const char *URL = CONFIG_API_CONN_TEST_DATA_SERVER CONFIG_API_CONN_TEST_DATA_BASE_URL "/data_north_V1_0_5.csv";
+    DEFINE_DATA_NORTH_V1_0_5_ENDPOINT;
+    
     esp_err_t err;
     int len;
     char buffer[10];
     char *expected;
     int64_t contentLen;
 
-    err = openServerFile(&contentLen, client, URL, RETRY_NUM);
+    err = mock_esp_http_client_add_endpoint(data_north_V1_0_5);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    err = openServerFile(&contentLen, client, data_north_V1_0_5.url, RETRY_NUM);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     expected = "1,71\n2,7"; // 10th char is null-terminator
@@ -110,6 +123,6 @@ TEST_CASE("getNextResponseBlock_typical", "[api_connect]")
     TEST_ASSERT_EQUAL(8, len); // function reserves two chars
     TEST_ASSERT_EQUAL_STRING(expected, buffer);
 
-    err = esp_http_client_close(client);
+    err = ESP_HTTP_CLIENT_CLOSE(client);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 }

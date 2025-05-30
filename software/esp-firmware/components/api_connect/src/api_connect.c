@@ -124,7 +124,7 @@ esp_err_t getNextResponseBlock(char *output,
 }
 
 /**
- * @brief Parses the next CSV entry from the mark in circBuf and remark the next
+ * @brief Parses the next CSV entry from the mark in circBuf and remarks the next
  *        newline character in the buffer. The end of a CSV entry is denoted by
  *        a newline character.
  * 
@@ -185,7 +185,7 @@ esp_err_t nextCSVEntryFromMark(LEDData *data,
         {
             commaNdx = i;
             entryLEDNum = strtol(&buf[0], NULL, 10);
-            if (errno != 0)
+            if (errno != 0) // TODO: remove errno usage!
             {
                 ESP_LOGI(TAG, "strtol failure parsing CSV");
                 return ESP_FAIL;
@@ -198,7 +198,7 @@ esp_err_t nextCSVEntryFromMark(LEDData *data,
         {
             bytesRead = i; // don't include this newline character
             entrySpeed = strtol(&buf[commaNdx + 1], NULL, 10);
-            if (errno != 0)
+            if (errno != 0) // TODO: remove errno usage!
             {
                 ESP_LOGI(TAG, "strtol failure parsing CSV");
                 return ESP_FAIL;
@@ -211,7 +211,10 @@ esp_err_t nextCSVEntryFromMark(LEDData *data,
 
     /* remark circular buffer and return data */
     err = circularBufferMark(circBuf, bytesRead, FROM_PREV_MARK);
-    if (err != ESP_OK) return ESP_FAIL;
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "failure to mark buffer");
+        return ESP_FAIL;
+    }
 
     data->ledNum = entryLEDNum;
     data->speed = entrySpeed;
@@ -334,12 +337,12 @@ esp_err_t openServerFile(int64_t *contentLength,
     if (retryNum <= 0) return ESP_ERR_INVALID_ARG;
 
     /* clear http buffer if not clear */
-    do {
-        bytesFlushed = ESP_HTTP_CLIENT_READ(client, buf, flushBufSize);
-    } while (bytesFlushed != 0);
+    // do {
+    //     bytesFlushed = ESP_HTTP_CLIENT_READ(client, buf, flushBufSize);
+    // } while (bytesFlushed != 0);
 
     /* establish connection and open URL */
-    ESP_LOGI(TAG, "retrieving: %s", URL);
+    ESP_LOGE(TAG, "retrieving: %s", URL);
     while (retryNum != 0)
     {
         err = ESP_HTTP_CLIENT_SET_URL(client, URL);

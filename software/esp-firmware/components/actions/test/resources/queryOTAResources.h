@@ -14,7 +14,7 @@
         .url = "https://bearanvil.com/queryOTA_" #name ".json", \
         .responseCode = 200, \
         .response = name##_start, \
-        .contentLen = name##_end - name##_start + 1, \
+        .contentLen = name##_end - name##_start - 1, \
     };
 
 extern const char version1_start[] asm("_binary_queryOTA_version1_json_start");

@@ -12,11 +12,6 @@ CONFIG_MOCK_APP_NVS=y
 CONFIG_MOCK_TRAFFIC_DATA=y
 CONFIG_MOCK_REFRESH=y # to avoid util extern macro conflicts
 
-# ESP HTTP Client Wrapper
-CONFIG_MOCK_ESP_HTTP_CLIENT=y
-CONFIG_MAX_NUM_CLIENT_ENDPOINTS=10
-# CONFIG_TEST_ESP_HTTP_CLIENT_WRAPPER is not set
-
 #
 # Heap memory debugging
 #

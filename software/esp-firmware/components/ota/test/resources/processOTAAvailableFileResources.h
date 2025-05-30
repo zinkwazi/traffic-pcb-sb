@@ -11,7 +11,7 @@
         .url = "https://bearanvil.com/processOTAAvailableFile_" #name ".json", \
         .responseCode = 200, \
         .response = name##_start, \
-        .contentLen = name##_end - name##_start + 1, \
+        .contentLen = name##_end - name##_start - 1, \
     };
 
 extern const char comments0_start[] asm("_binary_processOTAAvailableFile_comments0_json_start");

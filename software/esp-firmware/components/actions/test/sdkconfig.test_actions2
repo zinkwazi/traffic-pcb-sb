@@ -8,11 +8,6 @@ CONFIG_UTILS_EXTERN_MACROS=y
 # list of mocked components for action unit tests
 CONFIG_MOCK_REFRESH=y # to avoid util extern macro conflicts
 
-# ESP HTTP Client Wrapper
-CONFIG_MOCK_ESP_HTTP_CLIENT=y
-CONFIG_MAX_NUM_CLIENT_ENDPOINTS=10
-# CONFIG_TEST_ESP_HTTP_CLIENT_WRAPPER is not set
-
 #
 # Heap memory debugging
 #
