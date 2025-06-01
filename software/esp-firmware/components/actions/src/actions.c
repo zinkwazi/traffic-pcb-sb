@@ -182,7 +182,7 @@ STATIC_IF_NOT_TEST esp_err_t handleActionQueryOTA(void)
     (void) queryOTAUpdateAvailable(&updateAvailable, &patchUpdate); // allow firmware updates even if this
                                                                     // function fails in order to fix 
                                                                     // potential issues in this function
-    if (patchUpdate && updateAvailable)
+    if (updateAvailable) // all updates are mandatory
     {
         TaskHandle_t otaTask = getOTATask();
         if (otaTask == NULL)
@@ -195,10 +195,6 @@ STATIC_IF_NOT_TEST esp_err_t handleActionQueryOTA(void)
         {
             (void) indicateOTAUpdate();
         }
-
-    } else if (updateAvailable)
-    {
-        (void) indicateOTAUpdate(); // best effort
     }
     #else
     #error "Unsupported hardware version!"
