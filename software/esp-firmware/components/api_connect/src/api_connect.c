@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "esp_mac.h"
 #include "esp_log.h"
 #include "esp_http_client.h"
 #include "esp_err.h"
@@ -20,6 +21,8 @@
 #include "main_types.h"
 
 #define TAG "api_connect"
+
+#define MAX_QUERY_LEN 32
 
 esp_err_t getNextResponseBlock(char *output, int *outputLen, esp_http_client_handle_t client);
 esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf, LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client);
@@ -323,17 +326,24 @@ esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf,
  */
 esp_err_t openServerFile(int64_t *contentLength, 
                          esp_http_client_handle_t client, 
-                         const char *URL, 
+                         const char *URL,
                          int retryNum)
 {
     int bytesFlushed;
     const int flushBufSize = 128;
     char buf[flushBufSize];
+    char urlBuf[MAX_URL_LEN + MAX_QUERY_LEN + 1];
+    char query[MAX_QUERY_LEN + 1];
+    uint8_t mac[6];
     esp_err_t err;
     /* input guards */
     if (contentLength == NULL) return ESP_ERR_INVALID_ARG;
     if (client == NULL) return ESP_ERR_INVALID_ARG;
     if (URL == NULL) return ESP_ERR_INVALID_ARG;
+    if (strlen(URL) > MAX_URL_LEN) {
+        ESP_LOGE(TAG, "URL is too long: %s", URL);
+        return ESP_ERR_INVALID_ARG;
+    }
     if (retryNum <= 0) return ESP_ERR_INVALID_ARG;
 
     /* clear http buffer if not clear */
@@ -341,20 +351,40 @@ esp_err_t openServerFile(int64_t *contentLength,
     //     bytesFlushed = ESP_HTTP_CLIENT_READ(client, buf, flushBufSize);
     // } while (bytesFlushed != 0);
 
+    err = ESP_HTTP_CLIENT_FLUSH_RESPONSE(client, &bytesFlushed);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "failed to flush response. err: %d", err);
+        return ESP_FAIL;
+    }
+    if (bytesFlushed != 0)
+    {
+        ESP_LOGW(TAG, "flushed %d bytes from response", bytesFlushed);
+    }
+
+    err = esp_base_mac_addr_get(mac);
+    if (err != ESP_OK) throwFatalError();
+    snprintf(query, MAX_QUERY_LEN, "?id=%.2x:%.2x:%.2x:%.2x:%.2x:%.2x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+    strncpy(urlBuf, URL, MAX_URL_LEN);
+    urlBuf[MAX_URL_LEN + 1] = '\0';
+    strncat(urlBuf, query, MAX_QUERY_LEN);
+    urlBuf[MAX_URL_LEN + MAX_QUERY_LEN + 1] = '\0';
+
     /* establish connection and open URL */
     ESP_LOGI(TAG, "retrieving: %s", URL);
     while (retryNum != 0)
     {
-        err = ESP_HTTP_CLIENT_SET_URL(client, URL);
+        err = ESP_HTTP_CLIENT_SET_URL(client, urlBuf);
         if (err != ESP_OK) return err; // should always be able to do this
 
         err = ESP_HTTP_CLIENT_OPEN(client, 0);
         if (err != ESP_OK) return err; // should always be able to do this
 
-        *contentLength = ESP_HTTP_CLIENT_GET_CONTENT_LENGTH(client);
+        *contentLength = ESP_HTTP_CLIENT_FETCH_HEADERS(client);
         while (*contentLength == -ESP_ERR_HTTP_EAGAIN)
         {
-            *contentLength = ESP_HTTP_CLIENT_GET_CONTENT_LENGTH(client);
+            *contentLength = ESP_HTTP_CLIENT_FETCH_HEADERS(client);
         }
         if (*contentLength <= 0)
         {
@@ -463,6 +493,7 @@ esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[],
     {
         /* there is another addendum/regular file to retrieve */
         /* open file and retrieve next addendum filename from metadata */
+        static_assert(META_SIZE < MAX_URL_LEN); // <= is accurate, but I'm paranoid
         err = openServerFile(&contentLen, client, metadata, retryNum);
         if (err != ESP_OK || contentLen < 0)
         {

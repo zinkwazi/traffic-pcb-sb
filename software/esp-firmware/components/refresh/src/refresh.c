@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "esp_mac.h"
 #include "esp_crt_bundle.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -164,7 +165,7 @@ esp_http_client_handle_t initHttpClient(void)
         .user_data = NULL,
     };
 
-    return esp_http_client_init(&httpConfig);
+    return ESP_HTTP_CLIENT_INIT(&httpConfig);
 }
 
 /**

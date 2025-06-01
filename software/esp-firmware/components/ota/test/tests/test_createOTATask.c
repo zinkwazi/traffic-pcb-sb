@@ -132,7 +132,7 @@ TEST_CASE("vOTATask_indicatesCorrectly", "[ota]")
     /* this task is a lower priority than the OTA task, so it will wake up
     after the OTA task is done initializing and is waiting for a task notification.
     If not, then something has gone wrong in the OTA task and this is blocked forever. */
-    vTaskDelay(pdMS_TO_TICKS(5000)); // TODO: don't wait, its bad design for a test
+    vTaskDelay(pdMS_TO_TICKS(1000)); // TODO: don't wait, its bad design for a test
     vTaskDelete(otaTask);
     vSemaphoreDelete(getPerformedUpdateSema());
 

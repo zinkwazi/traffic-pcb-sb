@@ -229,8 +229,7 @@ esp_err_t queryOTAUpdateAvailable(bool *available, bool *patch)
         }
 
         do {
-            // contentLength = wrap_http_client_fetch_headers(client);
-            contentLength = ESP_HTTP_CLIENT_GET_CONTENT_LENGTH(client);
+            contentLength = ESP_HTTP_CLIENT_FETCH_HEADERS(client);
         } while (contentLength == -ESP_ERR_HTTP_EAGAIN);
         if (contentLength <= 0) // null-terminator
         {
