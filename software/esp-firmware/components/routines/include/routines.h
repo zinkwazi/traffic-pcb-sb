@@ -14,22 +14,6 @@
 #include "freertos/task.h"
 
 /**
- * @brief The input parameters to dirButtonISR, which gives the routine
- * pointers to the main task's objects.
- */
-struct DirButtonISRParams {
-  TaskHandle_t mainTask; /*!< A handle to the main task used to send a 
-                              notification. */
-  TickType_t *lastISR; /*!< The tick that the last button interrupt was serviced.
-                           Used for button debouncing. */
-  bool *toggle; /*!< Indicates to the main task that the LED direction should
-                     change from North to South or vice versa. The bool should
-                     remain in-scope for the duration of use of this struct. */
-};
-
-typedef struct DirButtonISRParams DirButtonISRParams;
-
-/**
  * @brief The input parameters to refreshTimerCallback, which gives the callback
  * pointers to the main task's objects.
  */

@@ -21,91 +21,8 @@
 #define TAG "routines"
 
 static void timerFlashDirCallback(void *params);
-static void dirButtonISR(void *params);
 static void otaButtonISR(void *params);
 static void refreshTimerCallback(void *params);
-
-/**
- * @brief Initializes the direction button and attaches dirButtonISR to a 
- *        negative edge of the GPIO pin.
- * 
- * @param toggle A pointer to a bool that is passed to dirButtonISR. The bool
- *               should be in-scope for the duration of use of dirButtonISR.
- * 
- * @returns ESP_OK if successful.
- * ESP_ERR_INVALID_ARG if toggle is NULL.
- * ESP_FAIL otherwise.
- */
-esp_err_t initDirectionButton(bool *toggle) {
-  static DirButtonISRParams params;
-  static TickType_t lastTickISR;
-  /* input guards */
-  if (toggle == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
-  /* copy parameters */
-  lastTickISR = false;
-  params.mainTask = xTaskGetCurrentTaskHandle();
-  params.lastISR = &lastTickISR;
-  params.toggle = toggle;
-  /* setup button and install ISR */
-  if (gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT) != ESP_OK || // pin has an external pullup
-      gpio_set_intr_type(T_SW_PIN, GPIO_INTR_NEGEDGE) != ESP_OK ||
-      gpio_isr_handler_add(T_SW_PIN, dirButtonISR, &params) != ESP_OK ||
-      gpio_intr_enable(T_SW_PIN) != ESP_OK)
-  {
-    THROW_ERR(ESP_FAIL);
-  }
-  return ESP_OK;
-}
-
-/**
- * @brief Enables the direction button interrupt, which is handled by
- *        dirButtonISR.
- * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- */
-esp_err_t enableDirectionButtonIntr(void) {
-  return gpio_intr_enable(T_SW_PIN);
-}
-
-/**
- * @brief Disables the direction button interrupt, which is handled by
- *        dirButtonISR.
- * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- */
-esp_err_t disableDirectionButtonIntr(void) {
-  return gpio_intr_disable(T_SW_PIN);
-}
-
-/**
- * @brief Initializes the OTA button (IO0) and attaches otaButtonISR to a 
- *        negative edge of the GPIO pin.
- * 
- * @param otaTask A handle to the OTA task, which is implemented by vOTATask.
- * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- */
-esp_err_t initIOButton(TaskHandle_t otaTask) {
-  if (gpio_set_pull_mode(IO_SW_PIN, GPIO_PULLUP_ONLY) != ESP_OK) {
-    THROW_ERR(ESP_FAIL);
-  }
-  if (gpio_pullup_en(IO_SW_PIN) != ESP_OK) {
-    THROW_ERR(ESP_FAIL);
-  }
-  if (gpio_set_direction(IO_SW_PIN, GPIO_MODE_INPUT) != ESP_OK) {
-    THROW_ERR(ESP_FAIL);
-  }
-  if (gpio_set_intr_type(IO_SW_PIN, GPIO_INTR_NEGEDGE) != ESP_OK) {
-    THROW_ERR(ESP_FAIL);
-  }
-  if (gpio_isr_handler_add(IO_SW_PIN, otaButtonISR, otaTask) != ESP_OK) {
-    THROW_ERR(ESP_FAIL);
-  }
-  if (gpio_intr_enable(IO_SW_PIN) != ESP_OK) {
-    THROW_ERR(ESP_FAIL);
-  }
-  return ESP_OK;
-}
 
 /**
  * @brief Creates a timer that, when started, periodically sends task
@@ -188,52 +105,6 @@ static void refreshTimerCallback(void *params) {
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-/**
- * @brief Interrupt service routine that handles OTA button presses.
- * 
- * Handles OTA button presses to tell the main task to trigger an over-the-air
- * firmware upgrade.
- * 
- * @param params A TaskHandle_t that is the handle of the main task.
- */
-static void otaButtonISR(void *params) {
-  TaskHandle_t otaTask = (TaskHandle_t) params;
-
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(otaTask, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
-
-/**
- * @brief Interrupt service routine that handles direction button presses.
- * 
- * Handles direction button presses once the main task is 
- * ready to refresh LEDs. A button press is only acted upon
- * once the main task has refreshed all LEDs because the ISR
- * sends a task notification to the main task, which the task
- * only checks once it has finished handling a previous press.
- * 
- * @param params A pointer to a struct dirButtonISRParams that
- *               contains references to the main task's objects.
- */
-static void dirButtonISR(void *params) {
-  TaskHandle_t mainTask = ((DirButtonISRParams *) params)->mainTask;
-  TickType_t *lastISR = ((DirButtonISRParams *) params)->lastISR;
-  bool *toggle = ((DirButtonISRParams *) params)->toggle;
-
-  /* debounce interrupt */
-  TickType_t currentTick = xTaskGetTickCountFromISR();
-  if (currentTick - *lastISR < pdMS_TO_TICKS(CONFIG_DEBOUNCE_PERIOD)) {
-    return;
-  } else {
-    *lastISR = currentTick;
-  }
-
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  *toggle = true;
-  vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
 
 #if CONFIG_HARDWARE_VERSION == 1
 /**

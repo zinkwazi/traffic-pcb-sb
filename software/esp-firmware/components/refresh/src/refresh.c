@@ -47,6 +47,7 @@
 
 #define NUM_NO_REFRESH_LEDS 11
 
+/* The LEDs that are not refreshed, which are indicator LEDs */
 static const int32_t noRefreshNums[NUM_NO_REFRESH_LEDS] = {WIFI_LED_NUM,
                                                         ERROR_LED_NUM,
                                                         OTA_LED_NUM,
@@ -58,7 +59,10 @@ static const int32_t noRefreshNums[NUM_NO_REFRESH_LEDS] = {WIFI_LED_NUM,
                                                         MEDIUM_LED_NUM,
                                                         HEAVY_LED_NUM,
                                                         46, // 46 does not exist for V2_0
-                                                        }; 
+                                                        };
+
+/* If true, refresh functions work as intended. If false, they do not execute. Implements night-mode */
+static bool refreshLocked = false; // unlocked during initialization just in case
 
 #else
 #error "Unsupported hardware version!"
@@ -165,8 +169,37 @@ esp_http_client_handle_t initHttpClient(void)
         .user_data = NULL,
     };
 
+    refreshLocked = false;
+
     return ESP_HTTP_CLIENT_INIT(&httpConfig);
 }
+
+/**
+ * Locks board refreshes, meaning refreshes will not occur
+ * when refreshBoard is called.
+ * 
+ * @note This function is not thread-safe.
+ * 
+ * @returns ESP_OK if successful.
+ */
+void lockBoardRefresh(void)
+{
+    refreshLocked = true;
+}
+
+/**
+ * Unlocks board refreshes, meaning refreshes will occur
+ * any time refreshBoard is called.
+ * 
+ * @note This function is not thread-safe.
+ * 
+ * @returns ESP_OK if successful.
+ */
+void unlockBoardRefresh(void)
+{
+    refreshLocked = false;
+}
+
 
 /**
  * @brief Updates the data stored in the provided array by querying it
@@ -233,6 +266,9 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
     LEDData typicalSpeeds[MAX_NUM_LEDS_REG];
     int32_t ledOrder[MAX_NUM_LEDS_REG];
     esp_err_t err;
+    /* check for locked refreshes (implements night mode) */
+    if (refreshLocked) return ESP_OK;
+
     /* check for a task notification */
     if (mustAbort()) return REFRESH_ABORT_NO_CLEAR; // not an error
 

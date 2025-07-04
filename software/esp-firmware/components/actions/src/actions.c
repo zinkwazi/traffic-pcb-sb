@@ -1,7 +1,7 @@
 /**
  * actions.c
  * 
- * Contains functions that scheduling jobs and interact with SNTP.
+ * Contains functions that schedule jobs and interact with SNTP.
  */
 #include "actions.h"
 #include "actions_pi.h" // contains static function declarations
@@ -34,19 +34,46 @@
 #define HOURS_TO_SECS(h) (h * 60 * 60)
 #define MINS_TO_SECS(m) (m * 60)
 
-
 /* The number of seconds between updating traffic data from the server */
 #define UPDATE_TRAFFIC_DATA_PERIOD_SEC MINS_TO_SECS(20)
 
 /* The number of seconds between checking the ambient brightness level */
 #define UPDATE_BRIGHTNESS_PERIOD_SEC 2
 
-/* The times of day to check whether an OTA update is available */
-#define CHECK_OTA_AVAILABLE_TIMES_SIZE (sizeof(checkOTAAvailableTimes) / sizeof(time_t))
-static const time_t checkOTAAvailableTimes[] = {
+static const time_t otaSchedule[] = {
     HOURS_TO_SECS(0) + MINS_TO_SECS(0), // midnight
     HOURS_TO_SECS(11) + MINS_TO_SECS(0), // 11:00am
     HOURS_TO_SECS(17) + MINS_TO_SECS(0), // 5:00pm
+};
+
+static const time_t startNighttimeModeSchedule[] = {
+    HOURS_TO_SECS(21) + MINS_TO_SECS(0), // 9:00pm
+};
+
+static const time_t endNighttimeModeSchedule[] = {
+    HOURS_TO_SECS(5) + MINS_TO_SECS(0), // 5:00am
+};
+
+/* The list of actions and when they are scheduled for every day.
+   WARNING: actions are scheduled one at a time, so if two actions
+   are scheduled very close together, then one of them may be missed.
+   This architecture can be changed, but it is unlikely to be necessary. */
+static const ScheduledAction scheduledActions[] = {
+    { // checkOTAAvailable
+        .action = ACTION_QUERY_OTA,
+        .schedule = otaSchedule,
+        .scheduleLen = sizeof(otaSchedule) / sizeof(time_t),
+    },
+    { // startNighttimeMode
+        .action = ACTION_START_NIGHTTIME_MODE,
+        .schedule = startNighttimeModeSchedule,
+        .scheduleLen = sizeof(startNighttimeModeSchedule) / sizeof(time_t),
+    },
+    { // endNighttimeMode
+        .action = ACTION_END_NIGHTTIME_MODE,
+        .schedule = endNighttimeModeSchedule,
+        .scheduleLen = sizeof(endNighttimeModeSchedule) / sizeof(time_t),
+    },
 };
 
 int64_t getUpdateTrafficDataPeriodSec(void)
@@ -59,14 +86,14 @@ int64_t getUpdateBrightnessPeriodSec(void)
     return UPDATE_BRIGHTNESS_PERIOD_SEC;
 }
 
-const time_t *getCheckOTAAvailableTimes(void)
+const ScheduledAction *getScheduledActions(void)
 {
-    return checkOTAAvailableTimes;
+    return scheduledActions;
 }
 
-size_t getCheckOTAAvailableTimesSize(void)
+size_t getScheduledActionsLen(void)
 {
-    return CHECK_OTA_AVAILABLE_TIMES_SIZE;
+    return sizeof(scheduledActions) / sizeof(ScheduledAction);
 }
 
 /**
@@ -92,6 +119,12 @@ esp_err_t handleAction(Action action)
         case ACTION_QUERY_OTA:
             ESP_LOGI(TAG, "Performing Action: ACTION_QUERY_OTA");
             return handleActionQueryOTA();
+        case ACTION_START_NIGHTTIME_MODE:
+            ESP_LOGI(TAG, "Performing Action: ACTION_START_NIGHTTIME_MODE");
+            return handleActionStartNighttimeMode();
+        case ACTION_END_NIGHTTIME_MODE:
+            ESP_LOGI(TAG, "Performing Action: ACTION_END_NIGHTTIME_MODE");
+            return handleActionEndNighttimeMode();
 #endif /* CONFIG_HARDWARE_VERSION */
         default:
             return ESP_ERR_NOT_FOUND;
@@ -200,6 +233,39 @@ STATIC_IF_NOT_TEST esp_err_t handleActionQueryOTA(void)
     #error "Unsupported hardware version!"
     #endif
 
+    return ESP_OK;
+}
+
+/**
+ * @brief Starts nighttime mode, which locks refreshes and turns off LEDs.
+ */
+STATIC_IF_NOT_TEST esp_err_t handleActionStartNighttimeMode(void)
+{
+    esp_err_t err;
+    
+    /* turn off refreshes */
+    err = lockBoardRefresh();
+    if (err != ESP_OK) return err;
+
+    /* tell main to refresh. There is a case where the board is already
+    refreshing where this causes a quick clear */
+
+
+    return ESP_OK;
+}
+
+STATIC_IF_NOT_TEST esp_err_t handleActionEndNighttimeMode(void)
+{
+    esp_err_t err;
+
+    /* turn on refreshes */
+    err = unlockBoardRefresh();
+    if (err != ESP_OK) return err;
+
+    /* tell main to refresh. There is a case where the board is
+    already refreshing where this causes a quick clear */
+    
+    
     return ESP_OK;
 }
 

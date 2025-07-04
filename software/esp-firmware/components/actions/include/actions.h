@@ -27,15 +27,26 @@ enum Action {
     ACTION_UPDATE_DATA,
     ACTION_UPDATE_BRIGHTNESS,
     ACTION_QUERY_OTA,
+    ACTION_START_NIGHTTIME_MODE,
+    ACTION_END_NIGHTTIME_MODE,
+    ACTION_NONE, // used to denote that no actions are scheduled
 };
 
 typedef enum Action Action;
 
+struct ScheduledAction {
+    const time_t *schedule;
+    const size_t scheduleLen;
+    const Action action;
+};
+
+typedef struct ScheduledAction ScheduledAction;
+
 /* used by action task */
 int64_t getUpdateTrafficDataPeriodSec(void);
 int64_t getUpdateBrightnessPeriodSec(void);
-const time_t *getCheckOTAAvailableTimes(void);
-size_t getCheckOTAAvailableTimesSize(void);
+const ScheduledAction *getScheduledActions(void);
+size_t getScheduledActionsLen(void);
 esp_err_t handleAction(Action action);
 
 #endif /* ACTIONS_H_4_7_25 */

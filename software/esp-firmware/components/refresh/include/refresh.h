@@ -20,8 +20,10 @@
 #define REFRESH_ABORT_NO_CLEAR (0x3592)
 #define CONNECT_ERROR (0x3569)
 
-esp_err_t initRefresh();
+esp_err_t initRefresh(void);
 esp_http_client_handle_t initHttpClient(void);
+void lockBoardRefresh(void);
+void unlockBoardRefresh(void);
 esp_err_t clearBoard(Direction dir, bool quick);
 esp_err_t quickClearBoard(Direction dir);
 esp_err_t refreshData(LEDData data[], esp_http_client_handle_t client, Direction dir, SpeedCategory category);

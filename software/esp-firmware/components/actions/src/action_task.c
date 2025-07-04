@@ -42,7 +42,7 @@
 
 static void vActionTask(void *pvParams);
 static esp_err_t initActions(void);
-static int64_t secsUntilNextAction(void);
+static int64_t secsUntilNextScheduledAction(Action *nextAction);
 static esp_err_t sendAction(Action action);
 static void actionTimerCallback(void *arg);
 static void updateDataTimerCallback(void *arg);
@@ -58,11 +58,11 @@ static void updateBrightnessTimerCallback(void *arg);
 /* A queue on which actions will be sent to the action task */
 static QueueHandle_t sActionQueue = NULL; // holds Action objects
 
-static const esp_timer_create_args_t nextActionTimerCfg = {
+static esp_timer_create_args_t nextActionTimerCfg = {
     .callback = actionTimerCallback,
-    .arg = NULL,
+    .arg = NULL, // provided action on timer start
     .dispatch_method = ESP_TIMER_TASK,
-    .name = "jobTimer",
+    .name = "actionTimer",
 };
 
 static esp_timer_handle_t nextActionTimer = NULL;
@@ -138,7 +138,7 @@ static void vActionTask(void *pvParams)
     /* wait for actions off queue */
     while (true)
     {
-        Action currAction;
+        Action currAction, nextAction;
         success = xQueueReceive(sActionQueue, &currAction, portMAX_DELAY);
         if (success != pdTRUE) throwFatalError();
 
@@ -146,25 +146,37 @@ static void vActionTask(void *pvParams)
         (void) handleAction(currAction);
 
         /* restart action timer */
-        if (currAction == ACTION_UPDATE_DATA) continue;
+        if (currAction == ACTION_UPDATE_DATA) continue; // periodic timer
 #if CONFIG_HARDWARE_VERSION == 1
         /* feature unsupported */
 #elif CONFIG_HARDWARE_VERSION == 2
-        if (currAction == ACTION_UPDATE_BRIGHTNESS) continue;
+        if (currAction == ACTION_UPDATE_BRIGHTNESS) continue; // periodic timer
 #else
 #error "Unsupported hardware version!"   
 #endif
 
         /* restart action timer */
-        int64_t nextActionSecs = secsUntilNextAction();
+        err = esp_timer_delete(nextActionTimer);
+        if (err != ESP_OK) throwFatalError();
+
+        int64_t nextActionSecs = secsUntilNextScheduledAction(&nextAction);
+        if (nextAction == ACTION_NONE)
+        {
+            ESP_LOGW(TAG, "No actions scheduled.");
+            continue;
+        }
         if (nextActionSecs <= 0)
         {
             ESP_LOGW(TAG, "Got %lld seconds until next action.", nextActionSecs);
             continue;
         }
-        ESP_LOGI(TAG, "action timer set for %lld seconds from now", nextActionSecs);
+        
+        nextActionTimerCfg.arg = (void *) &nextAction;
+        err = esp_timer_create(&nextActionTimerCfg, &nextActionTimer);
+        if (err != ESP_OK) throwFatalError();
         err = esp_timer_start_once(nextActionTimer, nextActionSecs * 1000000);
         if (err != ESP_OK) throwFatalError();
+        ESP_LOGI(TAG, "action timer set for %lld seconds from now", nextActionSecs);
     }
     ESP_LOGW(TAG, "Action task is exiting!");
     throwFatalError();
@@ -183,6 +195,7 @@ static esp_err_t initActions(void)
 {
     esp_err_t err;
     int64_t nextJobSecs;
+    Action nextAction = ACTION_NONE;
 
 #if CONFIG_HARDWARE_VERSION == 1
     /* feature unsupported */
@@ -224,9 +237,6 @@ static esp_err_t initActions(void)
 #error "Unsupported hardware version!"
 #endif
 
-    err = esp_timer_create(&nextActionTimerCfg, &nextActionTimer);
-    if (err != ESP_OK) return err;
-
     /* start timers */
     ESP_LOGI(TAG, "traffic timer set for %lld seconds from now", getUpdateTrafficDataPeriodSec());
     err = esp_timer_start_periodic(updateTrafficTimer, getUpdateTrafficDataPeriodSec() * 1000000);
@@ -243,15 +253,23 @@ static esp_err_t initActions(void)
 #endif
 
     /* set a timer that goes off at next job */
-    nextJobSecs = secsUntilNextAction();
+    nextJobSecs = secsUntilNextScheduledAction(&nextAction);
+    if (nextAction == ACTION_NONE)
+    {
+        ESP_LOGW(TAG, "Got ACTION_NONE during initialization. Action timer will not be started!");
+        return ESP_OK; // don't reset so that an OTA update can occur
+    }
     if (nextJobSecs <= 0)
     {
         ESP_LOGW(TAG, "Got %lld seconds until next action.", nextJobSecs);
         return ESP_OK;
     }
-    ESP_LOGI(TAG, "job timer set for %lld seconds from now", nextJobSecs);
+    nextActionTimerCfg.arg = (void *) &nextAction;
+    err = esp_timer_create(&nextActionTimerCfg, &nextActionTimer);
+    if (err != ESP_OK) return err;
     err = esp_timer_start_once(nextActionTimer, nextJobSecs * 1000000);
     if (err != ESP_OK) return err;
+    ESP_LOGI(TAG, "job timer set for %lld seconds from now", nextJobSecs);
 
     return ESP_OK;
 }
@@ -262,11 +280,16 @@ static esp_err_t initActions(void)
  * @requires:
  *  - SNTP initialized, ie. gettimeofday is callable.
  * 
+ * @param nextAction A pointer to where the next action, corresponding to
+ * the seconds returned, will be stored. This is necessary to know which
+ * action the timer should perform when completed. If no actions are
+ * scheduled, then nextAction is ACTION_NONE.
+ * 
  * @returns A positive integer representing the number of seconds until a
  * job is scheduled to occur. If no job is scheduled, 0 is returned. If an
  * error occurred, -1 is returned. Other negative values are unexpected.
  */
-static int64_t secsUntilNextAction(void)
+static int64_t secsUntilNextScheduledAction(Action *nextAction)
 {
     time_t currTime, earliestJobOfDay, earliestJobAfterCurrTime;
     earliestJobAfterCurrTime = SECONDS_IN_DAY;
@@ -289,35 +312,40 @@ static int64_t secsUntilNextAction(void)
     currTime = HOURS_TO_SECS(localTime.tm_hour) + MINS_TO_SECS(localTime.tm_min) + localTime.tm_sec;
     ESP_LOGI(TAG, "Seconds passed today: %lld", currTime);
 
-    /* check for earliest job and earliest job after current time */
-    if (getCheckOTAAvailableTimes() == 0) 
+    *nextAction = ACTION_NONE;
+
+    /* check for earliest action and earliest action after current time */
+    for (int i = 0; i < getScheduledActionsLen(); i++)
     {
-        ESP_LOGW(TAG, "No scheduled jobs");
-        return 0;
+        const ScheduledAction action = getScheduledActions()[i];
+        for (int j = 0; j < action.scheduleLen; j++)
+        {
+            time_t actionTime = action.schedule[j];
+            if (actionTime < earliestJobOfDay)
+            {
+                earliestJobOfDay = actionTime;
+                if (!foundAfter)
+                {
+                    *nextAction = action.action;
+                }
+            }
+            if (actionTime > currTime &&
+                actionTime < earliestJobAfterCurrTime)
+            {
+                foundAfter = true;
+                earliestJobAfterCurrTime = actionTime;
+                *nextAction = action.action;
+            }
+        }
     }
 
-    for (int i = 0; i < getCheckOTAAvailableTimesSize(); i++)
-    {
-        time_t jobTime = getCheckOTAAvailableTimes()[i];
-        if (jobTime < earliestJobOfDay)
-        {
-            earliestJobOfDay = jobTime;
-        }
-        if (jobTime > currTime &&
-            jobTime < earliestJobAfterCurrTime)
-        {
-            foundAfter = true;
-            earliestJobAfterCurrTime = jobTime;
-        }
-    }
-
-    /* return seconds until next job */
+    /* return seconds until next action */
     if (!foundAfter)
     {
-        /* no jobs occur after currTime, thus schedule for next day */
+        /* no actions occur after currTime, thus schedule for next day */
         return SECONDS_IN_DAY - (currTime - earliestJobOfDay);
     }
-    /* a job occurs after currTime */
+    /* an action occurs after currTime */
     return earliestJobAfterCurrTime - currTime;
 }
 
@@ -340,8 +368,9 @@ static esp_err_t sendAction(Action action)
 
 static void actionTimerCallback(void *arg)
 {
+    Action *action = (Action *) arg;
     ESP_LOGI(TAG, "Action timer expired...");
-    if (sendAction(ACTION_QUERY_OTA) != ESP_OK)
+    if (sendAction(*action) != ESP_OK)
     {
         ESP_LOGE(TAG, "failed to send action");
     }
