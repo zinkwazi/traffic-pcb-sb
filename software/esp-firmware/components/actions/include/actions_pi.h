@@ -18,6 +18,8 @@ STATIC_IF_NOT_TEST esp_err_t handleActionUpdateData(void);
 #elif CONFIG_HARDWARE_VERSION == 2
 STATIC_IF_NOT_TEST esp_err_t handleActionUpdateBrightness(void);
 STATIC_IF_NOT_TEST esp_err_t handleActionQueryOTA(void);
+STATIC_IF_NOT_TEST esp_err_t handleActionStartNighttimeMode(void);
+STATIC_IF_NOT_TEST esp_err_t handleActionEndNighttimeMode(void);
 #else
 #error "Unsupported hardware version!"
 #endif

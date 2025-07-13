@@ -26,6 +26,7 @@
 #include "app_errors.h"
 #include "led_registers.h"
 #include "indicators.h"
+#include "input.h"
 #include "main_types.h"
 #include "refresh.h"
 #include "routines.h"
@@ -140,9 +141,16 @@ void app_main(void)
     ESP_LOGE(TAG, "Base MAC Address: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     err = initializeApplication(&state, &res);
     if (err != ESP_OK) throwFatalError(); // if app_errors component uninitialized, this still traps
+
+    /* TODO: check whether nighttime mode should be enabled or not */
+
     
     /* handle requests to update all LEDs */
-    err = enableDirectionButtonIntr();
+    err = enableHoldDirButton();
+    if (err != ESP_OK) throwFatalError();
+    err = enableQuickDirButton();
+    if (err != ESP_OK) throwFatalError();
+    err = enableOTAButton();
     if (err != ESP_OK) throwFatalError();
     while (true) {
       err = mainRefresh(&state, &res); // never consumes task notifications, only checks them

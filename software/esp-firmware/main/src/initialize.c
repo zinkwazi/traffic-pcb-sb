@@ -30,6 +30,7 @@
 #include "sdkconfig.h"
 
 #include "indicators_config.h"
+#include "input.h"
 #include "animations.h"
 #include "led_matrix.h"
 #include "pinout.h"
@@ -220,9 +221,7 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     /* initialize buttons */
     err = gpio_install_isr_service(0);
     if (err != ESP_OK) THROW_ERR(err);
-    err = initIOButton(otaTask);
-    if (err != ESP_OK) return err;
-    err = initDirectionButton(&(state->toggle));
+    err = initInput(otaTask, xTaskGetCurrentTaskHandle(), &(state->toggle));
     if (err != ESP_OK) return err;
 
 #if CONFIG_HARDWARE_VERSION == 1

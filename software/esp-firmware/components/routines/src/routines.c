@@ -21,7 +21,6 @@
 #define TAG "routines"
 
 static void timerFlashDirCallback(void *params);
-static void otaButtonISR(void *params);
 static void refreshTimerCallback(void *params);
 
 /**

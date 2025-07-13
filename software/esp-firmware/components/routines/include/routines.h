@@ -27,10 +27,6 @@ struct RefreshTimerParams {
 
 typedef struct RefreshTimerParams RefreshTimerParams;
 
-esp_err_t initDirectionButton(bool *toggle);
-esp_err_t enableDirectionButtonIntr(void);
-esp_err_t disableDirectionButtonIntr(void);
-esp_err_t initIOButton(TaskHandle_t otaTask);
 esp_timer_handle_t createRefreshTimer(TaskHandle_t mainTask, bool *toggle);
 esp_timer_handle_t createDirectionFlashTimer(void);
 esp_timer_handle_t createLoadingAnimTimer(void);

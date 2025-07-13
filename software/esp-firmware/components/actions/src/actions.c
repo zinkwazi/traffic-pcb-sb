@@ -241,11 +241,8 @@ STATIC_IF_NOT_TEST esp_err_t handleActionQueryOTA(void)
  */
 STATIC_IF_NOT_TEST esp_err_t handleActionStartNighttimeMode(void)
 {
-    esp_err_t err;
-    
     /* turn off refreshes */
-    err = lockBoardRefresh();
-    if (err != ESP_OK) return err;
+    lockBoardRefresh();
 
     /* tell main to refresh. There is a case where the board is already
     refreshing where this causes a quick clear */
@@ -256,11 +253,8 @@ STATIC_IF_NOT_TEST esp_err_t handleActionStartNighttimeMode(void)
 
 STATIC_IF_NOT_TEST esp_err_t handleActionEndNighttimeMode(void)
 {
-    esp_err_t err;
-
     /* turn on refreshes */
-    err = unlockBoardRefresh();
-    if (err != ESP_OK) return err;
+    unlockBoardRefresh();
 
     /* tell main to refresh. There is a case where the board is
     already refreshing where this causes a quick clear */

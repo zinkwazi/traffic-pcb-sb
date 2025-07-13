@@ -9,9 +9,13 @@
 #ifndef INPUT_H_6_21_25
 #define INPUT_H_6_21_25
 
-#include "esp_err.h"
+#include <stdbool.h>
 
-esp_err_t initInput(void);
+#include "esp_err.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+esp_err_t initInput(TaskHandle_t otaTask, TaskHandle_t mainTask, bool *toggle);
 
 /**
  * Quick direction button press.

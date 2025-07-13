@@ -18,12 +18,13 @@
 #include "freertos/task.h"
 #include "sdkconfig.h"
 
-#include "pinout.h"
 #include "app_err.h"
+#include "pinout.h"
+#include "refresh.h"
 
 #define TAG "input"
 
-#define TIMEOUT 5000
+#define DIR_BUTTON_LONG_PRESS_TIME_US 500000
 
 /**
  * @brief The input parameters to dirButtonISR, which gives the routine
@@ -35,8 +36,6 @@ struct DirButtonISRParams {
     bool *toggle; /*!< Indicates to the main task that the LED direction should
                      change from North to South or vice versa. The bool should
                      remain in-scope for the duration of use of this struct. */
-    bool *timerExpired; /*!< A pointer to a boolean shared between the direction
-                             button interrupt and timer for internal use. */
 };
 
 typedef struct DirButtonISRParams DirButtonISRParams;
@@ -48,11 +47,22 @@ static bool dirButtonLongEnable = false;
 static void shortDirButtonPress(TaskHandle_t mainTask, bool *toggle);
 static void longDirButtonPress(TaskHandle_t mainTask, bool *toggle);
 static esp_err_t initDirectionButton(TaskHandle_t mainTask, bool *toggle);
-static esp_err_t initIOButton(TaskHandle_t otaTask);
+static esp_err_t initOTAButton(TaskHandle_t otaTask);
 static void otaButtonISR(void *params);
 static void dirButtonISR(void *params);
 static void timerDirButtonCallback(void *params);
 
+/**
+ * Initializes all input buttons on the board.
+ * 
+ * @param otaTask A handle to the OTA task, which will be used
+ * to send it task notifications.
+ * @param mainTask A handle to the main task, which will be used
+ * to send it task notifications.
+ * @param toggle A pointer to a boolean which the main task uses
+ * to determine whether to switch the direction of traffic when
+ * a task notification is received.
+ */
 esp_err_t initInput(TaskHandle_t otaTask, TaskHandle_t mainTask, bool *toggle)
 {
     esp_err_t err;
@@ -65,7 +75,6 @@ esp_err_t initInput(TaskHandle_t otaTask, TaskHandle_t mainTask, bool *toggle)
     
     return ESP_OK;
 }
-
 
 /**
  * Quick direction button press.
@@ -167,12 +176,11 @@ esp_err_t disableOTAButton(void)
 static esp_err_t initDirectionButton(TaskHandle_t mainTask, bool *toggle)
 {
     static DirButtonISRParams dirButtonISRParams;
-    static bool timerExpired = false; // state variable for dirButtonISR & dirButtonTimer communication
     const esp_timer_create_args_t timerArgs = {
         .name = "dirButtonTimer",
         .dispatch_method = ESP_TIMER_TASK,
         .callback = timerDirButtonCallback,
-        .arg = &timerExpired,
+        .arg = &dirButtonISRParams,
     };
     esp_err_t err;
 
@@ -182,10 +190,9 @@ static esp_err_t initDirectionButton(TaskHandle_t mainTask, bool *toggle)
     /* initialize params */
     dirButtonISRParams.mainTask = mainTask;
     dirButtonISRParams.toggle = toggle;
-    dirButtonISRParams.timerExpired = &timerExpired;
 
     /* initialize timer */
-    err = esp_timer_create(&timerArgs, &dirButtonISRParams);
+    err = esp_timer_create(&timerArgs, &dirButtonTimer); // lives forever
     if (err != ESP_OK) THROW_ERR(err);
 
     /* initialize direction button ISR */
@@ -199,7 +206,7 @@ static esp_err_t initDirectionButton(TaskHandle_t mainTask, bool *toggle)
     return ESP_OK;
 }
 
-static esp_err_t initIOButton(TaskHandle_t otaTask)
+static esp_err_t initOTAButton(TaskHandle_t otaTask)
 {
     esp_err_t err;
 
@@ -223,12 +230,25 @@ static esp_err_t initIOButton(TaskHandle_t otaTask)
  * 
  * @note This is called within an ISR context, thus should be short
  * and non-blocking.
+ * 
+ * @param mainTask A handle to the main task, which will receive
+ * a task notification from this function.
+ * @param toggle A pointer to the main task's 'toggle' variable,
+ * which is modified when the task notification is sent in order
+ * to let the main task know if it should switch direction
+ * of traffic.
  */
 static void shortDirButtonPress(TaskHandle_t mainTask, bool *toggle)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    // ESP_LOGI(TAG, "short button press");
+    ESP_EARLY_LOGI(TAG, "1");
+    if (!dirButtonShortEnable) return;
 
+    /* send a notification to the main task telling it to
+    switch the direction of traffic. */
     *toggle = true;
+    ESP_EARLY_LOGI(TAG, "here");
     vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
@@ -236,10 +256,29 @@ static void shortDirButtonPress(TaskHandle_t mainTask, bool *toggle)
 /**
  * @brief Defines what should occur when a long direction button
  * press is detected.
+ * 
+ * @note This is called from the direction task timer.
+ * 
+ * @param mainTask A handle to the main task, which will receive
+ * a task notification from this function.
+ * @param toggle A pointer to the main task's 'toggle' variable,
+ * which is modified when the task notification is sent in order
+ * to let the main task know if it should switch direction
+ * of traffic.
  */
 static void longDirButtonPress(TaskHandle_t mainTask, bool *toggle)
 {
+    if (!dirButtonLongEnable) return;
 
+    // ESP_LOGI(TAG, "long button press");
+
+    // TODO: check if it is nighttime and indicate nighttime mode is activated
+    lockBoardRefresh();
+
+    /* force a refresh of the board, which will be blank because the
+    board is locked. */
+    *toggle = false;
+    xTaskNotifyGive(mainTask);
 }
 
 /**
@@ -277,31 +316,46 @@ static void dirButtonISR(void *params)
     DirButtonISRParams *dirButtonISRParams = (DirButtonISRParams *) params;
 
     TickType_t currentTick = xTaskGetTickCountFromISR();
-    bool rising = (gpio_get_level(T_SW_PIN) == 1) ? true : false;
+    bool rising = (gpio_get_level(T_SW_PIN) == 0) ? true : false;
 
     /* debounce button */
-    if (currentTick - lastISRTick < pdMS_TO_TICKS(CONFIG_DEBOUNCE_PERIOD)) return;
-    lastISRTick = currentTick;
+    if (currentTick - lastISRTick < pdMS_TO_TICKS(100)) return;
+    lastISRTick = currentTick; // invert this so that reading the gpio level doesn't happen in bounce period
 
     if (rising)
     { // rising edge
-        if (*(dirButtonISRParams->timerExpired)) return; // long button press, already handled
-        /* stop timer */
-        (void) esp_timer_stop(dirButtonTimer); // just need it to stop
-        shortDirButtonPress(dirButtonISRParams->mainTask, dirButtonISRParams->toggle); // yields from ISR if higher priority task woken
+        ESP_EARLY_LOGI(TAG, "rising");
+         /* set timer */
+        (void) esp_timer_start_once(dirButtonTimer, DIR_BUTTON_LONG_PRESS_TIME_US); // nowhere for error to go
+        // shortDirButtonPress(dirButtonISRParams->mainTask, dirButtonISRParams->toggle); // yields from ISR if higher priority task woken
     } else
     { // falling edge
-        /* set timer */
-        if (dirButtonTimer != NULL) return; // can't report the error
-        (void) esp_timer_start_once(dirButtonTimer, TIMEOUT); // nowhere for error to go
-        *(dirButtonISRParams->timerExpired) = false;
+        ESP_EARLY_LOGI(TAG, "falling");
+        /* stop timer */
+        (void) esp_timer_stop(dirButtonTimer); // just need it to stop
     }
 }
 
+/**
+ * Callback for when the direction button timer expires. This
+ * indicates that the button has been held long enough for the
+ * input to be considered a long/hold button press.
+ * 
+ * @note If hold dir button presses are disabled, this is
+ * interpreted as a short button press.
+ * 
+ * @param params A pointer to a DirButtonISRParams struct.
+ */
 static void timerDirButtonCallback(void *params)
 {
     DirButtonISRParams *dirButtonISRParams = (DirButtonISRParams *) params;
 
-    *(dirButtonISRParams->timerExpired) = true;
-    longDirButtonPress(dirButtonISRParams->mainTask, dirButtonISRParams->toggle);
+    ESP_LOGI(TAG, "dirbuttonTimer");
+    if (dirButtonLongEnable)
+    {
+        // longDirButtonPress(dirButtonISRParams->mainTask, dirButtonISRParams->toggle);
+    } else
+    {
+        // shortDirButtonPress(dirButtonISRParams->mainTask, dirButtonISRParams->toggle);
+    }
 }

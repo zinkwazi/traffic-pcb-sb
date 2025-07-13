@@ -38,6 +38,7 @@ set(requires unity
             routines
             refresh
             indicators
+            input
             esp_driver_gpio
             esp_driver_uart
             esp_driver_usb_serial_jtag
