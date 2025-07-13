@@ -41,6 +41,7 @@ struct DirButtonISRParams {
 typedef struct DirButtonISRParams DirButtonISRParams;
 
 static esp_timer_handle_t dirButtonTimer = NULL;
+static esp_timer_handle_t dirButtonDebounceTimer = NULL;
 static bool dirButtonShortEnable = false;
 static bool dirButtonLongEnable = false;
 
@@ -50,7 +51,9 @@ static esp_err_t initDirectionButton(TaskHandle_t mainTask, bool *toggle);
 static esp_err_t initOTAButton(TaskHandle_t otaTask);
 static void otaButtonISR(void *params);
 static void dirButtonISR(void *params);
+
 static void timerDirButtonCallback(void *params);
+static void timerDebounceDirButtonCallback(void *params);
 
 /**
  * Initializes all input buttons on the board.
@@ -176,8 +179,17 @@ esp_err_t disableOTAButton(void)
 static esp_err_t initDirectionButton(TaskHandle_t mainTask, bool *toggle)
 {
     static DirButtonISRParams dirButtonISRParams;
-    const esp_timer_create_args_t timerArgs = {
-        .name = "dirButtonTimer",
+    /* The debounce timer is the timer that is set after the first ISR in a set of edges */
+    const esp_timer_create_args_t debounceTimerArgs = {
+        .name = "dirButtonDebounceTimer",
+        .dispatch_method = ESP_TIMER_TASK,
+        .callback = timerDebounceDirButtonCallback,
+        .arg = &dirButtonISRParams,
+    };
+
+    /* The hold timer is the timer that determines when a long button press registers */
+    const esp_timer_create_args_t holdTimerArgs = {
+        .name = "dirButtonHoldTimer",
         .dispatch_method = ESP_TIMER_TASK,
         .callback = timerDirButtonCallback,
         .arg = &dirButtonISRParams,
@@ -191,8 +203,11 @@ static esp_err_t initDirectionButton(TaskHandle_t mainTask, bool *toggle)
     dirButtonISRParams.mainTask = mainTask;
     dirButtonISRParams.toggle = toggle;
 
-    /* initialize timer */
-    err = esp_timer_create(&timerArgs, &dirButtonTimer); // lives forever
+    /* initialize timers */
+    err = esp_timer_create(&debounceTimerArgs, &dirButtonDebounceTimer); // lives forever
+    if (err != ESP_OK) THROW_ERR(err);
+
+    err = esp_timer_create(&holdTimerArgs, &dirButtonTimer); // lives forever
     if (err != ESP_OK) THROW_ERR(err);
 
     /* initialize direction button ISR */
@@ -311,29 +326,11 @@ static void otaButtonISR(void *params) {
  */
 static void dirButtonISR(void *params)
 {
-    static TickType_t lastISRTick = 0;
-
     DirButtonISRParams *dirButtonISRParams = (DirButtonISRParams *) params;
 
-    TickType_t currentTick = xTaskGetTickCountFromISR();
-    bool rising = (gpio_get_level(T_SW_PIN) == 0) ? true : false;
-
-    /* debounce button */
-    if (currentTick - lastISRTick < pdMS_TO_TICKS(100)) return;
-    lastISRTick = currentTick; // invert this so that reading the gpio level doesn't happen in bounce period
-
-    if (rising)
-    { // rising edge
-        ESP_EARLY_LOGI(TAG, "rising");
-         /* set timer */
-        (void) esp_timer_start_once(dirButtonTimer, DIR_BUTTON_LONG_PRESS_TIME_US); // nowhere for error to go
-        // shortDirButtonPress(dirButtonISRParams->mainTask, dirButtonISRParams->toggle); // yields from ISR if higher priority task woken
-    } else
-    { // falling edge
-        ESP_EARLY_LOGI(TAG, "falling");
-        /* stop timer */
-        (void) esp_timer_stop(dirButtonTimer); // just need it to stop
-    }
+    /* debounce button. Set a timer and don't interrupt during debounce period */
+    (void) gpio_intr_disable(T_SW_PIN); // nowhere for error to go
+    (void) esp_timer_start_once(dirButtonDebounceTimer, 50 * 1000); // 100ms debounce period, nowhere for error to go
 }
 
 /**
@@ -354,8 +351,52 @@ static void timerDirButtonCallback(void *params)
     if (dirButtonLongEnable)
     {
         // longDirButtonPress(dirButtonISRParams->mainTask, dirButtonISRParams->toggle);
-    } else
-    {
-        // shortDirButtonPress(dirButtonISRParams->mainTask, dirButtonISRParams->toggle);
     }
+}
+
+/**
+ * Callback for when the direction button debounce timer expires. This timer
+ * is set when the first edge is detected and expires when the line has settled
+ * to the point where reading the output of the line is deterministic.
+ * 
+ * @param params A pointer to a DirButtoNISRParams struct.
+ */
+static void timerDebounceDirButtonCallback(void *params)
+{
+    static bool prevRising = false; // whether the previous button press was rising or falling. These are expected
+                                    // in sequence, so any duplicates are rejected. Duplicates are either line glitches
+                                    // or the user is spamming the button, in which case only the first press should count.
+    DirButtonISRParams *dirButtonISRParams = (DirButtonISRParams *) params;
+
+    // ESP_LOGI(TAG, "debounceTimer");
+
+    bool rising = (gpio_get_level(T_SW_PIN) == 0) ? true : false;
+
+    /* handle button edges */
+    if (rising && !prevRising)
+    { // rising edge
+        ESP_EARLY_LOGI(TAG, "rising");
+         /* set timer */
+        (void) esp_timer_start_once(dirButtonTimer, DIR_BUTTON_LONG_PRESS_TIME_US); // nowhere for error to go
+        // shortDirButtonPress(dirButtonISRParams->mainTask, dirButtonISRParams->toggle); // yields from ISR if higher priority task woken
+        prevRising = true;
+    } else if (!rising && prevRising)
+    { // falling edge
+        ESP_EARLY_LOGI(TAG, "falling");
+        /* stop timer */
+        (void) esp_timer_stop(dirButtonTimer); // just need it to stop
+                                               // Note that there is a known race condition here.
+                                               // If the user is spamming the button, the timer might
+                                               // never be stopped as is normal because falling edges
+                                               // might not be detected an incredibly rare number of times.
+                                               // This behavior is preferrable to always stopping the
+                                               // timer because that might cause slightly more noticeable
+                                               // issues if the line is glitchy where a long button press
+                                               // is detected when it shouldn't be. I consider this the lesser
+                                               // of two evils because it is exceedingly rare if a long button
+                                               // press is sufficiently long.
+        prevRising = false;
+    }
+
+    (void) gpio_intr_enable(T_SW_PIN);
 }
