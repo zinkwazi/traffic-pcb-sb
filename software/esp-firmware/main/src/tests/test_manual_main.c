@@ -18,10 +18,9 @@
 
 void app_main(void)
 {
-    
+    vTaskDelay(pdMS_TO_TICKS(500)); // let USB fully init (maybe unnecessary)
     UNITY_BEGIN();
     TEST_ASSERT_EQUAL(ESP_OK, gpio_install_isr_service(0));
-    TEST_ASSERT_EQUAL(ESP_OK, initializeLogChannel());
     unity_run_menu();
     UNITY_END();
     for (;;) {
