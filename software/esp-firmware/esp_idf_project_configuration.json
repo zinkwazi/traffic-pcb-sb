@@ -113,6 +113,34 @@
       "postFlash": ""
     }
   },
+  "production_V2_1": {
+    "build": {
+      "compileArgs": [],
+      "ninjaArgs": [],
+      "buildDirectoryPath": "${workspaceFolder}/builds/production_V2_1",
+      "sdkconfigDefaults": [
+        "./configurations/sdkconfig.settings",
+        "./configurations/sdkconfig.production",
+        "./configurations/sdkconfig.V2_1_default"
+      ],
+      "sdkconfigFilePath": "${workspaceFolder}/configurations/current/sdkconfig.prod_V2_1"
+    },
+    "env": {
+      "executable": "main"
+    },
+    "flashBaudRate": "",
+    "monitorBaudRate": "",
+    "openOCD": {
+      "debugLevel": 0,
+      "args": []
+    },
+    "tasks": {
+      "preBuild": "",
+      "preFlash": "",
+      "postBuild": "",
+      "postFlash": ""
+    }
+  },
   "test_manual_V1_0": {
     "build": {
       "compileArgs": [],
