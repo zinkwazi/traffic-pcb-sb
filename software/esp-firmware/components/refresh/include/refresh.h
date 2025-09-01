@@ -2,7 +2,8 @@
  * refresh.h
  * 
  * Contains functionality for refreshing all of the traffic and direction LEDs
- * on the board.
+ * on the board. Note that the main task has ownership of this resource and
+ * it is designed with that in mind.
  */
 
 #ifndef REFRESH_H_4_9_25

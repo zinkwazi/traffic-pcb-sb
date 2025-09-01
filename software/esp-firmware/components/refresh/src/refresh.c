@@ -27,6 +27,7 @@
 #include "app_err.h"
 #include "app_errors.h"
 #include "app_nvs.h"
+#include "input_queue.h"
 #include "led_coordinates.h"
 #include "led_matrix.h"
 #include "led_registers.h"
@@ -106,7 +107,7 @@ esp_err_t initRefresh(void)
     /* input guards */
     if (getAppErrorsStatus() != ESP_OK) THROW_ERR(ESP_ERR_INVALID_STATE);
 
-    /* initialize static traffic data */
+    /* initialize static traffic data and resources */
     err = initTrafficData();
     if (err != ESP_OK) return err;
 
@@ -200,7 +201,6 @@ void unlockBoardRefresh(void)
     refreshLocked = false;
 }
 
-
 /**
  * @brief Updates the data stored in the provided array by querying it
  *        from the server, falling back to retrieving it from non-volatile
@@ -256,10 +256,7 @@ esp_err_t refreshData(LEDData data[], esp_http_client_handle_t client, Direction
  * @param[in] anim The animation to refresh the board using.
  * 
  * @returns ESP_OK if successful.
- * REFRESH_ABORT if a task notification is received during operation
- * and the board must be cleared.
- * REFRESH_ABORT_NO_CLEAR if a task notification is received before operation,
- * meaning no board clear is required.
+ * REFRESH_ABORT if input is received during operation and the board must be cleared.
  */
 esp_err_t refreshBoard(Direction dir, Animation anim) {
     LEDData currentSpeeds[MAX_NUM_LEDS_REG];
@@ -269,8 +266,8 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
     /* check for locked refreshes (implements night mode) */
     if (refreshLocked) return ESP_OK;
 
-    /* check for a task notification */
-    if (mustAbort()) return REFRESH_ABORT_NO_CLEAR; // not an error
+    /* check for abort (makes the latest refresh command on the main queue take priority) */
+    if (mustAbort()) return REFRESH_ABORT;
 
     /* generate correct ordering */
     err = orderLEDs(ledOrder, MAX_NUM_LEDS_REG, anim, LEDNumToCoord, ANIM_STANDARD_ARRAY_SIZE);
@@ -626,9 +623,11 @@ esp_err_t quickClearBoard(Direction dir)
 #error "Unsupported hardware version!"
 #endif
 
+/**
+ * Checks whether a new refresh command is on the main queue.
+ */
 static bool mustAbort(void) {
-    uint32_t notificationValue;
-    return xTaskNotifyWait(0, 0, &notificationValue, 0) == pdTRUE; // should not consume notification
+    return !abortCountZero();
 }
 
 static void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t percentFlow) {

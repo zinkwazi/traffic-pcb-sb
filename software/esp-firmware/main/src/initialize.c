@@ -31,6 +31,7 @@
 
 #include "indicators_config.h"
 #include "input.h"
+#include "input_queue.h"
 #include "animations.h"
 #include "led_matrix.h"
 #include "pinout.h"
@@ -51,8 +52,6 @@
 
 #define USB_SERIAL_BUF_SIZE (1024)
 
-static void initializeMainState(MainTaskState *state);
-
 #if CONFIG_HARDWARE_VERSION == 1
 /* no version specific functions */
 #elif CONFIG_HARDWARE_VERSION == 2
@@ -63,44 +62,29 @@ static esp_err_t endLoadingAnimation(void);
 #endif
 
 /**
- * @brief Initializes global static resources, software components, and fields
- *        of state and res.
+ * @brief Initializes global static resources, software components, and tasks.
  *
  * @note Queries user for settings if none are found in non-volatile storage.
- *
- * @requires:
- *  - initializeIndicatorLEDs is executed.
- *
- * @param[in] state A pointer to the main task state.
- * @param[in] res A pointer to resources for the main task.
  *
  * @returns ESP_OK if successful.
  *          ESP_ERR_INVALID_ARG if invalid arguments.
  *          ESP_ERR_NO_MEM if an allocation error occurred.
  *          ESP_FAIL if an unexpected error occurred.
  */
-esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
+esp_err_t initializeApplication(void)
 {
-    /* global resources */
-    static UserSettings settings;
-
-    /* local variables */
+    UserSettings settings; // global resource passed to tasks
     esp_err_t err = ESP_FAIL;
     esp_tls_t *tls = NULL;
     TaskHandle_t otaTask = NULL;
     wifi_init_config_t default_wifi_cfg = WIFI_INIT_CONFIG_DEFAULT();
-    nvs_handle_t workerHandle;
+    nvs_handle_t mainNvsHandle, workerNvsHandle;
 
-    /* input guards */
-    if (state == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
-    if (res == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
+    /* initialize task resources */
+    err = initInputQueue();
+    if (ESP_OK != err) return err;
 
-    /* initialize state and resources to known values */
-    initializeMainState(state);
-    res->nvsHandle = (nvs_handle_t) NULL;
-    res->refreshTimer = NULL;
-
-    /* initialize components and resources */
+    /* initialize firmware components and hardware resources */
     err = initLedMatrix();
     if (err != ESP_OK) return err;
     err = initAppErrors();
@@ -112,9 +96,7 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     settings.wifiSSIDLen = 0;
     settings.wifiPass = NULL;
     settings.wifiPassLen = 0;
-    res->settings = &settings;
 
-    /* initialize indicator LEDs */
     err = initializeIndicatorLEDs();
     if (err != ESP_OK) return err;
 
@@ -125,30 +107,30 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     }
     if (err != ESP_OK) THROW_ERR(err);
 
-    res->nvsHandle = openMainNvs();
-    if (res->nvsHandle == (nvs_handle_t) NULL) THROW_ERR(ESP_FAIL);
-    err = removeExtraMainNvsEntries(res->nvsHandle); // keep handle open
+    mainNvsHandle = openMainNvs();
+    if (mainNvsHandle == (nvs_handle_t) NULL) THROW_ERR(ESP_FAIL);
+    err = removeExtraMainNvsEntries(mainNvsHandle); // keep handle open
     if (err != ESP_OK) return err;
 
-    workerHandle = openWorkerNvs();
-    if (workerHandle == (nvs_handle_t) NULL) THROW_ERR(ESP_FAIL);
-    err = removeExtraWorkerNvsEntries(workerHandle); // keep handle open
+    workerNvsHandle = openWorkerNvs();
+    if (workerNvsHandle == (nvs_handle_t) NULL) THROW_ERR(ESP_FAIL);
+    err = removeExtraWorkerNvsEntries(workerNvsHandle); // keep handle open
     if (err != ESP_OK) return err;
 
     /* check if a settings update is requested or necessary */
     err = gpio_set_direction(T_SW_PIN, GPIO_MODE_INPUT); // pin has external pullup
     if (err != ESP_OK) THROW_ERR(ESP_FAIL);
-    err = retrieveNvsEntries(res->nvsHandle, &settings);
+    err = retrieveNvsEntries(mainNvsHandle, &settings);
     if (gpio_get_level(T_SW_PIN) == 0 || err != ESP_OK)
     {
         ESP_LOGI(TAG, "updating settings, err: %d", err);
-        updateNvsSettings(res->nvsHandle);
+        updateNvsSettings(mainNvsHandle);
     }
 
     /* retrieve nvs settings */
-    err = nvsEntriesExist(res->nvsHandle);
+    err = nvsEntriesExist(mainNvsHandle);
     if (err != ESP_OK) return err;
-    err = retrieveNvsEntries(res->nvsHandle, &settings);
+    err = retrieveNvsEntries(mainNvsHandle, &settings);
     if (err != ESP_OK) return err;
 
     /* begin loading animation */
@@ -177,7 +159,7 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     /* establish wifi connection & tls */
     err = esp_wifi_init(&default_wifi_cfg);
     if (err != ESP_OK) return err;
-    err = initWifi(res->settings->wifiSSID, res->settings->wifiPass);
+    err = initWifi(settings.wifiSSID, settings.wifiPass);
     if (err != ESP_OK) return err;
     err = establishWifiConnection();
     while (err == ESP_ERR_NVS_NOT_ENOUGH_SPACE) {
@@ -187,13 +169,13 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
         settings, so I don't think there is a risk of killing non-wifi 
         operation here by deleting stored data */
         ESP_LOGE(TAG, "erasing nvs");
-        err = nvs_erase_all(res->nvsHandle); // keep handle open
+        err = nvs_erase_all(mainNvsHandle); // keep handle open
         if (err != ESP_OK) return err;
-        err = nvs_erase_all(workerHandle); // close handle
+        err = nvs_erase_all(workerNvsHandle); // close handle
         if (err != ESP_OK) return err;
 
         ESP_LOGE(TAG, "rewriting user settings to nvs");
-        err = storeNvsSettings(res->nvsHandle, *res->settings);
+        err = storeNvsSettings(mainNvsHandle, settings);
         if (err != ESP_OK) return err;
 
         esp_restart();
@@ -213,15 +195,10 @@ esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res)
     err = createOTATask(&otaTask);
     if (err != ESP_OK) return err;
 
-    /* create refresh timer */
-    state->toggle = false;
-    res->refreshTimer = createRefreshTimer(xTaskGetCurrentTaskHandle(), &(state->toggle));
-    if (res->refreshTimer == NULL) return ESP_FAIL;
-
     /* initialize buttons */
     err = gpio_install_isr_service(0);
     if (err != ESP_OK) THROW_ERR(err);
-    err = initInput(otaTask, xTaskGetCurrentTaskHandle(), &(state->toggle));
+    err = initInput(otaTask);
     if (err != ESP_OK) return err;
 
 #if CONFIG_HARDWARE_VERSION == 1
@@ -446,22 +423,6 @@ esp_err_t initLEDLegendLight(uint8_t red, uint8_t green, uint8_t blue)
 #else
 #error "Unsupported hardware version!"
 #endif
-
-/**
- * @brief Initializes state to a known state.
- *
- * @param[out] state A pointer to the state to initialize.
- */
-static void initializeMainState(MainTaskState *state)
-{
-    state->toggle = false;
-    state->first = true;
-#ifdef CONFIG_FIRST_DIR_NORTH
-    state->dir = NORTH;
-#else
-    state->dir = SOUTH;
-#endif
-}
 
 #if CONFIG_HARDWARE_VERSION == 1
 

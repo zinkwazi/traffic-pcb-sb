@@ -4,4 +4,5 @@ idf_component_register(SRCS "src/routines.c"
                                 animations
                                 led_matrix
                                 esp_timer
+                                input
                                 esp_driver_gpio)

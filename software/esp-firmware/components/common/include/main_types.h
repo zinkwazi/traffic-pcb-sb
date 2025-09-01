@@ -60,14 +60,6 @@ struct MainTaskResources {
 
 typedef struct MainTaskResources MainTaskResources;
 
-struct MainTaskState {
-  bool toggle; // whether the direction of flow should be switched
-  bool first; // whether this is the first refresh
-  Direction dir; // current LED refresh direction
-};
-
-typedef struct MainTaskState MainTaskState;
-
 struct LEDData {
     uint16_t ledNum;
     /* The speed of the LED, with negative values specifying special LED types.*/

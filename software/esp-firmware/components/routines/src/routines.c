@@ -16,6 +16,7 @@
 
 #include "app_err.h"
 #include "led_matrix.h"
+#include "input_queue.h"
 #include "pinout.h"
 
 #define TAG "routines"
@@ -24,37 +25,21 @@ static void timerFlashDirCallback(void *params);
 static void refreshTimerCallback(void *params);
 
 /**
- * @brief Creates a timer that, when started, periodically sends task
- *        notifications to the main task to refresh the LEDs.
- * 
- * @param[in] mainTask The handle of the main task, used to send task 
- *        notifications.
- * @param[in] toggle A pointer to a portion of the main task state, which
- *        indicates to the main task that it should switch the current direction
- *        of the LEDs. This pointer should remain valid as long as the timer
- *        is in use.
+ * @brief Creates a timer that sends a command to the main task when
+ * it expires, which is useful for implementing a refresh timeout.
  * 
  * @returns A handle to the created timer if successful, otherwise NULL.
  */
-esp_timer_handle_t createRefreshTimer(TaskHandle_t mainTask, bool *toggle) {
-  static RefreshTimerParams params;
-  esp_timer_create_args_t timerArgs;
+esp_timer_handle_t createRefreshTimer(void) {
   esp_timer_handle_t ret;
-  /* input guards */
-  if (mainTask == NULL || toggle == NULL) {
-    return NULL;
-  }
-  /* copy parameters */
-  params.mainTask = mainTask;
-  params.toggle = toggle;
-  /* create timer */
-  timerArgs.callback = refreshTimerCallback;
-  timerArgs.arg = &params;
-  timerArgs.dispatch_method = ESP_TIMER_TASK;
-  timerArgs.name = "refreshTimer";
-  if (esp_timer_create(&timerArgs, &ret) != ESP_OK) {
-    return NULL;
-  }
+  esp_timer_create_args_t timerArgs = {
+    .name = "refreshTimer",
+    .callback = refreshTimerCallback,
+    .arg = NULL,
+    .dispatch_method = ESP_TIMER_TASK,
+  };
+
+  if (esp_timer_create(&timerArgs, &ret) != ESP_OK) return NULL;
   return ret;
 }
 
@@ -83,25 +68,17 @@ esp_timer_handle_t createDirectionFlashTimer(void) {
 }
 
 /**
- * @brief Callback that periodically sends a task notification to the main task.
+ * @brief Callback that periodically pushes a command to the main queue.
  * 
- * Callback that periodically tells the main task to refresh all LEDs if the 
- * direction button has not been pressed. The timer that calls this function 
- * restarts if the direction button is pressed.
+ * @note If the queue is full, the timer's command is missed.
  * 
- * @param params A TaskHandle_t that is the handle of the main task.
+ * @note This function is not ISR safe. It should be called by the timer task.
+ * 
+ * @param params NULL
  */
 static void refreshTimerCallback(void *params) {
-  TaskHandle_t mainTask = ((RefreshTimerParams *) params)->mainTask;
-  bool *toggle = ((RefreshTimerParams *) params)->toggle;
-
-#ifdef CONFIG_TIMER_CAUSES_TOGGLE
-  *toggle = true;
-#endif
-
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(mainTask, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  static const MainCommand cmd = MAIN_CMD_TIMEOUT;
+  (void) xQueueSend(inputQueue, &cmd, 0); // best effort. timer is periodic, not oneshot
 }
 
 

@@ -14,7 +14,7 @@
 
 #include "main_types.h"
 
-esp_err_t initializeApplication(MainTaskState *state, MainTaskResources *res);
+esp_err_t initializeApplication(void);
 esp_err_t initializeMatrices(void);
 esp_err_t initializeIndicatorLEDs(void);
 esp_err_t initializeLogChannel(void);

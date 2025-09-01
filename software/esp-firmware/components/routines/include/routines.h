@@ -27,7 +27,7 @@ struct RefreshTimerParams {
 
 typedef struct RefreshTimerParams RefreshTimerParams;
 
-esp_timer_handle_t createRefreshTimer(TaskHandle_t mainTask, bool *toggle);
+esp_timer_handle_t createRefreshTimer(void);
 esp_timer_handle_t createDirectionFlashTimer(void);
 esp_timer_handle_t createLoadingAnimTimer(void);
 
