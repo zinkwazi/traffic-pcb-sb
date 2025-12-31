@@ -365,11 +365,11 @@ esp_err_t openServerFile(int64_t *contentLength,
     err = esp_base_mac_addr_get(mac);
     if (err != ESP_OK) throwFatalError();
     snprintf(query, MAX_QUERY_LEN, "?id=%.2x:%.2x:%.2x:%.2x:%.2x:%.2x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-
+    
     strncpy(urlBuf, URL, MAX_URL_LEN);
     urlBuf[MAX_URL_LEN + 1] = '\0';
     strncat(urlBuf, query, MAX_QUERY_LEN);
-    urlBuf[MAX_URL_LEN + MAX_QUERY_LEN + 1] = '\0';
+    urlBuf[MAX_URL_LEN + MAX_QUERY_LEN] = '\0';
 
     /* establish connection and open URL */
     ESP_LOGI(TAG, "retrieving: %s", URL);
