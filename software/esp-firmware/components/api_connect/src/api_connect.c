@@ -22,17 +22,15 @@
 
 #define TAG "api_connect"
 
-#define MAX_QUERY_LEN 32
-
 esp_err_t getNextResponseBlock(char *output, int *outputLen, esp_http_client_handle_t client);
 esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf, LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client);
 esp_err_t nextCSVEntryFromMark(LEDData *data, CircularBuffer *circBuf, char *buf, uint32_t bufSize);
 
 #if USE_ADDENDUMS == true
-esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client, char *fileURL, int retryNum);
+esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client, const char *fileURL, int retryNum);
 esp_err_t parseMetadata(char **dataStart, char *block, int blockLen, char *metadata, int *metadataLen);
 #else
-esp_err_t getServerSpeedsNoAddendums(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client, char *URL, int retryNum);
+esp_err_t getServerSpeedsNoAddendums(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client, const char *URL, int retryNum);
 esp_err_t readServerSpeedData(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client);
 #endif
 
@@ -56,7 +54,7 @@ esp_err_t readServerSpeedData(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_ht
 esp_err_t getServerSpeeds(LEDData ledSpeeds[], 
                           uint32_t ledSpeedsLen, 
                           esp_http_client_handle_t client, 
-                          char *URL, 
+                          const char *URL, 
                           int retryNum)
 {
 #if USE_ADDENDUMS == true
@@ -367,7 +365,7 @@ esp_err_t openServerFile(int64_t *contentLength,
     snprintf(query, MAX_QUERY_LEN, "?id=%.2x:%.2x:%.2x:%.2x:%.2x:%.2x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     
     strncpy(urlBuf, URL, MAX_URL_LEN);
-    urlBuf[MAX_URL_LEN + 1] = '\0';
+    urlBuf[MAX_URL_LEN] = '\0';
     strncat(urlBuf, query, MAX_QUERY_LEN);
     urlBuf[MAX_URL_LEN + MAX_QUERY_LEN] = '\0';
 
@@ -449,7 +447,7 @@ esp_err_t openServerFile(int64_t *contentLength,
 esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[], 
                                       uint32_t ledSpeedsLen, 
                                       esp_http_client_handle_t client, 
-                                      char *fileURL, 
+                                      const char *fileURL, 
                                       int retryNum)
 {
     const char *addFolderEnding = ADDENDUM_FOLDER_ENDING "/";
@@ -680,7 +678,7 @@ esp_err_t parseMetadata(char **dataStart,
 esp_err_t getServerSpeedsNoAddendums(LEDData ledSpeeds[],
                                      uint32_t ledSpeedsLen,
                                      esp_http_client_handle_t client,
-                                     char *URL,
+                                     const char *URL,
                                      int retryNum)
 {
     int64_t contentLength;

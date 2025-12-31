@@ -23,6 +23,7 @@
 #include "esp_err.h"
 #include "esp_http_client.h"
 #include "esp_netif.h"
+#include "esp_mac.h"
 #include "esp_tls.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
@@ -46,15 +47,34 @@ extern esp_http_client_handle_t client;
  */
 TEST_CASE("getNextResponseBlock_inputGuards", "[api_connect]")
 {
-    DEFINE_DATA_NORTH_V1_0_5_ENDPOINT;
+    DEFINE_DATA_NORTH_V1_0_5_ENDPOINT(data_north_V1_0_5);
 
     esp_err_t err;
     int len;
     char buffer[10];
     int64_t contentLen;
 
-    /* setup mocks */
-    err = mock_esp_http_client_add_endpoint(data_north_V1_0_5);
+    /* define endpoints with expected query parameters */
+    uint8_t mac[6];
+    char query[MAX_QUERY_LEN];
+    char endpointURL[MAX_URL_LEN + MAX_QUERY_LEN];
+
+    err = esp_base_mac_addr_get(mac);
+    snprintf(query, MAX_QUERY_LEN, "?id=%.2x:%.2x:%.2x:%.2x:%.2x:%.2x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    strncpy(endpointURL, data_north_V1_0_5.url, MAX_URL_LEN);
+    endpointURL[MAX_URL_LEN] = '\0';
+    strncat(endpointURL, query, MAX_QUERY_LEN);
+
+    const MockHttpEndpoint dataNorthV105EndpointWithParams = {
+        .url = endpointURL,
+        .responseCode = data_north_V1_0_5.responseCode,
+        .response = data_north_V1_0_5.response,
+        .contentLen = data_north_V1_0_5.contentLen,
+    };
+
+    err = mock_esp_http_client_add_endpoint(dataNorthV105EndpointWithParams);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     /* tests */
@@ -95,7 +115,7 @@ TEST_CASE("getNextResponseBlock_inputGuards", "[api_connect]")
  */
 TEST_CASE("getNextResponseBlock_typical", "[api_connect]")
 {
-    DEFINE_DATA_NORTH_V1_0_5_ENDPOINT;
+    DEFINE_DATA_NORTH_V1_0_5_ENDPOINT(data_north_V1_0_5);
     
     esp_err_t err;
     int len;
@@ -103,9 +123,30 @@ TEST_CASE("getNextResponseBlock_typical", "[api_connect]")
     char *expected;
     int64_t contentLen;
 
-    err = mock_esp_http_client_add_endpoint(data_north_V1_0_5);
+    /* define endpoints with expected query parameters */
+    uint8_t mac[6];
+    char query[MAX_QUERY_LEN];
+    char endpointURL[MAX_URL_LEN + MAX_QUERY_LEN];
+
+    err = esp_base_mac_addr_get(mac);
+    snprintf(query, MAX_QUERY_LEN, "?id=%.2x:%.2x:%.2x:%.2x:%.2x:%.2x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
+    strncpy(endpointURL, data_north_V1_0_5.url, MAX_URL_LEN);
+    endpointURL[MAX_URL_LEN] = '\0';
+    strncat(endpointURL, query, MAX_QUERY_LEN);
+
+    const MockHttpEndpoint northV105EndpointWithParams = {
+        .url = endpointURL,
+        .responseCode = data_north_V1_0_5.responseCode,
+        .response = data_north_V1_0_5.response,
+        .contentLen = data_north_V1_0_5.contentLen,
+    };
+
+    err = mock_esp_http_client_add_endpoint(northV105EndpointWithParams);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    /* run test */
     err = openServerFile(&contentLen, client, data_north_V1_0_5.url, RETRY_NUM);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
