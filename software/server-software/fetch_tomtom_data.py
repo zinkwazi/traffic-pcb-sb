@@ -20,7 +20,7 @@ USE_FAKE_KEY = False
 DOMAIN_NAME = "https://bearanvil.com"
 
 # the home path of the output, which is typically the server path of where the domain lives
-OUTPUT_PATH = "C:/Users/bapti/Documents/traffic-pcb-sb/software/server-software"
+OUTPUT_PATH = "/home/jdbaptista/Documents/repos/traffic-pcb-sb/software/server-software"
 
 # output folder path relative to output home
 OUTPUT_FOLDER_RELPATH = "output"
@@ -37,6 +37,7 @@ INPUT_CSV = "input/led_locations_V1_0_5.csv"
 V2_0_0_ADD_INPUT_CSV = "input/led_loc_addendum_V2_0_0.csv"
 
 LOG_FILE = "output/fetch_tomtom_data.log"
+ERROR_LOG_FILE = "output/fetch_tomtom_data_err.log"
 
 class Direction(Enum):
     NORTH = 1
@@ -102,6 +103,10 @@ def log(message):
     with open(LOG_FILE, 'a') as log_file:
         log_file.write(f"{datetime.now()}: {message}\n")
 
+def logErr(message):
+    with open(ERROR_LOG_FILE, 'a') as log_file:
+        log_file.write(f"{datetime.now()}: {message}\n")
+
 # ================================
 # API Functions
 # ================================
@@ -150,6 +155,7 @@ def requestSegmentData(entry, speed_type, api_key):
         raise(ValueError, "api_key is empty string")
     if not validEntrySegmentData(entry):
         log(f"LED {entry[LED_NUM_KEY]} contains invalid segment data.")
+        logErr(f"{entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]} contains invalid segment data.")
         return -1
     
     # random data check
@@ -165,9 +171,11 @@ def requestSegmentData(entry, speed_type, api_key):
         )
     except:
         log(f"request failed.")
+        logErr(f"{entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]} segment data request failed.")
         return -1
     if response.status_code != 200:
         log(f"Failed to retrieve data: {response.status_code} - {response.text}")
+        logErr(f"{entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]} segment data request status code is {response.status_code} - {response.text}")
         return -1
     json_segment_data = response.json().get("flowSegmentData", {})
     
@@ -185,15 +193,18 @@ def requestSegmentData(entry, speed_type, api_key):
         speed = int(json_segment_data.get("freeFlowSpeed", -1))
     else:
         log(f"Requested data for unknown speed type")
+        logErr(f"Requested data for unknown speed type for {entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]}")
         speed = -1
     if speed == -1:
         log(f"No speed data found in response: {response.text}")
+        logErr(f"{entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]} segment request contains no speed data in response: {response.text}")
         return -1
     
     # verify openLR codes match
     returned_openLR_code = json_segment_data.get("openlr", "")
     if returned_openLR_code != entry[OPENLR_CODE_KEY]:
         log(f"Query openLR code {returned_openLR_code} is not the expected code: {entry[OPENLR_CODE_KEY]}")
+        logErr(f"{entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]} openLR code {returned_openLR_code} is not the expected code: {entry[OPENLR_CODE_KEY]}")
         return -1
     return speed
 
@@ -232,8 +243,11 @@ def requestTileData(entry,
         raise(ValueError, "entry is None")
     if api_key == "":
         raise(ValueError, "api_key is empty string")
+    if entry[TILE_KEY] == "NULL":
+        return -1; # ignore intentionally invalid tile data
     if not validEntryTileData(entry):
-        log(f"LED {entry[LED_NUM_KEY]} contains invalid tile data (potentially by design).")
+        log(f"{entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]} contains invalid tile data.")
+        logErr(f"{entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]} contains invalid tile data.")
         return -1
     
     # random data check
@@ -249,9 +263,11 @@ def requestTileData(entry,
         )
     except:
         log(f"Tile endpoint request failed.")
+        logErr(f"Tile endpoint request {tile} for {entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]} failed.")
         return -1
     if response.status_code != 200:
         log(f"Failed to retrieve data: {response.status_code} - {response.text}")
+        logErr(f"Tile endpoint request {tile} for {entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]} status code is {response.status_code} - {response.text}")
         return -1
 
     # parse speed from Google Protobuf response
@@ -259,10 +275,12 @@ def requestTileData(entry,
     response_tile.ParseFromString(response.content)
     if len(response_tile.layers) != 1:
         log(f"Response contains {len(response_tile.layers)} layers when 1 is expected: {response_tile}")
+        logErr(f"{entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]} tile {tile} response contains {len(response_tile.layers)} layers when 1 is expected: {response_tile}")
         return -1
     response_layer = response_tile.layers[0]
     if len(response_layer.features) != 1:
         log(f"Response contains {len(response_layer.features)} features when 1 is expected: {response_tile}")
+        logErr(f"{entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]} tile {tile} response contains {len(response_layer.features)} features when 1 is expected: {response_tile}")
         return -1
     response_feature = response_layer.features[0]
 
@@ -274,6 +292,7 @@ def requestTileData(entry,
             break
     if traffic_level_tag == -1:
         log(f"Response layer does not contain a tag for \'traffic_level\': {response_tile}")
+        logErr(f"{entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]} tile {tile} response layer does not contain a tag for \'traffic_level\': {response_tile}")
         return -1
     
     # find traffic level value index in feature
@@ -284,19 +303,23 @@ def requestTileData(entry,
             break
     if traffic_level_feature == -1:
         log(f"Response feature does not contain a tag corresponding to the traffic level: {response_tile}")
+        logErr(f"{entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]} tile {tile} response feature does not contain a tag corresponding to the traffic level: {response_tile}")
         return -1
     
     # retrieve current speed from traffic level value
     if len(response_layer.values) < traffic_level_feature + 1:
         log(f"Response layer does not contain a value at index {traffic_level_feature}: {response_tile}")
+        logErr(f"{entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]} tile {tile} response layer does not contain a value at index {traffic_level_feature}: {response_tile}")
         return -1
     traffic_level_value = response_layer.values[traffic_level_feature]
     if not traffic_level_value.HasField("double_value"): # TODO: traffic level could be other type, although it has always been double so far
         log(f"Response traffic level is not a double: {response_tile}")
+        logErr(f"{entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]} tile {tile} response traffic level is not a double: {response_tile}")
         return -1
     current_speed = round(traffic_level_value.double_value * 0.621371) # response gives kmph, convert to mph
     if current_speed == -1:
         log(f"No speed data found in response: {response_tile}")
+        logErr(f"{entry[DIRECTION_KEY]} LED {entry[LED_NUM_KEY]} tile {tile} response contains no speed data: {response_tile}")
         return -1
     return current_speed
 
@@ -394,6 +417,7 @@ def pruneCSVEntries(csv_reader: csv.DictReader,
     
     # runtime checks on entries
     if bad_entries:
+        logErr(f"Duplicate {direction} entries found in csv file")
         raise RuntimeError(f"Duplicate {direction} entries found in csv file")
     if not allow_missing:
         prev_led: int | None = None
@@ -406,9 +430,11 @@ def pruneCSVEntries(csv_reader: csv.DictReader,
                 prev_led += 1
                 while prev_led != num:
                     log(f"missing {direction} LED {prev_led} in csv file")
+                    logErr(f"missing {direction} LED {prev_led} in csv file")
                     prev_led += 1
             prev_led = num
     if bad_entries:
+        logErr(f"Missing {direction} entries in csv file")
         raise RuntimeError(f"Missing {direction} entries in csv file")
     
     # add referenced LEDs to ret list
@@ -424,8 +450,9 @@ def pruneCSVEntries(csv_reader: csv.DictReader,
     # check for bad entries, which are the only remaining in ref_to_leds
     for ref_num, leds in ref_to_leds.items():
         bad_entries = True
-        log(f"Entries {direction} LEDs {leds} reference {ref_num} invalidly")
+        logErr(f"Entries {direction} LEDs {leds} reference {ref_num} invalidly")
     if bad_entries:
+        logErr(f"Bad {direction} references in csv file")
         raise RuntimeError(f"Bad {direction} references in csv file")
     
     return ret
@@ -480,6 +507,7 @@ def requestSpeeds(entry_led_pairs,
                 speed = requestSegmentData(entry, speed_type, api_key)
             if speed == -1 and fail_with_zero:
                 log(f"failed to retrieve speed for LED {entry[LED_NUM_KEY]}, setting to 0")
+                logErr(f"failed to retrieve speed for LED {entry[LED_NUM_KEY]}, setting to 0")
                 speed = 0
             log(f"Retrieved speed {speed} for LEDs {leds} from LED number {entry[LED_NUM_KEY]} entry")
         for led_num in leds:
@@ -580,6 +608,7 @@ def main(speed_type, direction, api_key, csv_filename, output_relpath, output_2_
                     out_file.write(byte_array)
             except Exception as e:
                 log(f"Error writing byte array: {e}")
+                logErr(f"Error writing byte array: {e}")
 
         # Update version addendums
         log("Updating addendum V2_0_0")
@@ -589,6 +618,7 @@ def main(speed_type, direction, api_key, csv_filename, output_relpath, output_2_
         return True
     except Exception as e:
         log(f"Error processing {direction.name} direction: {e}")
+        logErr(f"Error processing {direction.name} direction: {e}")
         return False
     
 # ================================
@@ -604,8 +634,13 @@ if __name__ == "__main__":
     else:
         api_key = sys.argv[1]
 
-    # Ensure the log file exists
+    # Ensure the log files exists
     ensure_file_exists(LOG_FILE, LOG_FILE, "")
+    ensure_file_exists(ERROR_LOG_FILE, ERROR_LOG_FILE, "")
+
+    # clear error log file
+    with open(ERROR_LOG_FILE, 'w') as log_file:
+        log_file.write(f"\n")
 
     if len(sys.argv) > 2 and sys.argv[2] == "typical":
         log("")
