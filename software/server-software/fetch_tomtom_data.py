@@ -5,6 +5,7 @@ import requests
 import csv
 import tile_schema_pb2
 import random
+import time
 from enum import Enum
 from typing import Any
 import os
@@ -14,6 +15,8 @@ from datetime import datetime
 # Configuration Options
 # ================================
 
+NUM_RETRIES = 5
+RETRY_DELAY_MS = 2000 # time between retries
 USE_RANDOM_DATA = False
 USE_FAKE_KEY = False
 
@@ -460,7 +463,6 @@ def pruneCSVEntries(csv_reader: csv.DictReader,
 def requestSpeeds(entry_led_pairs,
                   speed_type: SpeedType,
                   api_key: str,
-                  fail_with_zero: bool=True
                   ):
     """
     Performs TomTom API requests for each provided entry, first attempting to 
@@ -471,11 +473,7 @@ def requestSpeeds(entry_led_pairs,
     Note that if an entry freeway is \"Special\", then -2 is returned for the
     speed.
 
-    If an API request fails, it is logged. Then, pairs with the corresponding
-    LED numbers are created with -1 speed if fail_with_zero is true. If
-    fail_with_zero is false, then pairs are created with -1 speed. A 0 speed
-    is necessary for pre-V1_0_5 firmware versions, which require binary arrays
-    of unsigned integers.
+    If an API request fails, it is logged and 0 speed is returned.
 
     Parameters:
         entry_led_pairs: A list returned from pruneCSVEntries containing tuples
@@ -483,8 +481,6 @@ def requestSpeeds(entry_led_pairs,
             be made and the LEDs to update based on the result.
         speed_type: The type of data to retrieve from TomTom.
         api_key: The API key to use when making API requests.
-        fail_with_zero: Whether to create a pair with a speed of 0 or -1 when an 
-            API request fails. If true, 0 is added to the pair, otherwise -1.
 
     Returns:
         A list of tuples containing an LED number and speed pair.
@@ -497,6 +493,12 @@ def requestSpeeds(entry_led_pairs,
         raise(ValueError, "api_key argument is an empty string")
 
     ret = []
+    failedLEDs = [] # contains LEDs whose speed data could not be retrieved. These are retried after a time delay.
+                    # unfortunately the TomTom API seems to have some non-determinism on what is returned. It seems
+                    # time is a major factor.
+                    # contains tuple: (entry, leds)
+
+    # first try
     for entry, leds in entry_led_pairs:
         if entry[FREEWAY_KEY] == "Special":
             log(f"Found special entry for LEDs {leds} from LED number {entry[LED_NUM_KEY]} entry")
@@ -505,13 +507,30 @@ def requestSpeeds(entry_led_pairs,
             speed = requestTileData(entry, api_key)
             if speed == -1: # indicates error
                 speed = requestSegmentData(entry, speed_type, api_key)
-            if speed == -1 and fail_with_zero:
-                log(f"failed to retrieve speed for LED {entry[LED_NUM_KEY]}, setting to 0")
-                logErr(f"failed to retrieve speed for LED {entry[LED_NUM_KEY]}, setting to 0")
+            if speed == -1:
+                log(f"failed to retrieve speed for LED {entry[LED_NUM_KEY]}")
+                logErr(f"failed to retrieve speed for LED {entry[LED_NUM_KEY]}")
+                failedLEDs.append((entry, leds))
                 speed = 0
             log(f"Retrieved speed {speed} for LEDs {leds} from LED number {entry[LED_NUM_KEY]} entry")
         for led_num in leds:
             ret.append((led_num, speed))
+
+    fixedLEDs = [] # contains a list of indexes of failed LEDs that have been fixed already.
+    for _ in range(NUM_RETRIES):
+        for ndx, entry, leds in enumerate(failedLEDs):
+            if ndx in fixedLEDs:
+                continue
+            if entry[FREEWAY_KEY] == "Special":
+                logErr(f"Found special entry for LED {entry[LED_NUM_KEY]} in failed LEDs list.")
+                continue
+            speed = requestTileData(entry, api_key)
+            if speed == -1:
+                speed = requestSegmentData(entry, speed_type, api_key)
+            if speed != -1:
+                log(f"Retried failed endpoint and found speed {speed} for LEDs {leds} from LED number {entry[LED_NUM_KEY]} entry")
+                logErr(f"Retried failed endpoint and found speed {speed} for LEDs {leds} from LED number {entry[LED_NUM_KEY]} entry")
+                fixedLEDs.append(ndx)
     return ret
 
 def createAddendum(addendum_folder, version, prev_addendum_url, addendum_data_file, direction, speed_type, api_key):
@@ -537,7 +556,7 @@ def createAddendum(addendum_folder, version, prev_addendum_url, addendum_data_fi
         with open(addendum_data_file, 'r') as input_file:
             csv_reader = csv.DictReader(input_file, dialect='excel')
             entry_leds_pairs = pruneCSVEntries(csv_reader, direction, allow_missing=True)
-        speeds = requestSpeeds(entry_leds_pairs, speed_type, api_key, fail_with_zero=False)
+        speeds = requestSpeeds(entry_leds_pairs, speed_type, api_key)
 
         log(f"Addendum Speeds: {speeds}")
 
@@ -584,7 +603,7 @@ def main(speed_type, direction, api_key, csv_filename, output_relpath, output_2_
         with open(csv_filename, 'r') as input_file:
             csv_reader = csv.DictReader(input_file, dialect='excel')
             entry_leds_pairs = pruneCSVEntries(csv_reader, direction, allow_missing=False)
-        speeds = requestSpeeds(entry_leds_pairs, speed_type, api_key, fail_with_zero=False)
+        speeds = requestSpeeds(entry_leds_pairs, speed_type, api_key)
         speeds = sorted(speeds, key=lambda ele: ele[0])
 
         # Debug log to check the contents of current_speeds

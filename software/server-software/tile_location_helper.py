@@ -15,6 +15,41 @@ import tile_schema_pb2
 # General Functions
 # ================================
 
+def requestSegmentCode(latitude, longitude, key):
+    """
+    Requests speed data from the TomTom Flow Segment Data endpoint. 
+
+    Parameters:
+        entry: The CSV entry holding information about the physical location
+            to query.
+        api_key: The API key to use when making requests.
+
+    Returns:
+        The speed retrieved from the endpoint if successful, otherwise -1.
+        
+        If there is a road closure, 0 is returned when speed_type is CURRENT 
+        and -1 is returned when speed_type is TYPICAL.
+
+        If the endpoint returns an openLR code that differs from that of the
+        entry, then -1 is returned.
+
+        Throws an exception if arguments are unexpected.
+    """
+    try:
+        response = requests.get(
+            f"https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json?key={api_key}&point={latitude},{longitude}&unit=mph&openLr=true"
+        )
+    except:
+        print(f"request failed.")
+        return ""
+    if response.status_code != 200:
+        print(f"Failed to retrieve segment data: {response.status_code} - {response.text}")
+        return ""
+    
+    json_segment_data = response.json().get("flowSegmentData", {})
+    returned_openLR_code = json_segment_data.get("openlr", "")
+    return returned_openLR_code
+
 def requestData(tile, key):
     '''Requests speed data from the TomTom API. Fails 
     if entry is invalid, which is checked with validEntry.
@@ -124,6 +159,7 @@ def main(latitude, longitude, key):
     if current_speed != -1:
         print(f"speed: {current_speed}")
     print()
+    print(f"OpenLR Code: {requestSegmentCode(latitude, longitude, key)}")
 
 
 if __name__ == "__main__":
