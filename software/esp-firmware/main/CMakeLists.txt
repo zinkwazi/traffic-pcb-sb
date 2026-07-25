@@ -1,4 +1,3 @@
-
 if ("$ENV{executable}" STREQUAL "main")
     set(srcs "src/main.c"
              "src/initialize.c")
@@ -12,6 +11,9 @@ elseif ("$ENV{executable}" STREQUAL "test_actions")
     set(includes "include")
 elseif ("$ENV{executable}" STREQUAL "test_actions2")
     set(srcs "../components/actions/test/test_actions_main2.c")
+    set(includes "include")
+elseif ("$ENV{executable}" STREQUAL "test_refresh")
+    set(srcs "../components/refresh/test/test_refresh_main.c")
     set(includes "include")
 elseif ("$ENV{executable}" STREQUAL "test_nonmock")
     set(srcs "src/tests/test_nonmock_main.c"

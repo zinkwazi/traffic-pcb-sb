@@ -168,8 +168,6 @@ static esp_err_t matSetRegistersSeparate(uint8_t page, uint8_t addr, uint8_t mat
  * @brief Initializes the led_matrix component, which allows use of led_matrix.h
  * functions. Resets matrices to normal operating mode.
  * 
- * @returns ESP_OK if successful, otherwise ESP_FAIL.
- * 
  * @returns ESP_OK if successful.
  * ESP_ERR_INVALID_STATE if the component is already initialized.
  * ESP_ERR_NOT_FOUND if a matrix on the first I2C bus could not be found.

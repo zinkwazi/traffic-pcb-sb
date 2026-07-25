@@ -21,4 +21,5 @@ idf_component_register(SRCS ${srcs}
                                 indicators
                                 esp_http_client
                                 esp_https_ota
+                                bootloader_support
                                 esp_http_client_wrapper)

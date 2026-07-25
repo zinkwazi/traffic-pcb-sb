@@ -6,6 +6,13 @@ menu "Refresh"
         help
             Whether to mock refresh.h or not.
 
+    config TEST_REFRESH
+        bool "Test Refresh Component"
+        default n
+        help
+            Whether to include functions useful when testing the refresh
+            component.
+
     config EXTERN_REFRESH_CONFIG
         bool "Use Extern refresh_config Macros"
         default n

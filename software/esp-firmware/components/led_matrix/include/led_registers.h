@@ -8,6 +8,8 @@
 #ifndef LED_REGISTERS_H_
 #define LED_REGISTERS_H_
 
+#include <stdbool.h>
+
 #include "sdkconfig.h"
 
 #include "led_types.h"
@@ -26,6 +28,15 @@
 #error "Unsupported Hardware Version"
 #endif
 
+/**
+ * The LED number to I2C register lookup table
+ * for the current hardware.
+ * 
+ * @note This is defined in Vx_x_led_registers.c,
+ * not led_registers.c.
+ */
 extern const LEDReg LEDNumToReg[MAX_NUM_LEDS_REG];
+
+bool isLEDValid(LEDReg reg);
 
 #endif /* LED_REGISTERS_H_ */

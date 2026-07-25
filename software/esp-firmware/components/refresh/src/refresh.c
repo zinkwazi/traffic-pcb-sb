@@ -679,32 +679,34 @@ static char *getCorrectURL(Direction dir, SpeedCategory category) {
     char *url = NULL;
     switch (dir)
     {
-    case NORTH:
-        switch(category)
-        {
-        case LIVE:
-            url = URL_DATA_CURRENT_NORTH;
+        case NORTH:
+            switch(category)
+            {
+            case LIVE:
+                url = URL_DATA_CURRENT_NORTH;
+                break;
+            case TYPICAL:
+                url = URL_DATA_TYPICAL_NORTH;
+                break;
+            default:
+                return NULL;
+            }
             break;
-        case TYPICAL:
-            url = URL_DATA_TYPICAL_NORTH;
+        case SOUTH:
+            switch(category)
+            {
+                case LIVE:
+                    url = URL_DATA_CURRENT_SOUTH;
+                    break;
+                case TYPICAL:
+                    url = URL_DATA_TYPICAL_SOUTH;
+                    break;
+                default:
+                return NULL;
+            }
             break;
         default:
-            return NULL;
-        }
-        break;
-    case SOUTH:
-    switch(category)
-    {
-        case LIVE:
-            url = URL_DATA_CURRENT_SOUTH;
             break;
-        case TYPICAL:
-            url = URL_DATA_TYPICAL_SOUTH;
-            break;
-        default:
-        return NULL;
-    }
-    break;
     }
     return url;
 }

@@ -19,6 +19,7 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -47,6 +48,7 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -76,6 +78,7 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -104,6 +107,7 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -132,6 +136,7 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -161,6 +166,7 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -191,6 +197,7 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -221,6 +228,7 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -252,6 +260,7 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -283,6 +292,7 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
+      "configs": [],
       "args": []
     },
     "tasks": {
@@ -314,6 +324,39 @@
     "monitorBaudRate": "",
     "openOCD": {
       "debugLevel": 0,
+      "configs": [],
+      "args": []
+    },
+    "tasks": {
+      "preBuild": "",
+      "preFlash": "",
+      "postBuild": "",
+      "postFlash": ""
+    }
+  },
+  "test_refresh": {
+    "build": {
+      "compileArgs": [],
+      "ninjaArgs": [],
+      "buildDirectoryPath": "${workspaceFolder}/builds/test_refresh",
+      "sdkconfigDefaults": [
+        "./configurations/sdkconfig.settings",
+        "./configurations/secrets/sdkconfig.test_secrets",
+        "./configurations/sdkconfig.test",
+        "./components/refresh/test/sdkconfig.test",
+        "./configurations/sdkconfig.V2_0_default"
+      ],
+      "sdkconfigFilePath": "${workspaceFolder}/configurations/current/sdkconfig.test_refresh"
+    },
+    "env": {
+      "executable": "test_refresh"
+    },
+    "idfTarget": "esp32s3",
+    "flashBaudRate": "",
+    "monitorBaudRate": "",
+    "openOCD": {
+      "debugLevel": 0,
+      "configs": [],
       "args": []
     },
     "tasks": {

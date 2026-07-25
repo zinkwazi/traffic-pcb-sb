@@ -48,6 +48,10 @@
 #define APP_ERR_LOST_MARK (APP_ERR_BASE + 6)
 /* An argument was uninitialized */
 #define APP_ERR_UNINITIALIZED (APP_ERR_BASE + 7)
+/* The refresh FSM was initialized more than once */
+#define APP_ERR_REFRESH_FSM_INITIALIZATION  (APP_ERR_BASE + 8)
+/* The refresh FSM detected a pointer that was not the singleton */
+#define APP_ERR_REFRESH_FSM_SINGLETON   (APP_ERR_BASE + 9)
 
 /* The backtrace depth to be printed during a bottom-level app error */
 #define APP_ERR_BACKTRACE_DEPTH (5)

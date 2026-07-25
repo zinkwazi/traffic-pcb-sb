@@ -23,6 +23,7 @@
 enum Direction {
     NORTH,
     SOUTH,
+    NO_DIR,
 };
 
 typedef enum Direction Direction;
@@ -67,5 +68,13 @@ struct LEDData {
 };
 
 typedef struct LEDData LEDData;
+
+struct Color {
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+};
+
+typedef struct Color Color;
 
 #endif /* MAIN_TYPES_H_ */

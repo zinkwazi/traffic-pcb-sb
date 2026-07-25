@@ -1,6 +1,9 @@
 
 set(srcs "src/refresh.c")
+list(APPEND srcs "src/refresh_task.c")
 list(APPEND srcs "src/traffic_data.c")
+list(APPEND srcs "src/refresh_fsm.c")
+
 set(include_dirs "include")
 
 if (CONFIG_MOCK_REFRESH)

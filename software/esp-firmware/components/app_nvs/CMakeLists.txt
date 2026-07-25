@@ -13,7 +13,7 @@ idf_component_register(SRCS ${srcs}
                                 indicators
                                 led_matrix
                                 routines
-                                driver
+                                esp_driver_usb_serial_jtag
                                 nvs_flash
                                 esp_timer
                                 cmock)

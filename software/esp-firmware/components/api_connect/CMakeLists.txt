@@ -1,4 +1,4 @@
-set(srcs "src/api_connect")
+set(srcs "src/api_connect.c")
 set(includes "include")
 
 if (CONFIG_MOCK_API_CONNECT)

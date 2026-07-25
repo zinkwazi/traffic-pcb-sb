@@ -373,6 +373,8 @@ esp_err_t refreshSpeedsFromNVS(LEDData data[], Direction dir, SpeedCategory cate
                     return ESP_ERR_INVALID_ARG;
             }
             break;
+        default:
+            break;
     }
     if (key == NULL) return ESP_FAIL;
 
@@ -429,7 +431,9 @@ esp_err_t storeSpeedsToNVS(LEDData data[], Direction dir, SpeedCategory category
                 default:
                     return ESP_ERR_INVALID_ARG;
             }
-        break;
+            break;
+        default:
+            break;
     }
     if (key == NULL) return ESP_FAIL;
 
