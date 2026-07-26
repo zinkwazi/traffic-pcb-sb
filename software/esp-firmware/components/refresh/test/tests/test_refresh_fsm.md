@@ -26,7 +26,7 @@ The refresh FSM takes in commands from user code and outputs actions in response
 
 1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called. The frame has been installed entirely and the FSM is idle.
 
-2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM outputs a `FRAME_RELEASE_STANDARD` for the frame of (1) and outputs `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1) until all LEDs of the frame are cleared.
+2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM begins to output `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1) until all LEDs of the frame are cleared. The final `REFRESH_ACTION_CLEAR` (for the first LED of frame (1)) also outputs a `FRAME_RELEASE_STANDARD` for the frame of (1) — the release happens together with that last clear, not when the command is first received.
 
 3) The FSM outputs `REFRESH_ACTION_SET` actions in the same order of the frame of (2) until all LEDs of the frame are set. The FSM is now idle.
 
@@ -34,80 +34,82 @@ The refresh FSM takes in commands from user code and outputs actions in response
 
 1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called. The frame has been installed entirely and the FSM is idle.
 
-2) `REFRESH_CMD_UPDATE_TYPICAL` is sent with the same direction as is already installed. The FSM outputs a `FRAME_RELEASE_TYPICAL` for the old typical frame. The FSM is idle.
+2) `REFRESH_CMD_UPDATE_TYPICAL` is sent with the same direction as is already installed. The FSM buffers the new typical frame and produces no output and no release — the previously installed typical frame for that direction is still in use for the currently displayed frame's colors, so it cannot be released yet. The FSM remains idle. The buffered frame is only latched in (releasing the old typical frame with a `FRAME_RELEASE_TYPICAL_NORTH`/`FRAME_RELEASE_TYPICAL_SOUTH`) the next time a frame installation begins.
 
 ### Typical Frame Update During Clearing
 
 1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called. The frame has been installed entirely and the FSM is idle.
 
-2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM outputs a `FRAME_RELEASE_STANDARD` for the frame of (1) and begins to output `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1).
+2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM queues the frame and begins to output `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1).
 
-3) While outputting `REFRESH_ACTION_CLEAR`, `REFRESH_CMD_UPDATE_TYPICAL` is sent with the same direction as the frame of (2). The FSM outputs a `FRAME_RELEASE_TYPICAL` for the old typical frame. The FSM continues outputting `REFRESH_ACTION_CLEAR` actions until all LEDs of the frame of (1) are cleared.
+3) While outputting `REFRESH_ACTION_CLEAR`, `REFRESH_CMD_UPDATE_TYPICAL` is sent with the same direction as the frame of (2). The FSM queues the new typical frame; clearing continues uninterrupted in the same tick.
 
-4) The FSM outputs `REFRESH_ACTION_SET` actions in the same order of the frame of (3) until all LEDs of the frame are set. The FSM is now idle.
+4) During the last `REFRESH_ACTION_CLEAR` for the first LED of frame (1), the FSM outputs a `FRAME_RELEASE_STANDARD` for the frame of (1) and a `FRAME_RELEASE_TYPICAL_NORTH`/`FRAME_RELEASE_TYPICAL_SOUTH` (depending on direction) for the typical frame that was in use for (1), both in the same output.
+
+5) The FSM outputs `REFRESH_ACTION_SET` actions in the same order of the frame of (2) until all LEDs of the frame are set. The FSM is now idle.
 
 ### Refresh Command During Clearing
 
 1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called. The frame has been installed entirely and the FSM is idle.
 
-2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM outputs a `FRAME_RELEASE_STANDARD` for the frame of (1) and begins to output `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1).
+2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM begins to output `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1).
 
-3) While outputting `REFRESH_ACTION_CLEAR`, `REFRESH_CMD_REFRESH` is sent. The FSM effectively ignores the `REFRESH_CMD_REFRESH` because a refresh is already occurring. The FSM continues outputting `REFRESH_ACTION_CLEAR` actions until all LEDs of the frame of (1) are cleared.
+3) While outputting `REFRESH_ACTION_CLEAR`, `REFRESH_CMD_REFRESH` is sent. The FSM effectively ignores the `REFRESH_CMD_REFRESH` because a refresh is already occurring: no state change and no output difference for that tick. The FSM continues outputting `REFRESH_ACTION_CLEAR` actions until all LEDs of the frame of (1) are cleared. The final `REFRESH_ACTION_CLEAR` (for the first LED of frame (1)) also outputs a `FRAME_RELEASE_STANDARD` for the frame of (1).
 
-4) The FSM outputs `REFRESH_ACTION_SET` actions in the same order of the frame of (3) until all LEDs of the frame are set. The FSM is now idle.
+4) The FSM outputs `REFRESH_ACTION_SET` actions in the same order of the frame of (2) until all LEDs of the frame are set. The FSM is now idle.
 
 ### Standard Frame Queueing During Clearing
 
 1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called. The frame has been installed entirely and the FSM is idle.
 
-2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM outputs a `FRAME_RELEASE_STANDARD` for the frame of (1) and begins to output `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1).
+2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM queues the frame and begins to output `REFRESH_ACTION_CLEAR` actions, one LED per tick, in the reverse order of the frame of (1).
 
-3) While outputting `REFRESH_ACTION_CLEAR`, `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM outputs a `FRAME_RELEASE_QUEUED_STANDARD` for the frame of (2) and continues outputting `REFRESH_ACTION_CLEAR` actions until all LEDs of the frame of (1) are cleared.
+3) While outputting `REFRESH_ACTION_CLEAR`, and before frame (1) has finished clearing, `REFRESH_CMD_NEW_FRAME` is sent again with the same direction as is already installed. Because a frame is already queued, the FSM immediately outputs a `FRAME_RELEASE_QUEUED_STANDARD` for the frame of (2) and a `FRAME_RELEASE_STANDARD` for the frame of (1) in the same tick, and stops clearing one LED at a time. Instead, it outputs a single `REFRESH_ACTION_CLEAR_RANGE` (starting from wherever clearing had reached) that clears the rest of the board in one tick, and immediately begins installing the frame of (3).
 
-4) The FSM outputs `REFRESH_ACTION_SET` actions in the same order of the frame of (3) until all LEDs of the frame are set. The FSM is now idle.
+4) Starting on the next tick, the FSM outputs `REFRESH_ACTION_SET` actions in the same order of the frame of (3) until all LEDs of the frame are set. The FSM is now idle.
 
 ### Refresh Command During Installation
 
 1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called. The frame has been installed entirely and the FSM is idle.
 
-2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM outputs a `FRAME_RELEASE_STANDARD` for the frame of (1) and outputs `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1) until all LEDs of the frame are cleared.
+2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM begins to output `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1) until all LEDs of the frame are cleared. The final `REFRESH_ACTION_CLEAR` (for the first LED of frame (1)) also outputs a `FRAME_RELEASE_STANDARD` for the frame of (1).
 
 3) The FSM begins to output `REFRESH_ACTION_SET` actions in the same order of the frame of (2).
 
-4) While outputting `REFRESH_ACTION_SET`, `REFRESH_CMD_REFRESH` is sent. The FSM effectively ignres the `REFRESH_CMD_REFRESH` because a refresh is already occurring. The FSM continues outputting `REFRESH_ACTION_SET` actions until all LEDs of the frame of (2) are installed. The FSM is now idle.
+4) While outputting `REFRESH_ACTION_SET`, `REFRESH_CMD_REFRESH` is sent. The FSM effectively ignores the `REFRESH_CMD_REFRESH` because a refresh is already occurring. The FSM continues outputting `REFRESH_ACTION_SET` actions until all LEDs of the frame of (2) are installed. The FSM is now idle.
 
 ### Typical Frame Queueing During Installation
 
 1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called. The frame has been installed entirely and the FSM is idle.
 
-2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM outputs a `FRAME_RELEASE_STANDARD` for the frame of (1) and outputs `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1) until all LEDs of the frame are cleared.
+2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM begins to output `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1) until all LEDs of the frame are cleared. The final `REFRESH_ACTION_CLEAR` (for the first LED of frame (1)) also outputs a `FRAME_RELEASE_STANDARD` for the frame of (1).
 
 3) The FSM begins to output `REFRESH_ACTION_SET` actions in the same order of the frame of (2).
 
-4) While outputting `REFRESH_ACTION_SET`, `REFRESH_CMD_UPDATE_TYPICAL` is sent with the same direction as the frame of (2). The FSM queues the frame update because the old typical frame is still being used for the current frame installation.
+4) While outputting `REFRESH_ACTION_SET`, `REFRESH_CMD_UPDATE_TYPICAL` is sent with the same direction as the frame of (2). The FSM buffers the frame update with no output, because the old typical frame is still in use for the current frame installation.
 
-5) The FSM continues to output `REFRESH_ACTION_SET` actions until all the LEDs of the frame of (2) are set. Once complete, the FSM outputs a `FRAME_RELEASE_TYPICAL` for the old typical frame. The FSM is now idle.
+5) The FSM continues to output `REFRESH_ACTION_SET` actions until all the LEDs of the frame of (2) are set. The FSM is now idle. The typical frame queued in (4) is *not* released or applied yet — it remains buffered and will only replace the current typical frame (releasing the old one with a `FRAME_RELEASE_TYPICAL_NORTH`/`FRAME_RELEASE_TYPICAL_SOUTH`) the next time a frame installation begins.
 
 ### Typical Frame Double Queueing During Installation
 
 1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called. The frame has been installed entirely and the FSM is idle.
 
-2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM outputs a `FRAME_RELEASE_STANDARD` for the frame of (1) and outputs `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1) until all LEDs of the frame are cleared.
+2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM begins to output `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1) until all LEDs of the frame are cleared. The final `REFRESH_ACTION_CLEAR` (for the first LED of frame (1)) also outputs a `FRAME_RELEASE_STANDARD` for the frame of (1).
 
 3) The FSM begins to output `REFRESH_ACTION_SET` actions in the same order of the frame of (2).
 
-4) While outputting `REFRESH_ACTION_SET`, `REFRESH_CMD_UPDATE_TYPICAL` is sent with the same direction as the frame of (2). The FSM queues the frame update because the old typical frame is still being used for the current frame installation.
+4) While outputting `REFRESH_ACTION_SET`, `REFRESH_CMD_UPDATE_TYPICAL` is sent with the same direction as the frame of (2). The FSM buffers the frame update with no output, because the old typical frame is still in use for the current frame installation.
 
-5) `REFRESH_CMD_UPDATE_TYPICAL` is sent again with the same direction as (4). The FSM outputs a `FRAME_RELEASE_QUEUED_TYPICAL` for old queued typical frame of (4). The FSM queues the new typical frame because the current typical frame is still being used for the current frame installation.
+5) `REFRESH_CMD_UPDATE_TYPICAL` is sent again with the same direction as (4). The FSM outputs a `FRAME_RELEASE_QUEUED_TYPICAL` for the old queued typical frame of (4), and buffers the new typical frame in its place, because the current typical frame is still in use for the current frame installation.
 
 ### New Frame Update During Installation
 
 1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called. The frame has been installed entirely and the FSM is idle.
 
-2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM outputs a `FRAME_RELEASE_STANDARD` for the frame of (1) and outputs `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1) until all LEDs of the frame are cleared.
+2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM begins to output `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1) until all LEDs of the frame are cleared. The final `REFRESH_ACTION_CLEAR` (for the first LED of frame (1)) also outputs a `FRAME_RELEASE_STANDARD` for the frame of (1).
 
 3) The FSM begins to output `REFRESH_ACTION_SET` actions in the same order of the frame of (2).
 
-4) While outputting `REFRESH_ACTION_SET`, `REFRESH_CMD_NEW_FRAME` is sent with the same direction as the frame of (2). The FSM stops installing the current frame and immediately prepares to install the new frame. It outputs a `FRAME_RELEASE_STANDARD` for the old frame and outputs `REFRESH_ACTION_CLEAR` in the reverse order of the frame of (2) starting from the most recently set LED in (3) until all LEDs in the frame are cleared.
+4) While outputting `REFRESH_ACTION_SET`, `REFRESH_CMD_NEW_FRAME` is sent with the same direction as the frame of (2). The FSM stops installing the current frame and immediately begins clearing it: it outputs `REFRESH_ACTION_CLEAR` actions in reverse order of the frame of (2), starting from the most recently set LED in (3), until all LEDs of the frame are cleared. The final `REFRESH_ACTION_CLEAR` (for the first LED of frame (2)) also outputs a `FRAME_RELEASE_STANDARD` for the frame of (2).
 
 5) The FSM outputs `REFRESH_ACTION_SET` in the same order of the frame of (4) until all LEDs in the frame are set. The FSM is now idle.
