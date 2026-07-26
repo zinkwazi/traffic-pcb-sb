@@ -3,7 +3,7 @@
  * 
  * Contains a finite state machine
  * run by the refresh task to handle
- * commands and update LEDs.
+ * commands to update LEDs.
  */
 
 #ifndef REFRESH_FSM_H_
@@ -14,6 +14,8 @@
 
 #include "main_types.h"
 #include "led_types.h"
+
+#define MAX_FRAME_SIZE          (512)
 
 typedef struct LEDSpeed {
     uint16_t ledNum; /* The Kicad LED number this speed corresponds to */
@@ -28,57 +30,14 @@ typedef struct LEDSpeed {
  * injection.
  */
 typedef enum {
+    REFRESH_ACTION_SET, /* set an LED to the provided color */
+    REFRESH_ACTION_CLEAR, /* clear the output of an LED */
+    REFRESH_ACTION_CLEAR_RANGE, /* clear the output of a range of LEDs */
     REFRESH_ACTION_NONE,
-    /* set an LED to the provided color */
-    REFRESH_ACTION_SET,
-    /* clear the output of an LED */
-    REFRESH_ACTION_CLEAR,
-    /* clear the output of a range of LEDs */
-    REFRESH_ACTION_CLEAR_RANGE,
-} RefreshFSMAction;
+} RefreshFSMActionType;
 
-typedef struct RefreshFSMOutput {
-    /**
-     * Whether the FSM is idle, indicating that
-     * the FSM can stop being ticked until a new
-     * command needs to be sent to it.
-     */
-    bool isIdle;
-    /**
-     * The frame index of the old frame that was
-     * that should be released. UINT32_MAX if there
-     * is not a frame to release.
-     */
-    uint32_t releaseOldFrameNdx;
-    /**
-     * The typical north frame index of the old typical
-     * frame that should be released. UINT32_MAX if
-     * there is not a frame to release.
-     */
-    uint32_t releaseOldTypicalNorthFrameNdx;
-    /**
-     * The typical south frame index of the old typical
-     * frame that should be released. UINT32_MAX if
-     * there is not a frame to release.
-     */
-    uint32_t releaseOldTypicalSouthFrameNdx;
-    /**
-     * The frame index of the queued frame that should
-     * be released. UINT32_MAX if there is not a frame
-     * to release.
-     */
-    uint32_t releaseQueuedFrameNdx;
-    /**
-     * The typical frame index of the queued typical
-     * frame that should be released. UINT32_MAX if
-     * there is not a frame to release.
-     */
-    uint32_t releaseQueuedTypicalFrameNdx;
-    /**
-     * The action the refresh task should take
-     * based on FSM logic.
-     */
-    RefreshFSMAction action;
+typedef struct RefreshFSMAction {
+    RefreshFSMActionType type;
     union {
         struct {
             uint16_t ledNum;
@@ -90,55 +49,70 @@ typedef struct RefreshFSMOutput {
         struct {
             uint32_t startLedNum;
         } clearRange;
-    } actionParams;
+    };
+} RefreshFSMAction;
+
+/**
+ * The type of frame release occurring by the refresh FSM.
+ */
+typedef enum {
+    REFRESH_FSM_FRAME_RELEASE_STANDARD,
+    REFRESH_FSM_FRAME_RELEASE_TYPICAL_NORTH,
+    REFRESH_FSM_FRAME_RELEASE_TYPICAL_SOUTH,
+    REFRESH_FSM_FRAME_RELEASE_QUEUED_TYPICAL,
+    REFRESH_FSM_FRAME_RELEASE_TYPES_COUNT,
+} RefreshFSMFrameReleaseType;
+
+/**
+ * A frame being released by the refresh FSM, which returns
+ * ownership to user code.
+ */
+typedef struct RefreshFSMFrameRelease {
+    uint32_t index;
+    RefreshFSMFrameReleaseType type;
+} RefreshFSMFrameRelease;
+
+typedef struct RefreshFSMFrameReleaseList {
+    RefreshFSMFrameRelease list[REFRESH_FSM_FRAME_RELEASE_TYPES_COUNT];
+    uint32_t len;
+} RefreshFSMFrameReleaseList;
+
+typedef struct RefreshFSMOutput {
+    /* Whether user code can stop ticking the FSM until a new command needs to be processed */
+    bool isIdle;
+    /* The frames the FSM is releasing back to user code ownership */
+    RefreshFSMFrameReleaseList framesToRelease;
+    /* The action user code should take based on FSM logic */
+    RefreshFSMAction action;
 } RefreshFSMOutput;
 
 typedef enum {
-    /**
-     * Install the provided LED frame to the board
-     * in the provided direction. If LEDs are off, this
-     * command starts instantly. If a frame is already
-     * on the board, this command slowly clears the board
-     * before starting to install the new frame. If a frame
-     * is already being cleared, this command quickly clears
-     * the board.
-     */
+    /* Installs the provided LED frame to the board in the provided direction */
     REFRESH_CMD_NEW_FRAME,
-    /**
-     * Update the typical LED speeds for the given
-     * direction used by the refresh FSM.
-     */
+    /* Clears then reinstalls the current LED frame, if any */
+    REFRESH_CMD_REFRESH,
+    /* Updates the typical LED speeds for the given direction */
     REFRESH_CMD_UPDATE_TYPICAL,
-    /**
-     * Turn on night mode. This will cause the board
-     * to be cleared the the previously stored direction.
-     */
+    /* Turns on night mode, during which LEDs will be turned off */
     REFRESH_CMD_NIGHT_MODE_ON,
-    /**
-     * Turn off night mode. This will cause the most
-     * recently received frame to be installed to the board.
-     */
+    /* Turns off night mode, allowing the current LED frame to be displayed */
     REFRESH_CMD_NIGHT_MODE_OFF,
-    /**
-     * no command.
-     */
     REFRESH_CMD_NONE,
 } RefreshFSMCommandType;
 
 typedef struct {
     RefreshFSMCommandType type;
-    /* The ledFrames index where this command's LED frame is stored. NUM_LED_FRAMES if unused. */
+    /* The ledFrames index where this command's LED frame is stored. Ownership is given to the FSM */
     uint32_t frameNdx;
-    /* The length of this command's LED frame. UINT32_MAX if unused. */
+    /* The length of this command's LED frame stored at frameNdx in ledFrames */
     uint32_t frameLen;
-    /* The animation and display direction. NO_DIR if unused. */
+    /* The animation and display direction */
     Direction dir;
 } RefreshFSMCommand;
 
 /**
- * Resources the refresh FSM needs to
- * do its job properly. These must exist
- * for the duration of use of the FSM.
+ * Resources the refresh FSM needs to do its job. These 
+ * must exist for the duration of use of the FSM.
  */
 typedef struct {
     /* the LED num to matrix register lookup table to determine if an LED is valid */
@@ -146,7 +120,7 @@ typedef struct {
     /* the length of LEDNumToReg */
     uint32_t LEDNumToRegLen;
     /* the frame array where input frames will be placed for the FSM */
-    LEDSpeed **LEDFrames;
+    LEDSpeed (*LEDFrames)[MAX_FRAME_SIZE];
     /* the length of LEDFrames */
     uint32_t LEDFramesLen;
     /* the LED color to display if an LED is considered slow */

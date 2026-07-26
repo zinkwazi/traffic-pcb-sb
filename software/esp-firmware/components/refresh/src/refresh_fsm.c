@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 #include "esp_log.h"
+#include "sdkconfig.h"
 
 #include "app_err.h"
 #include "esp_err.h"
@@ -35,34 +36,33 @@ typedef enum {
     REFRESH_FSM_CLEARED,
     /* the board has a frame installed */
     REFRESH_FSM_FRAME_INSTALLED,
+    REFRESH_FSM_STATE_COUNT,
 } RefreshFSMState;
 
 typedef struct RefreshFSM {
     /* the frame index of the LED that was just updated */
     uint32_t currLEDNdx;
-    /* the frame index of the current LED frame being installed. UINT32_MAX if none. */
+    /* the frame index of the current LED frame being installed. UINT32_MAX if none */
     uint32_t currFrameNdx;
-    /* the number of items in LEDFrames[currFrameNdx] */
     uint32_t currFrameLen;
-    /* the frame index of the next LED frame. This frame is the one to be installed next. UINT32_MAX if none. */
-    uint32_t nextFrameNdx;
-    /* the number of items in LEDFrames[nextFrameNdx] */
-    uint32_t nextFrameLen;
-    /* the frame index of the current north typical LED speeds frame, which must be max length. UINT32_MAX if none. */
+    /* the frame index of the current north typical LED speeds frame, which must be max length. UINT32_MAX if none */
     uint32_t currTypicalNorthFrameNdx;
-    /* the frame index of the next north typical LED speeds frame, which must be max length. UINT32_MAX if none. */
+    uint32_t currTypicalNorthFrameLen;
+    /* the frame index of the next north typical LED speeds frame, which must be max length. UINT32_MAX if none */
     uint32_t nextTypicalNorthFrameNdx;
-    /* the frame index of the current south typical LED speeds frame, which must be max length. UINT32_MAX if none. */
+    uint32_t nextTypicalNorthFrameLen;
+    /* the frame index of the current south typical LED speeds frame, which must be max length. UINT32_MAX if none */
     uint32_t currTypicalSouthFrameNdx;
-    /* the frame index of the next south typical LED speeds frame, which must be max length. UINT32_MAX if none. */
+    uint32_t currTypicalSouthFrameLen;
+    /* the frame index of the next south typical LED speeds frame, which must be max length. UINT32_MAX if none */
     uint32_t nextTypicalSouthFrameNdx;
+    uint32_t nextTypicalSouthFrameLen;
     /* the LED num to matrix register lookup table to determine if an LED is valid */
     LEDReg *LEDNumToReg;
     /* the length of LEDNumToReg */
     uint32_t LEDNumToRegLen;
     /* the frame array where input frames will be placed for the FSM */
-    LEDSpeed **LEDFrames;
-    /* the length of LEDFrames */
+    LEDSpeed (*LEDFrames)[MAX_FRAME_SIZE];
     uint32_t LEDFramesLen;
     /* the LED color to display if an LED is considered slow */
     Color slowLEDColor;
@@ -74,7 +74,7 @@ typedef struct RefreshFSM {
     RefreshFSMState state;
     /* the current animation and display direction. Note that the clearing direction is the opposite */
     Direction currDir;
-    /* the next animation and display direction. */
+    /* the next animation and display direction */
     Direction nextDir;
     /* whether night mode is currently active */
     bool nightMode;
@@ -83,13 +83,15 @@ typedef struct RefreshFSM {
 static RefreshFSM fsm;
 
 static void handleCommandNewFrame(RefreshFSMOutput *out, uint32_t frameNdx, uint32_t frameLen, Direction dir);
-static void handleCommandUpdateTypical(RefreshFSMOutput *out, uint32_t frameNdx, Direction dir);
+static void handleCommandRefresh(RefreshFSMOutput *out, Direction dir);
+static void handleCommandUpdateTypical(RefreshFSMOutput *out, uint32_t frameNdx, uint32_t frameLen, Direction dir);
 static void handleCommandNightModeOff(RefreshFSMOutput *out);
 static void handleCommandNightModeOn(void);
 static void handleStateWaitingForFrames(RefreshFSMOutput *out);
 static void handleStateInstallingFrame(RefreshFSMOutput *out);
 static void handleStateClearingFrame(RefreshFSMOutput *out);
 static void handleStateQuickClearingFrame(RefreshFSMOutput *out);
+static bool releaseFrame(RefreshFSMFrameReleaseList *framesToRelease, uint32_t index, RefreshFSMFrameReleaseType type);
 static bool iterateFrame(RefreshFSMOutput *out, bool setLED);
 static Color ledSpeedToColor(LEDSpeed speed, Direction dir);
 static char *refreshFSMStateName(RefreshFSMState state);
@@ -114,16 +116,19 @@ void refreshFSMInit(RefreshFSMResources *resources)
     assert(NULL != resources);
     assert(NULL != resources->LEDNumToReg);
     assert(NULL != resources->LEDFrames);
+    assert(0 != resources->LEDFramesLen);
 
     fsm.currLEDNdx = UINT32_MAX;
     fsm.currFrameNdx = UINT32_MAX;
     fsm.currFrameLen = 0;
-    fsm.nextFrameNdx = UINT32_MAX;
-    fsm.nextFrameLen = 0;
     fsm.currTypicalNorthFrameNdx = UINT32_MAX;
+    fsm.currTypicalNorthFrameLen = 0;
     fsm.nextTypicalNorthFrameNdx = UINT32_MAX;
+    fsm.nextTypicalNorthFrameLen = 0;
     fsm.currTypicalSouthFrameNdx = UINT32_MAX;
+    fsm.currTypicalSouthFrameLen = 0;
     fsm.nextTypicalSouthFrameNdx = UINT32_MAX;
+    fsm.nextTypicalSouthFrameLen = 0;
     fsm.LEDNumToReg = resources->LEDNumToReg;
     fsm.LEDNumToRegLen = resources->LEDNumToRegLen;
     fsm.LEDFrames = resources->LEDFrames;
@@ -155,11 +160,8 @@ RefreshFSMOutput refreshFSMTick(RefreshFSMCommand *cmd)
 
     RefreshFSMOutput out = {
         .isIdle = false,
-        .releaseOldFrameNdx = UINT32_MAX,
-        .releaseOldTypicalNorthFrameNdx = UINT32_MAX,
-        .releaseOldTypicalSouthFrameNdx = UINT32_MAX,
-        .releaseQueuedFrameNdx = UINT32_MAX,
-        .releaseQueuedTypicalFrameNdx = UINT32_MAX,
+        .framesToRelease.len = 0,
+        .action.type = REFRESH_ACTION_NONE,
     };
 
     /* handle command */
@@ -173,8 +175,11 @@ RefreshFSMOutput refreshFSMTick(RefreshFSMCommand *cmd)
         case REFRESH_CMD_NEW_FRAME:
             handleCommandNewFrame(&out, cmd->frameNdx, cmd->frameLen, cmd->dir);
             break;
+        case REFRESH_CMD_REFRESH:
+            handleCommandRefresh(&out, cmd->dir);
+            break;
         case REFRESH_CMD_UPDATE_TYPICAL:
-            handleCommandUpdateTypical(&out, cmd->frameNdx, cmd->dir);
+            handleCommandUpdateTypical(&out, cmd->frameNdx, cmd->frameLen, cmd->dir);
             break;
         case REFRESH_CMD_NIGHT_MODE_OFF:
             handleCommandNightModeOff(&out);
@@ -223,26 +228,21 @@ RefreshFSMOutput refreshFSMTick(RefreshFSMCommand *cmd)
 }
 
 /**
- * Transitions the FSM to the REFRESH_FSM_INSTALLING_FRAME
- * state. This is effectively an entry callback.
+ * Transitions the FSM to the REFRESH_FSM_INSTALLING_FRAME state.
  */
 static void transitionToInstallingFrame(RefreshFSMOutput *out)
 {
-    /* latch new frames */
-    if (UINT32_MAX != fsm.nextFrameNdx)
-    {
-        ESP_LOGI(TAG, "latching frameNdx from %lu to %lu", fsm.currFrameNdx, fsm.nextFrameNdx);
-        out->releaseOldFrameNdx = fsm.currFrameNdx;
-        fsm.currFrameNdx = fsm.nextFrameNdx;
-        fsm.currFrameLen = fsm.nextFrameLen;
-        fsm.currDir = fsm.nextDir;
-        fsm.nextFrameNdx = UINT32_MAX;
-    }
+    assert(NULL != out);
 
+    /* latch queued typical frames */
     if (UINT32_MAX != fsm.nextTypicalNorthFrameNdx)
     {
         ESP_LOGI(TAG, "latching typicalNorthNdx from %lu to %lu", fsm.currTypicalNorthFrameNdx, fsm.nextTypicalNorthFrameNdx);
-        out->releaseOldTypicalNorthFrameNdx = fsm.currTypicalNorthFrameNdx;
+        if (UINT32_MAX != fsm.currTypicalNorthFrameNdx)
+        {
+            bool released = releaseFrame(&out->framesToRelease, fsm.currTypicalNorthFrameNdx, REFRESH_FSM_FRAME_RELEASE_TYPICAL_NORTH);
+            assert(released && "failed to release current typical north frame");
+        }
         fsm.currTypicalNorthFrameNdx = fsm.nextTypicalNorthFrameNdx;
         fsm.nextTypicalNorthFrameNdx = UINT32_MAX;
     }
@@ -250,7 +250,11 @@ static void transitionToInstallingFrame(RefreshFSMOutput *out)
     if (UINT32_MAX != fsm.nextTypicalSouthFrameNdx)
     {
         ESP_LOGI(TAG, "latching typicalSouthNdx from %lu to %lu", fsm.currTypicalSouthFrameNdx, fsm.nextTypicalSouthFrameNdx);
-        out->releaseOldTypicalSouthFrameNdx = fsm.currTypicalSouthFrameNdx;
+        if (UINT32_MAX != fsm.currTypicalSouthFrameNdx)
+        {
+            bool released = releaseFrame(&out->framesToRelease, fsm.currTypicalSouthFrameNdx, REFRESH_FSM_FRAME_RELEASE_TYPICAL_SOUTH);
+            assert(released && "failed to release current typical south frame");
+        }
         fsm.currTypicalSouthFrameNdx = fsm.nextTypicalSouthFrameNdx;
         fsm.nextTypicalSouthFrameNdx = UINT32_MAX;
     }
@@ -261,44 +265,44 @@ static void transitionToInstallingFrame(RefreshFSMOutput *out)
 }
 
 /**
- * Checks whether it is valid to transition from the
- * REFRESH_FSM_WAITING_FOR_FRAMES state to the
- * REFRESH_FSM_INSTALLING_FRAME state and transitions if true.
+ * Attempts to transition from the REFRESH_FSM_WAITING_FOR_FRAMES
+ * state to the REFRESH_FSM_INSTALLING_FRAME state.
  */
 static void tryTransitionFromWaitingForFrames(RefreshFSMOutput *out)
 {
     const bool haveBothTypicalFrames = (fsm.nextTypicalNorthFrameNdx != UINT32_MAX) &&
                                        (fsm.nextTypicalSouthFrameNdx != UINT32_MAX);
-    if (haveBothTypicalFrames && fsm.nextFrameNdx != UINT32_MAX)
+    if (haveBothTypicalFrames && fsm.currFrameNdx != UINT32_MAX)
     {
         transitionToInstallingFrame(out);
     }
 }
 
 /**
- * Updates the FSM state to start installing
- * the new LED frame.
+ * Updates the FSM state to start installing the new LED frame.
  * 
- * @note If LEDs are off, the new frame starts 
- * being installed instantly. If a frame is
- * already on the board, the board will start being
- * cleared. If the board is already being cleared,
- * the board will be cleared quickly.
+ * @note If LEDs are off, the new frame starts being installed instantly.
+ * If a frame is already installed, the board will start being cleared.
+ * If the board is already being cleared, the board will be cleared quickly.
  * 
- * @param frameNdx The index in LEDFrames of the new
- * typical speed frame.
- * @param frameLen The length of the frame indexed
- * by frameNdx in LEDFrames.
- * @param dir The traffic direction this frame
- * corresponds to.
+ * @param frameNdx The index in LEDFrames of the new frame.
+ * @param frameLen The length of the new frame.
+ * @param dir The traffic direction of the new frame.
  */
 static void handleCommandNewFrame(RefreshFSMOutput *out, uint32_t frameNdx, uint32_t frameLen, Direction dir)
 {
-    /* buffer latest frame */
-    out->releaseQueuedFrameNdx = fsm.nextFrameNdx;
-    fsm.nextFrameNdx = frameNdx;
-    fsm.nextFrameLen = frameLen;
-    fsm.nextDir = dir;
+    assert(NULL != out);
+    assert(UINT32_MAX != frameNdx);
+
+    /* update current frame */
+    if (UINT32_MAX != fsm.currFrameNdx)
+    {
+        bool released = releaseFrame(&out->framesToRelease, fsm.currFrameNdx, REFRESH_FSM_FRAME_RELEASE_STANDARD);
+        assert(released && "failed to release queued standard frame");
+    }
+    fsm.currFrameNdx = frameNdx;
+    fsm.currFrameLen = frameLen;
+    fsm.currDir = dir;
 
     /* manage FSM state */
     switch (fsm.state)
@@ -323,6 +327,39 @@ static void handleCommandNewFrame(RefreshFSMOutput *out, uint32_t frameNdx, uint
         case REFRESH_FSM_FRAME_INSTALLED:
             fsm.state = REFRESH_FSM_CLEARING_FRAME;
             break;
+        default:
+            assert(0 && "encountered unknown refresh FSM state");
+            break;
+    }
+}
+
+static void handleCommandRefresh(RefreshFSMOutput *out, Direction dir)
+{
+    assert(NULL != out);
+    
+    switch (fsm.state)
+    {
+        case REFRESH_FSM_WAITING_FOR_FRAMES:
+            /* falls through */
+        case REFRESH_FSM_INSTALLING_FRAME:
+            /* falls through */
+        case REFRESH_FSM_CLEARING_FRAME:
+            /* falls through */
+        case REFRESH_FSM_QUICK_CLEARING_FRAME:
+            /* falls through */
+            break;
+        case REFRESH_FSM_CLEARED:
+            if (!fsm.nightMode)
+            {
+                transitionToInstallingFrame(out);
+            }
+            break;
+        case REFRESH_FSM_FRAME_INSTALLED:
+            fsm.state = REFRESH_FSM_CLEARING_FRAME;
+            break;
+        default:
+            assert(0 && "encountered unknown refresh FSM state");
+            break;
     }
 }
 
@@ -336,23 +373,38 @@ static void handleCommandNewFrame(RefreshFSMOutput *out, uint32_t frameNdx, uint
  * frame that must be unreserved.
  * @param frameNdx The index in LEDFrames of the new
  * typical speed frame.
+ * @param frameLen The length of the frame.
  * @param dir The traffic direction this typical
  * speed frame corresponds to.
  */
-static void handleCommandUpdateTypical(RefreshFSMOutput *out, uint32_t frameNdx, Direction dir)
+static void handleCommandUpdateTypical(RefreshFSMOutput *out, uint32_t frameNdx, uint32_t frameLen, Direction dir)
 {
+    assert(NULL != out);
+    assert(UINT32_MAX != frameNdx);
+    assert(0 != frameLen);
+
     /* update buffered typical direction */
     switch (dir)
     {
         case NORTH:
             ESP_LOGI(TAG, "buffered typicalNorthNdx %lu switched to ndx %lu", fsm.nextTypicalNorthFrameNdx, frameNdx);
-            out->releaseQueuedTypicalFrameNdx = fsm.nextTypicalNorthFrameNdx;
+            if (UINT32_MAX != fsm.nextTypicalNorthFrameNdx)
+            {
+                bool released = releaseFrame(&out->framesToRelease, fsm.nextTypicalNorthFrameNdx, REFRESH_FSM_FRAME_RELEASE_QUEUED_TYPICAL);
+                assert(released && "failed to release queued typical frame");
+            }
             fsm.nextTypicalNorthFrameNdx = frameNdx;
+            fsm.nextTypicalNorthFrameLen = frameLen;
             break;
         case SOUTH:
             ESP_LOGI(TAG, "buffered typicalSouthNdx %lu switched to ndx %lu", fsm.nextTypicalSouthFrameNdx, frameNdx);
-            out->releaseQueuedTypicalFrameNdx = fsm.nextTypicalSouthFrameNdx;
+            if (UINT32_MAX != fsm.nextTypicalSouthFrameNdx)
+            {
+                bool released = releaseFrame(&out->framesToRelease, fsm.nextTypicalSouthFrameNdx, REFRESH_FSM_FRAME_RELEASE_QUEUED_TYPICAL);
+                assert(released && "failed to release queued typical frame");
+            }
             fsm.nextTypicalSouthFrameNdx = frameNdx;
+            fsm.nextTypicalSouthFrameLen = frameLen;
             break;
         default:
             assert(0 && "encountered bad direction");
@@ -376,6 +428,8 @@ static void handleCommandUpdateTypical(RefreshFSMOutput *out, uint32_t frameNdx,
  */
 static void handleCommandNightModeOff(RefreshFSMOutput *out)
 {
+    assert(NULL != out);
+
     fsm.nightMode = false;
     switch (fsm.state)
     {
@@ -416,8 +470,9 @@ static void handleCommandNightModeOn(void)
  */
 static void handleStateWaitingForFrames(RefreshFSMOutput *out)
 {
+    assert(NULL != out);
+
     out->isIdle = true;
-    out->action = REFRESH_ACTION_NONE;
 }
 
 /**
@@ -457,21 +512,16 @@ static void handleStateClearingFrame(RefreshFSMOutput *out)
     const bool setLED = false;
     bool done = iterateFrame(out, setLED);
 
-    if (done)
-    {
-        if (!fsm.nightMode)
-        {
-            out->isIdle = false;
-            transitionToInstallingFrame(out);
-        } else
-        {
-            out->isIdle = true;
-            fsm.state = REFRESH_FSM_CLEARED;
-        }
-        return;
-    }
+    if (!done) return;
 
-    out->isIdle = false;
+    if (!fsm.nightMode)
+    {
+        transitionToInstallingFrame(out);
+    } else
+    {
+        out->isIdle = true;
+        fsm.state = REFRESH_FSM_CLEARED;
+    }
 }
 
 /**
@@ -488,15 +538,11 @@ static void handleStateQuickClearingFrame(RefreshFSMOutput *out)
 {
     assert(NULL != out);
 
-    out->action = REFRESH_ACTION_CLEAR_RANGE;
-    out->actionParams.clearRange.startLedNum = fsm.currLEDNdx;
-
-    out->releaseOldFrameNdx = fsm.currFrameNdx;
-    fsm.currFrameNdx = UINT32_MAX;
+    out->action.type = REFRESH_ACTION_CLEAR_RANGE;
+    out->action.clearRange.startLedNum = fsm.currLEDNdx;
 
     if (!fsm.nightMode)
     {
-        out->isIdle = false;
         transitionToInstallingFrame(out);
     } else
     {
@@ -506,13 +552,36 @@ static void handleStateQuickClearingFrame(RefreshFSMOutput *out)
 }
 
 /**
+ * Adds the frame to the list of frames to release.
+ * 
+ * @param framesToRelease The list to add the frame to release to.
+ * @param index The ledFrames index of the frame to release.
+ * @param type The type of release.
+ * 
+ * @returns True if the frame was added to the list.
+ * False if the list was full.
+ */
+static bool releaseFrame(RefreshFSMFrameReleaseList *framesToRelease, uint32_t index, RefreshFSMFrameReleaseType type)
+{
+    assert(NULL != framesToRelease);
+    if (framesToRelease->len >= REFRESH_FSM_FRAME_RELEASE_TYPES_COUNT) return false;
+
+    framesToRelease->list[framesToRelease->len].index = index;
+    framesToRelease->list[framesToRelease->len].type = type;
+    framesToRelease->len++;
+
+    return true;
+}
+
+/**
  * Iterates through the LEDs of the current frame, either
  * setting the LED color or clearing the LED.
  * 
  * @param fsm The refresh FSM.
  * @param[out] out Upstream output for communication
  * with the task running the FSM.
- * @param setLED Whether to set or clear the LED.
+ * @param setLED Whether to set or clear the LED. If clearing, the interation
+ * direction is reversed.
  * 
  * @returns True if iteration is complete, false otherwise.
  */
@@ -524,37 +593,56 @@ static bool iterateFrame(RefreshFSMOutput *out, bool setLED)
 
     /* find next LED */
     bool foundValidLED = false;
-    for (; fsm.currLEDNdx < fsm.currFrameLen; fsm.currLEDNdx++)
+    if (setLED)
     {
-        speed = fsm.LEDFrames[fsm.currFrameNdx][fsm.currLEDNdx];
-        if (speed.ledNum >= fsm.LEDNumToRegLen) continue;
-        if (isLEDValid(fsm.LEDNumToReg[speed.ledNum]))
+        /* iterate in forward direction */
+        for (; fsm.currLEDNdx < fsm.currFrameLen; fsm.currLEDNdx++)
         {
-            foundValidLED = true;
-            break;
+            speed = fsm.LEDFrames[fsm.currFrameNdx][fsm.currLEDNdx];
+            if (speed.ledNum >= fsm.LEDNumToRegLen) continue;
+            if (isLEDValid(fsm.LEDNumToReg[speed.ledNum]))
+            {
+                foundValidLED = true;
+                break;
+            }
+        }
+    } else
+    {
+        /* iterate in reverse direction */
+        fsm.currLEDNdx--; // index is ahead by 1
+        for (; fsm.currLEDNdx != UINT32_MAX; fsm.currLEDNdx--)
+        {
+            speed = fsm.LEDFrames[fsm.currFrameNdx][fsm.currLEDNdx];
+            if (speed.ledNum >= fsm.LEDNumToRegLen) continue;
+            if (isLEDValid(fsm.LEDNumToReg[speed.ledNum]))
+            {
+                foundValidLED = true;
+                break;
+            }
         }
     }
+
 
     /* generate output action */
     if (foundValidLED)
     {
-        fsm.currLEDNdx++;
         if (setLED)
         {
-            out->action = REFRESH_ACTION_SET;
-            out->actionParams.set.ledNum = speed.ledNum;
-            out->actionParams.set.color = ledSpeedToColor(speed, fsm.currDir);
+            fsm.currLEDNdx++;
+            out->action.type = REFRESH_ACTION_SET;
+            out->action.set.ledNum = speed.ledNum;
+            out->action.set.color = ledSpeedToColor(speed, fsm.currDir);
         } else
         {
-            out->action = REFRESH_ACTION_CLEAR;
-            out->actionParams.clear.ledNum = speed.ledNum;
+            out->action.type = REFRESH_ACTION_CLEAR;
+            out->action.clear.ledNum = speed.ledNum;
         }
     } else
     {
-        out->action = REFRESH_ACTION_NONE;
+        out->action.type = REFRESH_ACTION_NONE;
     }
 
-    return fsm.currLEDNdx >= fsm.currFrameLen;
+    return fsm.currLEDNdx >= fsm.currFrameLen || fsm.currLEDNdx == 0;
 }
 
 /**
@@ -607,6 +695,7 @@ static char *refreshFSMStateName(RefreshFSMState state)
         case REFRESH_FSM_QUICK_CLEARING_FRAME: return "QUICK_CLEARING_FRAME";
         case REFRESH_FSM_CLEARED: return "CLEARED";
         case REFRESH_FSM_FRAME_INSTALLED: return "FRAME_INSTALLED";
+        case REFRESH_FSM_STATE_COUNT: return "STATE_COUNT";
     }
     return "UNKNOWN";
 }

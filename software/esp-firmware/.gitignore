@@ -9,3 +9,4 @@ configurations/sdkconfig.dev_*
 configurations/sdkconfig.prod_*
 configurations/sdkconfig.new_dev_*
 configurations/sdkconfig.new_prod_*
+sdkconfig

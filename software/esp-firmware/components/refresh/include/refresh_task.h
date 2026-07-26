@@ -22,8 +22,6 @@
 
 #include "refresh_fsm.h"
 
-#define MAX_FRAME_SIZE          (512)
-
 esp_err_t createRefreshTask(TaskHandle_t *handle, const UBaseType_t prio);
 esp_err_t refreshLEDs(LEDSpeed *data, uint32_t dataLen, Direction dir, TickType_t blockTime);
 esp_err_t refreshEnableNightMode(TickType_t blockTime);
