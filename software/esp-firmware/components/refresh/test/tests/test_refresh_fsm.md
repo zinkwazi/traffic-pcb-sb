@@ -226,3 +226,29 @@ The refresh FSM takes in commands from user code and outputs actions in response
 5) `REFRESH_CMD_NEW_FRAME` is sent again, for frame C. Because frame B is already queued, the FSM releases it with a `FRAME_RELEASE_QUEUED_STANDARD` and buffers frame C in its place. Typical C, queued in (4), is unaffected.
 
 6) `REFRESH_CMD_UPDATE_TYPICAL` is sent for SOUTH (typical D). Nothing was previously queued for SOUTH, so typical D is only buffered -- but this also completes both directions' typical data, so the FSM immediately begins installing frame C (the frame left queued after (5)). Frame A is released with a `FRAME_RELEASE_STANDARD`, since it was only ever held as the current frame while queueing occurred, never displayed. Neither typical C nor typical D displaces a current typical -- both are the first ever latched for their direction -- so no typical is released here. The FSM outputs `REFRESH_ACTION_SET` actions in the order of frame C until all LEDs are set, then goes idle. Across the whole sequence, frame B and typical A were each released exactly once as displaced queued items, frame A was released once when finally replaced, and frame C, typical C, and typical D are never released, since they are the frame and typicals now actively in use.
+
+### Night Mode Enabled While Waiting For Frames
+
+1) The FSM is freshly initialized (`REFRESH_FSM_WAITING_FOR_FRAMES`, no frame or typical data yet). `REFRESH_CMD_NIGHT_MODE_ON` is sent before anything else has arrived. The FSM sets its night mode flag; since nothing is displayed yet, no output occurs and the FSM remains idle.
+
+2) `REFRESH_CMD_NEW_FRAME` is sent for frame (1). Since the FSM has no current frame yet, frame (1) is latched directly as the current frame. No output or release occurs; the FSM is still waiting for typical data.
+
+3) `REFRESH_CMD_UPDATE_TYPICAL` is sent for NORTH, then for SOUTH. Once both directions have typical data and a current frame exists, the FSM has everything it needs to begin installing frame (1) -- but because night mode is on, it must not light the board. Ownership of frame (1) and both typical frames is still fully consumed (no release, since all three are being latched in for the first time), but the FSM does not output any `REFRESH_ACTION_SET` actions and remains idle with the board dark, exactly as if it had gone through `REFRESH_FSM_CLEARED` -- it just never had anything on the board to clear first.
+
+4) `REFRESH_CMD_NIGHT_MODE_OFF` is sent. Because no other frame or typical update was ever queued while dark, the FSM installs frame (1) -- one LED per tick, in its original order -- with no release, since nothing is being replaced. Once fully installed, the FSM is idle.
+
+### Night Mode Off Cancels A Pending Clear
+
+1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called for frame (1). The frame has been installed entirely and the FSM is idle.
+
+2) `REFRESH_CMD_NIGHT_MODE_ON` is sent. The FSM begins clearing frame (1) from the board, one LED per tick, in reverse order.
+
+3) While outputting `REFRESH_ACTION_CLEAR`, before frame (1) has finished clearing, `REFRESH_CMD_NIGHT_MODE_OFF` is sent. Because the board is still mid-clear (not yet `REFRESH_FSM_CLEARED`), this has no immediate effect beyond clearing the night mode flag -- clearing continues normally, uninterrupted, on this and subsequent ticks.
+
+4) Once frame (1) is fully cleared, the FSM re-checks the night mode flag at that moment, not the value it had when clearing began. Because it is now off, the FSM does not go dark -- instead it immediately reinstalls frame (1), one LED per tick, in its original order. No frame or typical frame is ever released throughout this entire sequence, since frame (1) was never replaced, only cleared and redisplayed.
+
+### Night Mode Off Is A No-Op When The Board Is Not Dark
+
+1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called for frame (1). The frame has been installed entirely, night mode has never been turned on, and the FSM is idle.
+
+2) `REFRESH_CMD_NIGHT_MODE_OFF` is sent. Because the FSM is not in `REFRESH_FSM_CLEARED`, this has no effect beyond confirming the night mode flag is off (it already was). No output is produced, no release occurs, and the FSM remains idle with frame (1) undisturbed.

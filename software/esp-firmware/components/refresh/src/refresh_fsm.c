@@ -282,11 +282,19 @@ static void transitionToInstallingFrame(RefreshFSMOutput *out)
  */
 static void tryTransitionFromWaitingForFrames(RefreshFSMOutput *out)
 {
+
+
     const bool haveBothTypicalFrames = (fsm.nextTypicalNorthFrameNdx != UINT32_MAX) &&
                                        (fsm.nextTypicalSouthFrameNdx != UINT32_MAX);
     if (haveBothTypicalFrames && fsm.currFrameNdx != UINT32_MAX)
     {
-        transitionToInstallingFrame(out);
+        if (!fsm.nightMode)
+        {
+            transitionToInstallingFrame(out);
+        } else
+        {
+            fsm.state = REFRESH_FSM_CLEARED;
+        }
     }
 }
 
