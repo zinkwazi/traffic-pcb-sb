@@ -45,18 +45,17 @@ typedef struct RefreshFSM {
     /* the frame index of the current LED frame being installed. UINT32_MAX if none */
     uint32_t currFrameNdx;
     uint32_t currFrameLen;
+    /* the frame index of the next LED frame to be installed. UINT32_MAX if none */
+    uint32_t nextFrameNdx;
+    uint32_t nextFrameLen;
     /* the frame index of the current north typical LED speeds frame, which must be max length. UINT32_MAX if none */
     uint32_t currTypicalNorthFrameNdx;
-    uint32_t currTypicalNorthFrameLen;
     /* the frame index of the next north typical LED speeds frame, which must be max length. UINT32_MAX if none */
     uint32_t nextTypicalNorthFrameNdx;
-    uint32_t nextTypicalNorthFrameLen;
     /* the frame index of the current south typical LED speeds frame, which must be max length. UINT32_MAX if none */
     uint32_t currTypicalSouthFrameNdx;
-    uint32_t currTypicalSouthFrameLen;
     /* the frame index of the next south typical LED speeds frame, which must be max length. UINT32_MAX if none */
     uint32_t nextTypicalSouthFrameNdx;
-    uint32_t nextTypicalSouthFrameLen;
     /* the LED num to matrix register lookup table to determine if an LED is valid */
     LEDReg *LEDNumToReg;
     /* the length of LEDNumToReg */
@@ -121,14 +120,12 @@ void refreshFSMInit(RefreshFSMResources *resources)
     fsm.currLEDNdx = UINT32_MAX;
     fsm.currFrameNdx = UINT32_MAX;
     fsm.currFrameLen = 0;
+    fsm.nextFrameNdx = UINT32_MAX;
+    fsm.nextFrameLen = 0;
     fsm.currTypicalNorthFrameNdx = UINT32_MAX;
-    fsm.currTypicalNorthFrameLen = 0;
     fsm.nextTypicalNorthFrameNdx = UINT32_MAX;
-    fsm.nextTypicalNorthFrameLen = 0;
     fsm.currTypicalSouthFrameNdx = UINT32_MAX;
-    fsm.currTypicalSouthFrameLen = 0;
     fsm.nextTypicalSouthFrameNdx = UINT32_MAX;
-    fsm.nextTypicalSouthFrameLen = 0;
     fsm.LEDNumToReg = resources->LEDNumToReg;
     fsm.LEDNumToRegLen = resources->LEDNumToRegLen;
     fsm.LEDFrames = resources->LEDFrames;
@@ -234,7 +231,22 @@ static void transitionToInstallingFrame(RefreshFSMOutput *out)
 {
     assert(NULL != out);
 
-    /* latch queued typical frames */
+    /* latch queued frames */
+    if (UINT32_MAX != fsm.nextFrameNdx)
+    {
+        ESP_LOGI(TAG, "latching currNdx from %lu to %lu", fsm.currFrameNdx, fsm.nextFrameNdx);
+        if (UINT32_MAX != fsm.currFrameNdx)
+        {
+            bool released = releaseFrame(&out->framesToRelease, fsm.currFrameNdx, REFRESH_FSM_FRAME_RELEASE_STANDARD);
+            assert(released && "failed to release current frame");
+        }
+        fsm.currFrameNdx = fsm.nextFrameNdx;
+        fsm.currFrameLen = fsm.nextFrameLen;
+        fsm.currDir = fsm.nextDir;
+        fsm.nextFrameNdx = UINT32_MAX;
+        fsm.nextFrameLen = 0;
+    }
+
     if (UINT32_MAX != fsm.nextTypicalNorthFrameNdx)
     {
         ESP_LOGI(TAG, "latching typicalNorthNdx from %lu to %lu", fsm.currTypicalNorthFrameNdx, fsm.nextTypicalNorthFrameNdx);
@@ -294,15 +306,27 @@ static void handleCommandNewFrame(RefreshFSMOutput *out, uint32_t frameNdx, uint
     assert(NULL != out);
     assert(UINT32_MAX != frameNdx);
 
-    /* update current frame */
-    if (UINT32_MAX != fsm.currFrameNdx)
+    /* buffer new frame */
+    if (UINT32_MAX == fsm.currFrameNdx)
     {
-        bool released = releaseFrame(&out->framesToRelease, fsm.currFrameNdx, REFRESH_FSM_FRAME_RELEASE_STANDARD);
-        assert(released && "failed to release queued standard frame");
+        /* latch new frame */
+        fsm.currFrameNdx = frameNdx;
+        fsm.currFrameLen = frameLen;
+        fsm.currDir = dir;
+    } else
+    {
+        /* buffer new frame */
+        if (UINT32_MAX != fsm.nextFrameNdx)
+        {
+            bool released = releaseFrame(&out->framesToRelease, fsm.nextFrameNdx, REFRESH_FSM_FRAME_RELEASE_QUEUED_STANDARD);
+            assert(released && "failed to release queued standard frame");
+        }
+        fsm.nextFrameNdx = frameNdx;
+        fsm.nextFrameLen = frameLen;
+        fsm.nextDir = dir;
     }
-    fsm.currFrameNdx = frameNdx;
-    fsm.currFrameLen = frameLen;
-    fsm.currDir = dir;
+
+
 
     /* manage FSM state */
     switch (fsm.state)
@@ -394,7 +418,6 @@ static void handleCommandUpdateTypical(RefreshFSMOutput *out, uint32_t frameNdx,
                 assert(released && "failed to release queued typical frame");
             }
             fsm.nextTypicalNorthFrameNdx = frameNdx;
-            fsm.nextTypicalNorthFrameLen = frameLen;
             break;
         case SOUTH:
             ESP_LOGI(TAG, "buffered typicalSouthNdx %lu switched to ndx %lu", fsm.nextTypicalSouthFrameNdx, frameNdx);
@@ -404,7 +427,6 @@ static void handleCommandUpdateTypical(RefreshFSMOutput *out, uint32_t frameNdx,
                 assert(released && "failed to release queued typical frame");
             }
             fsm.nextTypicalSouthFrameNdx = frameNdx;
-            fsm.nextTypicalSouthFrameLen = frameLen;
             break;
         default:
             assert(0 && "encountered bad direction");

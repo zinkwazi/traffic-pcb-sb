@@ -22,15 +22,7 @@ The refresh FSM takes in commands from user code and outputs actions in response
 
 3) The FSM outputs `REFRESH_ACTION_SET` actions in the order of the frame of (1) until all LEDs of the frame are set. The FSM is now idle.
 
-### New Frame Installation Different Direction
-
-1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called. The frame has been installed entirely and the FSM is idle.
-
-2) `REFRESH_CMD_NEW_FRAME` is sent with a different direction from what is already installed. The FSM outputs `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1) until all LEDs of the frame are cleared.
-
-3) The FSM outputs `REFRESH_ACTION_SET` actions in the same order of the frame of (2) until all LEDs of the frame are set. The FSM is now idle.
-
-### New Frame Installation Same Direction
+### New Frame Installation
 
 1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called. The frame has been installed entirely and the FSM is idle.
 
