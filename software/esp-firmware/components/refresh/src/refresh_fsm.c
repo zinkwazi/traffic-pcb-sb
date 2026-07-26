@@ -473,6 +473,9 @@ static void handleCommandNightModeOn(void)
     fsm.nightMode = true;
     switch (fsm.state)
     {
+        case REFRESH_FSM_INSTALLING_FRAME:
+            fsm.state = REFRESH_FSM_CLEARING_FRAME;
+            break;
         case REFRESH_FSM_FRAME_INSTALLED:
             fsm.state = REFRESH_FSM_CLEARING_FRAME;
             break;

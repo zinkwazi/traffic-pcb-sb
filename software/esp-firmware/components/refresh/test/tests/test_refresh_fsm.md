@@ -122,3 +122,107 @@ The refresh FSM takes in commands from user code and outputs actions in response
    - Below `CONFIG_SLOW_CUTOFF_PERCENT`: `slowLEDColor`.
    - At or above `CONFIG_SLOW_CUTOFF_PERCENT` but below `CONFIG_MEDIUM_CUTOFF_PERCENT`: `mediumLEDColor`.
    - At or above `CONFIG_MEDIUM_CUTOFF_PERCENT`: `fastLEDColor`.
+
+### Night Mode Enabled During Installation
+
+1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called. The frame has been installed entirely and the FSM is idle.
+
+2) `REFRESH_CMD_NEW_FRAME` is sent with the same direction as is already installed. The FSM begins to output `REFRESH_ACTION_CLEAR` actions in the reverse order of the frame of (1) until all LEDs of the frame are cleared. The final `REFRESH_ACTION_CLEAR` (for the first LED of frame (1)) also outputs a `FRAME_RELEASE_STANDARD` for the frame of (1).
+
+3) The FSM begins to output `REFRESH_ACTION_SET` actions in the same order of the frame of (2).
+
+4) While outputting `REFRESH_ACTION_SET`, `REFRESH_CMD_NIGHT_MODE_ON` is sent. Because night mode must darken the board regardless of what the FSM is doing, the FSM stops installing frame (2) and immediately begins clearing the LEDs that have already been set, in reverse order, starting from the most recently set LED in (3) -- the same way a `REFRESH_CMD_NEW_FRAME` sent mid-install would interrupt installation. No frame is released, since frame (2) is not being replaced, only its display is being suppressed.
+
+5) Once the already-installed LEDs are cleared, because night mode is still on, the FSM does not reinstall frame (2). Instead the board stays dark and the FSM goes idle, remaining idle on subsequent `REFRESH_CMD_NONE` ticks until further commands arrive.
+
+### Multiple Frames Queued While Waiting For Frames
+
+1) The FSM is freshly initialized (`REFRESH_FSM_WAITING_FOR_FRAMES`, no typical frames for either direction yet). `REFRESH_CMD_NEW_FRAME` is sent for frame A. Since the FSM has no current frame yet, frame A is latched directly as the current frame. No output or release occurs, and the FSM remains idle (still waiting for typical data).
+
+2) `REFRESH_CMD_NEW_FRAME` is sent again, for frame B (same direction as (1)). Since a current frame already exists, frame B is buffered as the next frame to install. No release occurs yet, since nothing was previously queued. The FSM remains idle.
+
+3) `REFRESH_CMD_NEW_FRAME` is sent a third time, for frame C (same direction). Because frame B is already queued as the next frame, the FSM immediately releases frame B with a `FRAME_RELEASE_QUEUED_STANDARD` and buffers frame C as the next frame in its place. The FSM remains idle, still waiting for typical data.
+
+4) `REFRESH_CMD_UPDATE_TYPICAL` is sent for one direction, then the other. Once both directions have typical data, the FSM releases frame A with a `FRAME_RELEASE_STANDARD` and begins installing frame C -- frame B was already released in (3) and is never installed, and frame A is released rather than displayed once frame C takes its place as the queued frame.
+
+### Night Mode Round Trip Retains Frame Ownership
+
+1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called for frame (1). The frame has been installed entirely and the FSM is idle.
+
+2) `REFRESH_CMD_NIGHT_MODE_ON` is sent. The FSM clears frame (1) from the board, one LED per tick, in reverse order. No frame is released during this clear -- frame (1) is not being replaced, only hidden.
+
+3) Once fully cleared, because night mode is on, the FSM goes idle with the board dark rather than reinstalling frame (1). No release occurs. The FSM remains idle on further `REFRESH_CMD_NONE` ticks.
+
+4) `REFRESH_CMD_NIGHT_MODE_OFF` is sent. Because no other frame or typical update was ever queued while the board was dark, the FSM reinstalls frame (1) -- the same frame it held onto since (1) -- one LED per tick, in the same order as its original installation. No frame is released during this reinstall, since frame (1) was never replaced, only redisplayed. Once fully installed, the FSM is idle again, having never released or reallocated frame (1) or either typical frame throughout the entire round trip.
+
+### Typical Frame Double Queueing During Clearing
+
+1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called for frame (1). The frame has been installed entirely and the FSM is idle.
+
+2) `REFRESH_CMD_NEW_FRAME` is sent for frame (2), with the same direction as is already installed. The FSM queues frame (2) and begins to output `REFRESH_ACTION_CLEAR` actions in the reverse order of frame (1).
+
+3) While outputting `REFRESH_ACTION_CLEAR`, `REFRESH_CMD_UPDATE_TYPICAL` is sent for typical frame A, with the same direction as frame (2). The FSM buffers typical frame A with no release, since nothing was previously queued for that direction. Clearing continues uninterrupted in the same tick.
+
+4) Immediately after, `REFRESH_CMD_UPDATE_TYPICAL` is sent again for the same direction, for typical frame B. Because typical frame A is already queued, the FSM immediately releases it with a `FRAME_RELEASE_QUEUED_TYPICAL` and buffers typical frame B in its place -- typical frame A is never latched in or used for a single LED's color. Clearing continues uninterrupted in the same tick.
+
+5) Clearing continues until the final `REFRESH_ACTION_CLEAR` (for the first LED of frame (1)), which releases frame (1) with a `FRAME_RELEASE_STANDARD` and the typical frame that was in use for frame (1) with a `FRAME_RELEASE_TYPICAL_NORTH`/`FRAME_RELEASE_TYPICAL_SOUTH` (depending on direction), in the same output. Typical frame B, queued in (4), is latched in as the new current typical frame for that direction -- it is not released, since it is now in active use.
+
+6) The FSM outputs `REFRESH_ACTION_SET` actions in the same order of frame (2) until all LEDs of the frame are set. The FSM is now idle. Across the whole sequence, frame (1) and the original typical frame were each released exactly once, typical frame A was released exactly once (as a displaced queued frame, never installed), and frame (2) and typical frame B were never released, since they are the frame and typical frame now actively in use.
+
+### Independent Typical Frame Queues Per Direction
+
+1) The FSM has typical frames for all directions and a frame has been installed entirely. The FSM is idle.
+
+2) `REFRESH_CMD_UPDATE_TYPICAL` is sent for NORTH (typical A), then for SOUTH (typical B). Neither direction had a queued update pending before, so both are only buffered -- no release occurs for either, and the FSM remains idle.
+
+3) `REFRESH_CMD_UPDATE_TYPICAL` is sent again for NORTH (typical C). Because typical A is already queued for NORTH, the FSM releases it with a `FRAME_RELEASE_QUEUED_TYPICAL` and buffers typical C in its place. Typical B, queued for SOUTH in (2), is unaffected -- it is not released and remains queued.
+
+4) `REFRESH_CMD_UPDATE_TYPICAL` is sent again for SOUTH (typical D). Because typical B is already queued for SOUTH, the FSM releases it with a `FRAME_RELEASE_QUEUED_TYPICAL` and buffers typical D in its place. Typical C, queued for NORTH in (3), is unaffected.
+
+5) `REFRESH_CMD_REFRESH` is sent. No frame was ever queued, so no frame is released; the FSM clears then reinstalls the current frame. The final `REFRESH_ACTION_CLEAR` releases the original NORTH typical frame with a `FRAME_RELEASE_TYPICAL_NORTH` and the original SOUTH typical frame with a `FRAME_RELEASE_TYPICAL_SOUTH`, in the same output, and latches in typical C (NORTH) and typical D (SOUTH) as the new current typical frames. The FSM then reinstalls the current frame and goes idle. Across the whole sequence, typicals A and B were each released exactly once as displaced queued frames, and typicals C and D are never released, since they are now in active use.
+
+### Typical Frame Double Queueing While Waiting For Frames
+
+1) The FSM is freshly initialized (`REFRESH_FSM_WAITING_FOR_FRAMES`, no typical frames for either direction yet). `REFRESH_CMD_NEW_FRAME` is sent for frame (1). Since the FSM has no current frame yet, frame (1) is latched directly as the current frame with no output or release. The FSM remains idle.
+
+2) `REFRESH_CMD_UPDATE_TYPICAL` is sent for NORTH (typical A). Nothing was previously queued for NORTH, so typical A is only buffered -- no release. The FSM remains idle, still missing SOUTH typical data.
+
+3) `REFRESH_CMD_UPDATE_TYPICAL` is sent again for NORTH (typical B). Because typical A is already queued for NORTH, the FSM releases it with a `FRAME_RELEASE_QUEUED_TYPICAL` and buffers typical B in its place -- typical A is never latched in or used for a single LED's color. The FSM remains idle, still missing SOUTH typical data.
+
+4) `REFRESH_CMD_UPDATE_TYPICAL` is sent for SOUTH (typical C). Both directions now have typical data and a current frame exists, so the FSM begins installing frame (1). Because frame (1) was latched directly in (1) rather than queued, no frame is released. Because typicals B and C are each the first ever queued for their direction, neither displaces a current typical, so no typical is released either -- the only release across this entire sequence was typical A's `FRAME_RELEASE_QUEUED_TYPICAL` in (3). The FSM outputs `REFRESH_ACTION_SET` actions in the order of frame (1) until all LEDs are set, then goes idle.
+
+### New Frame Queued While Board Is Dark
+
+1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called for frame (1). The frame has been installed entirely and the FSM is idle.
+
+2) `REFRESH_CMD_NIGHT_MODE_ON` is sent. The FSM clears frame (1) from the board and, once fully cleared, goes idle with the board dark (`REFRESH_FSM_CLEARED`). No frame is released.
+
+3) `REFRESH_CMD_NEW_FRAME` is sent for frame (2), while the board is still dark. Because night mode is on, the FSM does not begin installing frame (2) -- it is only buffered as the next frame to install. No output is produced and no release occurs. The FSM remains idle with the board dark.
+
+4) `REFRESH_CMD_NEW_FRAME` is sent again, for frame (3), still while the board is dark. Because frame (2) is already queued, the FSM immediately releases it with a `FRAME_RELEASE_QUEUED_STANDARD` -- it is displaced before ever being installed -- and buffers frame (3) in its place. The board remains dark and the FSM remains idle.
+
+5) `REFRESH_CMD_NIGHT_MODE_OFF` is sent. Because frame (3) is queued as the next frame, the FSM releases frame (1) with a `FRAME_RELEASE_STANDARD` -- it is never redisplayed, only replaced by the frame that was queued while dark -- and begins installing frame (3) instead. No typical frame is released, since neither typical was ever requeued while dark. The FSM outputs `REFRESH_ACTION_SET` actions in the order of frame (3) until all LEDs are set, then goes idle.
+
+### Frame Queue Displacement Across A Direction Change
+
+1) The FSM has typical frames for all directions and `REFRESH_CMD_NEW_FRAME` has been called for frame (1) (NORTH). The frame has been installed entirely and the FSM is idle.
+
+2) `REFRESH_CMD_NEW_FRAME` is sent for frame A, with a *different* direction (SOUTH) than is currently installed. The FSM queues frame A and begins to output `REFRESH_ACTION_CLEAR` actions in reverse order of frame (1).
+
+3) While outputting `REFRESH_ACTION_CLEAR`, before frame (1) has finished clearing, `REFRESH_CMD_NEW_FRAME` is sent again, for frame B, with yet another direction (NORTH). Because a frame is already queued, the FSM immediately releases frame A with a `FRAME_RELEASE_QUEUED_STANDARD` and frame (1) with a `FRAME_RELEASE_STANDARD`, in the same tick, and outputs a single `REFRESH_ACTION_CLEAR_RANGE` that clears the remainder of the board and immediately begins installing frame B. The frame queue holds only one slot regardless of direction, so frame A is displaced and released exactly the same way it would be if frame B shared its direction.
+
+4) Starting on the next tick, the FSM outputs `REFRESH_ACTION_SET` actions in the order of frame B until all LEDs are set. The FSM is now idle.
+
+### Interleaved Frame And Typical Queueing While Waiting For Frames
+
+1) The FSM is freshly initialized (`REFRESH_FSM_WAITING_FOR_FRAMES`). `REFRESH_CMD_NEW_FRAME` is sent for frame A. Since the FSM has no current frame yet, frame A is latched directly as the current frame. No output or release occurs.
+
+2) `REFRESH_CMD_UPDATE_TYPICAL` is sent for NORTH (typical A). Nothing was previously queued for NORTH, so typical A is only buffered. The FSM remains idle, still missing SOUTH typical data.
+
+3) `REFRESH_CMD_NEW_FRAME` is sent for frame B. Since a current frame already exists (frame A), frame B is only buffered as the next frame to install. No release occurs yet.
+
+4) `REFRESH_CMD_UPDATE_TYPICAL` is sent again for NORTH (typical C). Because typical A is already queued for NORTH, the FSM releases it with a `FRAME_RELEASE_QUEUED_TYPICAL` and buffers typical C in its place. Frame B, queued in (3), is unaffected.
+
+5) `REFRESH_CMD_NEW_FRAME` is sent again, for frame C. Because frame B is already queued, the FSM releases it with a `FRAME_RELEASE_QUEUED_STANDARD` and buffers frame C in its place. Typical C, queued in (4), is unaffected.
+
+6) `REFRESH_CMD_UPDATE_TYPICAL` is sent for SOUTH (typical D). Nothing was previously queued for SOUTH, so typical D is only buffered -- but this also completes both directions' typical data, so the FSM immediately begins installing frame C (the frame left queued after (5)). Frame A is released with a `FRAME_RELEASE_STANDARD`, since it was only ever held as the current frame while queueing occurred, never displayed. Neither typical C nor typical D displaces a current typical -- both are the first ever latched for their direction -- so no typical is released here. The FSM outputs `REFRESH_ACTION_SET` actions in the order of frame C until all LEDs are set, then goes idle. Across the whole sequence, frame B and typical A were each released exactly once as displaced queued items, frame A was released once when finally replaced, and frame C, typical C, and typical D are never released, since they are the frame and typicals now actively in use.

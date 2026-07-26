@@ -17,13 +17,17 @@
 
 #define TEST_GROUP      "refresh_fsm"
 
-#define NUM_TEST_FRAMES         (6)
+#define NUM_TEST_FRAMES         (7)
+
+/* Shared across all TEST_CASEs below: too large for the main task's stack,
+   and Unity runs test cases sequentially (never concurrently), so a single
+   static instance is safe -- each test's setup loop overwrites the entries
+   it uses before asserting on them. */
+static LEDReg ledNumToReg[MAX_FRAME_SIZE];
+static LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
 
 TEST_CASE("defaultInitialization", TEST_GROUP)
 {
-    LEDReg ledNumToReg[MAX_FRAME_SIZE];
-    LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
-
     /* initialize variables */
     for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
     {
@@ -58,8 +62,6 @@ TEST_CASE("defaultInitialization", TEST_GROUP)
 
 TEST_CASE("initialFrameInstallation", TEST_GROUP)
 {
-    LEDReg ledNumToReg[MAX_FRAME_SIZE];
-    LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
     const uint32_t cmd1FrameNdx = 0;
     const uint32_t cmd2FrameNdx = 1;
     const uint32_t cmd3FrameNdx = 2;
@@ -163,8 +165,6 @@ TEST_CASE("initialFrameInstallation", TEST_GROUP)
 
 TEST_CASE("frameRefresh", TEST_GROUP)
 {
-    LEDReg ledNumToReg[MAX_FRAME_SIZE];
-    LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
     const uint32_t cmd1FrameNdx = 0;
     const uint32_t cmd2FrameNdx = 1;
     const uint32_t cmd3FrameNdx = 2;
@@ -310,8 +310,6 @@ TEST_CASE("frameRefresh", TEST_GROUP)
  
 TEST_CASE("newFrameInstallation", TEST_GROUP)
 {
-    LEDReg ledNumToReg[MAX_FRAME_SIZE];
-    LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
     const uint32_t cmd1FrameNdx = 0;
     const uint32_t cmd2FrameNdx = 1;
     const uint32_t cmd3FrameNdx = 2;
@@ -475,8 +473,6 @@ TEST_CASE("newFrameInstallation", TEST_GROUP)
 
 TEST_CASE("typicalFrameUpdate_ReleasesQueuedFrame", TEST_GROUP)
 {
-    LEDReg ledNumToReg[MAX_FRAME_SIZE];
-    LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
     const uint32_t cmd1FrameNdx = 0;
     const uint32_t cmd2FrameNdx = 1;
     const uint32_t cmd3FrameNdx = 2;
@@ -618,8 +614,6 @@ TEST_CASE("typicalFrameUpdate_ReleasesQueuedFrame", TEST_GROUP)
 
 TEST_CASE("typicalFrameUpdate_ReleasesOldFrame", TEST_GROUP)
 {
-    LEDReg ledNumToReg[MAX_FRAME_SIZE];
-    LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
     const uint32_t cmd1FrameNdx = 0;
     const uint32_t cmd2FrameNdx = 1;
     const uint32_t cmd3FrameNdx = 2;
@@ -807,8 +801,6 @@ TEST_CASE("typicalFrameUpdate_ReleasesOldFrame", TEST_GROUP)
 
 TEST_CASE("typicalFrameUpdateDuringClearing", TEST_GROUP)
 {
-    LEDReg ledNumToReg[MAX_FRAME_SIZE];
-    LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
     const uint32_t cmd1FrameNdx = 0;
     const uint32_t cmd2FrameNdx = 1;
     const uint32_t cmd3FrameNdx = 2;
@@ -1022,8 +1014,6 @@ TEST_CASE("typicalFrameUpdateDuringClearing", TEST_GROUP)
 
 TEST_CASE("refreshCommandDuringClearing", TEST_GROUP)
 {
-    LEDReg ledNumToReg[MAX_FRAME_SIZE];
-    LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
     const uint32_t cmd1FrameNdx = 0;
     const uint32_t cmd2FrameNdx = 1;
     const uint32_t cmd3FrameNdx = 2;
@@ -1216,8 +1206,6 @@ TEST_CASE("refreshCommandDuringClearing", TEST_GROUP)
 
 TEST_CASE("typicalFrameUpdate", TEST_GROUP)
 {
-    LEDReg ledNumToReg[MAX_FRAME_SIZE];
-    LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
     const uint32_t cmd1FrameNdx = 0;
     const uint32_t cmd2FrameNdx = 1;
     const uint32_t cmd3FrameNdx = 2;
@@ -1350,8 +1338,6 @@ TEST_CASE("typicalFrameUpdate", TEST_GROUP)
 
 TEST_CASE("standardFrameQueueingDuringClearing", TEST_GROUP)
 {
-    LEDReg ledNumToReg[MAX_FRAME_SIZE];
-    LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
     const uint32_t cmd1FrameNdx = 0;
     const uint32_t cmd2FrameNdx = 1;
     const uint32_t cmd3FrameNdx = 2;
@@ -1540,8 +1526,6 @@ TEST_CASE("standardFrameQueueingDuringClearing", TEST_GROUP)
 
 TEST_CASE("refreshCommandDuringInstallation", TEST_GROUP)
 {
-    LEDReg ledNumToReg[MAX_FRAME_SIZE];
-    LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
     const uint32_t cmd1FrameNdx = 0;
     const uint32_t cmd2FrameNdx = 1;
     const uint32_t cmd3FrameNdx = 2;
@@ -1725,8 +1709,6 @@ TEST_CASE("refreshCommandDuringInstallation", TEST_GROUP)
 
 TEST_CASE("typicalFrameQueueingDuringInstallation", TEST_GROUP)
 {
-    LEDReg ledNumToReg[MAX_FRAME_SIZE];
-    LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
     const uint32_t cmd1FrameNdx = 0;
     const uint32_t cmd2FrameNdx = 1;
     const uint32_t cmd3FrameNdx = 2;
@@ -1929,8 +1911,6 @@ TEST_CASE("typicalFrameQueueingDuringInstallation", TEST_GROUP)
 
 TEST_CASE("typicalFrameDoubleQueueingDuringInstallation", TEST_GROUP)
 {
-    LEDReg ledNumToReg[MAX_FRAME_SIZE];
-    LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
     const uint32_t cmd1FrameNdx = 0;
     const uint32_t cmd2FrameNdx = 1;
     const uint32_t cmd3FrameNdx = 2;
@@ -2154,8 +2134,6 @@ TEST_CASE("typicalFrameDoubleQueueingDuringInstallation", TEST_GROUP)
 
 TEST_CASE("newFrameUpdateDuringInstallation", TEST_GROUP)
 {
-    LEDReg ledNumToReg[MAX_FRAME_SIZE];
-    LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
     const uint32_t cmd1FrameNdx = 0;
     const uint32_t cmd2FrameNdx = 1;
     const uint32_t cmd3FrameNdx = 2;
@@ -2378,8 +2356,6 @@ TEST_CASE("newFrameUpdateDuringInstallation", TEST_GROUP)
 
 TEST_CASE("ledColorReflectsLiveVsTypicalSpeed", TEST_GROUP)
 {
-    LEDReg ledNumToReg[MAX_FRAME_SIZE];
-    LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
     const uint32_t cmd1FrameNdx = 0;
     const uint32_t cmd2FrameNdx = 1;
     const uint32_t cmd3FrameNdx = 2;
@@ -2498,4 +2474,1697 @@ TEST_CASE("ledColorReflectsLiveVsTypicalSpeed", TEST_GROUP)
     TEST_ASSERT_EQUAL_HEX8_MESSAGE(slowColor.blue, out5.action.set.color.blue, "LED 2 color.blue");
     TEST_ASSERT_EQUAL(0, out5.framesToRelease.len);
     TEST_ASSERT_TRUE(out5.isIdle);
+}
+
+TEST_CASE("nightModeEnabledDuringInstallation", TEST_GROUP)
+{
+    const uint32_t cmd1FrameNdx = 0;
+    const uint32_t cmd2FrameNdx = 1;
+    const uint32_t cmd3FrameNdx = 2;
+    const uint32_t cmd6FrameNdx = 3;
+
+    /* initialize variables */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledNumToReg[i].matrix = MAT1_PAGE0;
+        ledNumToReg[i].red = 0x44;
+        ledNumToReg[i].blue = 0x55;
+        ledNumToReg[i].green = 0x66;
+    }
+
+    /* initialize FSM */
+    RefreshFSMResources resources = {
+        .LEDNumToReg = ledNumToReg,
+        .LEDNumToRegLen = MAX_FRAME_SIZE,
+        .LEDFrames = ledFrames,
+        .LEDFramesLen = NUM_TEST_FRAMES,
+        .slowLEDColor = { 0 },
+        .mediumLEDColor = { 0 },
+        .fastLEDColor = { 0 },
+    };
+
+    refreshFSMInit(&resources);
+
+    /* send REFRESH_CMD_NEW_FRAME */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd1FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd1 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = cmd1FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out1 = refreshFSMTick(&cmd1);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out1.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out1.framesToRelease.len);
+    TEST_ASSERT_TRUE(out1.isIdle);
+
+    /* send REFRESH_CMD_UPDATE_TYPICAL for NORTH */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd2FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd2 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = cmd2FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out2 = refreshFSMTick(&cmd2);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out2.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out2.framesToRelease.len);
+    TEST_ASSERT_TRUE(out2.isIdle);
+
+    /* send REFRESH_CMD_UPDATE_TYPICAL for SOUTH */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd3FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd3 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = cmd3FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = SOUTH,
+    };
+    RefreshFSMOutput out3 = refreshFSMTick(&cmd3);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out3.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out3.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out3.framesToRelease.len);
+    TEST_ASSERT_FALSE(out3.isIdle);
+
+    /* send REFRESH_CMD_NONE until all LEDs of the frame are set */
+    RefreshFSMCommand cmd4 = { .type = REFRESH_CMD_NONE };
+    for (uint32_t i = 1; i < MAX_FRAME_SIZE - 1; i++)
+    {
+        RefreshFSMOutput out4 = refreshFSMTick(&cmd4);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out4.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out4.action.set.ledNum);
+        TEST_ASSERT_EQUAL(0, out4.framesToRelease.len);
+        TEST_ASSERT_FALSE(out4.isIdle);
+    }
+
+    RefreshFSMOutput out4 = refreshFSMTick(&cmd4);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out4.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(MAX_FRAME_SIZE - 1, out4.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out4.framesToRelease.len);
+    TEST_ASSERT_TRUE(out4.isIdle);
+
+    RefreshFSMOutput out5 = refreshFSMTick(&cmd4);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out5.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out5.framesToRelease.len);
+    TEST_ASSERT_TRUE(out5.isIdle);
+
+    /* (2) NEW_FRAME frame A, same direction (NORTH) as installed. Clears
+       frame (1) entirely; the final REFRESH_ACTION_CLEAR (LED 0) also
+       releases frame (1). */
+    for (uint32_t i = 0; i < 15; i++)
+    {
+        ledFrames[cmd6FrameNdx][i].ledNum = 20 + i;
+    }
+    RefreshFSMCommand cmd6 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = cmd6FrameNdx,
+        .frameLen = 15,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out6 = refreshFSMTick(&cmd6);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out6.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(MAX_FRAME_SIZE - 1, out6.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(0, out6.framesToRelease.len);
+    TEST_ASSERT_FALSE(out6.isIdle);
+
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    for (uint32_t i = MAX_FRAME_SIZE - 2; i > 0; i--)
+    {
+        RefreshFSMOutput out7 = refreshFSMTick(&cmdNone);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out7.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out7.action.clear.ledNum);
+        TEST_ASSERT_EQUAL(0, out7.framesToRelease.len);
+        TEST_ASSERT_FALSE(out7.isIdle);
+    }
+
+    RefreshFSMOutput out8 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out8.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out8.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(1, out8.framesToRelease.len);
+    TEST_ASSERT_EQUAL(cmd1FrameNdx, out8.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, out8.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_FALSE(out8.isIdle);
+
+    /* (3) the FSM begins to output REFRESH_ACTION_SET actions in the order
+       of frame (2) */
+    RefreshFSMOutput out9 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out9.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(20, out9.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out9.framesToRelease.len);
+    TEST_ASSERT_FALSE(out9.isIdle);
+
+    RefreshFSMOutput out10 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out10.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(21, out10.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out10.framesToRelease.len);
+    TEST_ASSERT_FALSE(out10.isIdle);
+
+    RefreshFSMOutput out11 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out11.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(22, out11.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out11.framesToRelease.len);
+    TEST_ASSERT_FALSE(out11.isIdle);
+
+    /* (4) while outputting REFRESH_ACTION_SET, REFRESH_CMD_NIGHT_MODE_ON is
+       sent. Night mode must darken the board regardless of what the FSM is
+       doing, so the FSM should stop installing frame (2) and immediately
+       start clearing the LEDs already set, in reverse order, starting from
+       the most recently set LED (ledNum 22) -- mirroring how a
+       REFRESH_CMD_NEW_FRAME sent mid-install interrupts installation (see
+       "New Frame Update During Installation"). No frame is released, since
+       frame (2) is not being replaced. */
+    RefreshFSMCommand cmd12 = { .type = REFRESH_CMD_NIGHT_MODE_ON };
+    RefreshFSMOutput out12 = refreshFSMTick(&cmd12);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out12.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(22, out12.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(0, out12.framesToRelease.len);
+    TEST_ASSERT_FALSE(out12.isIdle);
+
+    RefreshFSMOutput out13 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out13.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(21, out13.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(0, out13.framesToRelease.len);
+    TEST_ASSERT_FALSE(out13.isIdle);
+
+    /* (5) once the already-installed LEDs (22, 21, 20) are cleared, since
+       night mode is still on, the FSM does not reinstall frame (2) -- the
+       board stays dark and the FSM goes idle instead. No frame is
+       released, since frame (2) still belongs to the FSM for when night
+       mode turns back off. */
+    RefreshFSMOutput out14 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out14.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(20, out14.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(0, out14.framesToRelease.len);
+    TEST_ASSERT_TRUE(out14.isIdle);
+
+    /* the board remains dark and the FSM remains idle on further
+       REFRESH_CMD_NONE ticks -- it does not spontaneously resume
+       installing frame (2) */
+    RefreshFSMOutput out15 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out15.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out15.framesToRelease.len);
+    TEST_ASSERT_TRUE(out15.isIdle);
+}
+
+TEST_CASE("multipleFramesQueuedWhileWaitingForFrames", TEST_GROUP)
+{
+    const uint32_t frameAFrameNdx = 0;
+    const uint32_t frameBFrameNdx = 1;
+    const uint32_t frameCFrameNdx = 2;
+    const uint32_t typicalNorthFrameNdx = 3;
+    const uint32_t typicalSouthFrameNdx = 4;
+
+    /* initialize variables */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledNumToReg[i].matrix = MAT1_PAGE0;
+        ledNumToReg[i].red = 0x44;
+        ledNumToReg[i].blue = 0x55;
+        ledNumToReg[i].green = 0x66;
+    }
+
+    /* initialize FSM */
+    RefreshFSMResources resources = {
+        .LEDNumToReg = ledNumToReg,
+        .LEDNumToRegLen = MAX_FRAME_SIZE,
+        .LEDFrames = ledFrames,
+        .LEDFramesLen = NUM_TEST_FRAMES,
+        .slowLEDColor = { 0 },
+        .mediumLEDColor = { 0 },
+        .fastLEDColor = { 0 },
+    };
+
+    refreshFSMInit(&resources);
+
+    /* (1) send REFRESH_CMD_NEW_FRAME for frame A. The FSM has no current
+       frame yet, so frame A is latched directly as the current frame with
+       no output or release. The FSM remains idle: it still has no typical
+       data. */
+    for (uint32_t i = 0; i < 5; i++)
+    {
+        ledFrames[frameAFrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmdA = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = frameAFrameNdx,
+        .frameLen = 5,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput outA = refreshFSMTick(&cmdA);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outA.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, outA.framesToRelease.len);
+    TEST_ASSERT_TRUE(outA.isIdle);
+
+    /* (2) send REFRESH_CMD_NEW_FRAME for frame B. A current frame (A)
+       already exists, so frame B is only buffered as the next frame to
+       install. Nothing was queued before, so no release occurs. */
+    for (uint32_t i = 0; i < 5; i++)
+    {
+        ledFrames[frameBFrameNdx][i].ledNum = 10 + i;
+    }
+    RefreshFSMCommand cmdB = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = frameBFrameNdx,
+        .frameLen = 5,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput outB = refreshFSMTick(&cmdB);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outB.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, outB.framesToRelease.len);
+    TEST_ASSERT_TRUE(outB.isIdle);
+
+    /* (3) send REFRESH_CMD_NEW_FRAME for frame C. Frame B is already
+       queued as the next frame, so the FSM immediately releases frame B
+       as FRAME_RELEASE_QUEUED_STANDARD -- it is displaced before it was
+       ever installed -- and buffers frame C in its place. */
+    for (uint32_t i = 0; i < 5; i++)
+    {
+        ledFrames[frameCFrameNdx][i].ledNum = 20 + i;
+    }
+    RefreshFSMCommand cmdC = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = frameCFrameNdx,
+        .frameLen = 5,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput outC = refreshFSMTick(&cmdC);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outC.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(1, outC.framesToRelease.len);
+    TEST_ASSERT_EQUAL(frameBFrameNdx, outC.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_STANDARD, outC.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_TRUE(outC.isIdle);
+
+    /* send REFRESH_CMD_UPDATE_TYPICAL for NORTH -- still missing SOUTH, so
+       the FSM remains idle with no output or release */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[typicalNorthFrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmdTypicalNorth = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalNorthFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput outTypicalNorth = refreshFSMTick(&cmdTypicalNorth);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outTypicalNorth.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, outTypicalNorth.framesToRelease.len);
+    TEST_ASSERT_TRUE(outTypicalNorth.isIdle);
+
+    /* (4) send REFRESH_CMD_UPDATE_TYPICAL for SOUTH. Both directions now
+       have typical data, so the FSM releases frame A as
+       FRAME_RELEASE_STANDARD -- frame A was never displayed, only held as
+       the current frame while queueing occurred -- and begins installing
+       frame C, the frame left queued after (3). Frame B is never
+       installed and is not released again; it was already accounted for
+       in (3). */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[typicalSouthFrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmdTypicalSouth = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalSouthFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = SOUTH,
+    };
+    RefreshFSMOutput outTypicalSouth = refreshFSMTick(&cmdTypicalSouth);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, outTypicalSouth.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(20, outTypicalSouth.action.set.ledNum);
+    TEST_ASSERT_EQUAL(1, outTypicalSouth.framesToRelease.len);
+    TEST_ASSERT_EQUAL(frameAFrameNdx, outTypicalSouth.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, outTypicalSouth.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_FALSE(outTypicalSouth.isIdle);
+
+    /* the FSM installs frame C -- and only frame C -- to completion.
+       Frames A and B never appear as REFRESH_ACTION_SET LEDs. */
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    for (uint32_t i = 21; i < 24; i++)
+    {
+        RefreshFSMOutput out = refreshFSMTick(&cmdNone);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out.action.set.ledNum);
+        TEST_ASSERT_EQUAL(0, out.framesToRelease.len);
+        TEST_ASSERT_FALSE(out.isIdle);
+    }
+
+    RefreshFSMOutput outLast = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, outLast.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(24, outLast.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, outLast.framesToRelease.len);
+    TEST_ASSERT_TRUE(outLast.isIdle);
+}
+
+TEST_CASE("nightModeRoundTripRetainsFrameOwnership", TEST_GROUP)
+{
+    const uint32_t cmd1FrameNdx = 0;
+    const uint32_t cmd2FrameNdx = 1;
+    const uint32_t cmd3FrameNdx = 2;
+
+    /* initialize variables */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledNumToReg[i].matrix = MAT1_PAGE0;
+        ledNumToReg[i].red = 0x44;
+        ledNumToReg[i].blue = 0x55;
+        ledNumToReg[i].green = 0x66;
+    }
+
+    /* initialize FSM */
+    RefreshFSMResources resources = {
+        .LEDNumToReg = ledNumToReg,
+        .LEDNumToRegLen = MAX_FRAME_SIZE,
+        .LEDFrames = ledFrames,
+        .LEDFramesLen = NUM_TEST_FRAMES,
+        .slowLEDColor = { 0 },
+        .mediumLEDColor = { 0 },
+        .fastLEDColor = { 0 },
+    };
+
+    refreshFSMInit(&resources);
+
+    /* send REFRESH_CMD_NEW_FRAME */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd1FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd1 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = cmd1FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out1 = refreshFSMTick(&cmd1);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out1.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out1.framesToRelease.len);
+    TEST_ASSERT_TRUE(out1.isIdle);
+
+    /* send REFRESH_CMD_UPDATE_TYPICAL for NORTH */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd2FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd2 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = cmd2FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out2 = refreshFSMTick(&cmd2);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out2.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out2.framesToRelease.len);
+    TEST_ASSERT_TRUE(out2.isIdle);
+
+    /* send REFRESH_CMD_UPDATE_TYPICAL for SOUTH */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd3FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd3 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = cmd3FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = SOUTH,
+    };
+    RefreshFSMOutput out3 = refreshFSMTick(&cmd3);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out3.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out3.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out3.framesToRelease.len);
+    TEST_ASSERT_FALSE(out3.isIdle);
+
+    /* send REFRESH_CMD_NONE until all LEDs of the frame are set */
+    RefreshFSMCommand cmd4 = { .type = REFRESH_CMD_NONE };
+    for (uint32_t i = 1; i < MAX_FRAME_SIZE - 1; i++)
+    {
+        RefreshFSMOutput out4 = refreshFSMTick(&cmd4);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out4.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out4.action.set.ledNum);
+        TEST_ASSERT_EQUAL(0, out4.framesToRelease.len);
+        TEST_ASSERT_FALSE(out4.isIdle);
+    }
+
+    RefreshFSMOutput out4 = refreshFSMTick(&cmd4);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out4.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(MAX_FRAME_SIZE - 1, out4.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out4.framesToRelease.len);
+    TEST_ASSERT_TRUE(out4.isIdle);
+
+    RefreshFSMOutput out5 = refreshFSMTick(&cmd4);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out5.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out5.framesToRelease.len);
+    TEST_ASSERT_TRUE(out5.isIdle);
+
+    /* (2) REFRESH_CMD_NIGHT_MODE_ON is sent. The FSM begins clearing frame
+       (1) from the board, one LED per tick, in reverse order. No frame is
+       released -- frame (1) is only being hidden, not replaced. */
+    RefreshFSMCommand cmd6 = { .type = REFRESH_CMD_NIGHT_MODE_ON };
+    RefreshFSMOutput out6 = refreshFSMTick(&cmd6);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out6.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(MAX_FRAME_SIZE - 1, out6.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(0, out6.framesToRelease.len);
+    TEST_ASSERT_FALSE(out6.isIdle);
+
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    for (uint32_t i = MAX_FRAME_SIZE - 2; i > 0; i--)
+    {
+        RefreshFSMOutput out7 = refreshFSMTick(&cmdNone);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out7.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out7.action.clear.ledNum);
+        TEST_ASSERT_EQUAL(0, out7.framesToRelease.len);
+        TEST_ASSERT_FALSE(out7.isIdle);
+    }
+
+    /* (3) once fully cleared, because night mode is still on, the FSM goes
+       idle with the board dark instead of reinstalling frame (1). No
+       release occurs -- frame (1) is still owned by the FSM, waiting to be
+       redisplayed once night mode turns off. */
+    RefreshFSMOutput out8 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out8.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out8.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(0, out8.framesToRelease.len);
+    TEST_ASSERT_TRUE(out8.isIdle);
+
+    /* the board stays dark and the FSM remains idle on further
+       REFRESH_CMD_NONE ticks */
+    RefreshFSMOutput out9 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out9.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out9.framesToRelease.len);
+    TEST_ASSERT_TRUE(out9.isIdle);
+
+    /* (4) REFRESH_CMD_NIGHT_MODE_OFF is sent. No other frame or typical
+       update was ever queued while dark, so the FSM reinstalls frame (1)
+       -- the same frame it has held onto the entire time -- starting from
+       its first LED. No frame is released during reinstallation, since
+       frame (1) was never replaced. */
+    RefreshFSMCommand cmd10 = { .type = REFRESH_CMD_NIGHT_MODE_OFF };
+    RefreshFSMOutput out10 = refreshFSMTick(&cmd10);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out10.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out10.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out10.framesToRelease.len);
+    TEST_ASSERT_FALSE(out10.isIdle);
+
+    for (uint32_t i = 1; i < MAX_FRAME_SIZE - 1; i++)
+    {
+        RefreshFSMOutput out11 = refreshFSMTick(&cmdNone);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out11.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out11.action.set.ledNum);
+        TEST_ASSERT_EQUAL(0, out11.framesToRelease.len);
+        TEST_ASSERT_FALSE(out11.isIdle);
+    }
+
+    /* frame (1) and both typical frames were never released or
+       reallocated throughout the entire night mode round trip -- only the
+       board's on/off display state changed */
+    RefreshFSMOutput out12 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out12.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(MAX_FRAME_SIZE - 1, out12.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out12.framesToRelease.len);
+    TEST_ASSERT_TRUE(out12.isIdle);
+}
+
+TEST_CASE("typicalFrameDoubleQueueingDuringClearing", TEST_GROUP)
+{
+    const uint32_t cmd1FrameNdx = 0;
+    const uint32_t cmd2FrameNdx = 1;
+    const uint32_t cmd3FrameNdx = 2;
+    const uint32_t cmd6FrameNdx = 3;
+    const uint32_t cmd7FrameNdx = 4;
+    const uint32_t cmd8FrameNdx = 5;
+
+    /* initialize variables */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledNumToReg[i].matrix = MAT1_PAGE0;
+        ledNumToReg[i].red = 0x44;
+        ledNumToReg[i].blue = 0x55;
+        ledNumToReg[i].green = 0x66;
+    }
+
+    /* initialize FSM */
+    RefreshFSMResources resources = {
+        .LEDNumToReg = ledNumToReg,
+        .LEDNumToRegLen = MAX_FRAME_SIZE,
+        .LEDFrames = ledFrames,
+        .LEDFramesLen = NUM_TEST_FRAMES,
+        .slowLEDColor = { 0 },
+        .mediumLEDColor = { 0 },
+        .fastLEDColor = { 0 },
+    };
+
+    refreshFSMInit(&resources);
+
+    /* send REFRESH_CMD_NEW_FRAME */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd1FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd1 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = cmd1FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out1 = refreshFSMTick(&cmd1);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out1.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out1.framesToRelease.len);
+    TEST_ASSERT_TRUE(out1.isIdle);
+
+    /* send REFRESH_CMD_UPDATE_TYPICAL for NORTH */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd2FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd2 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = cmd2FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out2 = refreshFSMTick(&cmd2);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out2.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out2.framesToRelease.len);
+    TEST_ASSERT_TRUE(out2.isIdle);
+
+    /* send REFRESH_CMD_UPDATE_TYPICAL for SOUTH */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd3FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd3 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = cmd3FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = SOUTH,
+    };
+    RefreshFSMOutput out3 = refreshFSMTick(&cmd3);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out3.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out3.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out3.framesToRelease.len);
+    TEST_ASSERT_FALSE(out3.isIdle);
+
+    /* send REFRESH_CMD_NONE until all LEDs of the frame are set */
+    RefreshFSMCommand cmd4 = { .type = REFRESH_CMD_NONE };
+    for (uint32_t i = 1; i < MAX_FRAME_SIZE - 1; i++)
+    {
+        RefreshFSMOutput out4 = refreshFSMTick(&cmd4);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out4.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out4.action.set.ledNum);
+        TEST_ASSERT_EQUAL(0, out4.framesToRelease.len);
+        TEST_ASSERT_FALSE(out4.isIdle);
+    }
+
+    RefreshFSMOutput out4 = refreshFSMTick(&cmd4);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out4.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(MAX_FRAME_SIZE - 1, out4.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out4.framesToRelease.len);
+    TEST_ASSERT_TRUE(out4.isIdle);
+
+    RefreshFSMOutput out5 = refreshFSMTick(&cmd4);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out5.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out5.framesToRelease.len);
+    TEST_ASSERT_TRUE(out5.isIdle);
+
+    /* (2) NEW_FRAME with the same direction (NORTH) as installed. The FSM
+       queues the frame and begins clearing the board in reverse order. */
+    for (uint32_t i = 0; i < 15; i++)
+    {
+        ledFrames[cmd6FrameNdx][i].ledNum = 20 + i;
+    }
+    RefreshFSMCommand cmd6 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = cmd6FrameNdx,
+        .frameLen = 15,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out6 = refreshFSMTick(&cmd6);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out6.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(MAX_FRAME_SIZE - 1, out6.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(0, out6.framesToRelease.len);
+    TEST_ASSERT_FALSE(out6.isIdle);
+
+    /* send REFRESH_CMD_NONE to continue clearing partway through the board */
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    for (uint32_t i = MAX_FRAME_SIZE - 2; i > 10; i--)
+    {
+        RefreshFSMOutput out7 = refreshFSMTick(&cmdNone);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out7.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out7.action.clear.ledNum);
+        TEST_ASSERT_EQUAL(0, out7.framesToRelease.len);
+        TEST_ASSERT_FALSE(out7.isIdle);
+    }
+
+    /* (3) while REFRESH_ACTION_CLEAR is still being output, send
+       REFRESH_CMD_UPDATE_TYPICAL for typical frame A, same direction
+       (NORTH). Nothing was previously queued for NORTH, so the FSM only
+       buffers typical frame A -- no release, and clearing continues
+       uninterrupted in the same tick. */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd7FrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmd7 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = cmd7FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out8 = refreshFSMTick(&cmd7);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out8.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(10, out8.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(0, out8.framesToRelease.len);
+    TEST_ASSERT_FALSE(out8.isIdle);
+
+    /* (4) immediately after, REFRESH_CMD_UPDATE_TYPICAL is sent again for
+       NORTH, with typical frame B. Typical frame A is already queued, so
+       the FSM immediately releases it with a FRAME_RELEASE_QUEUED_TYPICAL
+       -- it is displaced before ever being latched in or used -- and
+       buffers typical frame B in its place. Clearing continues
+       uninterrupted in the same tick. */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd8FrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmd9 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = cmd8FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out9 = refreshFSMTick(&cmd9);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out9.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(9, out9.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(1, out9.framesToRelease.len);
+    TEST_ASSERT_EQUAL(cmd7FrameNdx, out9.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_TYPICAL, out9.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_FALSE(out9.isIdle);
+
+    /* continue clearing down to LED 1 */
+    for (uint32_t i = 8; i > 0; i--)
+    {
+        RefreshFSMOutput out10 = refreshFSMTick(&cmdNone);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out10.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out10.action.clear.ledNum);
+        TEST_ASSERT_EQUAL(0, out10.framesToRelease.len);
+        TEST_ASSERT_FALSE(out10.isIdle);
+    }
+
+    /* (5) the final REFRESH_ACTION_CLEAR, for LED 0 (the first LED of
+       frame (1)), releases the old standard frame of (1) and the old
+       NORTH typical frame in the same output. Typical frame B (queued in
+       (4)) is latched in as the new current NORTH typical frame -- it is
+       not released here, since it is now in active use. */
+    RefreshFSMOutput out11 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out11.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out11.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(2, out11.framesToRelease.len);
+    if (cmd1FrameNdx == out11.framesToRelease.list[0].index)
+    {
+        TEST_ASSERT_EQUAL(cmd1FrameNdx, out11.framesToRelease.list[0].index);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, out11.framesToRelease.list[0].type, "refresh frame release type");
+        TEST_ASSERT_EQUAL(cmd2FrameNdx, out11.framesToRelease.list[1].index);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_TYPICAL_NORTH, out11.framesToRelease.list[1].type, "refresh frame release type");
+    } else
+    {
+        TEST_ASSERT_EQUAL(cmd2FrameNdx, out11.framesToRelease.list[0].index);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_TYPICAL_NORTH, out11.framesToRelease.list[0].type, "refresh frame release type");
+        TEST_ASSERT_EQUAL(cmd1FrameNdx, out11.framesToRelease.list[1].index);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, out11.framesToRelease.list[1].type, "refresh frame release type");
+    }
+    TEST_ASSERT_FALSE(out11.isIdle);
+
+    /* (6) the FSM outputs REFRESH_ACTION_SET actions in the same order of
+       frame (2) until all LEDs of the frame are set. The FSM is now idle.
+       Frame (2) and typical frame B are never released -- they are the
+       frame and typical frame now actively in use. */
+    RefreshFSMOutput out12 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out12.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(20, out12.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out12.framesToRelease.len);
+    TEST_ASSERT_FALSE(out12.isIdle);
+
+    for (uint32_t i = 21; i < 20 + 14; i++)
+    {
+        RefreshFSMOutput out13 = refreshFSMTick(&cmdNone);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out13.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out13.action.set.ledNum);
+        TEST_ASSERT_EQUAL(0, out13.framesToRelease.len);
+        TEST_ASSERT_FALSE(out13.isIdle);
+    }
+
+    RefreshFSMOutput out14 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out14.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(20 + 14, out14.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out14.framesToRelease.len);
+    TEST_ASSERT_TRUE(out14.isIdle);
+}
+
+TEST_CASE("independentTypicalFrameQueuesPerDirection", TEST_GROUP)
+{
+    const uint32_t cmd1FrameNdx = 0;
+    const uint32_t cmd2FrameNdx = 1;
+    const uint32_t cmd3FrameNdx = 2;
+    const uint32_t typicalAFrameNdx = 3;
+    const uint32_t typicalBFrameNdx = 4;
+    const uint32_t typicalCFrameNdx = 5;
+    const uint32_t typicalDFrameNdx = 6;
+
+    /* initialize variables */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledNumToReg[i].matrix = MAT1_PAGE0;
+        ledNumToReg[i].red = 0x44;
+        ledNumToReg[i].blue = 0x55;
+        ledNumToReg[i].green = 0x66;
+    }
+
+    /* initialize FSM */
+    RefreshFSMResources resources = {
+        .LEDNumToReg = ledNumToReg,
+        .LEDNumToRegLen = MAX_FRAME_SIZE,
+        .LEDFrames = ledFrames,
+        .LEDFramesLen = NUM_TEST_FRAMES,
+        .slowLEDColor = { 0 },
+        .mediumLEDColor = { 0 },
+        .fastLEDColor = { 0 },
+    };
+
+    refreshFSMInit(&resources);
+
+    /* send REFRESH_CMD_NEW_FRAME */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd1FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd1 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = cmd1FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out1 = refreshFSMTick(&cmd1);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out1.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out1.framesToRelease.len);
+    TEST_ASSERT_TRUE(out1.isIdle);
+
+    /* send REFRESH_CMD_UPDATE_TYPICAL for NORTH */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd2FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd2 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = cmd2FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out2 = refreshFSMTick(&cmd2);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out2.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out2.framesToRelease.len);
+    TEST_ASSERT_TRUE(out2.isIdle);
+
+    /* send REFRESH_CMD_UPDATE_TYPICAL for SOUTH */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd3FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd3 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = cmd3FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = SOUTH,
+    };
+    RefreshFSMOutput out3 = refreshFSMTick(&cmd3);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out3.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out3.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out3.framesToRelease.len);
+    TEST_ASSERT_FALSE(out3.isIdle);
+
+    /* send REFRESH_CMD_NONE until all LEDs of the frame are set */
+    RefreshFSMCommand cmd4 = { .type = REFRESH_CMD_NONE };
+    for (uint32_t i = 1; i < MAX_FRAME_SIZE - 1; i++)
+    {
+        RefreshFSMOutput out4 = refreshFSMTick(&cmd4);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out4.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out4.action.set.ledNum);
+        TEST_ASSERT_EQUAL(0, out4.framesToRelease.len);
+        TEST_ASSERT_FALSE(out4.isIdle);
+    }
+
+    RefreshFSMOutput out4 = refreshFSMTick(&cmd4);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out4.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(MAX_FRAME_SIZE - 1, out4.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out4.framesToRelease.len);
+    TEST_ASSERT_TRUE(out4.isIdle);
+
+    RefreshFSMOutput out5 = refreshFSMTick(&cmd4);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out5.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out5.framesToRelease.len);
+    TEST_ASSERT_TRUE(out5.isIdle);
+
+    /* (2) REFRESH_CMD_UPDATE_TYPICAL is sent for NORTH (typical A), then
+       for SOUTH (typical B). Neither direction had a queued update
+       pending, so both are only buffered -- no release for either. */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[typicalAFrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmdA = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalAFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput outA = refreshFSMTick(&cmdA);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outA.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, outA.framesToRelease.len);
+    TEST_ASSERT_TRUE(outA.isIdle);
+
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[typicalBFrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmdB = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalBFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = SOUTH,
+    };
+    RefreshFSMOutput outB = refreshFSMTick(&cmdB);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outB.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, outB.framesToRelease.len);
+    TEST_ASSERT_TRUE(outB.isIdle);
+
+    /* (3) REFRESH_CMD_UPDATE_TYPICAL is sent again for NORTH (typical C).
+       Typical A is already queued for NORTH, so the FSM releases it as
+       FRAME_RELEASE_QUEUED_TYPICAL and buffers typical C in its place.
+       Typical B, still queued for SOUTH, is unaffected. */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[typicalCFrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmdC = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalCFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput outC = refreshFSMTick(&cmdC);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outC.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(1, outC.framesToRelease.len);
+    TEST_ASSERT_EQUAL(typicalAFrameNdx, outC.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_TYPICAL, outC.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_TRUE(outC.isIdle);
+
+    /* (4) REFRESH_CMD_UPDATE_TYPICAL is sent again for SOUTH (typical D).
+       Typical B is already queued for SOUTH, so the FSM releases it as
+       FRAME_RELEASE_QUEUED_TYPICAL and buffers typical D in its place.
+       Typical C, still queued for NORTH, is unaffected. */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[typicalDFrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmdD = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalDFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = SOUTH,
+    };
+    RefreshFSMOutput outD = refreshFSMTick(&cmdD);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outD.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(1, outD.framesToRelease.len);
+    TEST_ASSERT_EQUAL(typicalBFrameNdx, outD.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_TYPICAL, outD.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_TRUE(outD.isIdle);
+
+    /* (5) REFRESH_CMD_REFRESH is sent. No frame was ever queued, so no
+       frame is released; the FSM clears then reinstalls the current
+       frame. */
+    RefreshFSMCommand cmdRefresh = { .type = REFRESH_CMD_REFRESH };
+    RefreshFSMOutput outRefresh = refreshFSMTick(&cmdRefresh);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, outRefresh.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(MAX_FRAME_SIZE - 1, outRefresh.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(0, outRefresh.framesToRelease.len);
+    TEST_ASSERT_FALSE(outRefresh.isIdle);
+
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    for (uint32_t i = MAX_FRAME_SIZE - 2; i > 0; i--)
+    {
+        RefreshFSMOutput out = refreshFSMTick(&cmdNone);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out.action.clear.ledNum);
+        TEST_ASSERT_EQUAL(0, out.framesToRelease.len);
+        TEST_ASSERT_FALSE(out.isIdle);
+    }
+
+    /* the final REFRESH_ACTION_CLEAR releases the original NORTH typical
+       (cmd2) with FRAME_RELEASE_TYPICAL_NORTH and the original SOUTH
+       typical (cmd3) with FRAME_RELEASE_TYPICAL_SOUTH, in that order --
+       the frame and typical release checks in transitionToInstallingFrame
+       run sequentially (frame, then NORTH, then SOUTH), so this ordering
+       is deterministic. Typicals C and D are latched in as the new
+       current typicals and are not released here. */
+    RefreshFSMOutput outFinalClear = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, outFinalClear.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, outFinalClear.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(2, outFinalClear.framesToRelease.len);
+    TEST_ASSERT_EQUAL(cmd2FrameNdx, outFinalClear.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_TYPICAL_NORTH, outFinalClear.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_EQUAL(cmd3FrameNdx, outFinalClear.framesToRelease.list[1].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_TYPICAL_SOUTH, outFinalClear.framesToRelease.list[1].type, "refresh frame release type");
+    TEST_ASSERT_FALSE(outFinalClear.isIdle);
+
+    /* the FSM reinstalls the current frame (unchanged) and goes idle.
+       Typicals C and D are never released -- they are now in active
+       use. */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE - 1; i++)
+    {
+        RefreshFSMOutput out = refreshFSMTick(&cmdNone);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out.action.set.ledNum);
+        TEST_ASSERT_EQUAL(0, out.framesToRelease.len);
+        TEST_ASSERT_FALSE(out.isIdle);
+    }
+
+    RefreshFSMOutput outFinalSet = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, outFinalSet.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(MAX_FRAME_SIZE - 1, outFinalSet.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, outFinalSet.framesToRelease.len);
+    TEST_ASSERT_TRUE(outFinalSet.isIdle);
+}
+
+TEST_CASE("typicalFrameDoubleQueueingWhileWaitingForFrames", TEST_GROUP)
+{
+    const uint32_t cmd1FrameNdx = 0;
+    const uint32_t typicalAFrameNdx = 1;
+    const uint32_t typicalBFrameNdx = 2;
+    const uint32_t typicalCFrameNdx = 3;
+
+    /* initialize variables */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledNumToReg[i].matrix = MAT1_PAGE0;
+        ledNumToReg[i].red = 0x44;
+        ledNumToReg[i].blue = 0x55;
+        ledNumToReg[i].green = 0x66;
+    }
+
+    /* initialize FSM */
+    RefreshFSMResources resources = {
+        .LEDNumToReg = ledNumToReg,
+        .LEDNumToRegLen = MAX_FRAME_SIZE,
+        .LEDFrames = ledFrames,
+        .LEDFramesLen = NUM_TEST_FRAMES,
+        .slowLEDColor = { 0 },
+        .mediumLEDColor = { 0 },
+        .fastLEDColor = { 0 },
+    };
+
+    refreshFSMInit(&resources);
+
+    /* (1) send REFRESH_CMD_NEW_FRAME for frame (1). The FSM has no current
+       frame yet, so frame (1) is latched directly as the current frame
+       with no output or release. The FSM remains idle. */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd1FrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmd1 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = cmd1FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out1 = refreshFSMTick(&cmd1);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out1.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out1.framesToRelease.len);
+    TEST_ASSERT_TRUE(out1.isIdle);
+
+    /* (2) send REFRESH_CMD_UPDATE_TYPICAL for NORTH (typical A). Nothing
+       was previously queued for NORTH, so typical A is only buffered --
+       no release. The FSM remains idle, still missing SOUTH typical
+       data. */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[typicalAFrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmdA = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalAFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput outA = refreshFSMTick(&cmdA);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outA.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, outA.framesToRelease.len);
+    TEST_ASSERT_TRUE(outA.isIdle);
+
+    /* (3) send REFRESH_CMD_UPDATE_TYPICAL again for NORTH (typical B).
+       Typical A is already queued for NORTH, so the FSM releases it with
+       a FRAME_RELEASE_QUEUED_TYPICAL and buffers typical B in its place --
+       typical A is never latched in or used for a single LED's color. The
+       FSM remains idle, still missing SOUTH typical data. */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[typicalBFrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmdB = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalBFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput outB = refreshFSMTick(&cmdB);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outB.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(1, outB.framesToRelease.len);
+    TEST_ASSERT_EQUAL(typicalAFrameNdx, outB.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_TYPICAL, outB.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_TRUE(outB.isIdle);
+
+    /* (4) send REFRESH_CMD_UPDATE_TYPICAL for SOUTH (typical C). Both
+       directions now have typical data and a current frame exists, so the
+       FSM begins installing frame (1). Frame (1) was latched directly in
+       (1) rather than queued, so no frame is released. Typicals B and C
+       are each the first ever queued for their direction, so neither
+       displaces a current typical -- no typical is released here either.
+       The only release across this entire sequence was typical A's
+       FRAME_RELEASE_QUEUED_TYPICAL in (3). */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[typicalCFrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmdC = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalCFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = SOUTH,
+    };
+    RefreshFSMOutput outC = refreshFSMTick(&cmdC);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, outC.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, outC.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, outC.framesToRelease.len);
+    TEST_ASSERT_FALSE(outC.isIdle);
+
+    /* the FSM installs frame (1) to completion with no further
+       releases */
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    for (uint32_t i = 1; i < MAX_FRAME_SIZE - 1; i++)
+    {
+        RefreshFSMOutput out = refreshFSMTick(&cmdNone);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out.action.set.ledNum);
+        TEST_ASSERT_EQUAL(0, out.framesToRelease.len);
+        TEST_ASSERT_FALSE(out.isIdle);
+    }
+
+    RefreshFSMOutput outLast = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, outLast.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(MAX_FRAME_SIZE - 1, outLast.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, outLast.framesToRelease.len);
+    TEST_ASSERT_TRUE(outLast.isIdle);
+}
+
+TEST_CASE("newFrameQueuedWhileBoardIsDark", TEST_GROUP)
+{
+    const uint32_t cmd1FrameNdx = 0;
+    const uint32_t cmd2FrameNdx = 1;
+    const uint32_t cmd3FrameNdx = 2;
+    const uint32_t frameBFrameNdx = 3;
+    const uint32_t frameCFrameNdx = 4;
+
+    /* initialize variables */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledNumToReg[i].matrix = MAT1_PAGE0;
+        ledNumToReg[i].red = 0x44;
+        ledNumToReg[i].blue = 0x55;
+        ledNumToReg[i].green = 0x66;
+    }
+
+    /* initialize FSM */
+    RefreshFSMResources resources = {
+        .LEDNumToReg = ledNumToReg,
+        .LEDNumToRegLen = MAX_FRAME_SIZE,
+        .LEDFrames = ledFrames,
+        .LEDFramesLen = NUM_TEST_FRAMES,
+        .slowLEDColor = { 0 },
+        .mediumLEDColor = { 0 },
+        .fastLEDColor = { 0 },
+    };
+
+    refreshFSMInit(&resources);
+
+    /* send REFRESH_CMD_NEW_FRAME */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd1FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd1 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = cmd1FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out1 = refreshFSMTick(&cmd1);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out1.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out1.framesToRelease.len);
+    TEST_ASSERT_TRUE(out1.isIdle);
+
+    /* send REFRESH_CMD_UPDATE_TYPICAL for NORTH */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd2FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd2 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = cmd2FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out2 = refreshFSMTick(&cmd2);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out2.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out2.framesToRelease.len);
+    TEST_ASSERT_TRUE(out2.isIdle);
+
+    /* send REFRESH_CMD_UPDATE_TYPICAL for SOUTH */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd3FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd3 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = cmd3FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = SOUTH,
+    };
+    RefreshFSMOutput out3 = refreshFSMTick(&cmd3);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out3.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out3.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out3.framesToRelease.len);
+    TEST_ASSERT_FALSE(out3.isIdle);
+
+    /* send REFRESH_CMD_NONE until all LEDs of the frame are set */
+    RefreshFSMCommand cmd4 = { .type = REFRESH_CMD_NONE };
+    for (uint32_t i = 1; i < MAX_FRAME_SIZE - 1; i++)
+    {
+        RefreshFSMOutput out4 = refreshFSMTick(&cmd4);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out4.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out4.action.set.ledNum);
+        TEST_ASSERT_EQUAL(0, out4.framesToRelease.len);
+        TEST_ASSERT_FALSE(out4.isIdle);
+    }
+
+    RefreshFSMOutput out4 = refreshFSMTick(&cmd4);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out4.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(MAX_FRAME_SIZE - 1, out4.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out4.framesToRelease.len);
+    TEST_ASSERT_TRUE(out4.isIdle);
+
+    RefreshFSMOutput out5 = refreshFSMTick(&cmd4);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out5.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out5.framesToRelease.len);
+    TEST_ASSERT_TRUE(out5.isIdle);
+
+    /* (2) REFRESH_CMD_NIGHT_MODE_ON is sent. The FSM clears frame (1) from
+       the board and, once fully cleared, goes idle with the board dark.
+       No frame is released. */
+    RefreshFSMCommand cmd6 = { .type = REFRESH_CMD_NIGHT_MODE_ON };
+    RefreshFSMOutput out6 = refreshFSMTick(&cmd6);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out6.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(MAX_FRAME_SIZE - 1, out6.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(0, out6.framesToRelease.len);
+    TEST_ASSERT_FALSE(out6.isIdle);
+
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    for (uint32_t i = MAX_FRAME_SIZE - 2; i > 0; i--)
+    {
+        RefreshFSMOutput out7 = refreshFSMTick(&cmdNone);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out7.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out7.action.clear.ledNum);
+        TEST_ASSERT_EQUAL(0, out7.framesToRelease.len);
+        TEST_ASSERT_FALSE(out7.isIdle);
+    }
+
+    RefreshFSMOutput out8 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out8.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out8.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(0, out8.framesToRelease.len);
+    TEST_ASSERT_TRUE(out8.isIdle);
+
+    /* (3) REFRESH_CMD_NEW_FRAME is sent for frame (2), while the board is
+       still dark. Because night mode is on, the FSM does not begin
+       installing frame (2) -- it is only buffered as the next frame. No
+       output is produced and no release occurs. */
+    for (uint32_t i = 0; i < 10; i++)
+    {
+        ledFrames[frameBFrameNdx][i].ledNum = 100 + i;
+    }
+    RefreshFSMCommand cmd9 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = frameBFrameNdx,
+        .frameLen = 10,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out9 = refreshFSMTick(&cmd9);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out9.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out9.framesToRelease.len);
+    TEST_ASSERT_TRUE(out9.isIdle);
+
+    /* (4) REFRESH_CMD_NEW_FRAME is sent again, for frame (3), still while
+       the board is dark. Frame (2) is already queued, so the FSM
+       immediately releases it with a FRAME_RELEASE_QUEUED_STANDARD --
+       displaced before ever being installed -- and buffers frame (3) in
+       its place. The board remains dark. */
+    for (uint32_t i = 0; i < 8; i++)
+    {
+        ledFrames[frameCFrameNdx][i].ledNum = 200 + i;
+    }
+    RefreshFSMCommand cmd10 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = frameCFrameNdx,
+        .frameLen = 8,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out10 = refreshFSMTick(&cmd10);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out10.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(1, out10.framesToRelease.len);
+    TEST_ASSERT_EQUAL(frameBFrameNdx, out10.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_STANDARD, out10.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_TRUE(out10.isIdle);
+
+    /* (5) REFRESH_CMD_NIGHT_MODE_OFF is sent. Frame (3) is queued, so the
+       FSM releases frame (1) with a FRAME_RELEASE_STANDARD -- it is never
+       redisplayed, only replaced by the frame queued while dark -- and
+       begins installing frame (3) instead. No typical frame is released,
+       since neither typical was ever requeued while dark. */
+    RefreshFSMCommand cmd11 = { .type = REFRESH_CMD_NIGHT_MODE_OFF };
+    RefreshFSMOutput out11 = refreshFSMTick(&cmd11);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out11.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(200, out11.action.set.ledNum);
+    TEST_ASSERT_EQUAL(1, out11.framesToRelease.len);
+    TEST_ASSERT_EQUAL(cmd1FrameNdx, out11.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, out11.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_FALSE(out11.isIdle);
+
+    /* the FSM installs frame (3) to completion with no further
+       releases */
+    for (uint32_t i = 201; i < 200 + 7; i++)
+    {
+        RefreshFSMOutput out = refreshFSMTick(&cmdNone);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out.action.set.ledNum);
+        TEST_ASSERT_EQUAL(0, out.framesToRelease.len);
+        TEST_ASSERT_FALSE(out.isIdle);
+    }
+
+    RefreshFSMOutput outLast = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, outLast.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(200 + 7, outLast.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, outLast.framesToRelease.len);
+    TEST_ASSERT_TRUE(outLast.isIdle);
+}
+
+TEST_CASE("frameQueueDisplacementAcrossADirectionChange", TEST_GROUP)
+{
+    const uint32_t cmd1FrameNdx = 0;
+    const uint32_t cmd2FrameNdx = 1;
+    const uint32_t cmd3FrameNdx = 2;
+    const uint32_t frameAFrameNdx = 3;
+    const uint32_t frameBFrameNdx = 4;
+
+    /* initialize variables */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledNumToReg[i].matrix = MAT1_PAGE0;
+        ledNumToReg[i].red = 0x44;
+        ledNumToReg[i].blue = 0x55;
+        ledNumToReg[i].green = 0x66;
+    }
+
+    /* initialize FSM */
+    RefreshFSMResources resources = {
+        .LEDNumToReg = ledNumToReg,
+        .LEDNumToRegLen = MAX_FRAME_SIZE,
+        .LEDFrames = ledFrames,
+        .LEDFramesLen = NUM_TEST_FRAMES,
+        .slowLEDColor = { 0 },
+        .mediumLEDColor = { 0 },
+        .fastLEDColor = { 0 },
+    };
+
+    refreshFSMInit(&resources);
+
+    /* send REFRESH_CMD_NEW_FRAME */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd1FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd1 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = cmd1FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out1 = refreshFSMTick(&cmd1);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out1.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out1.framesToRelease.len);
+    TEST_ASSERT_TRUE(out1.isIdle);
+
+    /* send REFRESH_CMD_UPDATE_TYPICAL for NORTH */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd2FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd2 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = cmd2FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out2 = refreshFSMTick(&cmd2);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out2.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out2.framesToRelease.len);
+    TEST_ASSERT_TRUE(out2.isIdle);
+
+    /* send REFRESH_CMD_UPDATE_TYPICAL for SOUTH */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd3FrameNdx][i].ledNum = i;
+    }
+
+    RefreshFSMCommand cmd3 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = cmd3FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = SOUTH,
+    };
+    RefreshFSMOutput out3 = refreshFSMTick(&cmd3);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out3.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out3.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out3.framesToRelease.len);
+    TEST_ASSERT_FALSE(out3.isIdle);
+
+    /* send REFRESH_CMD_NONE until all LEDs of the frame are set */
+    RefreshFSMCommand cmd4 = { .type = REFRESH_CMD_NONE };
+    for (uint32_t i = 1; i < MAX_FRAME_SIZE - 1; i++)
+    {
+        RefreshFSMOutput out4 = refreshFSMTick(&cmd4);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out4.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out4.action.set.ledNum);
+        TEST_ASSERT_EQUAL(0, out4.framesToRelease.len);
+        TEST_ASSERT_FALSE(out4.isIdle);
+    }
+
+    RefreshFSMOutput out4 = refreshFSMTick(&cmd4);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out4.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(MAX_FRAME_SIZE - 1, out4.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out4.framesToRelease.len);
+    TEST_ASSERT_TRUE(out4.isIdle);
+
+    RefreshFSMOutput out5 = refreshFSMTick(&cmd4);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out5.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out5.framesToRelease.len);
+    TEST_ASSERT_TRUE(out5.isIdle);
+
+    /* (2) NEW_FRAME for frame A, with a *different* direction (SOUTH) than
+       is currently installed (NORTH). The FSM queues frame A and begins
+       to output REFRESH_ACTION_CLEAR actions in reverse order of frame
+       (1). */
+    for (uint32_t i = 0; i < 10; i++)
+    {
+        ledFrames[frameAFrameNdx][i].ledNum = 50 + i;
+    }
+    RefreshFSMCommand cmd6 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = frameAFrameNdx,
+        .frameLen = 10,
+        .dir = SOUTH,
+    };
+    RefreshFSMOutput out6 = refreshFSMTick(&cmd6);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out6.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(MAX_FRAME_SIZE - 1, out6.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(0, out6.framesToRelease.len);
+    TEST_ASSERT_FALSE(out6.isIdle);
+
+    /* clear partway through the board, stopping well before frame (1) has
+       finished clearing */
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    for (uint32_t i = MAX_FRAME_SIZE - 2; i >= 50; i--)
+    {
+        RefreshFSMOutput out7 = refreshFSMTick(&cmdNone);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out7.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out7.action.clear.ledNum);
+        TEST_ASSERT_EQUAL(0, out7.framesToRelease.len);
+        TEST_ASSERT_FALSE(out7.isIdle);
+    }
+
+    /* (3) while REFRESH_ACTION_CLEAR is still being output, REFRESH_CMD_NEW_FRAME
+       is sent again for frame B, with yet another direction (NORTH). A
+       frame is already queued (frame A), so the FSM immediately releases
+       frame A as FRAME_RELEASE_QUEUED_STANDARD and frame (1) as
+       FRAME_RELEASE_STANDARD, in the same tick, and outputs a single
+       REFRESH_ACTION_CLEAR_RANGE that clears the remainder of the board
+       and immediately begins installing frame B -- the frame queue holds
+       only one slot regardless of direction. */
+    for (uint32_t i = 0; i < 12; i++)
+    {
+        ledFrames[frameBFrameNdx][i].ledNum = 300 + i;
+    }
+    RefreshFSMCommand cmd8 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = frameBFrameNdx,
+        .frameLen = 12,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out8 = refreshFSMTick(&cmd8);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR_RANGE, out8.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(50, out8.action.clearRange.startLedNum);
+    TEST_ASSERT_EQUAL(2, out8.framesToRelease.len);
+    TEST_ASSERT_EQUAL(frameAFrameNdx, out8.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_STANDARD, out8.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_EQUAL(cmd1FrameNdx, out8.framesToRelease.list[1].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, out8.framesToRelease.list[1].type, "refresh frame release type");
+    TEST_ASSERT_FALSE(out8.isIdle);
+
+    /* (4) starting on the next tick, the FSM outputs REFRESH_ACTION_SET
+       actions in the order of frame B until all LEDs are set. The FSM is
+       now idle. */
+    RefreshFSMOutput out9 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out9.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(300, out9.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out9.framesToRelease.len);
+    TEST_ASSERT_FALSE(out9.isIdle);
+
+    for (uint32_t i = 301; i < 300 + 11; i++)
+    {
+        RefreshFSMOutput out10 = refreshFSMTick(&cmdNone);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out10.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out10.action.set.ledNum);
+        TEST_ASSERT_EQUAL(0, out10.framesToRelease.len);
+        TEST_ASSERT_FALSE(out10.isIdle);
+    }
+
+    RefreshFSMOutput out11 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out11.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(300 + 11, out11.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, out11.framesToRelease.len);
+    TEST_ASSERT_TRUE(out11.isIdle);
+}
+
+TEST_CASE("interleavedFrameAndTypicalQueueingWhileWaitingForFrames", TEST_GROUP)
+{
+    const uint32_t frameAFrameNdx = 0;
+    const uint32_t typicalAFrameNdx = 1;
+    const uint32_t frameBFrameNdx = 2;
+    const uint32_t typicalCFrameNdx = 3;
+    const uint32_t frameCFrameNdx = 4;
+    const uint32_t typicalDFrameNdx = 5;
+
+    /* initialize variables */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledNumToReg[i].matrix = MAT1_PAGE0;
+        ledNumToReg[i].red = 0x44;
+        ledNumToReg[i].blue = 0x55;
+        ledNumToReg[i].green = 0x66;
+    }
+
+    /* initialize FSM */
+    RefreshFSMResources resources = {
+        .LEDNumToReg = ledNumToReg,
+        .LEDNumToRegLen = MAX_FRAME_SIZE,
+        .LEDFrames = ledFrames,
+        .LEDFramesLen = NUM_TEST_FRAMES,
+        .slowLEDColor = { 0 },
+        .mediumLEDColor = { 0 },
+        .fastLEDColor = { 0 },
+    };
+
+    refreshFSMInit(&resources);
+
+    /* (1) send REFRESH_CMD_NEW_FRAME for frame A. The FSM has no current
+       frame yet, so frame A is latched directly as the current frame with
+       no output or release. */
+    for (uint32_t i = 0; i < 5; i++)
+    {
+        ledFrames[frameAFrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmdFrameA = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = frameAFrameNdx,
+        .frameLen = 5,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput outFrameA = refreshFSMTick(&cmdFrameA);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outFrameA.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, outFrameA.framesToRelease.len);
+    TEST_ASSERT_TRUE(outFrameA.isIdle);
+
+    /* (2) send REFRESH_CMD_UPDATE_TYPICAL for NORTH (typical A). Nothing
+       was previously queued for NORTH, so typical A is only buffered. The
+       FSM remains idle, still missing SOUTH typical data. */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[typicalAFrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmdTypicalA = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalAFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput outTypicalA = refreshFSMTick(&cmdTypicalA);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outTypicalA.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, outTypicalA.framesToRelease.len);
+    TEST_ASSERT_TRUE(outTypicalA.isIdle);
+
+    /* (3) send REFRESH_CMD_NEW_FRAME for frame B. A current frame already
+       exists (frame A), so frame B is only buffered as the next frame to
+       install. No release occurs yet. */
+    for (uint32_t i = 0; i < 5; i++)
+    {
+        ledFrames[frameBFrameNdx][i].ledNum = 500 + i;
+    }
+    RefreshFSMCommand cmdFrameB = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = frameBFrameNdx,
+        .frameLen = 5,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput outFrameB = refreshFSMTick(&cmdFrameB);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outFrameB.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, outFrameB.framesToRelease.len);
+    TEST_ASSERT_TRUE(outFrameB.isIdle);
+
+    /* (4) send REFRESH_CMD_UPDATE_TYPICAL again for NORTH (typical C).
+       Typical A is already queued for NORTH, so the FSM releases it as
+       FRAME_RELEASE_QUEUED_TYPICAL and buffers typical C in its place.
+       Frame B, queued in (3), is unaffected. */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[typicalCFrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmdTypicalC = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalCFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput outTypicalC = refreshFSMTick(&cmdTypicalC);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outTypicalC.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(1, outTypicalC.framesToRelease.len);
+    TEST_ASSERT_EQUAL(typicalAFrameNdx, outTypicalC.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_TYPICAL, outTypicalC.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_TRUE(outTypicalC.isIdle);
+
+    /* (5) send REFRESH_CMD_NEW_FRAME again for frame C. Frame B is
+       already queued, so the FSM releases it as
+       FRAME_RELEASE_QUEUED_STANDARD and buffers frame C in its place.
+       Typical C, queued in (4), is unaffected. */
+    for (uint32_t i = 0; i < 6; i++)
+    {
+        ledFrames[frameCFrameNdx][i].ledNum = 400 + i;
+    }
+    RefreshFSMCommand cmdFrameC = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = frameCFrameNdx,
+        .frameLen = 6,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput outFrameC = refreshFSMTick(&cmdFrameC);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outFrameC.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(1, outFrameC.framesToRelease.len);
+    TEST_ASSERT_EQUAL(frameBFrameNdx, outFrameC.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_STANDARD, outFrameC.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_TRUE(outFrameC.isIdle);
+
+    /* (6) send REFRESH_CMD_UPDATE_TYPICAL for SOUTH (typical D). Nothing
+       was previously queued for SOUTH, so typical D is only buffered --
+       but this also completes both directions' typical data, so the FSM
+       immediately begins installing frame C (the frame left queued after
+       (5)). Frame A is released as FRAME_RELEASE_STANDARD, since it was
+       only ever held as the current frame while queueing occurred, never
+       displayed. Neither typical C nor typical D displaces a current
+       typical -- both are the first ever latched for their direction --
+       so no typical is released here. */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[typicalDFrameNdx][i].ledNum = i;
+    }
+    RefreshFSMCommand cmdTypicalD = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalDFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = SOUTH,
+    };
+    RefreshFSMOutput outTypicalD = refreshFSMTick(&cmdTypicalD);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, outTypicalD.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(400, outTypicalD.action.set.ledNum);
+    TEST_ASSERT_EQUAL(1, outTypicalD.framesToRelease.len);
+    TEST_ASSERT_EQUAL(frameAFrameNdx, outTypicalD.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, outTypicalD.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_FALSE(outTypicalD.isIdle);
+
+    /* the FSM installs frame C to completion with no further releases --
+       frame C, typical C, and typical D are now in active use and are
+       never released */
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    for (uint32_t i = 401; i < 400 + 5; i++)
+    {
+        RefreshFSMOutput out = refreshFSMTick(&cmdNone);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out.action.type, "refresh action type");
+        TEST_ASSERT_EQUAL(i, out.action.set.ledNum);
+        TEST_ASSERT_EQUAL(0, out.framesToRelease.len);
+        TEST_ASSERT_FALSE(out.isIdle);
+    }
+
+    RefreshFSMOutput outLast = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, outLast.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(400 + 5, outLast.action.set.ledNum);
+    TEST_ASSERT_EQUAL(0, outLast.framesToRelease.len);
+    TEST_ASSERT_TRUE(outLast.isIdle);
 }
