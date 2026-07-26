@@ -113,3 +113,12 @@ The refresh FSM takes in commands from user code and outputs actions in response
 4) While outputting `REFRESH_ACTION_SET`, `REFRESH_CMD_NEW_FRAME` is sent with the same direction as the frame of (2). The FSM stops installing the current frame and immediately begins clearing it: it outputs `REFRESH_ACTION_CLEAR` actions in reverse order of the frame of (2), starting from the most recently set LED in (3), until all LEDs of the frame are cleared. The final `REFRESH_ACTION_CLEAR` (for the first LED of frame (2)) also outputs a `FRAME_RELEASE_STANDARD` for the frame of (2).
 
 5) The FSM outputs `REFRESH_ACTION_SET` in the same order of the frame of (4) until all LEDs in the frame are set. The FSM is now idle.
+
+### LED Color Reflects Live vs Typical Speed
+
+1) The FSM has typical frames for all directions. Each LED in the current frame has a live speed and a corresponding typical (free-flow) speed for its direction, looked up by LED number in the current typical frame.
+
+2) For each LED, the FSM computes the live speed as a percentage of the typical speed (0-100 scale, e.g. a live speed equal to the typical speed is 100%). When `REFRESH_ACTION_SET` is output for that LED, `action.set.color` is set based on where that percentage falls relative to `CONFIG_SLOW_CUTOFF_PERCENT` (default 50) and `CONFIG_MEDIUM_CUTOFF_PERCENT` (default 80):
+   - Below `CONFIG_SLOW_CUTOFF_PERCENT`: `slowLEDColor`.
+   - At or above `CONFIG_SLOW_CUTOFF_PERCENT` but below `CONFIG_MEDIUM_CUTOFF_PERCENT`: `mediumLEDColor`.
+   - At or above `CONFIG_MEDIUM_CUTOFF_PERCENT`: `fastLEDColor`.

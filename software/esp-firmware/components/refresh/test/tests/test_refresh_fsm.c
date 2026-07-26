@@ -2375,3 +2375,127 @@ TEST_CASE("newFrameUpdateDuringInstallation", TEST_GROUP)
     TEST_ASSERT_EQUAL(0, out17.framesToRelease.len);
     TEST_ASSERT_TRUE(out17.isIdle);
 }
+
+TEST_CASE("ledColorReflectsLiveVsTypicalSpeed", TEST_GROUP)
+{
+    LEDReg ledNumToReg[MAX_FRAME_SIZE];
+    LEDSpeed ledFrames[NUM_TEST_FRAMES][MAX_FRAME_SIZE];
+    const uint32_t cmd1FrameNdx = 0;
+    const uint32_t cmd2FrameNdx = 1;
+    const uint32_t cmd3FrameNdx = 2;
+
+    /* initialize variables */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledNumToReg[i].matrix = MAT1_PAGE0;
+        ledNumToReg[i].red = 0x44;
+        ledNumToReg[i].blue = 0x55;
+        ledNumToReg[i].green = 0x66;
+    }
+
+    /* typical speed frames are indexed directly by ledNum, so they must be
+       full length. Every LED's typical (free-flow) speed is 100, so the
+       live speed value doubles as its percentage of typical. */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[cmd2FrameNdx][i].ledNum = i;
+        ledFrames[cmd2FrameNdx][i].speed = 100;
+        ledFrames[cmd3FrameNdx][i].ledNum = i;
+        ledFrames[cmd3FrameNdx][i].speed = 100;
+    }
+
+    /* current frame: LED 0 is at 90% of typical (fast), LED 1 is at 60% of
+       typical (medium), LED 2 is at 30% of typical (slow) */
+    ledFrames[cmd1FrameNdx][0].ledNum = 0;
+    ledFrames[cmd1FrameNdx][0].speed = 90;
+    ledFrames[cmd1FrameNdx][1].ledNum = 1;
+    ledFrames[cmd1FrameNdx][1].speed = 60;
+    ledFrames[cmd1FrameNdx][2].ledNum = 2;
+    ledFrames[cmd1FrameNdx][2].speed = 30;
+
+    /* initialize FSM with distinct, recognizable colors for each speed
+       category */
+    const Color slowColor = { .red = 0xFF, .green = 0x00, .blue = 0x00 };
+    const Color mediumColor = { .red = 0x00, .green = 0xFF, .blue = 0x00 };
+    const Color fastColor = { .red = 0x00, .green = 0x00, .blue = 0xFF };
+    RefreshFSMResources resources = {
+        .LEDNumToReg = ledNumToReg,
+        .LEDNumToRegLen = MAX_FRAME_SIZE,
+        .LEDFrames = ledFrames,
+        .LEDFramesLen = NUM_TEST_FRAMES,
+        .slowLEDColor = slowColor,
+        .mediumLEDColor = mediumColor,
+        .fastLEDColor = fastColor,
+    };
+
+    refreshFSMInit(&resources);
+
+    /* send REFRESH_CMD_NEW_FRAME */
+    RefreshFSMCommand cmd1 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = cmd1FrameNdx,
+        .frameLen = 3,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out1 = refreshFSMTick(&cmd1);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out1.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out1.framesToRelease.len);
+    TEST_ASSERT_TRUE(out1.isIdle);
+
+    /* send REFRESH_CMD_UPDATE_TYPICAL for NORTH */
+    RefreshFSMCommand cmd2 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = cmd2FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out2 = refreshFSMTick(&cmd2);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out2.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out2.framesToRelease.len);
+    TEST_ASSERT_TRUE(out2.isIdle);
+
+    /* send REFRESH_CMD_UPDATE_TYPICAL for SOUTH -- this completes both
+       typical frames, so the FSM immediately begins installing frame (1) */
+    RefreshFSMCommand cmd3 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = cmd3FrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = SOUTH,
+    };
+    RefreshFSMOutput out3 = refreshFSMTick(&cmd3);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out3.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out3.action.set.ledNum);
+    /* LED 0 is at 90% of its typical speed, at or above
+       CONFIG_MEDIUM_CUTOFF_PERCENT (80), so it should be colored
+       fastLEDColor */
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(fastColor.red, out3.action.set.color.red, "LED 0 color.red");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(fastColor.green, out3.action.set.color.green, "LED 0 color.green");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(fastColor.blue, out3.action.set.color.blue, "LED 0 color.blue");
+    TEST_ASSERT_EQUAL(0, out3.framesToRelease.len);
+    TEST_ASSERT_FALSE(out3.isIdle);
+
+    /* LED 1 is at 60% of its typical speed, between
+       CONFIG_SLOW_CUTOFF_PERCENT (50) and CONFIG_MEDIUM_CUTOFF_PERCENT
+       (80), so it should be colored mediumLEDColor */
+    RefreshFSMCommand cmd4 = { .type = REFRESH_CMD_NONE };
+    RefreshFSMOutput out4 = refreshFSMTick(&cmd4);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out4.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(1, out4.action.set.ledNum);
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(mediumColor.red, out4.action.set.color.red, "LED 1 color.red");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(mediumColor.green, out4.action.set.color.green, "LED 1 color.green");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(mediumColor.blue, out4.action.set.color.blue, "LED 1 color.blue");
+    TEST_ASSERT_EQUAL(0, out4.framesToRelease.len);
+    TEST_ASSERT_FALSE(out4.isIdle);
+
+    /* LED 2 is at 30% of its typical speed, below CONFIG_SLOW_CUTOFF_PERCENT
+       (50), so it should be colored slowLEDColor. This is the last LED of
+       the frame, so the FSM is now idle. */
+    RefreshFSMOutput out5 = refreshFSMTick(&cmd4);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out5.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(2, out5.action.set.ledNum);
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(slowColor.red, out5.action.set.color.red, "LED 2 color.red");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(slowColor.green, out5.action.set.color.green, "LED 2 color.green");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(slowColor.blue, out5.action.set.color.blue, "LED 2 color.blue");
+    TEST_ASSERT_EQUAL(0, out5.framesToRelease.len);
+    TEST_ASSERT_TRUE(out5.isIdle);
+}

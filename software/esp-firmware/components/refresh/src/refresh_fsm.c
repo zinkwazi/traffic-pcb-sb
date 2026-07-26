@@ -692,7 +692,7 @@ static Color ledSpeedToColor(LEDSpeed speed, Direction dir)
     if (0 == typicalSpeed.speed) typicalSpeed.speed = 1;
 
     /* determine color */
-    float percentFlow = speed.speed / typicalSpeed.speed;
+    uint32_t percentFlow = (uint32_t) (100 * ((float) speed.speed / (float) typicalSpeed.speed));
     if (percentFlow < CONFIG_SLOW_CUTOFF_PERCENT) {
         ret = fsm.slowLEDColor;
     } else if (percentFlow < CONFIG_MEDIUM_CUTOFF_PERCENT) {
