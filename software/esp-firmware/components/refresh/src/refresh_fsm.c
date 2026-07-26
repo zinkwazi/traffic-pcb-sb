@@ -277,13 +277,14 @@ static void transitionToInstallingFrame(RefreshFSMOutput *out)
 }
 
 /**
- * Attempts to transition from the REFRESH_FSM_WAITING_FOR_FRAMES
- * state to the REFRESH_FSM_INSTALLING_FRAME state.
+ * Attempts to transition out of the REFRESH_FSM_WAITING_FOR_FRAMES
+ * state once both typical frames and a current frame are available.
+ * Transitions to REFRESH_FSM_INSTALLING_FRAME, unless night mode is
+ * on, in which case the FSM instead goes to REFRESH_FSM_CLEARED so
+ * the board stays dark until night mode is turned off.
  */
 static void tryTransitionFromWaitingForFrames(RefreshFSMOutput *out)
 {
-
-
     const bool haveBothTypicalFrames = (fsm.nextTypicalNorthFrameNdx != UINT32_MAX) &&
                                        (fsm.nextTypicalSouthFrameNdx != UINT32_MAX);
     if (haveBothTypicalFrames && fsm.currFrameNdx != UINT32_MAX)

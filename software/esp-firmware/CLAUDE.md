@@ -52,6 +52,8 @@ Speed-to-color thresholds (`CONFIG_SLOW_CUTOFF_PERCENT` / `CONFIG_MEDIUM_CUTOFF_
 - Medium (50–80%): ORANGE `{0x15, 0x09, 0x00}`
 - Fast (> 80%): BLUE `{0x00, 0x00, 0x10}`
 
+Boundary exactness (e.g. whether a value exactly at a cutoff is classified into the lower or upper bucket) does not matter for this project — either classification is acceptable at the cutoff itself.
+
 ## The Refresh Component (Under Active Refactoring)
 
 This component controls all traffic LEDs. It is currently being split into a focused FSM (`refresh_fsm`) and a thin task wrapper (`refresh_task`). The old monolithic implementation is in `src/refresh.c` and `src/refresh_task.c`.
