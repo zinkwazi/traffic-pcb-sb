@@ -20,23 +20,19 @@
 /**
  * @brief Describes the direction of traffic flow of a road segment.
  */
-enum Direction {
+typedef enum Direction {
     NORTH,
     SOUTH,
     NO_DIR,
-};
-
-typedef enum Direction Direction;
+} Direction;
 
 /**
  * @brief Describes the type of LED data of stored.
  */
-enum SpeedCategory {
+typedef enum SpeedCategory {
     LIVE,
     TYPICAL,
-};
-
-typedef enum SpeedCategory SpeedCategory;
+} SpeedCategory;
 
 /**
  * @brief User non-volatile storage settings.
@@ -44,37 +40,29 @@ typedef enum SpeedCategory SpeedCategory;
  * @note This struct is populated when user non-volatile storage settings
  *       are retrieved with retrieveNvsEntries.
  */
-struct UserSettings {
+typedef struct UserSettings {
     char *wifiSSID; /*!< A string containing the wifi SSID. */
     size_t wifiSSIDLen; /*!< The length of the wifiSSID string. */
     char *wifiPass; /*!< A string containing the wifi password. */
     size_t wifiPassLen; /*!< The length of the wifiPass string. */
-};
+} UserSettings;
 
-typedef struct UserSettings UserSettings;
-
-struct MainTaskResources {
+typedef struct MainTaskResources {
     nvs_handle_t nvsHandle;
     UserSettings *settings;
     esp_timer_handle_t refreshTimer;
-};
+} MainTaskResources;
 
-typedef struct MainTaskResources MainTaskResources;
-
-struct LEDData {
+typedef struct LEDData {
     uint16_t ledNum;
     /* The speed of the LED, with negative values specifying special LED types.*/
     int8_t speed;
-};
+} LEDData;
 
-typedef struct LEDData LEDData;
-
-struct Color {
+typedef struct Color {
     uint8_t red;
     uint8_t green;
     uint8_t blue;
-};
-
-typedef struct Color Color;
+} Color;
 
 #endif /* MAIN_TYPES_H_ */
