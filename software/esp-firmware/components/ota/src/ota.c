@@ -410,7 +410,8 @@ STATIC_IF_NOT_TEST UpdateType compareVersions(VersionInfo serverVer)
     if (serverVer.revisionVer != OTA_REVISION_VERSION) return UPDATE_NONE;
     /* compare firmware version */
     if (serverVer.majorVer > OTA_MAJOR_VERSION) return UPDATE_MAJOR;
-    if (serverVer.majorVer < OTA_MAJOR_VERSION) return UPDATE_NONE;
+    // if (serverVer.majorVer < OTA_MAJOR_VERSION) return UPDATE_NONE; // never true because major version is still 0.
+    // TODO: uncomment above line once major version is non-zero
 
     if (serverVer.minorVer > OTA_MINOR_VERSION) return UPDATE_MINOR;
     if (serverVer.minorVer < OTA_MINOR_VERSION) return UPDATE_NONE;

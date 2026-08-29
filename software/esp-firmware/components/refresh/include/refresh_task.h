@@ -20,7 +20,7 @@
 #include "main_types.h"
 #include "led_types.h"
 
-#include "refresh_fsm.h"
+#include "refresh_types.h"
 
 esp_err_t createRefreshTask(TaskHandle_t *handle, const UBaseType_t prio);
 esp_err_t refreshLEDs(LEDSpeed *data, uint32_t dataLen, Direction dir, TickType_t blockTime);

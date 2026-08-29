@@ -30,8 +30,9 @@
 #include "led_types.h"
 #include "utilities.h"
 
-#include "refresh_fsm.h"
 #include "refresh_config.h"
+#include "refresh_fsm.h"
+#include "refresh_types.h"
 
 #define TAG "refreshTask"
 
@@ -42,28 +43,19 @@
 
 #define NUM_RETRY               (5)
 
-/* The length of commandQueue. */
-#define COMMAND_QUEUE_LEN       (5)
-
 /* The number of LED frames that can be reserved */
-#define NUM_LED_FRAMES          (4)
+#define NUM_LED_FRAMES          (6)
 
-/**
- * A command which the refresh task can handle.
- */
-typedef struct {
-    RefreshFSMCommandType type;
-    uint32_t frameNdx; /* The ledFrames index where this command's LED frame is stored. NUM_LED_FRAMES if unused. */
-    Direction dir; /* The animation and display direction. NO_DIR if unused. */
-} RefreshCommand;
-
-static QueueHandle_t commandQueue = NULL; /* A queue holding RefreshCommands which the refresh task will handle in order */
+static QueueHandle_t commandQueue = NULL; /* A queue holding RefreshFSMCommands which the refresh task will handle in order */
 
 static LEDSpeed ledFrames[NUM_LED_FRAMES][MAX_FRAME_SIZE]; /* frames of LEDs for commands to pass LED data to the refresh task */
-static QueueHandle_t ledFramesEmptyNdxQueue; /* a queue of uint32_t ledFrames indices that are not currently in use by a command */
+static QueueHandle_t ledFramesEmptyNdxQueue = NULL; /* a queue of uint32_t ledFrames indices that are not currently in use by a command */
 
 static esp_err_t reserveLEDFrame(uint32_t *ndx, TickType_t ticksToWait);
+static esp_err_t releaseLEDFrame(uint32_t ndx);
 static void refreshTask(void *params);
+static void initRefreshTask(void);
+static void handleRefreshFSMAction(RefreshFSMAction *action);
 
 /**
  * Creates the refresh task and initializes resources.
@@ -89,7 +81,7 @@ esp_err_t createRefreshTask(TaskHandle_t *handle, const UBaseType_t prio)
     }
     
     /* initialize resources */
-    commandQueue = xQueueCreate(COMMAND_QUEUE_LEN, sizeof(RefreshCommand));
+    commandQueue = xQueueCreate(NUM_LED_FRAMES, sizeof(RefreshFSMCommand));
     if (NULL == commandQueue) return ESP_ERR_NO_MEM;
     ledFramesEmptyNdxQueue = xQueueCreate(NUM_LED_FRAMES, sizeof(uint32_t));
     if (NULL == ledFramesEmptyNdxQueue)
@@ -129,7 +121,7 @@ esp_err_t createRefreshTask(TaskHandle_t *handle, const UBaseType_t prio)
  * @param data An array of LEDColor to use when refreshing LEDs.
  * Must be of size MAX_NUM_LEDS_REG.
  * @param dataLen The length of the data array. Must be less
- * than or equal to 
+ * than or equal to MAX_FRAME_SIZE.
  * @param dir The direction to refresh LEDs in.
  * @param blockTime The maximum number of ticks to block for.
  * 
@@ -144,20 +136,22 @@ esp_err_t refreshLEDs(LEDSpeed *data, uint32_t dataLen, Direction dir, TickType_
 
     if (NULL == data) return ESP_ERR_INVALID_ARG;
     if (NO_DIR == dir) return ESP_ERR_INVALID_ARG;
+    if (dataLen > MAX_FRAME_SIZE) return ESP_ERR_INVALID_ARG;
 
     /* store LED frame for refresh task */
     uint32_t frameNdx;
     err = reserveLEDFrame(&frameNdx, blockTime);
     if (err != ESP_OK) return err;
-    for (uint32_t i = 0; i < MAX_NUM_LEDS_REG; i++)
+    for (uint32_t i = 0; i < dataLen; i++)
     {
         ledFrames[frameNdx][i] = data[i];
     }
 
     /* create and push command */
-    RefreshCommand cmd = {
+    RefreshFSMCommand cmd = {
         .type = REFRESH_CMD_NEW_FRAME,
         .frameNdx = frameNdx,
+        .frameLen = dataLen,
         .dir = dir,
     };
     BaseType_t success = xQueueSend(commandQueue, &cmd, 0); // expect that if able to reserve a frame, that there is space on the command queue
@@ -184,9 +178,10 @@ esp_err_t refreshLEDs(LEDSpeed *data, uint32_t dataLen, Direction dir, TickType_
  */
 esp_err_t refreshEnableNightMode(TickType_t blockTime)
 {
-    RefreshCommand cmd = {
+    RefreshFSMCommand cmd = {
         .type = REFRESH_CMD_NIGHT_MODE_ON,
         .frameNdx = MAX_NUM_LEDS_REG,
+        .frameLen = 0,
         .dir = NO_DIR,
     };
     BaseType_t success = xQueueSend(commandQueue, &cmd, blockTime);
@@ -207,9 +202,10 @@ esp_err_t refreshEnableNightMode(TickType_t blockTime)
  */
 esp_err_t refreshDisableNightMode(TickType_t blockTime)
 {
-    RefreshCommand cmd = {
+    RefreshFSMCommand cmd = {
         .type = REFRESH_CMD_NIGHT_MODE_OFF,
         .frameNdx = MAX_NUM_LEDS_REG,
+        .frameLen = 0,
         .dir = NO_DIR,
     };
     BaseType_t success = xQueueSend(commandQueue, &cmd, blockTime);
@@ -246,6 +242,30 @@ static esp_err_t reserveLEDFrame(uint32_t *ndx, TickType_t ticksToWait)
 }
 
 /**
+ * Releases an LED frame for use by a new command.
+ * 
+ * @requires:
+ * - createRefreshTask called.
+ * 
+ * @param ndx The index of the LED frame to release.
+ * 
+ * @returns ESP_OK if successful.
+ * ESP_ERR_INVALID_ARG if invalid argument.
+ * ESP_FAIL if unable to release LED frame.
+ */
+static esp_err_t releaseLEDFrame(uint32_t ndx)
+{
+    if (ndx >= NUM_LED_FRAMES) return ESP_ERR_INVALID_ARG;
+
+    BaseType_t success = xQueueSend(ledFramesEmptyNdxQueue, &ndx, 0);
+    if (pdTRUE != success)
+    {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
+/**
  * Implements the refresh task, which is responsible for
  * handling traffic LED commands.
  * 
@@ -255,8 +275,7 @@ static void refreshTask(void *params)
 {
     UNUSED(params);
 
-    esp_err_t err;
-    RefreshCommand nextCmd = { .type = REFRESH_CMD_NONE };
+    TickType_t sleepTicks = portMAX_DELAY;
 
     /* check validity of resources */
     if (NULL == commandQueue || NULL == ledFramesEmptyNdxQueue)
@@ -265,13 +284,79 @@ static void refreshTask(void *params)
         vTaskDelete(NULL);
     }
 
-    /* initialize LED matrices */
+    initRefreshTask();
+    while (true)
+    {
+        RefreshFSMCommand cmd;
+        RefreshFSMOutput out;
+
+        /* sleep while waiting for command */
+        BaseType_t success = xQueueReceive(commandQueue, (void *) &cmd, sleepTicks);
+        if (pdTRUE != success)
+        {
+            cmd.type = REFRESH_CMD_NONE;
+        }
+
+        /* provide command to refresh FSM and handle action */
+        out = refreshFSMTick(&cmd);
+        if (0 != out.framesToRelease.len)
+        {
+            for (uint32_t i = 0; i < out.framesToRelease.len; i++)
+            {
+                ESP_LOGI(TAG, "releasing frame %d for reason %d", out.framesToRelease.list[i].index, out.framesToRelease.list[i].type);
+                esp_err_t err = releaseLEDFrame(out.framesToRelease.list[i].index);
+                assert(ESP_OK == err && "failed to release LED frame");
+
+            }
+        }
+        handleRefreshFSMAction(&out.action);
+        sleepTicks = (out.isIdle) ? portMAX_DELAY : portTICK_PERIOD_MS * CONFIG_LED_UPDATE_PERIOD;
+    }
+
+    ESP_LOGE(TAG, "Refresh task is exiting unexpectedly.");
+    vTaskDelete(NULL);
+}
+
+/**
+ * Runs initialization of dependencies for the refreshTask.
+ * This is separated to reduce lifetime stack usage of the
+ * refreshTask.
+ * 
+ * @note if initialization fails, then this
+ * function deletes the current task.
+ */
+static void initRefreshTask(void)
+{
+    const RefreshFSMResources fsmResources = {
+        .LEDNumToReg = LEDNumToReg,
+        .LEDNumToRegLen = MAX_NUM_LEDS_REG,
+        .LEDFrames = ledFrames,
+        .LEDFramesLen = NUM_LED_FRAMES,
+        .slowLEDColor = {
+            .red = SLOW_RED,
+            .green = SLOW_GREEN,
+            .blue = SLOW_BLUE,
+        },
+        .mediumLEDColor = {
+            .red = MEDIUM_RED,
+            .green = MEDIUM_GREEN,
+            .blue = MEDIUM_BLUE,
+        },
+        .fastLEDColor = {
+            .red = FAST_RED,
+            .green = FAST_GREEN,
+            .blue = FAST_BLUE,
+        },
+    };
+    esp_err_t err;
+
     err = initLedMatrix();
     if (ESP_OK != err && ESP_ERR_INVALID_STATE != err)
     {
         ESP_LOGE(TAG, "LED Matrices could not be initialized: %d", err);
         vTaskDelete(NULL);
     }
+
     err = matReset();
     if (ESP_OK != err)
     {
@@ -279,13 +364,33 @@ static void refreshTask(void *params)
         vTaskDelete(NULL);
     }
 
-    while (true)
+    refreshFSMInit(&fsmResources);
+}
+
+/**
+ * Performs the requested FSM action.
+ * 
+ * @param action The requested FSM action.
+ */
+static void handleRefreshFSMAction(RefreshFSMAction *action)
+{
+    if (REFRESH_ACTION_NONE == action->type) return;
+
+    switch (action->type)
     {
-
+        case REFRESH_ACTION_SET:
+            // TODO: handle case
+            break;
+        case REFRESH_ACTION_CLEAR:
+            // TODO: handle case
+            break;
+        case REFRESH_ACTION_CLEAR_RANGE:
+            // TODO: handle case
+            break;
+        case REFRESH_ACTION_NONE:
+            ESP_LOGW(TAG, "REFRESH_ACTION_NONE found unexpectedly.");
+            break;
     }
-
-    ESP_LOGE(TAG, "Refresh task is exiting unexpectedly.");
-    vTaskDelete(NULL);
 }
 
 #ifdef CONFIG_TEST_REFRESH

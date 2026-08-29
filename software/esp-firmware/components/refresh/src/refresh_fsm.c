@@ -21,6 +21,8 @@
 #include "main_types.h"
 #include "refresh_task.h"
 
+#include "refresh_types.h"
+
 #define TAG "refresh_fsm"
 
 typedef enum {
@@ -57,7 +59,7 @@ typedef struct RefreshFSM {
     /* the frame index of the next south typical LED speeds frame, which must be max length. UINT32_MAX if none */
     uint32_t nextTypicalSouthFrameNdx;
     /* the LED num to matrix register lookup table to determine if an LED is valid */
-    LEDReg *LEDNumToReg;
+    const LEDReg *LEDNumToReg;
     /* the length of LEDNumToReg */
     uint32_t LEDNumToRegLen;
     /* the frame array where input frames will be placed for the FSM */
@@ -110,7 +112,7 @@ static char *refreshFSMStateName(RefreshFSMState state);
  * 
  * @returns ESP_OK if successful.
  */
-void refreshFSMInit(RefreshFSMResources *resources)
+void refreshFSMInit(const RefreshFSMResources *resources)
 {
     assert(NULL != resources);
     assert(NULL != resources->LEDNumToReg);
@@ -151,7 +153,7 @@ void refreshFSMInit(RefreshFSMResources *resources)
  * @returns Upstream output for communication with
  * the task running the FSM.
  */
-RefreshFSMOutput refreshFSMTick(RefreshFSMCommand *cmd)
+RefreshFSMOutput refreshFSMTick(const RefreshFSMCommand *cmd)
 {
     assert(NULL != cmd);
 

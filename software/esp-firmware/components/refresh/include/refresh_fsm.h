@@ -15,12 +15,31 @@
 #include "main_types.h"
 #include "led_types.h"
 
-#define MAX_FRAME_SIZE          (512)
+#include "refresh_types.h"
 
-typedef struct LEDSpeed {
-    uint16_t ledNum; /* The Kicad LED number this speed corresponds to */
-    uint8_t speed; /* The speed of the road segment of the LED */
-} LEDSpeed;
+typedef enum {
+    /* Installs the provided LED frame to the board in the provided direction */
+    REFRESH_CMD_NEW_FRAME,
+    /* Clears then reinstalls the current LED frame, if any */
+    REFRESH_CMD_REFRESH,
+    /* Updates the typical LED speeds for the given direction */
+    REFRESH_CMD_UPDATE_TYPICAL,
+    /* Turns on night mode, during which LEDs will be turned off */
+    REFRESH_CMD_NIGHT_MODE_ON,
+    /* Turns off night mode, allowing the current LED frame to be displayed */
+    REFRESH_CMD_NIGHT_MODE_OFF,
+    REFRESH_CMD_NONE,
+} RefreshFSMCommandType;
+
+typedef struct {
+    RefreshFSMCommandType type;
+    /* The ledFrames index where this command's LED frame is stored. Ownership is given to the FSM */
+    uint32_t frameNdx;
+    /* The length of this command's LED frame stored at frameNdx in ledFrames */
+    uint32_t frameLen;
+    /* The animation and display direction */
+    Direction dir;
+} RefreshFSMCommand;
 
 /**
  * Action the FSM instructs to take.
@@ -87,37 +106,13 @@ typedef struct RefreshFSMOutput {
     RefreshFSMAction action;
 } RefreshFSMOutput;
 
-typedef enum {
-    /* Installs the provided LED frame to the board in the provided direction */
-    REFRESH_CMD_NEW_FRAME,
-    /* Clears then reinstalls the current LED frame, if any */
-    REFRESH_CMD_REFRESH,
-    /* Updates the typical LED speeds for the given direction */
-    REFRESH_CMD_UPDATE_TYPICAL,
-    /* Turns on night mode, during which LEDs will be turned off */
-    REFRESH_CMD_NIGHT_MODE_ON,
-    /* Turns off night mode, allowing the current LED frame to be displayed */
-    REFRESH_CMD_NIGHT_MODE_OFF,
-    REFRESH_CMD_NONE,
-} RefreshFSMCommandType;
-
-typedef struct {
-    RefreshFSMCommandType type;
-    /* The ledFrames index where this command's LED frame is stored. Ownership is given to the FSM */
-    uint32_t frameNdx;
-    /* The length of this command's LED frame stored at frameNdx in ledFrames */
-    uint32_t frameLen;
-    /* The animation and display direction */
-    Direction dir;
-} RefreshFSMCommand;
-
 /**
  * Resources the refresh FSM needs to do its job. These 
  * must exist for the duration of use of the FSM.
  */
 typedef struct {
     /* the LED num to matrix register lookup table to determine if an LED is valid */
-    LEDReg *LEDNumToReg;
+    const LEDReg *LEDNumToReg;
     /* the length of LEDNumToReg */
     uint32_t LEDNumToRegLen;
     /* the frame array where input frames will be placed for the FSM */
@@ -132,7 +127,7 @@ typedef struct {
     Color fastLEDColor;
 } RefreshFSMResources;
 
-void refreshFSMInit(RefreshFSMResources *resources);
-RefreshFSMOutput refreshFSMTick(RefreshFSMCommand *cmd);
+void refreshFSMInit(const RefreshFSMResources *resources);
+RefreshFSMOutput refreshFSMTick(const RefreshFSMCommand *cmd);
 
 #endif /* REFRESH_FSM_H_ */
