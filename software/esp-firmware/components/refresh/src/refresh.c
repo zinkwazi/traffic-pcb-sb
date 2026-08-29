@@ -646,29 +646,6 @@ static void setColor(uint8_t *red, uint8_t *green, uint8_t *blue, uint8_t percen
     }
 }
 
-static esp_err_t updateLED(uint16_t ledNum, uint8_t percentFlow, bool setScaling) {
-    esp_err_t err;
-    uint8_t red, green, blue;
-
-    /* determine and update color */
-    setColor(&red, &green, &blue, percentFlow);
-    for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
-    {
-        err = matSetColor(ledNum, red, green, blue);
-        if (err == ESP_OK) break;
-    }
-    if (err != ESP_OK) return err;
-    if (!setScaling) return ESP_OK;
-
-    /* set scaling if requested */
-    for (int32_t i = 0; i < MATRIX_RETRY_NUM; i++)
-    {
-        err = matSetScaling(ledNum, DEFAULT_SCALE, DEFAULT_SCALE, DEFAULT_SCALE);
-        if (err == ESP_OK) break;
-    }
-    if (err != ESP_OK) return ESP_FAIL;    
-    return ESP_OK;
-}
 
 /**
  * @brief Returns a pointer to the correct URL.

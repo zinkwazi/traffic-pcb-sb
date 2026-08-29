@@ -33,6 +33,7 @@
 #include "refresh_config.h"
 #include "refresh_fsm.h"
 #include "refresh_types.h"
+#include "refresh_utilities.h"
 
 #define TAG "refreshTask"
 
@@ -63,9 +64,6 @@ static void handleRefreshFSMAction(RefreshFSMAction *action);
  * @param[out] handle Where a handle to the created task
  * is created if successful. Can be NULL.
  * @param[in] prio The priority of the refresh task.
- * 
- * @requires:
- * - initLEDMatrix called.
  * 
  * @returns ESP_OK if the task was created successfully.
  * ESP_ERR_INVALID_STATE if the task was already created.
@@ -372,17 +370,28 @@ static void initRefreshTask(void)
  * 
  * @param action The requested FSM action.
  */
-static void handleRefreshFSMAction(RefreshFSMAction *action)
+static esp_err_t handleRefreshFSMAction(RefreshFSMAction *action)
 {
+    esp_err_t err;
+
     if (REFRESH_ACTION_NONE == action->type) return;
 
     switch (action->type)
     {
         case REFRESH_ACTION_SET:
-            // TODO: handle case
+            err = setLEDColor(action->set.ledNum, action->set.color, DONT_SET_BRIGHTNESS);
+            if (ESP_OK != err)
+            {
+                ESP_LOGE(TAG, "Failed to set LED %d.", action->set.ledNum);
+            }
             break;
         case REFRESH_ACTION_CLEAR:
-            // TODO: handle case
+            const Color colorOff = { .red = 0x00, .blue = 0x00, .green = 0x00 };
+            err = setLEDColor(action->clear.ledNum, colorOff, DONT_SET_BRIGHTNESS);
+            if (ESP_OK != err)
+            {
+                ESP_LOGE(TAG, "Failed to clear LED %d.", action->set.ledNum);
+            }
             break;
         case REFRESH_ACTION_CLEAR_RANGE:
             // TODO: handle case
@@ -391,6 +400,8 @@ static void handleRefreshFSMAction(RefreshFSMAction *action)
             ESP_LOGW(TAG, "REFRESH_ACTION_NONE found unexpectedly.");
             break;
     }
+
+    return err;
 }
 
 #ifdef CONFIG_TEST_REFRESH

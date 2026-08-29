@@ -157,9 +157,12 @@ static esp_err_t takeMatrixMutex(i2c_master_dev_handle_t device);
 static esp_err_t giveMatrixMutex(i2c_master_dev_handle_t device);
 
 #if CONFIG_HARDWARE_VERSION == 1
+static esp_err_t matInitialize(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
 static esp_err_t matGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3, uint8_t page, uint8_t addr);
 static esp_err_t matSetRegistersSeparate(uint8_t page, uint8_t addr, uint8_t mat1val, uint8_t mat2val, uint8_t mat3val);
 #elif CONFIG_HARDWARE_VERSION == 2
+esp_err_t matInitializeBus1(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
+esp_err_t matInitializeBus2(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
 static esp_err_t matGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3, uint8_t *result4, uint8_t page, uint8_t addr);
 static esp_err_t matSetRegistersSeparate(uint8_t page, uint8_t addr, uint8_t mat1val, uint8_t mat2val, uint8_t mat3val, uint8_t mat4val);
 #endif
@@ -238,331 +241,8 @@ esp_err_t getLedMatrixStatus(void)
 }
 
 #if CONFIG_HARDWARE_VERSION == 1
-/**
- * @brief Initializes the first I2C bus, which connects to matrix 1 and 2, 
- * asserts that the matrices are connected, and syncs internal state variables
- * to the state of the matrices.
- * 
- * @param[in] port The GPIO port of the first I2C bus.
- * @param[in] sdaPin The GPIO pin of the SDA line.
- * @param[in] sclPin The GPIO pin of the SCL line.
- * 
- * @returns ESP_OK if successful.
- * ESP_ERR_NOT_FOUND if a matrix on the first I2C bus could not be found.
- * ESP_ERR_NO_MEM if not enough memory was available.
- * APP_ERR_MUTEX_RELEASE if a device mutex could not be released. A reboot is
- * recommended.
- * ESP_FAIL if an unexpected error occurred.
- */
-esp_err_t matInitialize(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin)
-{
-    esp_err_t err;
-    i2c_master_bus_config_t master_bus_config = {
-        .i2c_port = port,
-        .sda_io_num = sdaPin,
-        .scl_io_num = sclPin,
-        .clk_source = I2C_CLK_SRC_DEFAULT, // not sure about this
-        .glitch_ignore_cnt = 7,            // typical value
-        .intr_priority = 0,                // may be one of level 1, 2, or 3 when set to 0
-        .flags.enable_internal_pullup = false,
-    };
-    i2c_device_config_t matrix_config = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = MAT1_ADDR,
-        .scl_speed_hz = BUS_SPEED_HZ,
-        .scl_wait_us = SCL_WAIT_US, // use default value
-    };
 
-    /* Initialize I2C bus 1 */
-    err = i2c_new_master_bus(&master_bus_config, &sI2CBus1);
-    if (err != ESP_OK)
-    {
-        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
-        if (err == ESP_ERR_NOT_FOUND) THROW_ERR(ESP_FAIL);
-        THROW_ERR(err); // ESP_ERR_NO_MEM
-    }
-    err = i2c_master_bus_add_device(sI2CBus1, &matrix_config, &sMat1Handle);
-    if (err != ESP_OK)
-    {
-        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
-        THROW_ERR(err); // ESP_ERR_NO_MEM
-    }
-    matrix_config.device_address = MAT2_ADDR;
-    err = i2c_master_bus_add_device(sI2CBus1, &matrix_config, &sMat2Handle);
-    if (err != ESP_OK)
-    {
-        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
-        THROW_ERR(err); // ESP_ERR_NO_MEM
-    }
-    matrix_config.device_address = MAT3_ADDR;
-    err = i2c_master_bus_add_device(sI2CBus1, &matrix_config, &sMat3Handle);
-    if (err != ESP_OK)
-    {
-        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
-        THROW_ERR(err); // ESP_ERR_NO_MEM
-    }
-
-    /* initialize matrix 1 and 2 mutexes */
-    sMat1Mutex = xSemaphoreCreateMutex();
-    if (sMat1Mutex == NULL) THROW_ERR(ESP_FAIL);
-    sMat2Mutex = xSemaphoreCreateMutex();
-    if (sMat2Mutex == NULL) THROW_ERR(ESP_FAIL);
-    sMat3Mutex = xSemaphoreCreateMutex();
-    if (sMat3Mutex == NULL) THROW_ERR(ESP_FAIL);
-
-    /* initialize matrix state and sync with matrices. This doubles as a check
-    that the matrices are connected. */
-    sMat1State = PWM0_PAGE; // force setPage to actually set the page
-    sMat2State = PWM0_PAGE; // so that pages are synced with hardware
-    sMat3State = PWM0_PAGE;
-    err = matSetPage(sMat1Handle, CONFIG_PAGE); // acquires sMat1Mutex
-    if (err != ESP_OK)
-    {
-        err = handleMatSetPageErr(err, sMat1Handle); // releases device mutex
-        if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
-        if (err == ESP_ERR_INVALID_STATE) return ESP_FAIL;
-        if (err == APP_ERR_MUTEX_FAIL) return ESP_FAIL;
-        if (err == APP_ERR_UNHANDLED) return ESP_FAIL;
-        if (err == ESP_ERR_TIMEOUT) return ESP_ERR_NOT_FOUND;
-        if (err == ESP_ERR_INVALID_RESPONSE) return ESP_ERR_NOT_FOUND;
-        return err; // APP_ERR_MUTEX_RELEASE
-    }
-    err = giveMatrixMutex(sMat1Handle);
-    if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
-
-    err = matSetPage(sMat2Handle, CONFIG_PAGE); // acquires sMat2Mutex
-    if (err != ESP_OK)
-    {
-        err = handleMatSetPageErr(err, sMat2Handle); // releases device mutex
-        if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
-        if (err == ESP_ERR_INVALID_STATE) return ESP_FAIL;
-        if (err == APP_ERR_MUTEX_FAIL) return ESP_FAIL;
-        if (err == APP_ERR_UNHANDLED) return ESP_FAIL;
-        if (err == ESP_ERR_TIMEOUT) return ESP_ERR_NOT_FOUND;
-        if (err == ESP_ERR_INVALID_RESPONSE) return ESP_ERR_NOT_FOUND;
-        return err; // APP_ERR_MUTEX_RELEASE
-    }
-    err = giveMatrixMutex(sMat2Handle);
-    if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
-
-    err = matSetPage(sMat3Handle, CONFIG_PAGE); // acquires sMat3Mutex
-    if (err != ESP_OK)
-    {
-        err = handleMatSetPageErr(err, sMat3Handle); // releases device mutex
-        if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
-        if (err == ESP_ERR_INVALID_STATE) return ESP_FAIL;
-        if (err == APP_ERR_MUTEX_FAIL) return ESP_FAIL;
-        if (err == APP_ERR_UNHANDLED) return ESP_FAIL;
-        if (err == ESP_ERR_TIMEOUT) return ESP_ERR_NOT_FOUND;
-        if (err == ESP_ERR_INVALID_RESPONSE) return ESP_ERR_NOT_FOUND;
-        return err; // APP_ERR_MUTEX_RELEASE
-    }
-    err = giveMatrixMutex(sMat3Handle);
-    if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
-
-    return (esp_err_t) ESP_OK;
-}
 #elif CONFIG_HARDWARE_VERSION == 2
-/**
- * @brief Initializes the first I2C bus, which connects to matrix 1 and 2, 
- * asserts that the matrices are connected, and syncs internal state variables
- * to the state of the matrices.
- * 
- * @param[in] port The GPIO port of the first I2C bus.
- * @param[in] sdaPin The GPIO pin of the SDA line.
- * @param[in] sclPin The GPIO pin of the SCL line.
- * 
- * @returns ESP_OK if successful.
- * ESP_ERR_NOT_FOUND if a matrix on the first I2C bus could not be found.
- * ESP_ERR_NO_MEM if not enough memory was available.
- * APP_ERR_MUTEX_RELEASE if a device mutex could not be released. A reboot is
- * recommended.
- * ESP_FAIL if an unexpected error occurred.
- */
-esp_err_t matInitializeBus1(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin)
-{
-    esp_err_t err;
-    i2c_master_bus_config_t master_bus_config = {
-        .i2c_port = port,
-        .sda_io_num = sdaPin,
-        .scl_io_num = sclPin,
-        .clk_source = I2C_CLK_SRC_DEFAULT, // not sure about this
-        .glitch_ignore_cnt = 7,            // typical value
-        .intr_priority = 0,                // may be one of level 1, 2, or 3 when set to 0
-        .flags.enable_internal_pullup = false,
-    };
-    i2c_device_config_t matrix_config = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = MAT1_ADDR,
-        .scl_speed_hz = BUS_SPEED_HZ,
-        .scl_wait_us = SCL_WAIT_US, // use default value
-    };
-
-    /* Initialize I2C bus 1 */
-    err = i2c_new_master_bus(&master_bus_config, &sI2CBus1);
-    if (err != ESP_OK)
-    {
-        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
-        if (err == ESP_ERR_NOT_FOUND) THROW_ERR(ESP_FAIL);
-        THROW_ERR(err); // ESP_ERR_NO_MEM
-    }
-    err = i2c_master_bus_add_device(sI2CBus1, &matrix_config, &sMat1Handle);
-    if (err != ESP_OK)
-    {
-        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
-        THROW_ERR(err); // ESP_ERR_NO_MEM
-    }
-    matrix_config.device_address = MAT2_ADDR;
-    err = i2c_master_bus_add_device(sI2CBus1, &matrix_config, &sMat2Handle);
-    if (err != ESP_OK)
-    {
-        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
-        THROW_ERR(err); // ESP_ERR_NO_MEM
-    }
-
-    /* initialize matrix 1 and 2 mutexes */
-    sMat1Mutex = xSemaphoreCreateMutex();
-    if (sMat1Mutex == NULL) THROW_ERR(ESP_FAIL);
-    sMat2Mutex = xSemaphoreCreateMutex();
-    if (sMat2Mutex == NULL) THROW_ERR(ESP_FAIL);
-
-    /* initialize matrix state and sync with matrices. This doubles as a check
-    that the matrices are connected. */
-    sMat1State = PWM0_PAGE; // force setPage to actually set the page
-    sMat2State = PWM0_PAGE; // so that pages are synced with hardware
-    err = matSetPage(sMat1Handle, CONFIG_PAGE); // acquires sMat1Mutex
-    if (err != ESP_OK)
-    {
-        err = handleMatSetPageErr(err, sMat1Handle); // releases device mutex
-        if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
-        if (err == ESP_ERR_INVALID_STATE) return ESP_FAIL;
-        if (err == APP_ERR_MUTEX_FAIL) return ESP_FAIL;
-        if (err == APP_ERR_UNHANDLED) return ESP_FAIL;
-        if (err == ESP_ERR_TIMEOUT) return ESP_ERR_NOT_FOUND;
-        if (err == ESP_ERR_INVALID_RESPONSE) return ESP_ERR_NOT_FOUND;
-        return err; // APP_ERR_MUTEX_RELEASE
-    }
-    err = giveMatrixMutex(sMat1Handle);
-    if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
-
-    err = matSetPage(sMat2Handle, CONFIG_PAGE); // acquires sMat1Mutex
-    if (err != ESP_OK)
-    {
-        err = handleMatSetPageErr(err, sMat2Handle); // releases device mutex
-        if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
-        if (err == ESP_ERR_INVALID_STATE) return ESP_FAIL;
-        if (err == APP_ERR_MUTEX_FAIL) return ESP_FAIL;
-        if (err == APP_ERR_UNHANDLED) return ESP_FAIL;
-        if (err == ESP_ERR_TIMEOUT) return ESP_ERR_NOT_FOUND;
-        if (err == ESP_ERR_INVALID_RESPONSE) return ESP_ERR_NOT_FOUND;
-        return err; // APP_ERR_MUTEX_RELEASE
-    }
-    err = giveMatrixMutex(sMat2Handle);
-    if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
-
-    return (esp_err_t) ESP_OK;
-}
-
-/**
- * @brief Initializes the second I2C bus, which connects to matrix 3 and 4, 
- * asserts that the matrices are connected, and syncs internal state variables
- * to the state of the matrices.
- * 
- * @param[in] port The GPIO port of the second I2C bus.
- * @param[in] sdaPin The GPIO pin of the SDA line.
- * @param[in] sclPin The GPIO pin of the SCL line.
- * 
- * @returns ESP_OK if successful.
- * ESP_ERR_NOT_FOUND if a matrix on the first I2C bus could not be found.
- * ESP_ERR_NO_MEM if not enough memory was available.
- * APP_ERR_MUTEX_RELEASE if a device mutex could not be released. A reboot is
- * recommended.
- * ESP_FAIL if an unexpected error occurred.
- */
-esp_err_t matInitializeBus2(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin)
-{
-    esp_err_t err;
-    i2c_master_bus_config_t master_bus_config = {
-        .i2c_port = port,
-        .sda_io_num = sdaPin,
-        .scl_io_num = sclPin,
-        .clk_source = I2C_CLK_SRC_DEFAULT, // not sure about this
-        .glitch_ignore_cnt = 7,            // typical value
-        .intr_priority = 0,                // may be one of level 1, 2, or 3 when set to 0
-        .flags.enable_internal_pullup = false,
-    };
-    i2c_device_config_t matrix_config = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = MAT3_ADDR,
-        .scl_speed_hz = BUS_SPEED_HZ,
-        .scl_wait_us = SCL_WAIT_US, // use default value
-    };
-
-    /* Initialize I2C bus 1 */
-    err = i2c_new_master_bus(&master_bus_config, &sI2CBus2);
-    if (err != ESP_OK)
-    {
-        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
-        if (err == ESP_ERR_NOT_FOUND) THROW_ERR(ESP_FAIL);
-        THROW_ERR(err); // ESP_ERR_NO_MEM
-    }
-    err = i2c_master_bus_add_device(sI2CBus2, &matrix_config, &sMat3Handle);
-    if (err != ESP_OK)
-    {
-        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
-        THROW_ERR(err); // ESP_ERR_NO_MEM
-    }
-    matrix_config.device_address = MAT4_ADDR;
-    err = i2c_master_bus_add_device(sI2CBus2, &matrix_config, &sMat4Handle);
-    if (err != ESP_OK)
-    {
-        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
-        THROW_ERR(err); // ESP_ERR_NO_MEM
-    }
-
-    /* initialize matrix 1 and 2 mutexes */
-    sMat3Mutex = xSemaphoreCreateMutex();
-    if (sMat3Mutex == NULL) THROW_ERR(ESP_FAIL);
-    sMat4Mutex = xSemaphoreCreateMutex();
-    if (sMat4Mutex == NULL) THROW_ERR(ESP_FAIL);
-
-    /* initialize matrix state and sync with matrices. This doubles as a check
-    that the matrices are connected. */
-    sMat3State = PWM0_PAGE; // force setPage to actually set the page
-    sMat4State = PWM0_PAGE; // so that pages are synced with hardware
-    err = matSetPage(sMat3Handle, CONFIG_PAGE); // acquires sMat1Mutex
-    if (err != ESP_OK)
-    {
-        err = handleMatSetPageErr(err, sMat3Handle); // releases device mutex
-        if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
-        if (err == ESP_ERR_INVALID_STATE) return ESP_FAIL;
-        if (err == APP_ERR_MUTEX_FAIL) return ESP_FAIL;
-        if (err == APP_ERR_UNHANDLED) return ESP_FAIL;
-        if (err == ESP_ERR_TIMEOUT) return ESP_ERR_NOT_FOUND;
-        if (err == ESP_ERR_INVALID_RESPONSE) return ESP_ERR_NOT_FOUND;
-        return err; // APP_ERR_MUTEX_RELEASE
-    }
-    err = giveMatrixMutex(sMat3Handle);
-    if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
-
-    err = matSetPage(sMat4Handle, CONFIG_PAGE); // acquires sMat1Mutex
-    if (err != ESP_OK)
-    {
-        err = handleMatSetPageErr(err, sMat4Handle); // releases device mutex
-        if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
-        if (err == ESP_ERR_INVALID_STATE) return ESP_FAIL;
-        if (err == APP_ERR_MUTEX_FAIL) return ESP_FAIL;
-        if (err == APP_ERR_UNHANDLED) return ESP_FAIL;
-        if (err == ESP_ERR_TIMEOUT) return ESP_ERR_NOT_FOUND;
-        if (err == ESP_ERR_INVALID_RESPONSE) return ESP_ERR_NOT_FOUND;
-        return err; // APP_ERR_MUTEX_RELEASE
-    }
-    err = giveMatrixMutex(sMat4Handle);
-    if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
-
-    return (esp_err_t) ESP_OK;
-}
-
 /**
  * @brief Sets the global current control of each matrix based on the current
  * ambient light level.
@@ -1626,6 +1306,131 @@ static esp_err_t giveMatrixMutex(i2c_master_dev_handle_t device)
 
 #if CONFIG_HARDWARE_VERSION == 1
 /**
+ * @brief Initializes the first I2C bus, which connects to matrix 1 and 2, 
+ * asserts that the matrices are connected, and syncs internal state variables
+ * to the state of the matrices.
+ * 
+ * @param[in] port The GPIO port of the first I2C bus.
+ * @param[in] sdaPin The GPIO pin of the SDA line.
+ * @param[in] sclPin The GPIO pin of the SCL line.
+ * 
+ * @returns ESP_OK if successful.
+ * ESP_ERR_NOT_FOUND if a matrix on the first I2C bus could not be found.
+ * ESP_ERR_NO_MEM if not enough memory was available.
+ * APP_ERR_MUTEX_RELEASE if a device mutex could not be released. A reboot is
+ * recommended.
+ * ESP_FAIL if an unexpected error occurred.
+ */
+static esp_err_t matInitialize(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin)
+{
+    esp_err_t err;
+    i2c_master_bus_config_t master_bus_config = {
+        .i2c_port = port,
+        .sda_io_num = sdaPin,
+        .scl_io_num = sclPin,
+        .clk_source = I2C_CLK_SRC_DEFAULT, // not sure about this
+        .glitch_ignore_cnt = 7,            // typical value
+        .intr_priority = 0,                // may be one of level 1, 2, or 3 when set to 0
+        .flags.enable_internal_pullup = false,
+    };
+    i2c_device_config_t matrix_config = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = MAT1_ADDR,
+        .scl_speed_hz = BUS_SPEED_HZ,
+        .scl_wait_us = SCL_WAIT_US, // use default value
+    };
+
+    /* Initialize I2C bus 1 */
+    err = i2c_new_master_bus(&master_bus_config, &sI2CBus1);
+    if (err != ESP_OK)
+    {
+        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
+        if (err == ESP_ERR_NOT_FOUND) THROW_ERR(ESP_FAIL);
+        THROW_ERR(err); // ESP_ERR_NO_MEM
+    }
+    err = i2c_master_bus_add_device(sI2CBus1, &matrix_config, &sMat1Handle);
+    if (err != ESP_OK)
+    {
+        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
+        THROW_ERR(err); // ESP_ERR_NO_MEM
+    }
+    matrix_config.device_address = MAT2_ADDR;
+    err = i2c_master_bus_add_device(sI2CBus1, &matrix_config, &sMat2Handle);
+    if (err != ESP_OK)
+    {
+        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
+        THROW_ERR(err); // ESP_ERR_NO_MEM
+    }
+    matrix_config.device_address = MAT3_ADDR;
+    err = i2c_master_bus_add_device(sI2CBus1, &matrix_config, &sMat3Handle);
+    if (err != ESP_OK)
+    {
+        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
+        THROW_ERR(err); // ESP_ERR_NO_MEM
+    }
+
+    /* initialize matrix 1 and 2 mutexes */
+    sMat1Mutex = xSemaphoreCreateMutex();
+    if (sMat1Mutex == NULL) THROW_ERR(ESP_FAIL);
+    sMat2Mutex = xSemaphoreCreateMutex();
+    if (sMat2Mutex == NULL) THROW_ERR(ESP_FAIL);
+    sMat3Mutex = xSemaphoreCreateMutex();
+    if (sMat3Mutex == NULL) THROW_ERR(ESP_FAIL);
+
+    /* initialize matrix state and sync with matrices. This doubles as a check
+    that the matrices are connected. */
+    sMat1State = PWM0_PAGE; // force setPage to actually set the page
+    sMat2State = PWM0_PAGE; // so that pages are synced with hardware
+    sMat3State = PWM0_PAGE;
+    err = matSetPage(sMat1Handle, CONFIG_PAGE); // acquires sMat1Mutex
+    if (err != ESP_OK)
+    {
+        err = handleMatSetPageErr(err, sMat1Handle); // releases device mutex
+        if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+        if (err == ESP_ERR_INVALID_STATE) return ESP_FAIL;
+        if (err == APP_ERR_MUTEX_FAIL) return ESP_FAIL;
+        if (err == APP_ERR_UNHANDLED) return ESP_FAIL;
+        if (err == ESP_ERR_TIMEOUT) return ESP_ERR_NOT_FOUND;
+        if (err == ESP_ERR_INVALID_RESPONSE) return ESP_ERR_NOT_FOUND;
+        return err; // APP_ERR_MUTEX_RELEASE
+    }
+    err = giveMatrixMutex(sMat1Handle);
+    if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
+
+    err = matSetPage(sMat2Handle, CONFIG_PAGE); // acquires sMat2Mutex
+    if (err != ESP_OK)
+    {
+        err = handleMatSetPageErr(err, sMat2Handle); // releases device mutex
+        if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+        if (err == ESP_ERR_INVALID_STATE) return ESP_FAIL;
+        if (err == APP_ERR_MUTEX_FAIL) return ESP_FAIL;
+        if (err == APP_ERR_UNHANDLED) return ESP_FAIL;
+        if (err == ESP_ERR_TIMEOUT) return ESP_ERR_NOT_FOUND;
+        if (err == ESP_ERR_INVALID_RESPONSE) return ESP_ERR_NOT_FOUND;
+        return err; // APP_ERR_MUTEX_RELEASE
+    }
+    err = giveMatrixMutex(sMat2Handle);
+    if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
+
+    err = matSetPage(sMat3Handle, CONFIG_PAGE); // acquires sMat3Mutex
+    if (err != ESP_OK)
+    {
+        err = handleMatSetPageErr(err, sMat3Handle); // releases device mutex
+        if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+        if (err == ESP_ERR_INVALID_STATE) return ESP_FAIL;
+        if (err == APP_ERR_MUTEX_FAIL) return ESP_FAIL;
+        if (err == APP_ERR_UNHANDLED) return ESP_FAIL;
+        if (err == ESP_ERR_TIMEOUT) return ESP_ERR_NOT_FOUND;
+        if (err == ESP_ERR_INVALID_RESPONSE) return ESP_ERR_NOT_FOUND;
+        return err; // APP_ERR_MUTEX_RELEASE
+    }
+    err = giveMatrixMutex(sMat3Handle);
+    if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
+
+    return (esp_err_t) ESP_OK;
+}
+
+/**
  * @brief Retrieves the data at the target register for all matrices.
  * 
  * @requires:
@@ -1726,6 +1531,206 @@ static esp_err_t matSetRegistersSeparate(uint8_t page, uint8_t addr, uint8_t mat
     return (esp_err_t) ESP_OK;
 }
 #elif CONFIG_HARDWARE_VERSION == 2
+/**
+ * @brief Initializes the first I2C bus, which connects to matrix 1 and 2, 
+ * asserts that the matrices are connected, and syncs internal state variables
+ * to the state of the matrices.
+ * 
+ * @param[in] port The GPIO port of the first I2C bus.
+ * @param[in] sdaPin The GPIO pin of the SDA line.
+ * @param[in] sclPin The GPIO pin of the SCL line.
+ * 
+ * @returns ESP_OK if successful.
+ * ESP_ERR_NOT_FOUND if a matrix on the first I2C bus could not be found.
+ * ESP_ERR_NO_MEM if not enough memory was available.
+ * APP_ERR_MUTEX_RELEASE if a device mutex could not be released. A reboot is
+ * recommended.
+ * ESP_FAIL if an unexpected error occurred.
+ */
+static esp_err_t matInitializeBus1(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin)
+{
+    esp_err_t err;
+    i2c_master_bus_config_t master_bus_config = {
+        .i2c_port = port,
+        .sda_io_num = sdaPin,
+        .scl_io_num = sclPin,
+        .clk_source = I2C_CLK_SRC_DEFAULT, // not sure about this
+        .glitch_ignore_cnt = 7,            // typical value
+        .intr_priority = 0,                // may be one of level 1, 2, or 3 when set to 0
+        .flags.enable_internal_pullup = false,
+    };
+    i2c_device_config_t matrix_config = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = MAT1_ADDR,
+        .scl_speed_hz = BUS_SPEED_HZ,
+        .scl_wait_us = SCL_WAIT_US, // use default value
+    };
+
+    /* Initialize I2C bus 1 */
+    err = i2c_new_master_bus(&master_bus_config, &sI2CBus1);
+    if (err != ESP_OK)
+    {
+        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
+        if (err == ESP_ERR_NOT_FOUND) THROW_ERR(ESP_FAIL);
+        THROW_ERR(err); // ESP_ERR_NO_MEM
+    }
+    err = i2c_master_bus_add_device(sI2CBus1, &matrix_config, &sMat1Handle);
+    if (err != ESP_OK)
+    {
+        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
+        THROW_ERR(err); // ESP_ERR_NO_MEM
+    }
+    matrix_config.device_address = MAT2_ADDR;
+    err = i2c_master_bus_add_device(sI2CBus1, &matrix_config, &sMat2Handle);
+    if (err != ESP_OK)
+    {
+        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
+        THROW_ERR(err); // ESP_ERR_NO_MEM
+    }
+
+    /* initialize matrix 1 and 2 mutexes */
+    sMat1Mutex = xSemaphoreCreateMutex();
+    if (sMat1Mutex == NULL) THROW_ERR(ESP_FAIL);
+    sMat2Mutex = xSemaphoreCreateMutex();
+    if (sMat2Mutex == NULL) THROW_ERR(ESP_FAIL);
+
+    /* initialize matrix state and sync with matrices. This doubles as a check
+    that the matrices are connected. */
+    sMat1State = PWM0_PAGE; // force setPage to actually set the page
+    sMat2State = PWM0_PAGE; // so that pages are synced with hardware
+    err = matSetPage(sMat1Handle, CONFIG_PAGE); // acquires sMat1Mutex
+    if (err != ESP_OK)
+    {
+        err = handleMatSetPageErr(err, sMat1Handle); // releases device mutex
+        if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+        if (err == ESP_ERR_INVALID_STATE) return ESP_FAIL;
+        if (err == APP_ERR_MUTEX_FAIL) return ESP_FAIL;
+        if (err == APP_ERR_UNHANDLED) return ESP_FAIL;
+        if (err == ESP_ERR_TIMEOUT) return ESP_ERR_NOT_FOUND;
+        if (err == ESP_ERR_INVALID_RESPONSE) return ESP_ERR_NOT_FOUND;
+        return err; // APP_ERR_MUTEX_RELEASE
+    }
+    err = giveMatrixMutex(sMat1Handle);
+    if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
+
+    err = matSetPage(sMat2Handle, CONFIG_PAGE); // acquires sMat1Mutex
+    if (err != ESP_OK)
+    {
+        err = handleMatSetPageErr(err, sMat2Handle); // releases device mutex
+        if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+        if (err == ESP_ERR_INVALID_STATE) return ESP_FAIL;
+        if (err == APP_ERR_MUTEX_FAIL) return ESP_FAIL;
+        if (err == APP_ERR_UNHANDLED) return ESP_FAIL;
+        if (err == ESP_ERR_TIMEOUT) return ESP_ERR_NOT_FOUND;
+        if (err == ESP_ERR_INVALID_RESPONSE) return ESP_ERR_NOT_FOUND;
+        return err; // APP_ERR_MUTEX_RELEASE
+    }
+    err = giveMatrixMutex(sMat2Handle);
+    if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
+
+    return (esp_err_t) ESP_OK;
+}
+
+/**
+ * @brief Initializes the second I2C bus, which connects to matrix 3 and 4, 
+ * asserts that the matrices are connected, and syncs internal state variables
+ * to the state of the matrices.
+ * 
+ * @param[in] port The GPIO port of the second I2C bus.
+ * @param[in] sdaPin The GPIO pin of the SDA line.
+ * @param[in] sclPin The GPIO pin of the SCL line.
+ * 
+ * @returns ESP_OK if successful.
+ * ESP_ERR_NOT_FOUND if a matrix on the first I2C bus could not be found.
+ * ESP_ERR_NO_MEM if not enough memory was available.
+ * APP_ERR_MUTEX_RELEASE if a device mutex could not be released. A reboot is
+ * recommended.
+ * ESP_FAIL if an unexpected error occurred.
+ */
+static esp_err_t matInitializeBus2(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin)
+{
+    esp_err_t err;
+    i2c_master_bus_config_t master_bus_config = {
+        .i2c_port = port,
+        .sda_io_num = sdaPin,
+        .scl_io_num = sclPin,
+        .clk_source = I2C_CLK_SRC_DEFAULT, // not sure about this
+        .glitch_ignore_cnt = 7,            // typical value
+        .intr_priority = 0,                // may be one of level 1, 2, or 3 when set to 0
+        .flags.enable_internal_pullup = false,
+    };
+    i2c_device_config_t matrix_config = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = MAT3_ADDR,
+        .scl_speed_hz = BUS_SPEED_HZ,
+        .scl_wait_us = SCL_WAIT_US, // use default value
+    };
+
+    /* Initialize I2C bus 1 */
+    err = i2c_new_master_bus(&master_bus_config, &sI2CBus2);
+    if (err != ESP_OK)
+    {
+        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
+        if (err == ESP_ERR_NOT_FOUND) THROW_ERR(ESP_FAIL);
+        THROW_ERR(err); // ESP_ERR_NO_MEM
+    }
+    err = i2c_master_bus_add_device(sI2CBus2, &matrix_config, &sMat3Handle);
+    if (err != ESP_OK)
+    {
+        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
+        THROW_ERR(err); // ESP_ERR_NO_MEM
+    }
+    matrix_config.device_address = MAT4_ADDR;
+    err = i2c_master_bus_add_device(sI2CBus2, &matrix_config, &sMat4Handle);
+    if (err != ESP_OK)
+    {
+        if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
+        THROW_ERR(err); // ESP_ERR_NO_MEM
+    }
+
+    /* initialize matrix 1 and 2 mutexes */
+    sMat3Mutex = xSemaphoreCreateMutex();
+    if (sMat3Mutex == NULL) THROW_ERR(ESP_FAIL);
+    sMat4Mutex = xSemaphoreCreateMutex();
+    if (sMat4Mutex == NULL) THROW_ERR(ESP_FAIL);
+
+    /* initialize matrix state and sync with matrices. This doubles as a check
+    that the matrices are connected. */
+    sMat3State = PWM0_PAGE; // force setPage to actually set the page
+    sMat4State = PWM0_PAGE; // so that pages are synced with hardware
+    err = matSetPage(sMat3Handle, CONFIG_PAGE); // acquires sMat1Mutex
+    if (err != ESP_OK)
+    {
+        err = handleMatSetPageErr(err, sMat3Handle); // releases device mutex
+        if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+        if (err == ESP_ERR_INVALID_STATE) return ESP_FAIL;
+        if (err == APP_ERR_MUTEX_FAIL) return ESP_FAIL;
+        if (err == APP_ERR_UNHANDLED) return ESP_FAIL;
+        if (err == ESP_ERR_TIMEOUT) return ESP_ERR_NOT_FOUND;
+        if (err == ESP_ERR_INVALID_RESPONSE) return ESP_ERR_NOT_FOUND;
+        return err; // APP_ERR_MUTEX_RELEASE
+    }
+    err = giveMatrixMutex(sMat3Handle);
+    if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
+
+    err = matSetPage(sMat4Handle, CONFIG_PAGE); // acquires sMat1Mutex
+    if (err != ESP_OK)
+    {
+        err = handleMatSetPageErr(err, sMat4Handle); // releases device mutex
+        if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+        if (err == ESP_ERR_INVALID_STATE) return ESP_FAIL;
+        if (err == APP_ERR_MUTEX_FAIL) return ESP_FAIL;
+        if (err == APP_ERR_UNHANDLED) return ESP_FAIL;
+        if (err == ESP_ERR_TIMEOUT) return ESP_ERR_NOT_FOUND;
+        if (err == ESP_ERR_INVALID_RESPONSE) return ESP_ERR_NOT_FOUND;
+        return err; // APP_ERR_MUTEX_RELEASE
+    }
+    err = giveMatrixMutex(sMat4Handle);
+    if (err != ESP_OK) return APP_ERR_MUTEX_RELEASE;
+
+    return (esp_err_t) ESP_OK;
+}
+
 /**
  * @brief Retrieves the data at the target register for all matrices.
  * 

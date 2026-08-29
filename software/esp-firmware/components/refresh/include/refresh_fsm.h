@@ -58,13 +58,27 @@ typedef enum {
 typedef struct RefreshFSMAction {
     RefreshFSMActionType type;
     union {
+        /* REFRESH_ACTION_SET: set ledNum to color */
         struct {
             uint16_t ledNum;
             Color color;
         } set;
+        /* REFRESH_ACTION_CLEAR: turn off ledNum */
         struct {
             uint32_t ledNum;
         } clear;
+        /**
+         * REFRESH_ACTION_CLEAR_RANGE: turn off every valid LED from
+         * startLedNum through the end of the LED number space
+         * (i.e. all ledNum in [startLedNum, LEDNumToRegLen)), skipping
+         * any ledNum that LEDNumToReg reports as invalid.
+         *
+         * Unlike REFRESH_ACTION_CLEAR, which the FSM emits once per tick
+         * for a single LED, this action must clear the entire remaining
+         * range in one shot, back-to-back with no inter-LED delay -
+         * the FSM only emits REFRESH_ACTION_CLEAR_RANGE once and expects
+         * the whole board to be blank by the time this call returns.
+         */
         struct {
             uint32_t startLedNum;
         } clearRange;
