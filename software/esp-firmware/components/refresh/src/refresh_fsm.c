@@ -42,7 +42,7 @@ typedef enum {
 } RefreshFSMState;
 
 typedef struct RefreshFSM {
-    /* the frame index of the LED that was just updated */
+    /* one past the frame index of the LED just installed */
     uint32_t currLEDNdx;
     /* the frame index of the current LED frame being installed. UINT32_MAX if none */
     uint32_t currFrameNdx;
@@ -561,11 +561,16 @@ static void handleStateClearingFrame(RefreshFSMOutput *out)
 }
 
 /**
- * Turns off all LEDs in sequence, without delays
- * between LEDs, until all LEDs on the board are cleared.
- * 
+ * Turns off every currently-lit LED of the current frame in a single
+ * tick, in the same order they would be turned off one at a time by
+ * REFRESH_FSM_CLEARING_FRAME (i.e. the reverse of install order).
+ *
  * @note This state clears the board in a single tick.
- * 
+ * @note currLEDNdx marks one past the highest frame index that could
+ * still be lit, whether we arrived here mid-install (indices below it
+ * were already set) or mid-clear (indices below it are not yet
+ * cleared) - see iterateFrame.
+ *
  * @param fsm The refresh FSM.
  * @param[out] out Upstream output for communication
  * with the task running the FSM.
@@ -573,15 +578,21 @@ static void handleStateClearingFrame(RefreshFSMOutput *out)
 static void handleStateQuickClearingFrame(RefreshFSMOutput *out)
 {
     assert(NULL != out);
+    assert(UINT32_MAX != fsm.currFrameNdx);
 
-    out->action.type = REFRESH_ACTION_CLEAR_RANGE;
-    out->action.clearRange.startLedNum = fsm.currLEDNdx;
+    if (0 != fsm.currLEDNdx)
+    {
+        out->action.type = REFRESH_ACTION_CLEAR_RANGE;
+        out->action.clearRange.frameNdx = fsm.currFrameNdx;
+        out->action.clearRange.startNdx = fsm.currLEDNdx - 1;
+    }
 
     if (!fsm.nightMode)
     {
         transitionToInstallingFrame(out);
     } else
     {
+        fsm.currLEDNdx = 0;
         out->isIdle = true;
         fsm.state = REFRESH_FSM_CLEARED;
     }

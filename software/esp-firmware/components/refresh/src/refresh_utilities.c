@@ -48,8 +48,3 @@ esp_err_t setLEDColor(uint16_t ledNum, Color color, bool setToDefaultBrightness)
     if (err != ESP_OK) return ESP_FAIL;    
     return ESP_OK;
 }
-
-esp_err_t clearRange()
-{
-    
-}

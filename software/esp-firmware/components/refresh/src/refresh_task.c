@@ -56,7 +56,7 @@ static esp_err_t reserveLEDFrame(uint32_t *ndx, TickType_t ticksToWait);
 static esp_err_t releaseLEDFrame(uint32_t ndx);
 static void refreshTask(void *params);
 static void initRefreshTask(void);
-static void handleRefreshFSMAction(RefreshFSMAction *action);
+static esp_err_t handleRefreshFSMAction(RefreshFSMAction *action);
 
 /**
  * Creates the refresh task and initializes resources.
@@ -274,6 +274,7 @@ static void refreshTask(void *params)
     UNUSED(params);
 
     TickType_t sleepTicks = portMAX_DELAY;
+    esp_err_t err;
 
     /* check validity of resources */
     if (NULL == commandQueue || NULL == ledFramesEmptyNdxQueue)
@@ -297,6 +298,8 @@ static void refreshTask(void *params)
 
         /* provide command to refresh FSM and handle action */
         out = refreshFSMTick(&cmd);
+        err = handleRefreshFSMAction(&out.action); // must process action before frames are released
+        assert(ESP_OK == err);
         if (0 != out.framesToRelease.len)
         {
             for (uint32_t i = 0; i < out.framesToRelease.len; i++)
@@ -307,7 +310,6 @@ static void refreshTask(void *params)
 
             }
         }
-        handleRefreshFSMAction(&out.action);
         sleepTicks = (out.isIdle) ? portMAX_DELAY : portTICK_PERIOD_MS * CONFIG_LED_UPDATE_PERIOD;
     }
 
@@ -369,12 +371,15 @@ static void initRefreshTask(void)
  * Performs the requested FSM action.
  * 
  * @param action The requested FSM action.
+ * 
+ * @returns ESP_OK if successful. Potentially other errors.
  */
 static esp_err_t handleRefreshFSMAction(RefreshFSMAction *action)
 {
-    esp_err_t err;
+    esp_err_t err = ESP_OK;
+    const Color colorOff = { .red = 0x00, .blue = 0x00, .green = 0x00 };
 
-    if (REFRESH_ACTION_NONE == action->type) return;
+    if (REFRESH_ACTION_NONE == action->type) return ESP_OK;
 
     switch (action->type)
     {
@@ -386,7 +391,6 @@ static esp_err_t handleRefreshFSMAction(RefreshFSMAction *action)
             }
             break;
         case REFRESH_ACTION_CLEAR:
-            const Color colorOff = { .red = 0x00, .blue = 0x00, .green = 0x00 };
             err = setLEDColor(action->clear.ledNum, colorOff, DONT_SET_BRIGHTNESS);
             if (ESP_OK != err)
             {
@@ -394,7 +398,18 @@ static esp_err_t handleRefreshFSMAction(RefreshFSMAction *action)
             }
             break;
         case REFRESH_ACTION_CLEAR_RANGE:
-            // TODO: handle case
+            for (uint32_t ndx = action->clearRange.startNdx; ndx != UINT32_MAX; ndx--)
+            {
+                LEDSpeed speed = ledFrames[action->clearRange.frameNdx][ndx];
+                if (speed.ledNum >= MAX_NUM_LEDS_REG) continue;
+                if (!isLEDValid(LEDNumToReg[speed.ledNum])) continue;
+
+                err = setLEDColor(speed.ledNum, colorOff, DONT_SET_BRIGHTNESS);
+                if (ESP_OK != err)
+                {
+                    ESP_LOGE(TAG, "Failed to clear LED %d.", speed.ledNum);
+                }
+            }
             break;
         case REFRESH_ACTION_NONE:
             ESP_LOGW(TAG, "REFRESH_ACTION_NONE found unexpectedly.");

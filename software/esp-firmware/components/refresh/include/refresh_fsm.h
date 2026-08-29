@@ -59,28 +59,23 @@ typedef struct RefreshFSMAction {
     RefreshFSMActionType type;
     union {
         /* REFRESH_ACTION_SET: set ledNum to color */
-        struct {
+        struct set {
             uint16_t ledNum;
             Color color;
         } set;
         /* REFRESH_ACTION_CLEAR: turn off ledNum */
-        struct {
+        struct clear {
             uint32_t ledNum;
         } clear;
         /**
-         * REFRESH_ACTION_CLEAR_RANGE: turn off every valid LED from
-         * startLedNum through the end of the LED number space
-         * (i.e. all ledNum in [startLedNum, LEDNumToRegLen)), skipping
-         * any ledNum that LEDNumToReg reports as invalid.
-         *
-         * Unlike REFRESH_ACTION_CLEAR, which the FSM emits once per tick
-         * for a single LED, this action must clear the entire remaining
-         * range in one shot, back-to-back with no inter-LED delay -
-         * the FSM only emits REFRESH_ACTION_CLEAR_RANGE once and expects
-         * the whole board to be blank by the time this call returns.
+         * REFRESH_ACTION_CLEAR_RANGE: turn off every LED still lit
+         * on the board in the reverse direction of the current frame,
+         * starting from startNdx to 0. This should complete in a
+         * single tick before the frame is released if requested.
          */
-        struct {
-            uint32_t startLedNum;
+        struct clearRange {
+            uint32_t frameNdx;
+            uint32_t startNdx;
         } clearRange;
     };
 } RefreshFSMAction;
@@ -114,7 +109,7 @@ typedef struct RefreshFSMFrameReleaseList {
 typedef struct RefreshFSMOutput {
     /* Whether user code can stop ticking the FSM until a new command needs to be processed */
     bool isIdle;
-    /* The frames the FSM is releasing back to user code ownership */
+    /* The frames the FSM is releasing back to user code ownership after the requested action */
     RefreshFSMFrameReleaseList framesToRelease;
     /* The action user code should take based on FSM logic */
     RefreshFSMAction action;

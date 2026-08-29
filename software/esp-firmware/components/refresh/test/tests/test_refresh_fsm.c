@@ -1487,7 +1487,8 @@ TEST_CASE("standardFrameQueueingDuringClearing", TEST_GROUP)
     };
     RefreshFSMOutput out8 = refreshFSMTick(&cmd7);
     TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR_RANGE, out8.action.type, "refresh action type");
-    TEST_ASSERT_EQUAL(50, out8.action.clearRange.startLedNum);
+    TEST_ASSERT_EQUAL(cmd1FrameNdx, out8.action.clearRange.frameNdx);
+    TEST_ASSERT_EQUAL(49, out8.action.clearRange.startNdx);
     TEST_ASSERT_EQUAL(2, out8.framesToRelease.len);
     TEST_ASSERT_EQUAL(cmd6FrameNdx, out8.framesToRelease.list[0].index);
     TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_STANDARD, out8.framesToRelease.list[0].type, "refresh frame release type");
@@ -3958,7 +3959,8 @@ TEST_CASE("frameQueueDisplacementAcrossADirectionChange", TEST_GROUP)
     };
     RefreshFSMOutput out8 = refreshFSMTick(&cmd8);
     TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR_RANGE, out8.action.type, "refresh action type");
-    TEST_ASSERT_EQUAL(50, out8.action.clearRange.startLedNum);
+    TEST_ASSERT_EQUAL(cmd1FrameNdx, out8.action.clearRange.frameNdx);
+    TEST_ASSERT_EQUAL(49, out8.action.clearRange.startNdx);
     TEST_ASSERT_EQUAL(2, out8.framesToRelease.len);
     TEST_ASSERT_EQUAL(frameAFrameNdx, out8.framesToRelease.list[0].index);
     TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_STANDARD, out8.framesToRelease.list[0].type, "refresh frame release type");
@@ -5688,7 +5690,8 @@ TEST_CASE("frameQueueCollapseWhileNightModeIsOn", TEST_GROUP)
     };
     RefreshFSMOutput fOut9 = refreshFSMTick(&fCmd9);
     TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR_RANGE, fOut9.action.type, "refresh action type");
-    TEST_ASSERT_EQUAL(49, fOut9.action.clearRange.startLedNum);
+    TEST_ASSERT_EQUAL(cmd1FrameNdx, fOut9.action.clearRange.frameNdx);
+    TEST_ASSERT_EQUAL(48, fOut9.action.clearRange.startNdx);
     TEST_ASSERT_EQUAL(1, fOut9.framesToRelease.len);
     TEST_ASSERT_EQUAL(frameAFrameNdx, fOut9.framesToRelease.list[0].index);
     TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_STANDARD, fOut9.framesToRelease.list[0].type, "refresh frame release type");
