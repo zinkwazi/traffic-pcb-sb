@@ -4,7 +4,7 @@
  * Created On: 8/28/26
  * Author: Jaden Baptista
  * 
- * Utilities for the refresh task useful for abstracting dependencies.
+ * Utilities for the refresh task useful for abstracting dependencies, which improves testability.
  */
 
 #include "refresh_utilities.h"

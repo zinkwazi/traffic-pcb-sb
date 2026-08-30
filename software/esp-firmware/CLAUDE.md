@@ -11,13 +11,29 @@ Version-specific code lives in `versions/V1_0/` and `versions/V2_0/`. All active
 
 ## Build System
 
-Build variants are defined in `esp_idf_project_configuration.json`. Use `idf.py -DEXECUTABLE=<name>` to select:
+Build variants are defined in `esp_idf_project_configuration.json`, keyed by name (e.g. `test_refresh`, `test_hardware`, `production_V2_1`, `test_nonmock`, `test_manual`, `test_ota`, `test_actions1`, `test_actions2`). This JSON is a **VS Code ESP-IDF extension format only** — plain `idf.py` never reads it. Building the same variant from a bare CLI invocation requires reproducing two things from that JSON entry yourself, or the build silently uses the wrong config:
 
-- `V2_0` / `V2_1` — production firmware
-- `test_refresh` — unit tests for the refresh component (runs on device via Unity)
-- `test_manual` — manual hardware test builds
+1. **The `executable` env var** selects which branch of the root `CMakeLists.txt` runs (`$ENV{executable}`, lowercase) — this picks `TEST_COMPONENTS`, which sources get compiled, etc. It comes from the variant's `"env": {"executable": "..."}` in `esp_idf_project_configuration.json`.
+   **`idf.py -DEXECUTABLE=<name>` does NOT work** — that sets an unused CMake cache variable named `EXECUTABLE`; nothing reads it. Always `export executable=<name>` first.
+2. **`sdkconfigDefaults` and `sdkconfigFilePath`** select which Kconfig options actually land in the build (`CONFIG_HARDWARE_VERSION`, `CONFIG_TEST_REFRESH`, etc.). These must be passed explicitly as `-DSDKCONFIG_DEFAULTS=...` (semicolon-joined) and `-DSDKCONFIG=...` — copy them verbatim from the variant's `"build"` block in `esp_idf_project_configuration.json`.
 
-sdkconfig files live in `configurations/`. Component sources are conditionally compiled based on Kconfig options (e.g. `CONFIG_MOCK_LED_MATRIX`, `CONFIG_TEST_REFRESH`).
+Skipping step 2 doesn't fail the build — it silently falls back to `<project_dir>/sdkconfig` (creating one from bare Kconfig defaults if absent), which does **not** set `CONFIG_HARDWARE_VERSION=2` or `CONFIG_TEST_REFRESH=y` etc. This is invisible until either a `CONFIG_HARDWARE_VERSION`-gated file fails to compile, or (worse) it compiles a materially different, half-configured build that looks fine at a glance. It's most likely to bite right after `idf.py fullclean`, since the build directory's cached sdkconfig association (set up once by the extension) is gone at that point and every subsequent plain `idf.py build` regenerates the fallback.
+
+Locate ESP-IDF first — `<path-to-esp-idf>` below is not a project-relative path; on this machine it's `~/.espressif/v6.0.1/esp-idf` (find it generically with `cat ~/.espressif/idf-env.json` — the `idfInstalled` keys are the install paths — or `find ~/.espressif -maxdepth 3 -path "*/esp-idf" -type d`).
+
+Full working example for `test_refresh` (read the values from `esp_idf_project_configuration.json` for any other variant — e.g. swap `test_refresh` for `test_hardware` everywhere below, including inside `-DSDKCONFIG_DEFAULTS`/`-DSDKCONFIG`, to build/run `led_matrix`'s own hardware tests instead):
+```sh
+source ~/.espressif/v6.0.1/esp-idf/export.sh
+export executable=test_refresh
+idf.py -B builds/test_refresh \
+  -DSDKCONFIG_DEFAULTS="configurations/sdkconfig.settings;configurations/secrets/sdkconfig.test_secrets;configurations/sdkconfig.test;components/refresh/test/sdkconfig.test;configurations/sdkconfig.V2_0_default" \
+  -DSDKCONFIG=configurations/current/sdkconfig.test_refresh \
+  build
+```
+
+The VS Code ESP-IDF extension handles both of the above automatically per-profile when you build through its UI. But if `.vscode/settings.json` has a global `idf.customExtraVars.executable` entry, that **overrides** the per-profile `executable` value for every build regardless of which profile is selected — this has silently pinned the wrong test target before (a stale `test_hardware` value made `test_refresh` link in `led_matrix`'s tests). If build profile switching in the extension doesn't seem to be taking effect, check `.vscode/settings.json` for a stale `idf.customExtraVars.executable` first.
+
+sdkconfig files live in `configurations/`. Component sources are conditionally compiled based on Kconfig options (e.g. `CONFIG_TEST_REFRESH`, `CONFIG_HARDWARE_VERSION`, `CONFIG_FAKE_LED_MATRIX`).
 
 ## Component Overview
 
@@ -191,13 +207,18 @@ Tests use the **Unity** framework running natively on the ESP32-S3 (not host-sid
 
 **Test structure:**
 ```
+main/src/tests/test_main.c        — app_main for test_refresh/test_hardware: runs unity_run_all_tests()
 components/refresh/test/
-  test_refresh_main.c        — app_main: runs unity_run_all_tests()
-  CMakeLists.txt             — registers test component; REQUIRES refresh, led_matrix, common
+  CMakeLists.txt                  — registers test component; REQUIRES unity, refresh, common
+  sdkconfig.test                  — sdkconfig fragment merged in for the test_refresh build
   tests/
-    test_refresh_task.c      — TEST_CASE macros for refresh_task.h
-  resources/
-    ledFrame1.txt            — embedded test data
+    test_refresh_fsm.c            — TEST_CASE macros for refresh_fsm.h (no hardware, no mocks)
+    test_refresh_task.c           — TEST_CASE macros for refresh_task.h
+    test_refresh_utilities.c      — TEST_CASE macros for refresh_utilities.h (real led_matrix hardware)
+components/led_matrix/test/
+  CMakeLists.txt
+  tests/
+    test_led_matrix.c             — TEST_CASE macros for led_matrix.h (real hardware; test_hardware build only)
 ```
 
 **Writing tests:**
@@ -219,12 +240,32 @@ TEST_CASE("description", "groupName")
 
 **Test priority pattern:** Tests that create `refreshTask` at priority 1 must lower the *test task's* priority first (`vTaskPrioritySet(NULL, 2)`) so the refresh task can start before the test checks its state.
 
-**Mocking:** CMock-generated mocks live in `components/led_matrix/mocks/`. Include both the real header and the mock header — the mock header overrides the real implementation under `CONFIG_MOCK_LED_MATRIX=y`.
+**Mocking (architectural policy: fake only hardware dependencies):** Nothing in `refresh`'s test suite is CMock-mocked anymore — `refresh_utilities.c` (real, always built — no more `CONFIG_TEST_REFRESH`-gated swap to a mock) and `led_matrix` (real, no software fake yet) are both exercised against real hardware by `test_refresh_utilities.c` and `test_refresh_task.c` (board must be connected and flashed). `CONFIG_FAKE_LED_MATRIX` (`led_matrix/Kconfig.projbuild`) is reserved for a planned hand-written fake that will let these tests run without hardware, but it isn't wired up in `led_matrix/CMakeLists.txt` yet. Round-trip hardware tests follow a strict save/set/verify/restore pattern (see `test_led_matrix.c`) so they leave the matrix ICs as they found them; failure-injection tests (forcing a call to return an error) aren't possible against real hardware and are deferred until the fake exists. The `cmock` component/CMock-generated mocks (`components/*/mocks/Mock*.c/h`) remain available in principle for a pure-logic dependency with no hardware behind it, but nothing in `refresh` currently uses one.
 
-**Building and flashing tests:**
+**Building tests:** see the full `test_refresh` example (env var + `-DSDKCONFIG_DEFAULTS`/`-DSDKCONFIG`) under **Build System** above — a bare `export executable=test_refresh && idf.py -B builds/test_refresh build` only works if the build directory already has a cached sdkconfig association from a prior extension-driven configure; after `fullclean` it silently produces a broken config.
+
+**Fast path for agents:** `agents/run_test.sh <variant>`** builds, flashes, and reads back results for a test variant (e.g. `test_refresh`, `test_hardware`) in one command, deriving the env var/sdkconfig args from `esp_idf_project_configuration.json` itself and exiting as soon as the Unity summary line appears instead of polling on a fixed sleep. See `agents/README.md`. Prefer this over the manual steps below unless you're debugging the build/flash process itself.
+
+**Flashing tests to hardware:**
 ```sh
-idf.py -DEXECUTABLE=test_refresh build flash monitor
+idf.py -B builds/test_refresh -p /dev/ttyACM0 flash
 ```
+(Adjust the port; find it with `ls /dev/ttyACM*` or `ls /dev/ttyUSB*`. Only one process can hold the serial port at a time — check first with `fuser /dev/ttyACM0` or `ps aux | grep idf_monitor`, since a leftover `idf.py monitor` session (including one opened by the VS Code extension) will make `flash` fail with "port is busy". Don't kill someone else's active monitor session without asking first.)
+
+**Reading test results without a human at the terminal:** `idf.py monitor` is interactive by design — it reads live keystrokes from stdin for its menu/quit shortcuts, so it refuses to start at all when stdin isn't a real TTY ("Monitor requires standard input to be attached to TTY"), which is always the case when run from an automated/non-interactive shell. Work around this by wrapping it in `script` to allocate a pseudo-terminal, and always bound it with `timeout` — the test binary prints results once and then loops forever (`for (;;) {}` in `test_main.c`), so `monitor` never exits on its own:
+
+```sh
+timeout 45 script -qec "idf.py -B builds/test_refresh -p /dev/ttyACM0 monitor" /path/to/log.txt
+```
+
+Then read `/path/to/log.txt`, stripping ANSI escapes and carriage returns:
+```sh
+cat -v /path/to/log.txt | sed 's/\^\[\[[0-9;]*[a-zA-Z]//g; s/\^M//g'
+```
+
+Each test prints `path/to/file.c:LINE:test_name:PASS` or `:FAIL:<message>` (the message is sometimes empty — a bare `:FAIL` with nothing after it is normal, not truncated output). The run ends with a Unity summary line — `N Tests M Failures K Ignored` followed by `OK` or `FAIL`. A raw `pyserial` read on the port (without `idf.py monitor`) is unreliable here and reliably returned zero bytes in practice — use the `script`-wrapped `monitor` approach instead.
+
+**Don't confuse `THROW_ERR` noise with a failure.** Negative-path tests (invalid-argument checks, "rejects null", etc.) deliberately trigger real `THROW_ERR` calls, which print an `E (...) tag: ...` line and a `Backtrace: ...` line — this is expected, passing behavior, not a crash. `led_matrix`'s hardware test suite in particular produces many of these. When scanning output programmatically, match on `:FAIL` / `:PASS` (or the final summary line) specifically — don't treat the presence of `E (...)` or `Backtrace` lines alone as a sign anything failed.
 
 ## Error Handling
 

@@ -29,7 +29,13 @@ esp_err_t refreshDisableNightMode(TickType_t blockTime);
 
 #ifdef CONFIG_TEST_REFRESH
 
+#include "refresh_fsm.h"
+
 void refreshResetTaskResources(void);
+esp_err_t refreshCreateTaskResourcesForTest(void);
+bool initRefreshTask(void);
+void handleRefreshTaskCommand(RefreshFSMCommand *cmd, RefreshFSMOutput *out);
+uint32_t refreshGetAvailableFrameCount(void);
 
 #endif /* CONFIG_TEST_REFRESH */
 #endif /* REFRESH_TASK_H_ */

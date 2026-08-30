@@ -37,6 +37,12 @@
 
 #define TAG "refreshTask"
 
+#ifdef CONFIG_TEST_REFRESH
+#define STATIC_IF_NOT_TEST
+#else
+#define STATIC_IF_NOT_TEST static
+#endif /* CONFIG_TEST_REFRESH */
+
 #define UNUSED(x)   (void)(x)
 
 /* The delay between LED updates in milliseconds */
@@ -55,36 +61,35 @@ static QueueHandle_t ledFramesEmptyNdxQueue = NULL; /* a queue of uint32_t ledFr
 static esp_err_t reserveLEDFrame(uint32_t *ndx, TickType_t ticksToWait);
 static esp_err_t releaseLEDFrame(uint32_t ndx);
 static void refreshTask(void *params);
-static void initRefreshTask(void);
 static esp_err_t handleRefreshFSMAction(RefreshFSMAction *action);
+static esp_err_t createTaskResources(void);
+STATIC_IF_NOT_TEST bool initRefreshTask(void);
+STATIC_IF_NOT_TEST void handleRefreshTaskCommand(RefreshFSMCommand *cmd, RefreshFSMOutput *out);
 
 /**
- * Creates the refresh task and initializes resources.
- * 
- * @param[out] handle Where a handle to the created task
- * is created if successful. Can be NULL.
- * @param[in] prio The priority of the refresh task.
- * 
- * @returns ESP_OK if the task was created successfully.
- * ESP_ERR_INVALID_STATE if the task was already created.
+ * Creates commandQueue and ledFramesEmptyNdxQueue, populating
+ * ledFramesEmptyNdxQueue with every valid frame index.
+ *
+ * @returns ESP_OK if successful.
+ * ESP_ERR_INVALID_STATE if commandQueue already exists.
  * ESP_ERR_NO_MEM if memory could not be allocated for resources.
  * ESP_FAIL if a logical error occurred.
  */
-esp_err_t createRefreshTask(TaskHandle_t *handle, const UBaseType_t prio)
+static esp_err_t createTaskResources(void)
 {
     BaseType_t success;
     if (NULL != commandQueue)
     {
         return ESP_ERR_INVALID_STATE;
     }
-    
-    /* initialize resources */
+
     commandQueue = xQueueCreate(NUM_LED_FRAMES, sizeof(RefreshFSMCommand));
     if (NULL == commandQueue) return ESP_ERR_NO_MEM;
     ledFramesEmptyNdxQueue = xQueueCreate(NUM_LED_FRAMES, sizeof(uint32_t));
     if (NULL == ledFramesEmptyNdxQueue)
     {
         vQueueDelete(commandQueue);
+        commandQueue = NULL;
         return ESP_ERR_NO_MEM;
     }
 
@@ -94,13 +99,34 @@ esp_err_t createRefreshTask(TaskHandle_t *handle, const UBaseType_t prio)
         if (success != pdPASS)
         {
             vQueueDelete(commandQueue);
+            commandQueue = NULL;
             vQueueDelete(ledFramesEmptyNdxQueue);
+            ledFramesEmptyNdxQueue = NULL;
             return ESP_FAIL;
         }
     }
 
-    /* create task */
-    success = xTaskCreate(refreshTask, "RefreshTask", 15000, NULL, prio, handle);
+    return ESP_OK;
+}
+
+/**
+ * Creates the refresh task and initializes resources.
+ *
+ * @param[out] handle Where a handle to the created task
+ * is created if successful. Can be NULL.
+ * @param[in] prio The priority of the refresh task.
+ *
+ * @returns ESP_OK if the task was created successfully.
+ * ESP_ERR_INVALID_STATE if the task was already created.
+ * ESP_ERR_NO_MEM if memory could not be allocated for resources.
+ * ESP_FAIL if a logical error occurred.
+ */
+esp_err_t createRefreshTask(TaskHandle_t *handle, const UBaseType_t prio)
+{
+    esp_err_t err = createTaskResources();
+    if (ESP_OK != err) return err;
+
+    BaseType_t success = xTaskCreate(refreshTask, "RefreshTask", 15000, NULL, prio, handle);
     return (success == pdPASS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -274,16 +300,12 @@ static void refreshTask(void *params)
     UNUSED(params);
 
     TickType_t sleepTicks = portMAX_DELAY;
-    esp_err_t err;
 
-    /* check validity of resources */
-    if (NULL == commandQueue || NULL == ledFramesEmptyNdxQueue)
+    if (!initRefreshTask())
     {
-        ESP_LOGE(TAG, "Refresh task resources are invalid. Killing refresh task.");
         vTaskDelete(NULL);
     }
 
-    initRefreshTask();
     while (true)
     {
         RefreshFSMCommand cmd;
@@ -296,20 +318,7 @@ static void refreshTask(void *params)
             cmd.type = REFRESH_CMD_NONE;
         }
 
-        /* provide command to refresh FSM and handle action */
-        out = refreshFSMTick(&cmd);
-        err = handleRefreshFSMAction(&out.action); // must process action before frames are released
-        assert(ESP_OK == err);
-        if (0 != out.framesToRelease.len)
-        {
-            for (uint32_t i = 0; i < out.framesToRelease.len; i++)
-            {
-                ESP_LOGI(TAG, "releasing frame %d for reason %d", out.framesToRelease.list[i].index, out.framesToRelease.list[i].type);
-                esp_err_t err = releaseLEDFrame(out.framesToRelease.list[i].index);
-                assert(ESP_OK == err && "failed to release LED frame");
-
-            }
-        }
+        handleRefreshTaskCommand(&cmd, &out);
         sleepTicks = (out.isIdle) ? portMAX_DELAY : portTICK_PERIOD_MS * CONFIG_LED_UPDATE_PERIOD;
     }
 
@@ -322,10 +331,13 @@ static void refreshTask(void *params)
  * This is separated to reduce lifetime stack usage of the
  * refreshTask.
  * 
- * @note if initialization fails, then this
- * function deletes the current task.
+ * @param params The params provided to the refresh task, checked
+ * for validity in this function.
+ * 
+ * @returns True if initialized successfully. False otherwise,
+ * indicating the task should be deleted.
  */
-static void initRefreshTask(void)
+STATIC_IF_NOT_TEST bool initRefreshTask(void)
 {
     const RefreshFSMResources fsmResources = {
         .LEDNumToReg = LEDNumToReg,
@@ -350,21 +362,54 @@ static void initRefreshTask(void)
     };
     esp_err_t err;
 
+    if (NULL == commandQueue || NULL == ledFramesEmptyNdxQueue)
+    {
+        ESP_LOGE(TAG, "Refresh task resources are invalid.");
+        return false;
+    }
+
     err = initLedMatrix();
     if (ESP_OK != err && ESP_ERR_INVALID_STATE != err)
     {
         ESP_LOGE(TAG, "LED Matrices could not be initialized: %d", err);
-        vTaskDelete(NULL);
+        return false;
     }
 
     err = matReset();
     if (ESP_OK != err)
     {
         ESP_LOGE(TAG, "LED matrices could not be reset: %d", err);
-        vTaskDelete(NULL);
+        return false;
     }
 
     refreshFSMInit(&fsmResources);
+    return true;
+}
+
+/**
+ * Handles the refresh FSM command and produces FSM output
+ * 
+ * @param cmd The refresh FSM command to handle.
+ * @param out The location to place output of the refresh FSM.
+ */
+STATIC_IF_NOT_TEST void handleRefreshTaskCommand(RefreshFSMCommand *cmd, RefreshFSMOutput *out)
+{
+    esp_err_t err;
+    
+    /* provide command to refresh FSM and handle action */
+    *out = refreshFSMTick(cmd);
+    err = handleRefreshFSMAction(&out->action); // must process action before frames are released
+    assert(ESP_OK == err);
+    if (0 != out->framesToRelease.len)
+    {
+        for (uint32_t i = 0; i < out->framesToRelease.len; i++)
+        {
+            ESP_LOGI(TAG, "releasing frame %d for reason %d", out->framesToRelease.list[i].index, out->framesToRelease.list[i].type);
+            esp_err_t err = releaseLEDFrame(out->framesToRelease.list[i].index);
+            assert(ESP_OK == err && "failed to release LED frame");
+
+        }
+    }
 }
 
 /**
@@ -423,11 +468,45 @@ static esp_err_t handleRefreshFSMAction(RefreshFSMAction *action)
 
 /**
  * Sets task resources to the state they
- * should be in during initialization.
+ * should be in during initialization, freeing
+ * any queues created by a prior createRefreshTask().
  */
 void refreshResetTaskResources(void)
 {
-    commandQueue = NULL;
+    if (NULL != commandQueue)
+    {
+        vQueueDelete(commandQueue);
+        commandQueue = NULL;
+    }
+    if (NULL != ledFramesEmptyNdxQueue)
+    {
+        vQueueDelete(ledFramesEmptyNdxQueue);
+        ledFramesEmptyNdxQueue = NULL;
+    }
+}
+
+/**
+ * Creates commandQueue and ledFramesEmptyNdxQueue without spawning the
+ * refresh task, so tests can call initRefreshTask()/handleRefreshTaskCommand()
+ * directly against real resources with no task ever created or scheduled.
+ *
+ * @returns ESP_OK if successful. See createTaskResources() for other codes.
+ */
+esp_err_t refreshCreateTaskResourcesForTest(void)
+{
+    return createTaskResources();
+}
+
+/**
+ * @returns The number of LED frame slots currently available for
+ * reservation. Exists so tests can observe ledFramesEmptyNdxQueue's
+ * state directly, since refreshLEDs() is not a reliable probe: it
+ * consumes a commandQueue slot on every call too, and commandQueue
+ * shares the same capacity, so its state can mask the frame pool's.
+ */
+uint32_t refreshGetAvailableFrameCount(void)
+{
+    return (uint32_t) uxQueueMessagesWaiting(ledFramesEmptyNdxQueue);
 }
 
 #endif /* CONFIG_TEST_REFRESH */

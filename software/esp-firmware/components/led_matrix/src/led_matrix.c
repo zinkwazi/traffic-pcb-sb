@@ -74,7 +74,6 @@
 #define CONFIG_REG_ADDR 0x00
 #define CURRENT_CNTRL_REG_ADDR 0x01
 #define PULL_SEL_REG_ADDR 0x02
-#define PWM_FREQ_REG_ADDR 0x36
 #define RESET_REG_ADDR 0x3F
 
 /* Configuration Register Bits */
@@ -86,9 +85,6 @@
 /* Pull Up/Down Register Bits */
 #define PUR_BITS 0x07
 #define PDR_BITS 0x70
-
-/* PWM Frequency Setting Register Bits */
-#define PWS_BITS 0x0F
 
 /* Reset Register */
 #define RESET_KEY 0xAE
@@ -146,13 +142,16 @@ static SemaphoreHandle_t sMat4Mutex = NULL;
 #endif
 
 static void matSetBits(uint8_t *reg, uint8_t bitMask, uint8_t value);
+static uint8_t matGetBits(uint8_t reg, uint8_t bitMask);
+static esp_err_t matGetDeviceHandle(i2c_master_dev_handle_t *device, Matrix matrix);
+static esp_err_t matGetConfigBits(uint8_t *bits, Matrix matrix, uint8_t addr, uint8_t bitMask);
 static esp_err_t matParseLEDRegisterInfo(i2c_master_dev_handle_t *matrixHandle, uint8_t *pwmPage, uint8_t *scalingPage, LEDReg ledReg);
 static esp_err_t matSetPage(i2c_master_dev_handle_t device, uint8_t page);
 static esp_err_t handleMatSetPageErr(esp_err_t app_err, i2c_master_dev_handle_t device);
 static esp_err_t matGetRegister(uint8_t *result, i2c_master_dev_handle_t device, uint8_t page, uint8_t addr);
 static esp_err_t matSetRegister(i2c_master_dev_handle_t device, uint8_t page, uint8_t addr, uint8_t data);
 static esp_err_t matSetRegisters(uint8_t page, uint8_t addr, uint8_t data);
-static esp_err_t matSetConfig(uint8_t bitMask, uint8_t setting);
+static esp_err_t matSetConfig(uint8_t addr, uint8_t bitMask, uint8_t setting);
 static esp_err_t takeMatrixMutex(i2c_master_dev_handle_t device);
 static esp_err_t giveMatrixMutex(i2c_master_dev_handle_t device);
 
@@ -161,8 +160,8 @@ static esp_err_t matInitialize(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_
 static esp_err_t matGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3, uint8_t page, uint8_t addr);
 static esp_err_t matSetRegistersSeparate(uint8_t page, uint8_t addr, uint8_t mat1val, uint8_t mat2val, uint8_t mat3val);
 #elif CONFIG_HARDWARE_VERSION == 2
-esp_err_t matInitializeBus1(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
-esp_err_t matInitializeBus2(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
+static esp_err_t matInitializeBus1(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
+static esp_err_t matInitializeBus2(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);
 static esp_err_t matGetRegisters(uint8_t *result1, uint8_t *result2, uint8_t *result3, uint8_t *result4, uint8_t page, uint8_t addr);
 static esp_err_t matSetRegistersSeparate(uint8_t page, uint8_t addr, uint8_t mat1val, uint8_t mat2val, uint8_t mat3val, uint8_t mat4val);
 #endif
@@ -342,7 +341,41 @@ esp_err_t matSetGCCByAmbientLight(void)
 esp_err_t matSetOperatingMode(enum Operation setting)
 {
     if (setting >= MATRIX_OPERATION_MAX) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
-    return (esp_err_t) matSetConfig(SOFTWARE_SHUTDOWN_BITS, (uint8_t) setting);
+    return (esp_err_t) matSetConfig(CONFIG_REG_ADDR, SOFTWARE_SHUTDOWN_BITS, (uint8_t) setting);
+}
+
+/**
+ * @brief Performs I2C transactions to get the current operating
+ * mode of the matrix.
+ * 
+ * @param setting[out] The setting of the matrix.
+ * @param matrix The matrix to query.
+ * 
+ * @returns ESP_OK if successful and setting is valid, otherwise setting is MATRIX_OPERATION_MAX.
+ * ESP_ERR_INVALID_ARG if invalid argument.
+ * ESP_ERR_INVALID_STATE if requirement 1 is not met.
+ * ESP_ERR_TIMEOUT if an I2C transaction timed out.
+ * ESP_ERR_INVALID_RESPONSE if the matrix could not be queried properly.
+ * AP_ERR_MUTEX_RELEASE if the device mutex could not be released and a reboot
+ * is recommended.
+ * ESP_FAIL if an unexpected error occurs.
+ */
+esp_err_t matGetOperatingMode(enum Operation *setting, Matrix matrix)
+{
+    esp_err_t err;
+    uint8_t bits;
+
+    if (NULL == setting) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
+
+    err = matGetConfigBits(&bits, matrix, CONFIG_REG_ADDR, SOFTWARE_SHUTDOWN_BITS);
+    if (ESP_OK != err)
+    {
+        *setting = MATRIX_OPERATION_MAX;
+        return err;
+    }
+
+    *setting = (enum Operation) bits;
+    return ESP_OK;
 }
 
 /**
@@ -367,7 +400,25 @@ esp_err_t matSetOperatingMode(enum Operation setting)
 esp_err_t matSetOpenShortDetection(enum ShortDetectionEnable setting)
 {
     if (setting >= MATRIX_SHORT_DETECTION_EN_MAX) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
-    return (esp_err_t) matSetConfig(OPEN_SHORT_DETECT_EN_BITS, (uint8_t) setting);
+    return (esp_err_t) matSetConfig(CONFIG_REG_ADDR, OPEN_SHORT_DETECT_EN_BITS, (uint8_t) setting);
+}
+
+esp_err_t matGetOpenShortDetection(enum ShortDetectionEnable *setting, Matrix matrix)
+{
+    esp_err_t err;
+    uint8_t bits;
+
+    if (NULL == setting) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
+
+    err = matGetConfigBits(&bits, matrix, CONFIG_REG_ADDR, OPEN_SHORT_DETECT_EN_BITS);
+    if (ESP_OK != err)
+    {
+        *setting = MATRIX_SHORT_DETECTION_EN_MAX;
+        return err;
+    }
+
+    *setting = (enum ShortDetectionEnable) bits;
+    return ESP_OK;
 }
 
 /**
@@ -392,7 +443,25 @@ esp_err_t matSetOpenShortDetection(enum ShortDetectionEnable setting)
 esp_err_t matSetLogicLevel(enum LogicLevel setting)
 {
     if (setting >= MATRIX_LOGIC_LEVEL_MAX) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
-    return (esp_err_t) matSetConfig(LOGIC_LEVEL_CNTRL_BITS, (uint8_t) setting);
+    return (esp_err_t) matSetConfig(CONFIG_REG_ADDR, LOGIC_LEVEL_CNTRL_BITS, (uint8_t) setting);
+}
+
+esp_err_t matGetLogicLevel(enum LogicLevel *setting, Matrix matrix)
+{
+    esp_err_t err;
+    uint8_t bits;
+
+    if (NULL == setting) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
+
+    err = matGetConfigBits(&bits, matrix, CONFIG_REG_ADDR, LOGIC_LEVEL_CNTRL_BITS);
+    if (ESP_OK != err)
+    {
+        *setting = MATRIX_LOGIC_LEVEL_MAX;
+        return err;
+    }
+
+    *setting = (enum LogicLevel) bits;
+    return ESP_OK;
 }
 
 /**
@@ -417,7 +486,25 @@ esp_err_t matSetLogicLevel(enum LogicLevel setting)
 esp_err_t matSetSWxSetting(enum SWXSetting setting)
 {
     if (setting >= MATRIX_SWXSETTING_MAX) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
-    return (esp_err_t) matSetConfig(SWX_SETTING_BITS, (uint8_t) setting);
+    return (esp_err_t) matSetConfig(CONFIG_REG_ADDR, SWX_SETTING_BITS, (uint8_t) setting);
+}
+
+esp_err_t matGetSWxSetting(enum SWXSetting *setting, Matrix matrix)
+{
+    esp_err_t err;
+    uint8_t bits;
+
+    if (NULL == setting) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
+
+    err = matGetConfigBits(&bits, matrix, CONFIG_REG_ADDR, SWX_SETTING_BITS);
+    if (ESP_OK != err)
+    {
+        *setting = MATRIX_SWXSETTING_MAX;
+        return err;
+    }
+
+    *setting = (enum SWXSetting) bits;
+    return ESP_OK;
 }
 
 /**
@@ -447,6 +534,13 @@ esp_err_t matSetGlobalCurrentControl(uint8_t value)
     return (esp_err_t) err;
 }
 
+esp_err_t matGetGlobalCurrentControl(uint8_t *value, Matrix matrix)
+{
+    if (NULL == value) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
+
+    return matGetConfigBits(value, matrix, CURRENT_CNTRL_REG_ADDR, 0xFF);
+}
+
 /**
  * @brief Performs I2C transactions to change the resistor pullup value of each
  * matrix to the provided value.
@@ -469,7 +563,25 @@ esp_err_t matSetGlobalCurrentControl(uint8_t value)
 esp_err_t matSetResistorPullupSetting(enum ResistorSetting setting)
 {
     if (setting >= MATRIX_RESISTORSETTING_MAX) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
-    return (esp_err_t) matSetConfig(PUR_BITS, (uint8_t) setting);
+    return (esp_err_t) matSetConfig(PULL_SEL_REG_ADDR, PUR_BITS, (uint8_t) setting);
+}
+
+esp_err_t matGetResistorPullupSetting(enum ResistorSetting *setting, Matrix matrix)
+{
+    esp_err_t err;
+    uint8_t bits;
+
+    if (NULL == setting) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
+
+    err = matGetConfigBits(&bits, matrix, PULL_SEL_REG_ADDR, PUR_BITS);
+    if (ESP_OK != err)
+    {
+        *setting = MATRIX_RESISTORSETTING_MAX;
+        return err;
+    }
+
+    *setting = (enum ResistorSetting) bits;
+    return ESP_OK;
 }
 
 /**
@@ -494,38 +606,29 @@ esp_err_t matSetResistorPullupSetting(enum ResistorSetting setting)
 esp_err_t matSetResistorPulldownSetting(enum ResistorSetting setting)
 {
     if (setting >= MATRIX_RESISTORSETTING_MAX) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
-    return (esp_err_t) matSetConfig(PDR_BITS, (uint8_t) setting);
+    return (esp_err_t) matSetConfig(PULL_SEL_REG_ADDR, PDR_BITS, (uint8_t) setting);
 }
 
-/**
- * @brief Sets the PWM frequency of all matrix ICs.
- * 
- * @requires:
- * - I2C bus/buses initialized with matInitialize... functions.
- * 
- * @param[in] freq The PWM frequency to set the matrices to.
- * 
- * @returns ESP_OK if successful. Otherwise, the target register may have
- * changed in one or multiple matrices, but not all.
- * ESP_ERR_INVALID_ARG if invalid argument.
- * ESP_ERR_INVALID_STATE if requirement 1 is not met.
- * ESP_ERR_TIMEOUT if an I2C transaction timed out.
- * ESP_ERR_INVALID_RESPONSE if the matrix page could not be set properly.
- * APP_ERR_MUTEX_RELEASE if the device mutex could not be released and a reboot
- * is recommended.
- * ESP_FAIL if an unexpected error occurred.
- */
-esp_err_t matSetPWMFrequency(enum PWMFrequency freq)
+esp_err_t matGetResistorPulldownSetting(enum ResistorSetting *setting, Matrix matrix)
 {
     esp_err_t err;
-    /* input guards */
-    if (freq >= MATRIX_PWMFREQ_MAX) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
+    uint8_t bits;
 
-    /* set registers */
-    err = matSetRegisters(CONFIG_PAGE, PWM_FREQ_REG_ADDR, (uint8_t) freq);
-    if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
-    return (esp_err_t) err;
+    if (NULL == setting) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
+
+    err = matGetConfigBits(&bits, matrix, PULL_SEL_REG_ADDR, PDR_BITS);
+    if (ESP_OK != err)
+    {
+        *setting = MATRIX_RESISTORSETTING_MAX;
+        return err;
+    }
+
+    *setting = (enum ResistorSetting) bits;
+    return ESP_OK;
 }
+
+/* PWM frequency select (36h) removed: writes to it never took effect on the
+LCSC-sourced IS31FL3741A-marked chips this was tested against (two batches). */
 
 /**
  * @brief Resets all matrix registers to default values.
@@ -549,8 +652,72 @@ esp_err_t matReset(void)
 
     /* set registers */
     err = matSetRegisters(CONFIG_PAGE, RESET_REG_ADDR, RESET_KEY);
+
+    /* The reset key returns every matrix register, including the page
+    pointer (CMD_REG_ADDR), to its power-on default. The cached page state
+    is now stale regardless of the outcome above, so it must be invalidated
+    to force matSetPage to reselect the page on the next access. */
+    sMat1State = UINT8_MAX;
+    sMat2State = UINT8_MAX;
+    sMat3State = UINT8_MAX;
+#if CONFIG_HARDWARE_VERSION == 2
+    sMat4State = UINT8_MAX;
+#endif
+
     if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
     return (esp_err_t) err;
+}
+
+/**
+ * @brief Reads the ID Register (FCh) of a matrix IC. Per the datasheet, this
+ * is a global register available regardless of the currently selected page,
+ * and its value is fixed to the device's own I2C slave address (which is
+ * determined by the ADDR pin strapping). Reading it back and comparing
+ * against the address the driver expects for that matrix is a way to
+ * confirm the device physically present at that address is actually
+ * responding as an IS31FL3741A, rather than assuming every I2C ACK implies
+ * a correctly-identified, fully-functional chip.
+ *
+ * @requires:
+ * - I2C bus/buses initialized with matInitialize... functions.
+ *
+ * @param[out] id The location to store the register value.
+ * @param[in] matrix The matrix to query.
+ *
+ * @returns ESP_OK if successful.
+ * ESP_ERR_INVALID_ARG if invalid argument.
+ * ESP_ERR_TIMEOUT if an I2C transaction timed out.
+ * APP_ERR_MUTEX_FAIL if the device mutex could not be acquired.
+ * APP_ERR_MUTEX_RELEASE if the device mutex could not be released and a
+ * reboot is recommended.
+ * ESP_FAIL if an unexpected error occurred.
+ */
+esp_err_t matGetDeviceID(uint8_t *id, Matrix matrix)
+{
+    esp_err_t err, err2;
+    i2c_master_dev_handle_t device;
+    uint8_t addr = ID_REG_ADDR;
+
+    if (id == NULL) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
+
+    err = matGetDeviceHandle(&device, matrix);
+    if (err != ESP_OK) return err;
+
+    err = takeMatrixMutex(device);
+    if (err != ESP_OK)
+    {
+        if (err == ESP_ERR_INVALID_ARG) return APP_ERR_MUTEX_FAIL;
+        if (err == ESP_ERR_TIMEOUT) return APP_ERR_MUTEX_FAIL;
+        return err; // ESP_ERR_INVALID_STATE
+    }
+
+    err = i2c_master_transmit_receive(device, &addr, 1, id, 1, I2C_TIMEOUT_MS);
+    err2 = giveMatrixMutex(device);
+    if (err2 != ESP_OK) return APP_ERR_MUTEX_RELEASE;
+    if (err == ESP_ERR_INVALID_ARG) THROW_ERR(ESP_FAIL);
+    if (err != ESP_OK) THROW_ERR(err); // ESP_ERR_TIMEOUT
+
+    return (esp_err_t) ESP_OK;
 }
 
 /**
@@ -602,6 +769,39 @@ esp_err_t matSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue)
     if (err != ESP_OK) return err;
 
     err = matSetRegister(matrixHandle, page, ledReg.blue, blue);
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+    if (err != ESP_OK) return err;
+
+    return (esp_err_t) ESP_OK;
+}
+
+esp_err_t matGetColor(uint16_t ledNum, uint8_t *red, uint8_t *green, uint8_t *blue)
+{
+    esp_err_t err;
+    LEDReg ledReg;
+    i2c_master_dev_handle_t matrixHandle;
+    uint8_t page;
+    /* input guards */
+    if (red == NULL || green == NULL || blue == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (ledNum == 0) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (ledNum > MAX_NUM_LEDS_REG) THROW_ERR(ESP_ERR_INVALID_ARG);
+
+    /* determine the correct PWM registers */
+    ledReg = LEDNumToReg[ledNum - 1];
+    err = matParseLEDRegisterInfo(&matrixHandle, &page, NULL, ledReg);
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+    if (err != ESP_OK) return err;
+
+    /* read PWM registers */
+    err = matGetRegister(red, matrixHandle, page, ledReg.red);
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+    if (err != ESP_OK) return err;
+
+    err = matGetRegister(green, matrixHandle, page, ledReg.green);
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+    if (err != ESP_OK) return err;
+
+    err = matGetRegister(blue, matrixHandle, page, ledReg.blue);
     if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
     if (err != ESP_OK) return err;
 
@@ -665,6 +865,39 @@ esp_err_t matSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blu
     return (esp_err_t) ESP_OK;
 }
 
+esp_err_t matGetScaling(uint16_t ledNum, uint8_t *red, uint8_t *green, uint8_t *blue)
+{
+    esp_err_t err;
+    LEDReg ledReg;
+    i2c_master_dev_handle_t matrixHandle;
+    uint8_t page;
+    /* input guards */
+    if (red == NULL || green == NULL || blue == NULL) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (ledNum == 0) THROW_ERR(ESP_ERR_INVALID_ARG);
+    if (ledNum > MAX_NUM_LEDS_REG) THROW_ERR(ESP_ERR_INVALID_ARG);
+
+    /* determine the correct scaling registers */
+    ledReg = LEDNumToReg[ledNum - 1];
+    err = matParseLEDRegisterInfo(&matrixHandle, NULL, &page, ledReg);
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+    if (err != ESP_OK) return err;
+
+    /* read scaling registers */
+    err = matGetRegister(red, matrixHandle, page, ledReg.red);
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+    if (err != ESP_OK) return err;
+
+    err = matGetRegister(green, matrixHandle, page, ledReg.green);
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+    if (err != ESP_OK) return err;
+
+    err = matGetRegister(blue, matrixHandle, page, ledReg.blue);
+    if (err == ESP_ERR_INVALID_ARG) return ESP_FAIL;
+    if (err != ESP_OK) return err;
+
+    return (esp_err_t) ESP_OK;
+}
+
 /**
  * @brief Performs I2C transactions to put each of the matrix ICs into the
  * provided setting; ie. modifies bitMask bits to setting in each matrix's
@@ -673,8 +906,9 @@ esp_err_t matSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blu
  * @requires:
  * - I2C bus/buses initialized with matInitialize... functions.
  * 
+ * @param[in] addr The config-page register address to modify.
  * @param[in] setting The setting.
- * 
+ *
  * @returns ESP_OK if successful.
  * ESP_ERR_INVALID_STATE if requirement 1 is not met.
  * ESP_ERR_TIMEOUT if an I2C transaction timed out.
@@ -683,7 +917,7 @@ esp_err_t matSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blu
  * is recommended.
  * ESP_FAIL if an unexpected error occurred.
  */
-static esp_err_t matSetConfig(uint8_t bitMask, uint8_t setting)
+static esp_err_t matSetConfig(uint8_t addr, uint8_t bitMask, uint8_t setting)
 {
     esp_err_t err;
 #if CONFIG_HARDWARE_VERSION == 1
@@ -696,9 +930,9 @@ static esp_err_t matSetConfig(uint8_t bitMask, uint8_t setting)
 
     /* Read current configuration states */
 #if CONFIG_HARDWARE_VERSION == 1
-    err = matGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, CONFIG_REG_ADDR);
+    err = matGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, CONFIG_PAGE, addr);
 #elif CONFIG_HARDWARE_VERSION == 2
-    err = matGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, &mat4Cfg, CONFIG_PAGE, CONFIG_REG_ADDR);
+    err = matGetRegisters(&mat1Cfg, &mat2Cfg, &mat3Cfg, &mat4Cfg, CONFIG_PAGE, addr);
 #else
 #error "Unsupported hardware version!"
 #endif
@@ -713,10 +947,10 @@ static esp_err_t matSetConfig(uint8_t bitMask, uint8_t setting)
     matSetBits(&mat2Cfg, bitMask, setting);
     matSetBits(&mat3Cfg, bitMask, setting);
 #if CONFIG_HARDWARE_VERSION == 1
-err = matSetRegistersSeparate(CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg);
+err = matSetRegistersSeparate(CONFIG_PAGE, addr, mat1Cfg, mat2Cfg, mat3Cfg);
 #elif CONFIG_HARDWARE_VERSION == 2
     matSetBits(&mat4Cfg, bitMask, setting);
-    err = matSetRegistersSeparate(CONFIG_PAGE, CONFIG_REG_ADDR, mat1Cfg, mat2Cfg, mat3Cfg, mat4Cfg);
+    err = matSetRegistersSeparate(CONFIG_PAGE, addr, mat1Cfg, mat2Cfg, mat3Cfg, mat4Cfg);
 #else
 #error "Unsupported hardware version!"
 #endif
@@ -868,7 +1102,7 @@ static esp_err_t matParseLEDRegisterInfo(i2c_master_dev_handle_t *matrixHandle, 
  * be used to update configuration bits in matrix registers.
  * 
  * @param[out] reg The register value to be changed.
- * @param[in] bitMask The bits to be changed to value.
+ * @param[in] bitMask The bits to be changed to value, which must be contiguous.
  * @param[in] value The value to change bitmask bits in reg to. If this
  * value is greater than what bitMask can contain, this value will silently
  * be shortened.
@@ -876,14 +1110,112 @@ static esp_err_t matParseLEDRegisterInfo(i2c_master_dev_handle_t *matrixHandle, 
 static void matSetBits(uint8_t *reg, uint8_t bitMask, uint8_t value)
 {
     /* Align value to bitMask */
-    for (uint8_t currShift = 0; currShift < 8; currShift++)
-    {
-        if (bitMask % (0x01 << currShift) == 0x00) break;
-        value <<= currShift;
-    }
+    uint8_t shift = 0;
+    while (shift < 8 && (bitMask & (0x01 << shift)) == 0x00) shift++;
+    value <<= shift;
     /* Update prev mask bits */
     *reg &= ~bitMask;          // clear previous mask bits
     *reg |= (bitMask & value); // set value to mask bits of reg
+}
+
+/**
+ * @brief Gets the bits denoted by bitMask from reg. Meant to be used to
+ * read configuration bits in matrix registers.
+ *
+ * @param[in] reg The register value to read from.
+ * @param[in] bitMask The bits to be read from reg, which must be contiguous.
+ *
+ * @returns The value of the bitMask bits in reg, right-aligned to bit 0.
+ */
+static uint8_t matGetBits(uint8_t reg, uint8_t bitMask)
+{
+    uint8_t value = reg & bitMask;
+    /* Align value from bitMask */
+    uint8_t shift = 0;
+    while (shift < 8 && (bitMask & (0x01 << shift)) == 0x00) shift++;
+    value >>= shift;
+    return value;
+}
+
+/**
+ * @brief Resolves a Matrix enum value to its corresponding I2C device handle.
+ *
+ * @param[out] device The location to store the resolved device handle.
+ * @param[in] matrix The matrix to resolve.
+ *
+ * @returns ESP_OK if successful.
+ * ESP_ERR_INVALID_ARG if device is NULL, matrix is not a valid enum value, or
+ * the resolved device handle has not been initialized.
+ */
+static esp_err_t matGetDeviceHandle(i2c_master_dev_handle_t *device, Matrix matrix)
+{
+    if (device == NULL) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
+
+    switch (matrix)
+    {
+        case MATRIX1:
+            *device = sMat1Handle;
+            break;
+        case MATRIX2:
+            *device = sMat2Handle;
+            break;
+        case MATRIX3:
+            *device = sMat3Handle;
+            break;
+#if CONFIG_HARDWARE_VERSION == 1
+        /* none */
+#elif CONFIG_HARDWARE_VERSION == 2
+        case MATRIX4:
+            *device = sMat4Handle;
+            break;
+#else
+#error "Unsupported hardware version!"
+#endif
+        default:
+            THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
+    }
+
+    if (*device == NULL) return ESP_ERR_INVALID_ARG;
+    return ESP_OK;
+}
+
+/**
+ * @brief Reads a matrix config-page register and extracts the bits denoted by
+ * bitMask, right-aligned to bit 0.
+ *
+ * @requires:
+ * - I2C bus/buses initialized with matInitialize... functions.
+ *
+ * @param[out] bits The location to store the extracted bits.
+ * @param[in] matrix The matrix to query.
+ * @param[in] addr The register address to read, within the config page.
+ * @param[in] bitMask The bits to extract, which must be contiguous.
+ *
+ * @returns ESP_OK if successful.
+ * ESP_ERR_INVALID_ARG if invalid argument.
+ * ESP_ERR_INVALID_STATE if the I2C bus/buses are not initialized.
+ * ESP_ERR_TIMEOUT if an I2C transaction timed out.
+ * ESP_ERR_INVALID_RESPONSE if the matrix page could not be set properly.
+ * APP_ERR_MUTEX_RELEASE if the device mutex could not be released and a reboot
+ * is recommended.
+ * ESP_FAIL if an unexpected error occurred.
+ */
+static esp_err_t matGetConfigBits(uint8_t *bits, Matrix matrix, uint8_t addr, uint8_t bitMask)
+{
+    esp_err_t err;
+    i2c_master_dev_handle_t device;
+    uint8_t reg;
+
+    if (bits == NULL) THROW_ERR((esp_err_t) ESP_ERR_INVALID_ARG);
+
+    err = matGetDeviceHandle(&device, matrix);
+    if (err != ESP_OK) return err;
+
+    err = matGetRegister(&reg, device, CONFIG_PAGE, addr);
+    if (err != ESP_OK) return err;
+
+    *bits = matGetBits(reg, bitMask);
+    return ESP_OK;
 }
 
 /**

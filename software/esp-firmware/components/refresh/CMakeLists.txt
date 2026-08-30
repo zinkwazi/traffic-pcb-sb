@@ -3,19 +3,14 @@ set(srcs "src/refresh.c")
 list(APPEND srcs "src/refresh_task.c")
 list(APPEND srcs "src/traffic_data.c")
 list(APPEND srcs "src/refresh_fsm.c")
-list(APPEND srcs "src/refresh_utilities.c")
 
 set(include_dirs "include")
-
-if (CONFIG_MOCK_REFRESH)
-    set(srcs "mocks/Mockrefresh.c")
-    list(APPEND srcs "mocks/Mocktraffic_data.c")
-    list(APPEND include_dirs "mocks")
-endif ()
 
 if (CONFIG_EXTERN_REFRESH_CONFIG)
     list(APPEND srcs "src/extern_refresh_config.c")
 endif ()
+
+list(APPEND srcs "src/refresh_utilities.c")
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${include_dirs}
@@ -28,5 +23,4 @@ idf_component_register(SRCS ${srcs}
                                 input
                                 esp_http_client
                                 esp_http_client_wrapper
-                                mbedtls
-                                cmock)
+                                mbedtls)

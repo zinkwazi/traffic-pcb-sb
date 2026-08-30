@@ -18,22 +18,6 @@
 
 #include "app_err.h"
 
-enum PWMFrequency {
-    TWENTY_NINE_K = 0,
-    MATRIX_PWMFREQ_INVALID_1 = 1,
-    THREE_POINT_SIX_K = 2,
-    MATRIX_PWMFREQ_INVALID_3 = 3,
-    MATRIX_PWMFREQ_INVALID_4 = 4,
-    MATRIX_PWMFREQ_INVALID_5 = 5,
-    MATRIX_PWMFREQ_INVALID_6 = 6,
-    ONE_POINT_EIGHT_K = 7,
-    MATRIX_PWMFREQ_INVALID_8 = 8,
-    MATRIX_PWMFREQ_INVALID_9 = 9,
-    MATRIX_PWMFREQ_INVALID_10 = 10,
-    NINE_HUNDRED = 11,
-    MATRIX_PWMFREQ_MAX = 12, // indicates start of invalid values
-};
-
 enum ResistorSetting {
     RES_NONE = 0,
     HALF_K = 1,
@@ -79,19 +63,41 @@ enum SWXSetting {
     MATRIX_SWXSETTING_MAX = 9, // indicates start of invalid values
 };
 
+typedef enum Matrix {
+    MATRIX1,
+    MATRIX2,
+    MATRIX3,
+#if CONFIG_HARDWARE_VERISON == 1
+    /* none */
+#elif CONFIG_HARDWARE_VERSION == 2
+    MATRIX4,
+#endif
+} Matrix;
+
 esp_err_t initLedMatrix(void);
 esp_err_t getLedMatrixStatus(void);
 esp_err_t matSetOperatingMode(enum Operation setting);
+esp_err_t matGetOperatingMode(enum Operation *setting, Matrix matrix);
 esp_err_t matSetOpenShortDetection(enum ShortDetectionEnable setting);
+esp_err_t matGetOpenShortDetection(enum ShortDetectionEnable *setting, Matrix matrix);
 esp_err_t matSetLogicLevel(enum LogicLevel setting);
+esp_err_t matGetLogicLevel(enum LogicLevel *setting, Matrix matrix);
 esp_err_t matSetSWxSetting(enum SWXSetting setting);
+esp_err_t matGetSWxSetting(enum SWXSetting *setting, Matrix matrix);
 esp_err_t matSetGlobalCurrentControl(uint8_t value);
+esp_err_t matGetGlobalCurrentControl(uint8_t *value, Matrix matrix);
 esp_err_t matSetResistorPullupSetting(enum ResistorSetting setting);
+esp_err_t matGetResistorPullupSetting(enum ResistorSetting *setting, Matrix matrix);
 esp_err_t matSetResistorPulldownSetting(enum ResistorSetting setting);
-esp_err_t matSetPWMFrequency(enum PWMFrequency freq);
+esp_err_t matGetResistorPulldownSetting(enum ResistorSetting *setting, Matrix matrix);
+/* PWM frequency select (36h) removed: it never worked on the hardware this
+was tested against (LCSC-sourced IS31FL3741A-marked chips, two batches). */
 esp_err_t matReset(void);
+esp_err_t matGetDeviceID(uint8_t *id, Matrix matrix);
 esp_err_t matSetColor(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
+esp_err_t matGetColor(uint16_t ledNum, uint8_t *red, uint8_t *green, uint8_t *blue);
 esp_err_t matSetScaling(uint16_t ledNum, uint8_t red, uint8_t green, uint8_t blue);
+esp_err_t matGetScaling(uint16_t ledNum, uint8_t *red, uint8_t *green, uint8_t *blue);
 
 #if CONFIG_HARDWARE_VERSION == 1
 esp_err_t matInitialize(i2c_port_num_t port, gpio_num_t sdaPin, gpio_num_t sclPin);

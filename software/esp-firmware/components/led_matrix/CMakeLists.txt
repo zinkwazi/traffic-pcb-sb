@@ -1,13 +1,7 @@
 set(srcs "")
 set(include_dirs "include")
 
-if (CONFIG_MOCK_LED_MATRIX)
-     list(APPEND include_dirs "mocks")
-     list(APPEND srcs "mocks/Mockled_matrix.c")
-else ()
-     list(APPEND srcs "src/led_matrix.c")
-endif ()
-
+list(APPEND srcs "src/led_matrix.c")
 list(APPEND srcs "src/led_registers.c")
 list(APPEND srcs "src/V1_0_led_registers.c")
 list(APPEND srcs "src/V2_0_led_registers.c")

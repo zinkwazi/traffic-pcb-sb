@@ -39,10 +39,10 @@ enum MatrixLocation {
  * @brief Contains the matrix registers that correspond to an LED.
  */
 struct LEDReg {
-    enum MatrixLocation matrix; // all LEDs have their registers on the same page
     uint8_t red;
     uint8_t green;
     uint8_t blue;
+    enum MatrixLocation matrix; // all LEDs have their registers on the same page
 };
 
 typedef struct LEDReg LEDReg;

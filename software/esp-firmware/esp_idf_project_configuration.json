@@ -359,6 +359,38 @@
       "configs": [],
       "args": []
     },
+    "tasks": {  
+      "preBuild": "",
+      "preFlash": "",
+      "postBuild": "",
+      "postFlash": ""
+    }
+  },
+  "test_hardware": {
+    "build": {
+      "compileArgs": [],
+      "ninjaArgs": [],
+      "buildDirectoryPath": "${workspaceFolder}/builds/test_hardware",
+      "sdkconfigDefaults": [
+        "./configurations/sdkconfig.settings",
+        "./configurations/secrets/sdkconfig.test_secrets",
+        "./configurations/sdkconfig.test",
+        "./components/refresh/test/sdkconfig.test",
+        "./configurations/sdkconfig.V2_0_default"
+      ],
+      "sdkconfigFilePath": "${workspaceFolder}/configurations/current/sdkconfig.test_hardware"
+    },
+    "env": {
+      "executable": "test_hardware"
+    },
+    "idfTarget": "esp32s3",
+    "flashBaudRate": "",
+    "monitorBaudRate": "",
+    "openOCD": {
+      "debugLevel": 0,
+      "configs": [],
+      "args": []
+    },
     "tasks": {
       "preBuild": "",
       "preFlash": "",
