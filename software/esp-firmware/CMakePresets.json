@@ -23,7 +23,11 @@
             {
               "type": "openOCD",
               "value": {
-                "debugLevel": 0
+                "debugLevel": 0,
+                "configs": [
+                  "board/esp32s3-builtin.cfg"
+                ],
+                "args": []
               }
             }
           ]
@@ -47,7 +51,11 @@
             {
               "type": "openOCD",
               "value": {
-                "debugLevel": 0
+                "debugLevel": 0,
+                "configs": [
+                  "board/esp32s3-builtin.cfg"
+                ],
+                "args": []
               }
             }
           ]
@@ -71,7 +79,11 @@
             {
               "type": "openOCD",
               "value": {
-                "debugLevel": 0
+                "debugLevel": 0,
+                "configs": [
+                  "board/esp32s3-builtin.cfg"
+                ],
+                "args": []
               }
             }
           ]
@@ -95,7 +107,11 @@
             {
               "type": "openOCD",
               "value": {
-                "debugLevel": 0
+                "debugLevel": 0,
+                "configs": [
+                  "board/esp32s3-builtin.cfg"
+                ],
+                "args": []
               }
             }
           ]
@@ -119,7 +135,11 @@
             {
               "type": "openOCD",
               "value": {
-                "debugLevel": 0
+                "debugLevel": 0,
+                "configs": [
+                  "board/esp32s3-builtin.cfg"
+                ],
+                "args": []
               }
             }
           ]
@@ -143,7 +163,11 @@
             {
               "type": "openOCD",
               "value": {
-                "debugLevel": 0
+                "debugLevel": 0,
+                "configs": [
+                  "board/esp32s3-builtin.cfg"
+                ],
+                "args": []
               }
             }
           ]
@@ -168,7 +192,11 @@
             {
               "type": "openOCD",
               "value": {
-                "debugLevel": 0
+                "debugLevel": 0,
+                "configs": [
+                  "board/esp32s3-builtin.cfg"
+                ],
+                "args": []
               }
             }
           ]
@@ -193,7 +221,11 @@
             {
               "type": "openOCD",
               "value": {
-                "debugLevel": 0
+                "debugLevel": 0,
+                "configs": [
+                  "board/esp32s3-builtin.cfg"
+                ],
+                "args": []
               }
             }
           ]
@@ -218,7 +250,11 @@
             {
               "type": "openOCD",
               "value": {
-                "debugLevel": 0
+                "debugLevel": 0,
+                "configs": [
+                  "board/esp32s3-builtin.cfg"
+                ],
+                "args": []
               }
             }
           ]
@@ -243,7 +279,11 @@
             {
               "type": "openOCD",
               "value": {
-                "debugLevel": 0
+                "debugLevel": 0,
+                "configs": [
+                  "board/esp32s3-builtin.cfg"
+                ],
+                "args": []
               }
             }
           ]
@@ -268,7 +308,11 @@
             {
               "type": "openOCD",
               "value": {
-                "debugLevel": 0
+                "debugLevel": 0,
+                "configs": [
+                  "board/esp32s3-builtin.cfg"
+                ],
+                "args": []
               }
             }
           ]
@@ -293,7 +337,11 @@
             {
               "type": "openOCD",
               "value": {
-                "debugLevel": 0
+                "debugLevel": 0,
+                "configs": [
+                  "board/esp32s3-builtin.cfg"
+                ],
+                "args": []
               }
             }
           ]
@@ -318,7 +366,11 @@
             {
               "type": "openOCD",
               "value": {
-                "debugLevel": 0
+                "debugLevel": 0,
+                "configs": [
+                  "board/esp32s3-builtin.cfg"
+                ],
+                "args": []
               }
             }
           ]
