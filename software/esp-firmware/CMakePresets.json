@@ -1,0 +1,329 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "develop_V1_0",
+      "binaryDir": "${sourceDir}/builds/develop_V1_0",
+      "cacheVariables": {
+        "SDKCONFIG_DEFAULTS": "./configurations/sdkconfig.settings;./configurations/sdkconfig.develop;./configurations/sdkconfig.V1_0_default;./configurations/sdkconfig.V1_0_dev",
+        "SDKCONFIG": "${sourceDir}/configurations/current/sdkconfig.dev_V1_0"
+      },
+      "environment": {
+        "executable": "main"
+      },
+      "vendor": {
+        "espressif/vscode-esp-idf": {
+          "schemaVersion": 1,
+          "settings": [
+            {
+              "type": "openOCD",
+              "value": {
+                "debugLevel": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "develop_V2_0",
+      "binaryDir": "${sourceDir}/builds/develop_V2_0",
+      "cacheVariables": {
+        "SDKCONFIG_DEFAULTS": "./configurations/sdkconfig.settings;./configurations/sdkconfig.develop;./configurations/sdkconfig.V2_0_default",
+        "SDKCONFIG": "${sourceDir}/configurations/current/sdkconfig.dev_V2_0"
+      },
+      "environment": {
+        "executable": "main"
+      },
+      "vendor": {
+        "espressif/vscode-esp-idf": {
+          "schemaVersion": 1,
+          "settings": [
+            {
+              "type": "openOCD",
+              "value": {
+                "debugLevel": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "production_V1_0",
+      "binaryDir": "${sourceDir}/builds/production_V1_0",
+      "cacheVariables": {
+        "SDKCONFIG_DEFAULTS": "./configurations/sdkconfig.settings;./configurations/sdkconfig.production;./configurations/sdkconfig.V1_0_default;./configurations/sdkconfig.V1_0_prod",
+        "SDKCONFIG": "${sourceDir}/configurations/current/sdkconfig.prod_V1_0"
+      },
+      "environment": {
+        "executable": "main"
+      },
+      "vendor": {
+        "espressif/vscode-esp-idf": {
+          "schemaVersion": 1,
+          "settings": [
+            {
+              "type": "openOCD",
+              "value": {
+                "debugLevel": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "production_V2_0",
+      "binaryDir": "${sourceDir}/builds/production_V2_0",
+      "cacheVariables": {
+        "SDKCONFIG_DEFAULTS": "./configurations/sdkconfig.settings;./configurations/sdkconfig.production;./configurations/sdkconfig.V2_0_default",
+        "SDKCONFIG": "${sourceDir}/configurations/current/sdkconfig.prod_V2_0"
+      },
+      "environment": {
+        "executable": "main"
+      },
+      "vendor": {
+        "espressif/vscode-esp-idf": {
+          "schemaVersion": 1,
+          "settings": [
+            {
+              "type": "openOCD",
+              "value": {
+                "debugLevel": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "production_V2_1",
+      "binaryDir": "${sourceDir}/builds/production_V2_1",
+      "cacheVariables": {
+        "SDKCONFIG_DEFAULTS": "./configurations/sdkconfig.settings;./configurations/sdkconfig.production;./configurations/sdkconfig.V2_1_default",
+        "SDKCONFIG": "${sourceDir}/configurations/current/sdkconfig.prod_V2_1"
+      },
+      "environment": {
+        "executable": "main"
+      },
+      "vendor": {
+        "espressif/vscode-esp-idf": {
+          "schemaVersion": 1,
+          "settings": [
+            {
+              "type": "openOCD",
+              "value": {
+                "debugLevel": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "test_manual_V1_0",
+      "binaryDir": "${sourceDir}/builds/test_manual_V1_0",
+      "cacheVariables": {
+        "SDKCONFIG_DEFAULTS": "./configurations/sdkconfig.settings;./configurations/secrets/sdkconfig.test_secrets;./configurations/sdkconfig.test;./configurations/sdkconfig.V1_0_default",
+        "SDKCONFIG": "${sourceDir}/configurations/current/sdkconfig.test_manual_V1_0"
+      },
+      "environment": {
+        "executable": "test_manual"
+      },
+      "vendor": {
+        "espressif/vscode-esp-idf": {
+          "schemaVersion": 1,
+          "settings": [
+            {
+              "type": "openOCD",
+              "value": {
+                "debugLevel": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "test_manual_V2_0",
+      "binaryDir": "${sourceDir}/builds/test_manual_V2_0",
+      "cacheVariables": {
+        "IDF_TARGET": "esp32s3",
+        "SDKCONFIG_DEFAULTS": "./configurations/sdkconfig.settings;./configurations/secrets/sdkconfig.test_secrets;./configurations/sdkconfig.test;./configurations/sdkconfig.V2_0_default",
+        "SDKCONFIG": "${sourceDir}/configurations/current/sdkconfig.test_manual_V2_0"
+      },
+      "environment": {
+        "executable": "test_manual"
+      },
+      "vendor": {
+        "espressif/vscode-esp-idf": {
+          "schemaVersion": 1,
+          "settings": [
+            {
+              "type": "openOCD",
+              "value": {
+                "debugLevel": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "test_nonmock",
+      "binaryDir": "${sourceDir}/builds/test_nonmock",
+      "cacheVariables": {
+        "IDF_TARGET": "esp32s3",
+        "SDKCONFIG_DEFAULTS": "./configurations/sdkconfig.settings;./configurations/secrets/sdkconfig.test_secrets;./configurations/sdkconfig.test;./configurations/sdkconfig.V2_0_default",
+        "SDKCONFIG": "${sourceDir}/configurations/current/sdkconfig.test_nonmock"
+      },
+      "environment": {
+        "executable": "test_nonmock"
+      },
+      "vendor": {
+        "espressif/vscode-esp-idf": {
+          "schemaVersion": 1,
+          "settings": [
+            {
+              "type": "openOCD",
+              "value": {
+                "debugLevel": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "test_ota",
+      "binaryDir": "${sourceDir}/builds/test_ota",
+      "cacheVariables": {
+        "IDF_TARGET": "esp32s3",
+        "SDKCONFIG_DEFAULTS": "./configurations/sdkconfig.settings;./configurations/secrets/sdkconfig.test_secrets;./configurations/sdkconfig.test;./components/ota/test/sdkconfig.test_ota;./configurations/sdkconfig.V2_0_default",
+        "SDKCONFIG": "${sourceDir}/configurations/current/sdkconfig.test_ota"
+      },
+      "environment": {
+        "executable": "test_ota"
+      },
+      "vendor": {
+        "espressif/vscode-esp-idf": {
+          "schemaVersion": 1,
+          "settings": [
+            {
+              "type": "openOCD",
+              "value": {
+                "debugLevel": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "test_actions1",
+      "binaryDir": "${sourceDir}/builds/test_actions",
+      "cacheVariables": {
+        "IDF_TARGET": "esp32s3",
+        "SDKCONFIG_DEFAULTS": "./configurations/sdkconfig.settings;./configurations/secrets/sdkconfig.test_secrets;./configurations/sdkconfig.test;./components/actions/test/sdkconfig.test_actions1;./configurations/sdkconfig.V2_0_default",
+        "SDKCONFIG": "${sourceDir}/configurations/current/sdkconfig.test_actions1"
+      },
+      "environment": {
+        "executable": "test_actions"
+      },
+      "vendor": {
+        "espressif/vscode-esp-idf": {
+          "schemaVersion": 1,
+          "settings": [
+            {
+              "type": "openOCD",
+              "value": {
+                "debugLevel": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "test_actions2",
+      "binaryDir": "${sourceDir}/builds/test_actions2",
+      "cacheVariables": {
+        "IDF_TARGET": "esp32s3",
+        "SDKCONFIG_DEFAULTS": "./configurations/sdkconfig.settings;./configurations/secrets/sdkconfig.test_secrets;./configurations/sdkconfig.test;./components/actions/test/sdkconfig.test_actions2;./configurations/sdkconfig.V2_0_default",
+        "SDKCONFIG": "${sourceDir}/configurations/current/sdkconfig.test_actions2"
+      },
+      "environment": {
+        "executable": "test_actions2"
+      },
+      "vendor": {
+        "espressif/vscode-esp-idf": {
+          "schemaVersion": 1,
+          "settings": [
+            {
+              "type": "openOCD",
+              "value": {
+                "debugLevel": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "test_refresh",
+      "binaryDir": "${sourceDir}/builds/test_refresh",
+      "cacheVariables": {
+        "IDF_TARGET": "esp32s3",
+        "SDKCONFIG_DEFAULTS": "./configurations/sdkconfig.settings;./configurations/secrets/sdkconfig.test_secrets;./configurations/sdkconfig.test;./components/refresh/test/sdkconfig.test;./configurations/sdkconfig.V2_0_default",
+        "SDKCONFIG": "${sourceDir}/configurations/current/sdkconfig.test_refresh"
+      },
+      "environment": {
+        "executable": "test_refresh"
+      },
+      "vendor": {
+        "espressif/vscode-esp-idf": {
+          "schemaVersion": 1,
+          "settings": [
+            {
+              "type": "openOCD",
+              "value": {
+                "debugLevel": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "test_hardware",
+      "binaryDir": "${sourceDir}/builds/test_hardware",
+      "cacheVariables": {
+        "IDF_TARGET": "esp32s3",
+        "SDKCONFIG_DEFAULTS": "./configurations/sdkconfig.settings;./configurations/secrets/sdkconfig.test_secrets;./configurations/sdkconfig.test;./components/refresh/test/sdkconfig.test;./configurations/sdkconfig.V2_0_default",
+        "SDKCONFIG": "${sourceDir}/configurations/current/sdkconfig.test_hardware"
+      },
+      "environment": {
+        "executable": "test_hardware"
+      },
+      "vendor": {
+        "espressif/vscode-esp-idf": {
+          "schemaVersion": 1,
+          "settings": [
+            {
+              "type": "openOCD",
+              "value": {
+                "debugLevel": 0
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
