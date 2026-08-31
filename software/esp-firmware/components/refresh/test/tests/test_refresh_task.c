@@ -37,9 +37,15 @@
 
 #include "esp_err.h"
 
+#include "led_matrix.h"
 #include "main_types.h"
+#include "utilities.h"
 
 #define TEST_GROUP "[refresh_task]"
+
+/* An LED number guaranteed to be present on any populated V2.0/V2.1 board,
+   matching the convention used by test_refresh_utilities.c. */
+#define TEST_LED_NUM (1)
 
 /* mirrors the private NUM_LED_FRAMES in refresh_task.c; command queue and
    frame pool are both sized to this */
@@ -99,6 +105,54 @@ TEST_CASE("refreshLEDs_returnsInvalidArg_whenDataLenExceedsMax", TEST_GROUP)
     LEDSpeed data[1] = { { .ledNum = 5, .speed = 10 } };
     esp_err_t err = refreshLEDs(data, MAX_FRAME_SIZE + 1, NORTH, 0);
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
+}
+
+/* refreshLEDs() only needs the frame pool / command queue to exist, not a
+   running task consuming them (mirroring handleRefreshTaskCommand_
+   releasesSupersededQueuedFrame_toPool below, which reserves frames the
+   same way without ever creating the task). Driving these two boundary
+   checks through setUpResourcesWithoutRunningTask() instead of a full
+   createRefreshTask()/teardownRefreshTask() cycle avoids creating and
+   immediately deleting a real FreeRTOS task purely to check an argument
+   validation return code. */
+
+TEST_CASE("refreshLEDs_acceptsZeroLengthFrame", TEST_GROUP)
+{
+    esp_err_t setupErr = setUpResourcesWithoutRunningTask();
+
+    LEDSpeed data[1] = { { .ledNum = 5, .speed = 10 } };
+    /* dataLen == 0 is the lower boundary: no LEDs are copied, but a frame
+       slot should still be reserved and queued successfully */
+    esp_err_t ledsErr = refreshLEDs(data, 0, NORTH, 0);
+
+    refreshResetTaskResources();
+
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, setupErr, "resource setup");
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, ledsErr, "refreshLEDs return code for zero-length frame");
+}
+
+TEST_CASE("refreshLEDs_acceptsFrameAtMaxSize", TEST_GROUP)
+{
+    esp_err_t setupErr = setUpResourcesWithoutRunningTask();
+
+    /* static: MAX_FRAME_SIZE entries is too large to comfortably put on
+       the test task's stack */
+    static LEDSpeed data[MAX_FRAME_SIZE];
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        data[i].ledNum = i;
+        data[i].speed = 10;
+    }
+
+    /* dataLen == MAX_FRAME_SIZE is the upper boundary: contrast with
+       refreshLEDs_returnsInvalidArg_whenDataLenExceedsMax, which checks
+       MAX_FRAME_SIZE + 1 is rejected */
+    esp_err_t ledsErr = refreshLEDs(data, MAX_FRAME_SIZE, NORTH, 0);
+
+    refreshResetTaskResources();
+
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, setupErr, "resource setup");
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, ledsErr, "refreshLEDs return code for a frame at MAX_FRAME_SIZE");
 }
 
 TEST_CASE("createRefreshTask_returnsOk_onFirstCall", TEST_GROUP)
@@ -284,6 +338,19 @@ TEST_CASE("refreshDisableNightMode_returnsOk_whenQueueHasSpace", TEST_GROUP)
 
 /* ---- initRefreshTask() unit tests: no task is ever run ---- */
 
+TEST_CASE("refreshCreateTaskResourcesForTest_returnsInvalidState_whenAlreadyCreated", TEST_GROUP)
+{
+    refreshResetTaskResources();
+
+    esp_err_t err1 = refreshCreateTaskResourcesForTest();
+    esp_err_t err2 = refreshCreateTaskResourcesForTest();
+
+    refreshResetTaskResources();
+
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, err1, "first refreshCreateTaskResourcesForTest return code");
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_ERR_INVALID_STATE, err2, "second refreshCreateTaskResourcesForTest return code");
+}
+
 TEST_CASE("initRefreshTask_returnsFalse_whenResourcesNotCreated", TEST_GROUP)
 {
     refreshResetTaskResources();
@@ -380,4 +447,104 @@ TEST_CASE("handleRefreshTaskCommand_releasesSupersededQueuedFrame_toPool", TEST_
     TEST_ASSERT_EQUAL_MESSAGE(1, out3.framesToRelease.len, "third frame should release the superseded second frame");
     TEST_ASSERT_EQUAL_MESSAGE(1, out3.framesToRelease.list[0].index, "released frame should be the superseded index");
     TEST_ASSERT_EQUAL_MESSAGE(availableBefore + 1, availableAfter, "released frame should be returned to the pool");
+}
+
+/* ---- end-to-end hardware tests: verify handleRefreshTaskCommand()'s
+   dispatch of FSM actions actually reaches real led_matrix hardware, not
+   just that the right RefreshFSMAction is returned. Frame slots are
+   reserved and populated via refreshLEDs() (as in the tests above), then
+   fed back into handleRefreshTaskCommand() directly with hand-built
+   commands so the FSM state machine can be driven deterministically
+   through WAITING_FOR_FRAMES -> INSTALLING_FRAME -> CLEARING_FRAME
+   without a running task or command queue involved. ---- */
+
+TEST_CASE("handleRefreshTaskCommand_installThenNightMode_writesRealColorsToLedMatrix", TEST_GROUP)
+{
+    esp_err_t setupErr = setUpResourcesWithoutRunningTask();
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, setupErr, "resource setup");
+
+    /* initRefreshTask() calls matReset(), so the board is known-blank
+       going into this test */
+    bool initOk = initRefreshTask();
+
+    /* a single live LED, well below its typical speed so it unambiguously
+       classifies as "slow" (< 50% of typical) regardless of where the
+       exact cutoff boundary falls */
+    LEDSpeed currData[1] = { { .ledNum = TEST_LED_NUM, .speed = 20 } };
+    esp_err_t reserveCurr = refreshLEDs(currData, 1, NORTH, 0);
+
+    /* typical frames must be exactly MAX_FRAME_SIZE long and indexed by
+       LED number (ledFrames[ndx][ledNum].ledNum == ledNum), matching the
+       lookup the FSM performs in ledSpeedToColor() */
+    static LEDSpeed typicalNorth[MAX_FRAME_SIZE];
+    static LEDSpeed typicalSouth[MAX_FRAME_SIZE];
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        typicalNorth[i].ledNum = i;
+        typicalNorth[i].speed = 100;
+        typicalSouth[i].ledNum = i;
+        typicalSouth[i].speed = 100;
+    }
+    esp_err_t reserveTypicalNorth = refreshLEDs(typicalNorth, MAX_FRAME_SIZE, NORTH, 0);
+    esp_err_t reserveTypicalSouth = refreshLEDs(typicalSouth, MAX_FRAME_SIZE, SOUTH, 0);
+
+    /* while only the current frame is known, the FSM stays in
+       WAITING_FOR_FRAMES and takes no action */
+    RefreshFSMCommand cmdCurr = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = 0, .frameLen = 1, .dir = NORTH };
+    RefreshFSMOutput outCurr;
+    handleRefreshTaskCommand(&cmdCurr, &outCurr);
+
+    /* the north typical frame alone still isn't enough; south is still missing */
+    RefreshFSMCommand cmdTypicalNorth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = 1, .frameLen = MAX_FRAME_SIZE, .dir = NORTH };
+    RefreshFSMOutput outTypicalNorth;
+    handleRefreshTaskCommand(&cmdTypicalNorth, &outTypicalNorth);
+
+    /* south typical frame is the last piece: the FSM should immediately
+       install the single-LED current frame, which means
+       handleRefreshTaskCommand() has already dispatched a real
+       REFRESH_ACTION_SET to led_matrix by the time this call returns */
+    RefreshFSMCommand cmdTypicalSouth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = 2, .frameLen = MAX_FRAME_SIZE, .dir = SOUTH };
+    RefreshFSMOutput outTypicalSouth;
+    handleRefreshTaskCommand(&cmdTypicalSouth, &outTypicalSouth);
+
+    uint8_t installedRed = 0, installedGreen = 0, installedBlue = 0;
+    esp_err_t readInstalled = matGetColor(TEST_LED_NUM, &installedRed, &installedGreen, &installedBlue);
+
+    /* turning night mode on while a frame is installed should clear the
+       single lit LED in this same tick, dispatching a real
+       REFRESH_ACTION_CLEAR to led_matrix */
+    RefreshFSMCommand cmdNightModeOn = { .type = REFRESH_CMD_NIGHT_MODE_ON, .frameNdx = 0, .frameLen = 0, .dir = NO_DIR };
+    RefreshFSMOutput outNightModeOn;
+    handleRefreshTaskCommand(&cmdNightModeOn, &outNightModeOn);
+
+    uint8_t clearedRed = 0, clearedGreen = 0, clearedBlue = 0;
+    esp_err_t readCleared = matGetColor(TEST_LED_NUM, &clearedRed, &clearedGreen, &clearedBlue);
+
+    refreshResetTaskResources();
+
+    TEST_ASSERT_TRUE_MESSAGE(initOk, "initRefreshTask return value");
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, reserveCurr, "reserving current frame");
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, reserveTypicalNorth, "reserving north typical frame");
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, reserveTypicalSouth, "reserving south typical frame");
+
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outCurr.action.type, "no action while only the current frame is known");
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outTypicalNorth.action.type, "no action while south typical frame is still missing");
+
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, outTypicalSouth.action.type, "FSM action once both typical frames arrive");
+    TEST_ASSERT_EQUAL_MESSAGE(TEST_LED_NUM, outTypicalSouth.action.set.ledNum, "FSM should set the only LED in the current frame");
+    TEST_ASSERT_TRUE_MESSAGE(outTypicalSouth.isIdle, "FSM should be idle once the single-LED frame is fully installed");
+
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, readInstalled, "matGetColor after install");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(SLOW_RED, installedRed, "installed LED red channel should match the slow color");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(SLOW_GREEN, installedGreen, "installed LED green channel should match the slow color");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(SLOW_BLUE, installedBlue, "installed LED blue channel should match the slow color");
+
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, outNightModeOn.action.type, "FSM action when night mode turns on with a frame installed");
+    TEST_ASSERT_EQUAL_MESSAGE(TEST_LED_NUM, outNightModeOn.action.clear.ledNum, "FSM should clear the only LED in the current frame");
+    TEST_ASSERT_TRUE_MESSAGE(outNightModeOn.isIdle, "FSM should be idle once the single-LED frame is fully cleared");
+
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, readCleared, "matGetColor after night mode clear");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, clearedRed, "cleared LED red channel");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, clearedGreen, "cleared LED green channel");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, clearedBlue, "cleared LED blue channel");
 }
