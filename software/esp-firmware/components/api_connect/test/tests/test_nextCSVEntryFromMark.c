@@ -34,8 +34,8 @@ TEST_CASE("nextCSVEntryFromMark_noDataFound", "[api_connect]")
     char *str = "456\r\n";
     const int testBufSize = 9;
     const int circBackingSize = 3 * testBufSize;
-    char buffer[testBufSize];
-    char circBufBacking[circBackingSize];
+    char buffer[testBufSize] = {};
+    char circBufBacking[circBackingSize] = {};
     CircularBuffer circBuf;
     LEDData result;
 
@@ -67,8 +67,8 @@ TEST_CASE("nextCSVEntryFromMark_inputGuards", "[api_connect]")
     /* The maximum size of one test_data entry, including "\r\n" and '\0' */
     const int testBufSize = 9;
     const int circBackingSize = 6 * testBufSize;
-    char buffer[testBufSize];
-    char circBufBacking[circBackingSize];
+    char buffer[testBufSize] = {};
+    char circBufBacking[circBackingSize] = {};
     CircularBuffer circBuf;
     esp_err_t err;
     int numBytes;
@@ -114,8 +114,8 @@ TEST_CASE("nextCSVEntryFromMark_skipsNewline", "[api_connect]")
     /* The maximum size of one test_data entry, including "\r\n" and '\0' */
     const int testBufSize = 9;
     const int circBackingSize = 6 * testBufSize;
-    char buffer[testBufSize];
-    char circBufBacking[circBackingSize];
+    char buffer[testBufSize] = {};
+    char circBufBacking[circBackingSize] = {};
     CircularBuffer circBuf;
     esp_err_t err;
     int numBytes;
@@ -159,8 +159,8 @@ TEST_CASE("nextCSVEntryFromMark_fullFile", "[api_connect]")
     /* The maximum size of one test_data entry, including two "\r\n" and one '\0' */
     const int testBufSize = 12;
     const int circBackingSize = 2 * testBufSize;
-    char buffer[testBufSize];
-    char circBufBacking[circBackingSize];
+    char buffer[testBufSize] = {};
+    char circBufBacking[circBackingSize] = {};
     CircularBuffer circBuf;
     esp_err_t err;
     int numBytes;

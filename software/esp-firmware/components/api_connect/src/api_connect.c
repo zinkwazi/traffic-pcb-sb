@@ -29,10 +29,10 @@ esp_err_t readServerSpeedDataPreinit(CircularBuffer *circBuf, LEDData ledSpeeds[
 esp_err_t nextCSVEntryFromMark(LEDData *data, CircularBuffer *circBuf, char *buf, uint32_t bufSize);
 
 #if USE_ADDENDUMS == true
-esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client, char *fileURL, int retryNum);
+esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client, const char *fileURL, int retryNum);
 esp_err_t parseMetadata(char **dataStart, char *block, int blockLen, char *metadata, int *metadataLen);
 #else
-esp_err_t getServerSpeedsNoAddendums(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client, char *URL, int retryNum);
+esp_err_t getServerSpeedsNoAddendums(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client, const char *URL, int retryNum);
 esp_err_t readServerSpeedData(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_http_client_handle_t client);
 #endif
 
@@ -56,7 +56,7 @@ esp_err_t readServerSpeedData(LEDData ledSpeeds[], uint32_t ledSpeedsLen, esp_ht
 esp_err_t getServerSpeeds(LEDData ledSpeeds[], 
                           uint32_t ledSpeedsLen, 
                           esp_http_client_handle_t client, 
-                          char *URL, 
+                          const char *URL, 
                           int retryNum)
 {
 #if USE_ADDENDUMS == true
@@ -449,7 +449,7 @@ esp_err_t openServerFile(int64_t *contentLength,
 esp_err_t getServerSpeedsWithAddendums(LEDData ledSpeeds[], 
                                       uint32_t ledSpeedsLen, 
                                       esp_http_client_handle_t client, 
-                                      char *fileURL, 
+                                      const char *fileURL, 
                                       int retryNum)
 {
     const char *addFolderEnding = ADDENDUM_FOLDER_ENDING "/";
@@ -680,7 +680,7 @@ esp_err_t parseMetadata(char **dataStart,
 esp_err_t getServerSpeedsNoAddendums(LEDData ledSpeeds[],
                                      uint32_t ledSpeedsLen,
                                      esp_http_client_handle_t client,
-                                     char *URL,
+                                     const char *URL,
                                      int retryNum)
 {
     int64_t contentLength;

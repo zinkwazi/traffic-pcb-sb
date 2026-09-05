@@ -81,7 +81,7 @@ void app_main(void)
     for (uint32_t i = 0; i < MAX_NUM_LEDS_REG; i++)
     {
         data[i].ledNum = i + 1;
-        data[i].speed = i;
+        data[i].speed = i;  
     }
 
     err = refreshLEDs(data, SOUTH, portMAX_DELAY);

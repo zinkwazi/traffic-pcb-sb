@@ -37,12 +37,6 @@
 
 #define TAG "refreshTask"
 
-#ifdef CONFIG_TEST_REFRESH
-#define STATIC_IF_NOT_TEST
-#else
-#define STATIC_IF_NOT_TEST static
-#endif /* CONFIG_TEST_REFRESH */
-
 #define UNUSED(x)   (void)(x)
 
 /* The delay between LED updates in milliseconds */
