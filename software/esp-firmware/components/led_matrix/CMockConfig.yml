@@ -1,6 +1,0 @@
-:cmock:
-  :plugins:
-    - :ignore
-    - :ignore_arg
-    - :callback
-    - :return_thru_ptr

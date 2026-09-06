@@ -1,10 +1,12 @@
 set(srcs "")
 set(include_dirs "include")
 
-list(APPEND srcs "src/led_matrix.c")
 list(APPEND srcs "src/led_registers.c")
 list(APPEND srcs "src/V1_0_led_registers.c")
 list(APPEND srcs "src/V2_0_led_registers.c")
+
+list(APPEND srcs "src/led_matrix.c")
+list(APPEND srcs "fake/fake_led_matrix.c")
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${include_dirs}

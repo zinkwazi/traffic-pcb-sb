@@ -4,6 +4,11 @@
 CONFIG_TEST_REFRESH=y
 
 #
+# Hardware Dependencies
+#
+CONFIG_FAKE_LED_MATRIX=y
+
+#
 # Dependencies
 #
 CONFIG_FREERTOS_USE_TRACE_FACILITY=y

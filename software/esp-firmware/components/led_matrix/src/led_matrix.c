@@ -6,6 +6,8 @@
  *
  * See: https://www.lumissil.com/assets/pdf/core/IS31FL3741A_DS.pdf.
  */
+#include "sdkconfig.h"
+#if !defined(CONFIG_FAKE_LED_MATRIX)
 
 #include "led_matrix.h"
 
@@ -20,7 +22,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "hal/adc_types.h"
-#include "sdkconfig.h"
 
 #include "pinout.h"
 #include "app_err.h"
@@ -2180,3 +2181,6 @@ static esp_err_t matSetRegistersSeparate(uint8_t page, uint8_t addr, uint8_t mat
 #else
 #error "Unsupported hardware version!"
 #endif
+
+
+#endif /* !defined(CONFIG_FAKE_LED_MATRIX) */
