@@ -16,7 +16,7 @@ agents/run_test.sh test_refresh --port /dev/ttyUSB0
 ```
 
 It reads the variant's `executable`/sdkconfig settings straight out of
-`esp_idf_project_configuration.json` (so they can't drift from what the
+`CMakePresets.json` (so they can't drift from what the
 VS Code extension would use), sources the ESP-IDF `export.sh` itself, and
 sets `IDF_CCACHE_ENABLE=1` so rebuilding a second variant that shares most
 sources (e.g. `test_hardware` after `test_refresh`) doesn't recompile

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build, flash, and run an on-device Unity test variant, printing results and
-# exiting non-zero on failure. See esp_idf_project_configuration.json for the
+# exiting non-zero on failure. See CMakePresets.json's configurePresets for the
 # full list of variants (e.g. test_refresh, test_hardware).
 #
 # Usage:
@@ -49,22 +49,22 @@ if [[ -z "$PORT" ]]; then
   fi
 fi
 
-# idf.py never reads esp_idf_project_configuration.json itself (it's a
-# VS Code ESP-IDF extension format) -- pull this variant's executable name
-# and sdkconfig layering out of it here so it only has to be transcribed once.
+# idf.py never reads CMakePresets.json itself (the VS Code ESP-IDF extension
+# does) -- pull this variant's executable name and sdkconfig layering out of
+# it here so it only has to be transcribed once.
 CONFIG_LINE=$(python3 - "$VARIANT" <<'PYEOF'
 import json
 import sys
 
 variant = sys.argv[1]
-with open("esp_idf_project_configuration.json") as f:
-    d = json.load(f)
-if variant not in d:
-    sys.exit(f"unknown variant '{variant}'; choices: {', '.join(d)}")
-cfg = d[variant]
-defaults = ";".join(cfg["build"]["sdkconfigDefaults"])
-sdkconfig = cfg["build"]["sdkconfigFilePath"].replace("${workspaceFolder}/", "")
-print(cfg["env"]["executable"], defaults, sdkconfig, sep="\t")
+with open("CMakePresets.json") as f:
+    presets = {p["name"]: p for p in json.load(f)["configurePresets"]}
+if variant not in presets:
+    sys.exit(f"unknown variant '{variant}'; choices: {', '.join(presets)}")
+cfg = presets[variant]
+defaults = cfg["cacheVariables"]["SDKCONFIG_DEFAULTS"]
+sdkconfig = cfg["cacheVariables"]["SDKCONFIG"].replace("${sourceDir}/", "")
+print(cfg["environment"]["executable"], defaults, sdkconfig, sep="\t")
 PYEOF
 )
 IFS=$'\t' read -r EXECUTABLE SDKCONFIG_DEFAULTS SDKCONFIG_PATH <<<"$CONFIG_LINE"

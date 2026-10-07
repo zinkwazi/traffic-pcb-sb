@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 
+#include "sdkconfig.h"
 #include "driver/i2c_types.h"
 #include "driver/gpio.h"
 #include "esp_err.h"
@@ -106,5 +107,48 @@ esp_err_t matSetGCCByAmbientLight(void);
 #else
 #error "Unsupported hardware version!"
 #endif
+
+#if defined(CONFIG_FAKE_LED_MATRIX)
+
+/**
+ * Identifies a function of this header for fault injection
+ * into the led_matrix fake.
+ */
+typedef enum FakeMatFunction {
+    FAKE_MAT_INIT_LED_MATRIX,
+    FAKE_MAT_GET_LED_MATRIX_STATUS,
+    FAKE_MAT_SET_OPERATING_MODE,
+    FAKE_MAT_GET_OPERATING_MODE,
+    FAKE_MAT_SET_OPEN_SHORT_DETECTION,
+    FAKE_MAT_GET_OPEN_SHORT_DETECTION,
+    FAKE_MAT_SET_LOGIC_LEVEL,
+    FAKE_MAT_GET_LOGIC_LEVEL,
+    FAKE_MAT_SET_SWX_SETTING,
+    FAKE_MAT_GET_SWX_SETTING,
+    FAKE_MAT_SET_GLOBAL_CURRENT_CONTROL,
+    FAKE_MAT_GET_GLOBAL_CURRENT_CONTROL,
+    FAKE_MAT_SET_RESISTOR_PULLUP_SETTING,
+    FAKE_MAT_GET_RESISTOR_PULLUP_SETTING,
+    FAKE_MAT_SET_RESISTOR_PULLDOWN_SETTING,
+    FAKE_MAT_GET_RESISTOR_PULLDOWN_SETTING,
+    FAKE_MAT_RESET,
+    FAKE_MAT_GET_DEVICE_ID,
+    FAKE_MAT_SET_COLOR,
+    FAKE_MAT_GET_COLOR,
+    FAKE_MAT_SET_SCALING,
+    FAKE_MAT_GET_SCALING,
+#if CONFIG_HARDWARE_VERSION == 1
+    FAKE_MAT_INITIALIZE,
+#elif CONFIG_HARDWARE_VERSION == 2
+    FAKE_MAT_SET_GCC_BY_AMBIENT_LIGHT,
+#endif
+    FAKE_MAT_FUNCTION_MAX, // indicates start of invalid values
+} FakeMatFunction;
+
+esp_err_t fakeMatInjectFault(FakeMatFunction func, esp_err_t err, uint32_t numSuccessesBefore, uint32_t numFailures);
+void fakeMatResetFaults(void);
+uint32_t fakeMatGetCallCount(FakeMatFunction func);
+
+#endif /* defined(CONFIG_FAKE_LED_MATRIX) */
 
 #endif /* LED_MATRIX_H_4_8_25 */

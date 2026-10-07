@@ -30,4 +30,10 @@ menu "Input"
             The amount of time in microseconds the Toggle button must be held to
             be considered a long button press.
 
+    config FAKE_INPUT
+        bool "Fake the input component"
+        default n
+        help
+            Whether to use the fake of the input component or not.
+
 endmenu

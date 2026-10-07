@@ -7,6 +7,7 @@ CONFIG_TEST_REFRESH=y
 # Hardware Dependencies
 #
 CONFIG_FAKE_LED_MATRIX=y
+CONFIG_FAKE_INPUT=y
 
 #
 # Dependencies

@@ -6,10 +6,11 @@
  *
  * Unit tests for led_matrix.h. These ensure that fakes match real hardware behavior.
  *
- * @note These tests run against real IS31FL3741A hardware (see the
- * test_hardware executable target), not a mock. Every test that exercises a
- * setter therefore follows a strict save/set/verify/restore pattern so it
- * leaves the matrix ICs in the state it found them in.
+ * @note In the test_refresh configuration these run against the led_matrix
+ * fake (CONFIG_FAKE_LED_MATRIX). They are written to also run against real
+ * IS31FL3741A hardware, so every test that exercises a setter follows a
+ * strict save/set/verify/restore pattern so it leaves the matrix ICs in the
+ * state it found them in.
  *
  * @warning matGetSWxSetting is intentionally tested read-only, with no call
  * to matSetSWxSetting. The SWx setting determines how many pins are
