@@ -19,7 +19,7 @@
 #define INPUT_QUEUE_LENGTH (20)
 
 
-QueueHandle_t inputQueue = NULL; // holds MainCommand type. Exposed for inter-task communication
+QueueHandle_t mainInputQueue = NULL; // holds MainCommand type. Exposed for inter-task communication
 
 /* Keeps track of the number of unhandled commands on the main queue that cause an abort of the previous refresh */
 static SemaphoreHandle_t abortCountSemaphore;
@@ -33,9 +33,9 @@ static SemaphoreHandle_t abortCountSemaphore;
  */
 esp_err_t initInputQueue(void)
 {
-    if (NULL != inputQueue) return ESP_ERR_INVALID_STATE;
-    inputQueue = xQueueCreate(INPUT_QUEUE_LENGTH, sizeof(MainCommand));
-    if (NULL == inputQueue) return ESP_FAIL;
+    if (NULL != mainInputQueue) return ESP_ERR_INVALID_STATE;
+    mainInputQueue = xQueueCreate(INPUT_QUEUE_LENGTH, sizeof(MainCommand));
+    if (NULL == mainInputQueue) return ESP_FAIL;
     abortCountSemaphore = xSemaphoreCreateCounting(INPUT_QUEUE_LENGTH, 0);
     if (NULL == abortCountSemaphore) return ESP_ERR_NO_MEM;
     return ESP_OK;

@@ -1,0 +1,33 @@
+menu "Input"
+
+    config INPUT_PRIO
+        int "Priority of the button tasks"
+        default 5
+        help
+            The priority of the tasks that handle deferred processing of
+            button interrupts. These do very little work per event, so they
+            sit above the main task to keep button presses responsive.
+
+    config BUTTON_DEBOUNCE_US
+        int "Button Debounce Period"
+        default 50000
+        help
+            The amount of time in microseconds to not monitor edges of a button
+            GPIO pin after an initial edge is detected.
+
+    config BUTTON_VERIFY_US
+        int "Button Verification Period"
+        default 10000
+        help
+            The amount of time in microseconds after the debounce period to
+            expect no edges on a button GPIO pin. Otherwise, the debounce
+            period is restarted.
+
+    config LONG_BUTTON_PRESS_US
+        int "Long Button Press Period"
+        default 500000
+        help
+            The amount of time in microseconds the Toggle button must be held to
+            be considered a long button press.
+
+endmenu

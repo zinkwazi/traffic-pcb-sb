@@ -78,7 +78,7 @@ esp_timer_handle_t createDirectionFlashTimer(void) {
  */
 static void refreshTimerCallback(void *params) {
   static const MainCommand cmd = MAIN_CMD_TIMEOUT;
-  (void) xQueueSend(inputQueue, &cmd, 0); // best effort. timer is periodic, not oneshot
+  (void) xQueueSend(mainInputQueue, &cmd, 0); // best effort. timer is periodic, not oneshot
 }
 
 

@@ -1,5 +1,6 @@
 .devcontainer/
 .vscode/
+.claude/
 build/
 builds/
 unity-app/
@@ -10,3 +11,4 @@ configurations/sdkconfig.prod_*
 configurations/sdkconfig.new_dev_*
 configurations/sdkconfig.new_prod_*
 sdkconfig
+.clangd

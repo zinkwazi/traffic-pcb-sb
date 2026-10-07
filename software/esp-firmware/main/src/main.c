@@ -56,8 +56,6 @@ static esp_err_t mainRefresh(bool toggleDirection);
 void app_main(void)
 {
     MainCommand cmd;
-    bool toggleDirection = false;
-    bool prevCmdAborted = false;
     esp_err_t err;
     uint8_t mac[6];
 

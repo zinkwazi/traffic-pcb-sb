@@ -1,6 +1,7 @@
-idf_component_register(SRCS "src/input.c"
-                            "src/input_queue.c"
+idf_component_register(SRC_DIRS "src"
+                                 "fake"
                        INCLUDE_DIRS "include"
                        REQUIRES common
                                 app_errors
-                                refresh)
+                                driver
+                                esp_timer)

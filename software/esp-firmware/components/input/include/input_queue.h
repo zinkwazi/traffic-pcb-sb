@@ -25,7 +25,7 @@ typedef enum {
 /**
  * A queue that the main task uses to receive commands.
  */
-extern QueueHandle_t inputQueue; // holds mainCommand type.
+extern QueueHandle_t mainInputQueue; // holds mainCommand type.
 
 esp_err_t initInputQueue(void);
 esp_err_t incrementAbortCount(void);
