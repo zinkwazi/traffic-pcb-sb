@@ -27,7 +27,6 @@
 #include "led_registers.h"
 #include "indicators.h"
 #include "input.h"
-#include "input_queue.h"
 #include "main_types.h"
 #include "refresh.h"
 #include "routines.h"

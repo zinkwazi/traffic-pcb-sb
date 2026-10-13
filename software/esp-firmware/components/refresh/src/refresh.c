@@ -27,7 +27,7 @@
 #include "app_err.h"
 #include "app_errors.h"
 #include "app_nvs.h"
-#include "input_queue.h"
+#include "input.h"
 #include "led_coordinates.h"
 #include "led_matrix.h"
 #include "led_registers.h"

@@ -31,7 +31,6 @@
 
 #include "indicators_config.h"
 #include "input.h"
-#include "input_queue.h"
 #include "animations.h"
 #include "led_matrix.h"
 #include "pinout.h"
@@ -79,10 +78,6 @@ esp_err_t initializeApplication(void)
     TaskHandle_t otaTask = NULL;
     wifi_init_config_t default_wifi_cfg = WIFI_INIT_CONFIG_DEFAULT();
     nvs_handle_t mainNvsHandle, workerNvsHandle;
-
-    /* initialize task resources */
-    err = initInputQueue();
-    if (ESP_OK != err) return err;
 
     /* initialize firmware components and hardware resources */
     err = initLedMatrix();

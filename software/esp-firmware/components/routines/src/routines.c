@@ -16,7 +16,7 @@
 
 #include "app_err.h"
 #include "led_matrix.h"
-#include "input_queue.h"
+#include "input.h"
 #include "pinout.h"
 
 #define TAG "routines"

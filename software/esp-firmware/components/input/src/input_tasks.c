@@ -23,7 +23,7 @@
 #include "sdkconfig.h"
 
 #include "button_debounce_fsm.h"
-#include "input_queue.h"
+#include "input.h"
 #include "pinout.h"
 
 #define TAG "input_tasks"

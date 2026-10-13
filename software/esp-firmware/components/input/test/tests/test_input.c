@@ -19,50 +19,91 @@
 
 #include "unity.h"
 
-#include "input_queue.h"
-
 #define TEST_GROUP "[input]"
 
 /**
- * @brief Ensures the main input queue exists, independent of test
- * execution order. There is no deinit function, so once initialized the
- * queue stays initialized for the rest of the test binary.
+ * @brief Ensures input is initialized, independent of test execution
+ * order. There is no deinit function, so once initialized the input
+ * component stays initialized for the rest of the test binary.
  */
-static void ensureInputQueueInitialized(void)
+static void ensureInputInitialized(void)
 {
     if (NULL == mainInputQueue)
     {
-        TEST_ASSERT_EQUAL(ESP_OK, initInputQueue());
+        /* initInput requires the GPIO ISR service; it may already be installed */
+        esp_err_t err = gpio_install_isr_service(0);
+        TEST_ASSERT_TRUE(err == ESP_OK || err == ESP_ERR_INVALID_STATE);
+
+        TEST_ASSERT_EQUAL(ESP_OK, initInput(xTaskGetCurrentTaskHandle()));
+    }
+}
+
+/**
+ * @brief Drains the abort count so each abort count test starts from zero.
+ */
+static void resetAbortCount(void)
+{
+    while (!abortCountZero())
+    {
+        TEST_ASSERT_EQUAL(ESP_OK, decrementAbortCount());
     }
 }
 
 TEST_CASE("initInput_rejectsNullOTATask", TEST_GROUP)
 {
-    ensureInputQueueInitialized();
-
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, initInput(NULL));
 }
 
-TEST_CASE("initInput_rejectsUninitializedInputQueue", TEST_GROUP)
+TEST_CASE("initInput_createsMainInputQueue", TEST_GROUP)
 {
-    ensureInputQueueInitialized();
+    ensureInputInitialized();
 
-    /* there is no way to deinit the queue, so hide it for the duration of the test */
-    QueueHandle_t savedQueue = mainInputQueue;
-    mainInputQueue = NULL;
-    esp_err_t err = initInput(xTaskGetCurrentTaskHandle());
-    mainInputQueue = savedQueue;
-
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, err);
+    TEST_ASSERT_NOT_NULL(mainInputQueue);
 }
 
-TEST_CASE("initInput_succeeds", TEST_GROUP)
+TEST_CASE("mainInputQueue_holdsMainCommands", TEST_GROUP)
 {
-    ensureInputQueueInitialized();
+    MainCommand sent = MAIN_CMD_SCHEDULED;
+    MainCommand received = MAIN_CMD_ERROR;
 
-    /* initInput requires the GPIO ISR service; it may already be installed */
-    esp_err_t err = gpio_install_isr_service(0);
-    TEST_ASSERT_TRUE(err == ESP_OK || err == ESP_ERR_INVALID_STATE);
+    ensureInputInitialized();
+    xQueueReset(mainInputQueue);
 
-    TEST_ASSERT_EQUAL(ESP_OK, initInput(xTaskGetCurrentTaskHandle()));
+    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(mainInputQueue, &sent, 0));
+    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(mainInputQueue, &received, 0));
+    TEST_ASSERT_EQUAL(sent, received);
+}
+
+TEST_CASE("abortCount_incrementMakesNonZero", TEST_GROUP)
+{
+    ensureInputInitialized();
+    resetAbortCount();
+
+    TEST_ASSERT_TRUE(abortCountZero());
+    TEST_ASSERT_EQUAL(ESP_OK, incrementAbortCount());
+    TEST_ASSERT_FALSE(abortCountZero());
+
+    resetAbortCount();
+}
+
+TEST_CASE("abortCount_decrementReturnsToZero", TEST_GROUP)
+{
+    ensureInputInitialized();
+    resetAbortCount();
+
+    TEST_ASSERT_EQUAL(ESP_OK, incrementAbortCount());
+    TEST_ASSERT_EQUAL(ESP_OK, incrementAbortCount());
+    TEST_ASSERT_EQUAL(ESP_OK, decrementAbortCount());
+    TEST_ASSERT_FALSE(abortCountZero());
+    TEST_ASSERT_EQUAL(ESP_OK, decrementAbortCount());
+    TEST_ASSERT_TRUE(abortCountZero());
+}
+
+TEST_CASE("abortCount_decrementAtZeroFails", TEST_GROUP)
+{
+    ensureInputInitialized();
+    resetAbortCount();
+
+    TEST_ASSERT_EQUAL(ESP_FAIL, decrementAbortCount());
+    TEST_ASSERT_TRUE(abortCountZero());
 }
