@@ -23,19 +23,23 @@
 #include "refresh_types.h"
 
 esp_err_t createRefreshTask(TaskHandle_t *handle, const UBaseType_t prio);
-esp_err_t refreshLEDs(LEDSpeed *data, uint32_t dataLen, Direction dir, TickType_t blockTime);
-esp_err_t refreshEnableNightMode(TickType_t blockTime);
-esp_err_t refreshDisableNightMode(TickType_t blockTime);
+esp_err_t refreshTaskReserveFrame(LEDSpeed (**frame)[MAX_FRAME_SIZE], uint32_t *frameNdx, TickType_t ticksToWait);
+esp_err_t refreshTaskReleaseFrame(uint32_t frameNdx, TickType_t ticksToWait);
+esp_err_t refreshTaskRefreshLEDs(uint32_t frameNdx, uint32_t frameLen, Direction dir, TickType_t ticksToWait);
+esp_err_t refreshTaskUpdateTypical(uint32_t frameNdx, uint32_t frameLen, Direction dir, TickType_t ticksToWait);
+esp_err_t refreshTaskEnableNightMode(TickType_t ticksToWait);
+esp_err_t refreshTaskDisableNightMode(TickType_t ticksToWait);
 
 #ifdef CONFIG_TEST_REFRESH
 
 #include "refresh_fsm.h"
 
-void refreshResetTaskResources(void);
-esp_err_t refreshCreateTaskResourcesForTest(void);
-bool initRefreshTask(void);
-void handleRefreshTaskCommand(RefreshFSMCommand *cmd, RefreshFSMOutput *out);
-uint32_t refreshGetAvailableFrameCount(void);
+void refreshTaskResetResources(void);
+esp_err_t refreshTaskCreateResourcesForTest(void);
+bool refreshTaskInit(void);
+void refreshTaskHandleCommand(RefreshFSMCommand *cmd, RefreshFSMOutput *out);
+uint32_t refreshTaskGetAvailableFrameCount(void);
+bool refreshTaskIsFrameReserved(uint32_t frameNdx);
 
 #endif /* CONFIG_TEST_REFRESH */
 #endif /* REFRESH_TASK_H_ */

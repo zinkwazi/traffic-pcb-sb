@@ -79,9 +79,13 @@ esp_err_t initializeApplication(void)
     wifi_init_config_t default_wifi_cfg = WIFI_INIT_CONFIG_DEFAULT();
     nvs_handle_t mainNvsHandle, workerNvsHandle;
 
-    /* initialize firmware components and hardware resources */
-    err = initLedMatrix();
-    if (err != ESP_OK) return err;
+    /* initialize firmware components and hardware resources. The refresh
+    task may have already initialized the LED matrices. */
+    if (getLedMatrixStatus() != ESP_OK)
+    {
+        err = initLedMatrix();
+        if (err != ESP_OK) return err;
+    }
     err = initAppErrors();
     if (err != ESP_OK) return err;
     err = calculateLEDSequences();

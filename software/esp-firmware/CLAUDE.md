@@ -78,7 +78,7 @@ This component controls all traffic LEDs. It is currently being split into a foc
 
 ```
 External callers
-  ↓  refreshLEDs() / refreshEnableNightMode() / refreshDisableNightMode()
+  ↓  refreshTaskRefreshLEDs() / refreshTaskEnableNightMode() / refreshTaskDisableNightMode()
 refresh_task      — FreeRTOS task; owns command queue and frame buffers;
                     ticks the FSM; calls led_matrix based on FSM output
   ↓  refreshFSMTick()
@@ -172,12 +172,12 @@ FRAME_INSTALLED     — frame on board; idle until new command
 
 ```c
 esp_err_t createRefreshTask(TaskHandle_t *handle, const UBaseType_t prio);
-esp_err_t refreshLEDs(LEDColor *data, uint32_t dataLen, Direction dir, TickType_t blockTime);
-esp_err_t refreshEnableNightMode(TickType_t blockTime);
-esp_err_t refreshDisableNightMode(TickType_t blockTime);
+esp_err_t refreshTaskRefreshLEDs(LEDColor *data, uint32_t dataLen, Direction dir, TickType_t blockTime);
+esp_err_t refreshTaskEnableNightMode(TickType_t blockTime);
+esp_err_t refreshTaskDisableNightMode(TickType_t blockTime);
 
 // Only available when CONFIG_TEST_REFRESH is set:
-void refreshResetTaskResources(void);
+void refreshTaskResetResources(void);
 ```
 
 **Requires** `initLedMatrix()` to have been called before `createRefreshTask`.
@@ -188,7 +188,7 @@ void refreshResetTaskResources(void);
 
 **Internal timing:** `LED_UPDATE_DELAY_MS` (2 ms) between individual LED updates. `xQueueReceive` on the command queue serves as the sleep; a new command arriving early wakes the task immediately.
 
-**`refreshResetTaskResources()`**: resets static state to uninitialized. Only compiled when `CONFIG_TEST_REFRESH=y`. Required in test setUp/tearDown around `createRefreshTask` calls.
+**`refreshTaskResetResources()`**: resets static state to uninitialized. Only compiled when `CONFIG_TEST_REFRESH=y`. Required in test setUp/tearDown around `createRefreshTask` calls.
 
 ### Dependency chain for refresh
 
@@ -226,7 +226,7 @@ components/led_matrix/test/
 TEST_CASE("description", "groupName")
 {
     /* setup */
-    refreshResetTaskResources();
+    refreshTaskResetResources();
 
     /* test */
     esp_err_t err = createRefreshTask(NULL, 1);
@@ -234,7 +234,7 @@ TEST_CASE("description", "groupName")
 
     /* teardown */
     vTaskDelete(refreshTaskHandle);
-    refreshResetTaskResources();
+    refreshTaskResetResources();
 }
 ```
 

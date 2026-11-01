@@ -39,22 +39,22 @@
 
 #define TAG "app_main"
 
-#define NOT_QUICK     (false)
-
-static Direction currDir = SOUTH; // the currently displayed traffic direction
-
-static esp_err_t mainRefresh(bool toggleDirection);
+/* priority of the refresh task; below main and OTA */
+#define REFRESH_PRIO        (2)
+/* the traffic direction displayed at startup */
+#define STARTUP_DIR         (SOUTH)
+#define STARTUP_ANIM        (CURVED_LINE_SOUTH)
 
 /**
  * @brief The entrypoint task of the application.
  * 
- * Initializes other tasks, requests user settings, then handles button presses
- * for LED refreshes. As this task handles user input, it should not do a lot
- * of processing. Rather, heavy processing is primarily left to vDotWorkerTask.
+ * Creates the refresh task, initializes the application (which retrieves
+ * typical and live traffic data from the server, falling back to
+ * non-volatile storage), provides typical data for both directions to
+ * the refresh task, then displays live traffic data.
  */
 void app_main(void)
 {
-    MainCommand cmd;
     esp_err_t err;
     uint8_t mac[6];
 
@@ -71,59 +71,36 @@ void app_main(void)
     if (err != ESP_OK) throwFatalError();
     ESP_LOGE(TAG, "Base MAC Address: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-    err = createRefreshTask(NULL);
+    /* create the refresh task first: it resets the LED matrices, which must
+    happen before indicator LEDs are set, and the action task may send it
+    night mode commands as soon as it is created */
+    err = createRefreshTask(NULL, REFRESH_PRIO);
     if (err != ESP_OK) throwFatalError();
 
-    LEDData data[MAX_NUM_LEDS_REG];
-    for (uint32_t i = 0; i < MAX_NUM_LEDS_REG; i++)
+    /* connect to wifi and retrieve traffic data, among other things */
+    err = initializeApplication();
+    if (err != ESP_OK) throwFatalError();
+
+    /* the refresh task waits for typical data in both directions before
+    displaying any live data */
+    err = refreshTypical(NORTH, portMAX_DELAY);
+    if (err != ESP_OK) throwFatalError();
+    err = refreshTypical(SOUTH, portMAX_DELAY);
+    if (err != ESP_OK) throwFatalError();
+
+    /* display live data */
+    err = indicateDirection(STARTUP_DIR);
+    if (err != ESP_OK) throwFatalError();
+    err = refreshBoard(STARTUP_DIR, STARTUP_ANIM);
+    if (err != ESP_OK) throwFatalError();
+
+    /* block rather than spin so lower priority tasks can run */
+    while (true)
     {
-        data[i].ledNum = i + 1;
-        data[i].speed = i;  
+        vTaskDelay(portMAX_DELAY);
     }
-
-    err = refreshLEDs(data, SOUTH, portMAX_DELAY);
-    if (err != ESP_OK) throwFatalError();
-
-    while (true) {}
 
     /* emergency handling */
     ESP_LOGE(TAG, "Main task is exiting!");
     throwFatalError();
-}
-
-/**
- * @brief Handles everything that needs to happen after a toggle button press.
- * 
- * @param[in] toggleDirection Whether to toggle the current direction or not.
- * @param[in] typicalNoth An array filled with typical north road segment speeds.
- * @param[in] typicalSouth An array filled with typical south road segment speeds.
- * 
- * @returns ESP_OK if successful.
- * REFRESH_ABORT if a new command is available on the main queue.
- */
-static esp_err_t mainRefresh(bool toggleDirection) {
-    esp_err_t err;
-
-    /* handle toggle button press */
-    if (toggleDirection && NORTH == currDir) {
-        currDir = SOUTH;
-    } else if (toggleDirection && SOUTH == currDir) {
-        currDir = NORTH;
-    }
-
-    /* refresh LEDs */
-    err = indicateDirection(currDir);
-    if (err != ESP_OK) return err;
-    switch (currDir)
-    {
-        case NORTH:
-            err = refreshBoard(NORTH, CURVED_LINE_NORTH);
-            break;
-        case SOUTH:
-            err = refreshBoard(SOUTH, CURVED_LINE_SOUTH);
-            break;
-        default: 
-            THROW_ERR(ESP_FAIL);
-    }
-    return err;
 }

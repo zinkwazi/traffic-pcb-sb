@@ -22,7 +22,18 @@ typedef enum {
     REFRESH_CMD_NEW_FRAME,
     /* Clears then reinstalls the current LED frame, if any */
     REFRESH_CMD_REFRESH,
-    /* Updates the typical LED speeds for the given direction */
+    /**
+     * Updates the typical LED speeds for the given direction, taking
+     * effect the next time a frame is installed. Unlike NEW_FRAME, the
+     * frame is a lookup table indexed by LED number, not an ordered
+     * list: frame[n].ledNum must equal n and frame[n].speed is the
+     * typical speed of LED n (slot 0 is unused). Every slot up to
+     * MAX_NUM_LEDS_REG must be written, otherwise an assertion fails
+     * when an LED with a mismatched slot is installed. A typical speed
+     * of 0 is treated as 1. frameLen should be MAX_FRAME_SIZE and must
+     * be nonzero. The FSM leaves WAITING_FOR_FRAMES only once both
+     * directions have a typical frame.
+     */
     REFRESH_CMD_UPDATE_TYPICAL,
     /* Turns on night mode, during which LEDs will be turned off */
     REFRESH_CMD_NIGHT_MODE_ON,

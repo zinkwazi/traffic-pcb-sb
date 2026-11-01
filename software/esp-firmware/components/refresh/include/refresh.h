@@ -23,11 +23,10 @@
 
 esp_err_t initRefresh(void);
 esp_http_client_handle_t initHttpClient(void);
-void lockBoardRefresh(void);
-void unlockBoardRefresh(void);
-esp_err_t clearBoard(Direction dir, bool quick);
-esp_err_t quickClearBoard(Direction dir);
 esp_err_t refreshData(LEDData data[], esp_http_client_handle_t client, Direction dir, SpeedCategory category);
 esp_err_t refreshBoard(Direction dir, Animation anim);
+esp_err_t refreshTypical(Direction dir, TickType_t ticksToWait);
+esp_err_t refreshEnableNightMode(TickType_t ticksToWait);
+esp_err_t refreshDisableNightMode(TickType_t ticksToWait);
 
 #endif /* REFRESH_H_4_9_25 */
