@@ -700,3 +700,112 @@ TEST_CASE("refreshTaskHandleCommand_installThenNightMode_writesRealColorsToLedMa
     TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, clearedGreen, "cleared LED green channel");
     TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, clearedBlue, "cleared LED blue channel");
 }
+
+/* Regression test: REFRESH_ACTION_CLEAR_RANGE must look up the typical
+   frame by LED number (typical[speed.ledNum]), not by position in the live
+   frame (typical[ndx]). The live frame uses LED numbers that differ from
+   their positions, and the skipped LED is painted with a sentinel color
+   that the quick clear must leave alone. */
+TEST_CASE("refreshTaskHandleCommand_quickClear_skipsLEDsByTypicalSpeedOfLEDNumber", TEST_GROUP)
+{
+    esp_err_t setupErr = setUpResourcesWithoutRunningTask();
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, setupErr, "resource setup");
+
+    /* refreshTaskInit() calls matReset(), so the board is known-blank */
+    bool initOk = refreshTaskInit();
+
+    /* pick three valid LED numbers >= 3, so none equals its frame position
+       (0..2) and the skipped LED's typical slot isn't one the buggy
+       position lookup would read */
+    uint16_t ledNums[3] = { 0 };
+    uint32_t found = 0;
+    for (uint16_t ledNum = 3; ledNum <= MAX_NUM_LEDS_REG && found < 3; ledNum++)
+    {
+        if (isLEDValid(LEDNumToReg[ledNum - 1])) ledNums[found++] = ledNum;
+    }
+    const uint16_t ledA = ledNums[0], ledB = ledNums[1], ledC = ledNums[2];
+
+    LEDSpeed (*currFrame)[MAX_FRAME_SIZE], (*typicalNorth)[MAX_FRAME_SIZE], (*typicalSouth)[MAX_FRAME_SIZE];
+    LEDSpeed (*frameX)[MAX_FRAME_SIZE], (*frameY)[MAX_FRAME_SIZE];
+    uint32_t currNdx = UINT32_MAX, typicalNorthNdx = UINT32_MAX, typicalSouthNdx = UINT32_MAX;
+    uint32_t xNdx = UINT32_MAX, yNdx = UINT32_MAX;
+    esp_err_t reserveCurr = refreshTaskReserveFrame(&currFrame, &currNdx, 0);
+    esp_err_t reserveTypicalNorth = refreshTaskReserveFrame(&typicalNorth, &typicalNorthNdx, 0);
+    esp_err_t reserveTypicalSouth = refreshTaskReserveFrame(&typicalSouth, &typicalSouthNdx, 0);
+    esp_err_t reserveX = refreshTaskReserveFrame(&frameX, &xNdx, 0);
+    esp_err_t reserveY = refreshTaskReserveFrame(&frameY, &yNdx, 0);
+    bool reservedAll = (ESP_OK == reserveCurr && ESP_OK == reserveTypicalNorth && ESP_OK == reserveTypicalSouth &&
+                        ESP_OK == reserveX && ESP_OK == reserveY);
+
+    if (reservedAll && 3 == found)
+    {
+        (*currFrame)[0] = (LEDSpeed) { .ledNum = ledA, .speed = 20 };
+        (*currFrame)[1] = (LEDSpeed) { .ledNum = ledB, .speed = 20 };
+        (*currFrame)[2] = (LEDSpeed) { .ledNum = ledC, .speed = 20 };
+        for (uint32_t i = 0; i <= MAX_NUM_LEDS_REG; i++)
+        {
+            (*typicalNorth)[i] = (LEDSpeed) { .ledNum = i, .speed = 100 };
+            (*typicalSouth)[i] = (LEDSpeed) { .ledNum = i, .speed = 100 };
+        }
+        (*typicalNorth)[ledB].speed = UINT8_MAX;
+    }
+
+    /* the skipped LED is never set by the FSM; paint it so a wrongful clear
+       is detectable */
+    esp_err_t paintErr = matSetColor(ledB, 0x12, 0x34, 0x56);
+
+    /* install: A is set, B is skipped, C is set (frame fully installed) */
+    RefreshFSMCommand cmdCurr = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = currNdx, .frameLen = 3, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalNorth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalNorthNdx, .frameLen = MAX_NUM_LEDS_REG + 1, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalSouth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalSouthNdx, .frameLen = MAX_NUM_LEDS_REG + 1, .dir = SOUTH };
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE, .frameNdx = UINT32_MAX, .frameLen = UINT32_MAX, .dir = NO_DIR };
+    RefreshFSMOutput outCurr, outTypicalNorth, outInstallA, outInstallC;
+    refreshTaskHandleCommand(&cmdCurr, &outCurr);
+    refreshTaskHandleCommand(&cmdTypicalNorth, &outTypicalNorth);
+    refreshTaskHandleCommand(&cmdTypicalSouth, &outInstallA);
+    refreshTaskHandleCommand(&cmdNone, &outInstallC);
+
+    /* frame X starts a one-LED-per-tick clear (C first); frame Y then
+       interrupts it, so A and B are handled by a single CLEAR_RANGE */
+    RefreshFSMCommand cmdX = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = xNdx, .frameLen = 0, .dir = NORTH };
+    RefreshFSMCommand cmdY = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = yNdx, .frameLen = 0, .dir = NORTH };
+    RefreshFSMOutput outClearC, outQuickClear;
+    refreshTaskHandleCommand(&cmdX, &outClearC);
+    refreshTaskHandleCommand(&cmdY, &outQuickClear);
+
+    uint8_t aRed = 0xFF, aGreen = 0xFF, aBlue = 0xFF;
+    uint8_t bRed = 0, bGreen = 0, bBlue = 0;
+    uint8_t cRed = 0xFF, cGreen = 0xFF, cBlue = 0xFF;
+    esp_err_t readA = matGetColor(ledA, &aRed, &aGreen, &aBlue);
+    esp_err_t readB = matGetColor(ledB, &bRed, &bGreen, &bBlue);
+    esp_err_t readC = matGetColor(ledC, &cRed, &cGreen, &cBlue);
+
+    refreshTaskResetResources();
+
+    TEST_ASSERT_TRUE_MESSAGE(initOk, "refreshTaskInit return value");
+    TEST_ASSERT_EQUAL_MESSAGE(3, found, "need three valid LED numbers >= 3");
+    TEST_ASSERT_TRUE_MESSAGE(reservedAll, "reserving frames");
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, paintErr, "painting sentinel on skipped LED");
+
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, outInstallA.action.type, "install first LED");
+    TEST_ASSERT_EQUAL_MESSAGE(ledA, outInstallA.action.set.ledNum, "install first LED");
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, outInstallC.action.type, "install skips B");
+    TEST_ASSERT_EQUAL_MESSAGE(ledC, outInstallC.action.set.ledNum, "install skips B");
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, outClearC.action.type, "slow clear of C");
+    TEST_ASSERT_EQUAL_MESSAGE(ledC, outClearC.action.clear.ledNum, "slow clear of C");
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR_RANGE, outQuickClear.action.type, "quick clear of A and B");
+    TEST_ASSERT_EQUAL_MESSAGE(typicalNorthNdx, outQuickClear.action.clearRange.typicalFrameNdx, "quick clear uses the NORTH typical frame");
+
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, readA, "matGetColor A");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, aRed, "A cleared by quick clear (red)");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, aGreen, "A cleared by quick clear (green)");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, aBlue, "A cleared by quick clear (blue)");
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, readB, "matGetColor B");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0x12, bRed, "skipped LED B untouched by quick clear (red)");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0x34, bGreen, "skipped LED B untouched by quick clear (green)");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0x56, bBlue, "skipped LED B untouched by quick clear (blue)");
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, readC, "matGetColor C");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, cRed, "C cleared (red)");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, cGreen, "C cleared (green)");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, cBlue, "C cleared (blue)");
+}

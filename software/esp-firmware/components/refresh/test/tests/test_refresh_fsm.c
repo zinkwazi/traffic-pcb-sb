@@ -2473,6 +2473,459 @@ TEST_CASE("ledColorReflectsLiveVsTypicalSpeed", TEST_GROUP)
     TEST_ASSERT_TRUE(out5.isIdle);
 }
 
+TEST_CASE("ledColorUsesTypicalFrameOfCurrentDirection", TEST_GROUP)
+{
+    const uint32_t northLiveAFrameNdx = 0;
+    const uint32_t typicalNorthFrameNdx = 1;
+    const uint32_t typicalSouthAFrameNdx = 2;
+    const uint32_t southLiveFrameNdx = 3;
+    const uint32_t typicalSouthBFrameNdx = 4;
+    const uint32_t northLiveBFrameNdx = 5;
+
+    /* initialize variables */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledNumToReg[i].matrix = MAT1_PAGE0;
+        ledNumToReg[i].red = 0x44;
+        ledNumToReg[i].blue = 0x55;
+        ledNumToReg[i].green = 0x66;
+    }
+
+    /* each typical frame gives every LED a different typical speed, so the
+       same live speed of 45 maps to a different color depending on which
+       typical frame the FSM looks it up in:
+         NORTH:   45 / 100 = 45% -> slow
+         SOUTH A: 45 / 50  = 90% -> fast
+         SOUTH B: 45 / 60  = 75% -> medium */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[typicalNorthFrameNdx][i].ledNum = i;
+        ledFrames[typicalNorthFrameNdx][i].speed = 100;
+        ledFrames[typicalSouthAFrameNdx][i].ledNum = i;
+        ledFrames[typicalSouthAFrameNdx][i].speed = 50;
+        ledFrames[typicalSouthBFrameNdx][i].ledNum = i;
+        ledFrames[typicalSouthBFrameNdx][i].speed = 60;
+    }
+
+    /* every live frame is a single LED (LED 0) at speed 45 */
+    ledFrames[northLiveAFrameNdx][0].ledNum = 0;
+    ledFrames[northLiveAFrameNdx][0].speed = 45;
+    ledFrames[southLiveFrameNdx][0].ledNum = 0;
+    ledFrames[southLiveFrameNdx][0].speed = 45;
+    ledFrames[northLiveBFrameNdx][0].ledNum = 0;
+    ledFrames[northLiveBFrameNdx][0].speed = 45;
+
+    /* initialize FSM with distinct, recognizable colors for each speed
+       category */
+    const Color slowColor = { .red = 0xFF, .green = 0x00, .blue = 0x00 };
+    const Color mediumColor = { .red = 0x00, .green = 0xFF, .blue = 0x00 };
+    const Color fastColor = { .red = 0x00, .green = 0x00, .blue = 0xFF };
+    RefreshFSMResources resources = {
+        .LEDNumToReg = ledNumToReg,
+        .LEDNumToRegLen = MAX_FRAME_SIZE,
+        .LEDFrames = ledFrames,
+        .LEDFramesLen = NUM_TEST_FRAMES,
+        .slowLEDColor = slowColor,
+        .mediumLEDColor = mediumColor,
+        .fastLEDColor = fastColor,
+    };
+
+    refreshFSMInit(&resources);
+
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+
+    /* (1) send a NORTH frame, then both typical frames. The FSM begins
+       installing the NORTH frame as soon as both typicals arrive, and LED 0
+       is colored against the NORTH typical frame (45% -> slow). The frame
+       is a single LED, so installation completes in this tick. */
+    RefreshFSMCommand cmd1 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = northLiveAFrameNdx,
+        .frameLen = 1,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out1 = refreshFSMTick(&cmd1);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out1.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out1.framesToRelease.len);
+    TEST_ASSERT_TRUE(out1.isIdle);
+
+    RefreshFSMCommand cmd2 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalNorthFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out2 = refreshFSMTick(&cmd2);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out2.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out2.framesToRelease.len);
+    TEST_ASSERT_TRUE(out2.isIdle);
+
+    RefreshFSMCommand cmd3 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalSouthAFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = SOUTH,
+    };
+    RefreshFSMOutput out3 = refreshFSMTick(&cmd3);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out3.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out3.action.set.ledNum);
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(slowColor.red, out3.action.set.color.red, "NORTH LED 0 color.red");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(slowColor.green, out3.action.set.color.green, "NORTH LED 0 color.green");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(slowColor.blue, out3.action.set.color.blue, "NORTH LED 0 color.blue");
+    TEST_ASSERT_EQUAL(0, out3.framesToRelease.len);
+    TEST_ASSERT_TRUE(out3.isIdle);
+
+    /* (2) send a SOUTH frame. The FSM clears the single installed LED in
+       this tick, releases the NORTH frame, and latches the SOUTH frame. */
+    RefreshFSMCommand cmd4 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = southLiveFrameNdx,
+        .frameLen = 1,
+        .dir = SOUTH,
+    };
+    RefreshFSMOutput out4 = refreshFSMTick(&cmd4);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out4.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out4.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(1, out4.framesToRelease.len);
+    TEST_ASSERT_EQUAL(northLiveAFrameNdx, out4.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, out4.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_FALSE(out4.isIdle);
+
+    /* LED 0 of the SOUTH frame is colored against the SOUTH typical frame
+       A (90% -> fast), not the NORTH one it was previously colored with */
+    RefreshFSMOutput out5 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out5.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out5.action.set.ledNum);
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(fastColor.red, out5.action.set.color.red, "SOUTH LED 0 color.red");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(fastColor.green, out5.action.set.color.green, "SOUTH LED 0 color.green");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(fastColor.blue, out5.action.set.color.blue, "SOUTH LED 0 color.blue");
+    TEST_ASSERT_EQUAL(0, out5.framesToRelease.len);
+    TEST_ASSERT_TRUE(out5.isIdle);
+
+    /* (3) queue SOUTH typical frame B. It only takes effect on the next
+       install, so nothing happens yet. */
+    RefreshFSMCommand cmd6 = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalSouthBFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = SOUTH,
+    };
+    RefreshFSMOutput out6 = refreshFSMTick(&cmd6);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out6.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out6.framesToRelease.len);
+    TEST_ASSERT_TRUE(out6.isIdle);
+
+    /* (4) REFRESH_CMD_REFRESH reinstalls the SOUTH frame. The FSM clears
+       LED 0, latches SOUTH typical B, and releases SOUTH typical A. */
+    RefreshFSMCommand cmd7 = { .type = REFRESH_CMD_REFRESH, .dir = SOUTH };
+    RefreshFSMOutput out7 = refreshFSMTick(&cmd7);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out7.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out7.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(1, out7.framesToRelease.len);
+    TEST_ASSERT_EQUAL(typicalSouthAFrameNdx, out7.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_TYPICAL_SOUTH, out7.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_FALSE(out7.isIdle);
+
+    /* LED 0 is now colored against SOUTH typical B (75% -> medium) */
+    RefreshFSMOutput out8 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out8.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out8.action.set.ledNum);
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(mediumColor.red, out8.action.set.color.red, "SOUTH B LED 0 color.red");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(mediumColor.green, out8.action.set.color.green, "SOUTH B LED 0 color.green");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(mediumColor.blue, out8.action.set.color.blue, "SOUTH B LED 0 color.blue");
+    TEST_ASSERT_EQUAL(0, out8.framesToRelease.len);
+    TEST_ASSERT_TRUE(out8.isIdle);
+
+    /* (5) switch back to NORTH. The FSM clears LED 0 and releases the
+       SOUTH frame; the NORTH typical frame was never replaced. */
+    RefreshFSMCommand cmd9 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = northLiveBFrameNdx,
+        .frameLen = 1,
+        .dir = NORTH,
+    };
+    RefreshFSMOutput out9 = refreshFSMTick(&cmd9);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out9.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out9.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(1, out9.framesToRelease.len);
+    TEST_ASSERT_EQUAL(southLiveFrameNdx, out9.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, out9.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_FALSE(out9.isIdle);
+
+    /* LED 0 is colored against the NORTH typical frame again (45% -> slow) */
+    RefreshFSMOutput out10 = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out10.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(0, out10.action.set.ledNum);
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(slowColor.red, out10.action.set.color.red, "NORTH B LED 0 color.red");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(slowColor.green, out10.action.set.color.green, "NORTH B LED 0 color.green");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(slowColor.blue, out10.action.set.color.blue, "NORTH B LED 0 color.blue");
+    TEST_ASSERT_EQUAL(0, out10.framesToRelease.len);
+    TEST_ASSERT_TRUE(out10.isIdle);
+}
+
+/* ---- typical-frame skip tests: an LED whose typical speed is UINT8_MAX
+   must never be set or cleared. The skip is looked up in the typical frame
+   of the *current* direction, so these also verify that the FSM always has
+   a valid current typical frame whenever it iterates a frame, including
+   after direction changes and after night mode suppresses the first
+   install. ---- */
+
+#define SKIP_TEST_TYPICAL_SPEED (100)
+#define SKIP_TEST_LIVE_SPEED    (90)
+
+/* Clears every test frame and marks every LED number valid. ledFrames is
+   shared by every test in this file, so the skip tests call this both
+   before and after running so a leftover UINT8_MAX typical speed can't
+   cause another test to skip LEDs. */
+static void resetSkipTestResources(void)
+{
+    memset(ledFrames, 0, sizeof(ledFrames));
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledNumToReg[i].matrix = MAT1_PAGE0;
+        ledNumToReg[i].red = 0x44;
+        ledNumToReg[i].blue = 0x55;
+        ledNumToReg[i].green = 0x66;
+    }
+}
+
+/* Fills a typical frame (indexed by LED number) with a normal typical speed,
+   except skipLedNum, which is marked UINT8_MAX. Pass UINT32_MAX to skip
+   nothing. */
+static void fillSkipTestTypicalFrame(uint32_t frameNdx, uint32_t skipLedNum)
+{
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[frameNdx][i].ledNum = i;
+        ledFrames[frameNdx][i].speed = (i == skipLedNum) ? UINT8_MAX : SKIP_TEST_TYPICAL_SPEED;
+    }
+}
+
+/* Fills a live frame with LED numbers 0..len-1, in that order. */
+static void fillSkipTestLiveFrame(uint32_t frameNdx, uint32_t len)
+{
+    for (uint32_t i = 0; i < len; i++)
+    {
+        ledFrames[frameNdx][i].ledNum = i;
+        ledFrames[frameNdx][i].speed = SKIP_TEST_LIVE_SPEED;
+    }
+}
+
+static RefreshFSMResources skipTestResources(void)
+{
+    RefreshFSMResources resources = {
+        .LEDNumToReg = ledNumToReg,
+        .LEDNumToRegLen = MAX_FRAME_SIZE,
+        .LEDFrames = ledFrames,
+        .LEDFramesLen = NUM_TEST_FRAMES,
+        .slowLEDColor = { 0 },
+        .mediumLEDColor = { 0 },
+        .fastLEDColor = { 0 },
+    };
+    return resources;
+}
+
+static void assertSkipTestOutput(RefreshFSMOutput out, RefreshFSMActionType type, uint32_t ledNum, bool isIdle, uint32_t numReleases, const char *msg)
+{
+    TEST_ASSERT_EQUAL_MESSAGE(type, out.action.type, msg);
+    if (REFRESH_ACTION_SET == type)
+    {
+        TEST_ASSERT_EQUAL_MESSAGE(ledNum, out.action.set.ledNum, msg);
+    } else if (REFRESH_ACTION_CLEAR == type)
+    {
+        TEST_ASSERT_EQUAL_MESSAGE(ledNum, out.action.clear.ledNum, msg);
+    }
+    TEST_ASSERT_EQUAL_MESSAGE(isIdle, out.isIdle, msg);
+    TEST_ASSERT_EQUAL_MESSAGE(numReleases, out.framesToRelease.len, msg);
+}
+
+TEST_CASE("typicalSkipFollowsCurrentDirectionWhenInstallingAndClearing", TEST_GROUP)
+{
+    const uint32_t northLiveFrameNdx = 0;
+    const uint32_t typicalNorthFrameNdx = 1;
+    const uint32_t typicalSouthFrameNdx = 2;
+    const uint32_t southLiveFrameNdx = 3;
+
+    resetSkipTestResources();
+    /* each direction skips a different LED, so using the wrong direction's
+       typical frame shows up as the wrong LED being skipped */
+    fillSkipTestTypicalFrame(typicalNorthFrameNdx, 2);
+    fillSkipTestTypicalFrame(typicalSouthFrameNdx, 1);
+    fillSkipTestLiveFrame(northLiveFrameNdx, 4);
+    fillSkipTestLiveFrame(southLiveFrameNdx, 4);
+
+    RefreshFSMResources resources = skipTestResources();
+    refreshFSMInit(&resources);
+
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    RefreshFSMCommand cmdNorth = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = northLiveFrameNdx, .frameLen = 4, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalNorth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalNorthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalSouth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalSouthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = SOUTH };
+    RefreshFSMCommand cmdSouth = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = southLiveFrameNdx, .frameLen = 4, .dir = SOUTH };
+
+    /* (1) install the NORTH frame: LED 2 is skipped per the NORTH typical
+       frame, LED 1 is not */
+    assertSkipTestOutput(refreshFSMTick(&cmdNorth), REFRESH_ACTION_NONE, 0, true, 0, "north frame while waiting");
+    assertSkipTestOutput(refreshFSMTick(&cmdTypicalNorth), REFRESH_ACTION_NONE, 0, true, 0, "north typical while waiting");
+    assertSkipTestOutput(refreshFSMTick(&cmdTypicalSouth), REFRESH_ACTION_SET, 0, false, 0, "north install LED 0");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 1, false, 0, "north install LED 1");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 3, true, 0, "north install skips LED 2");
+
+    /* (2) a SOUTH frame arrives. The NORTH frame is cleared in reverse
+       using the NORTH typical frame (LED 2 skipped again, LED 1 cleared),
+       since the direction only switches once the SOUTH frame is latched */
+    assertSkipTestOutput(refreshFSMTick(&cmdSouth), REFRESH_ACTION_CLEAR, 3, false, 0, "north clear LED 3");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_CLEAR, 1, false, 0, "north clear skips LED 2");
+    RefreshFSMOutput outLastClear = refreshFSMTick(&cmdNone);
+    assertSkipTestOutput(outLastClear, REFRESH_ACTION_CLEAR, 0, false, 1, "north clear LED 0");
+    TEST_ASSERT_EQUAL(northLiveFrameNdx, outLastClear.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, outLastClear.framesToRelease.list[0].type, "refresh frame release type");
+
+    /* (3) the SOUTH frame is installed using the SOUTH typical frame: now
+       LED 1 is skipped and LED 2 is not */
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 0, false, 0, "south install LED 0");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 2, false, 0, "south install skips LED 1");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 3, true, 0, "south install LED 3");
+
+    resetSkipTestResources();
+}
+
+TEST_CASE("quickClearCarriesTypicalFrameOfCurrentDirection", TEST_GROUP)
+{
+    const uint32_t southLiveAFrameNdx = 0;
+    const uint32_t typicalNorthFrameNdx = 1;
+    const uint32_t typicalSouthFrameNdx = 2;
+    const uint32_t northLiveAFrameNdx = 3;
+    const uint32_t northLiveBFrameNdx = 4;
+    const uint32_t southLiveBFrameNdx = 5;
+    const uint32_t southLiveCFrameNdx = 6;
+
+    resetSkipTestResources();
+    fillSkipTestTypicalFrame(typicalNorthFrameNdx, UINT32_MAX);
+    fillSkipTestTypicalFrame(typicalSouthFrameNdx, UINT32_MAX);
+    fillSkipTestLiveFrame(southLiveAFrameNdx, 4);
+    fillSkipTestLiveFrame(northLiveAFrameNdx, 4);
+    fillSkipTestLiveFrame(northLiveBFrameNdx, 4);
+    fillSkipTestLiveFrame(southLiveBFrameNdx, 4);
+    fillSkipTestLiveFrame(southLiveCFrameNdx, 4);
+
+    RefreshFSMResources resources = skipTestResources();
+    refreshFSMInit(&resources);
+
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    RefreshFSMCommand cmdSouthA = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = southLiveAFrameNdx, .frameLen = 4, .dir = SOUTH };
+    RefreshFSMCommand cmdTypicalNorth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalNorthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalSouth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalSouthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = SOUTH };
+    RefreshFSMCommand cmdNorthA = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = northLiveAFrameNdx, .frameLen = 4, .dir = NORTH };
+    RefreshFSMCommand cmdNorthB = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = northLiveBFrameNdx, .frameLen = 4, .dir = NORTH };
+    RefreshFSMCommand cmdSouthB = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = southLiveBFrameNdx, .frameLen = 4, .dir = SOUTH };
+    RefreshFSMCommand cmdSouthC = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = southLiveCFrameNdx, .frameLen = 4, .dir = SOUTH };
+
+    /* (1) start installing SOUTH frame A: LEDs 0 and 1 are set */
+    assertSkipTestOutput(refreshFSMTick(&cmdSouthA), REFRESH_ACTION_NONE, 0, true, 0, "south A while waiting");
+    assertSkipTestOutput(refreshFSMTick(&cmdTypicalNorth), REFRESH_ACTION_NONE, 0, true, 0, "north typical while waiting");
+    assertSkipTestOutput(refreshFSMTick(&cmdTypicalSouth), REFRESH_ACTION_SET, 0, false, 0, "south A install LED 0");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 1, false, 0, "south A install LED 1");
+
+    /* (2) NORTH frame A interrupts the install, so the FSM starts clearing */
+    assertSkipTestOutput(refreshFSMTick(&cmdNorthA), REFRESH_ACTION_CLEAR, 1, false, 0, "south A clear LED 1");
+
+    /* (3) NORTH frame B interrupts the clear, so the rest of SOUTH frame A
+       is quick-cleared in one tick. The task needs the SOUTH typical frame
+       to know which LEDs to skip, since SOUTH frame A is the one on the
+       board. NORTH frame A is superseded and SOUTH frame A is released. */
+    RefreshFSMOutput outQuickSouth = refreshFSMTick(&cmdNorthB);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR_RANGE, outQuickSouth.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(southLiveAFrameNdx, outQuickSouth.action.clearRange.frameNdx);
+    TEST_ASSERT_EQUAL(0, outQuickSouth.action.clearRange.startNdx);
+    TEST_ASSERT_EQUAL_MESSAGE(typicalSouthFrameNdx, outQuickSouth.action.clearRange.typicalFrameNdx, "quick clear of a SOUTH frame uses the SOUTH typical frame");
+    TEST_ASSERT_FALSE(outQuickSouth.isIdle);
+    TEST_ASSERT_EQUAL(2, outQuickSouth.framesToRelease.len);
+    TEST_ASSERT_EQUAL(northLiveAFrameNdx, outQuickSouth.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_STANDARD, outQuickSouth.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_EQUAL(southLiveAFrameNdx, outQuickSouth.framesToRelease.list[1].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, outQuickSouth.framesToRelease.list[1].type, "refresh frame release type");
+
+    /* (4) NORTH frame B starts installing: LEDs 0 and 1 are set */
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 0, false, 0, "north B install LED 0");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 1, false, 0, "north B install LED 1");
+
+    /* (5) the same interruption sequence again, now with a NORTH frame on
+       the board: the quick clear must switch to the NORTH typical frame */
+    assertSkipTestOutput(refreshFSMTick(&cmdSouthB), REFRESH_ACTION_CLEAR, 1, false, 0, "north B clear LED 1");
+    RefreshFSMOutput outQuickNorth = refreshFSMTick(&cmdSouthC);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR_RANGE, outQuickNorth.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(northLiveBFrameNdx, outQuickNorth.action.clearRange.frameNdx);
+    TEST_ASSERT_EQUAL(0, outQuickNorth.action.clearRange.startNdx);
+    TEST_ASSERT_EQUAL_MESSAGE(typicalNorthFrameNdx, outQuickNorth.action.clearRange.typicalFrameNdx, "quick clear of a NORTH frame uses the NORTH typical frame");
+    TEST_ASSERT_FALSE(outQuickNorth.isIdle);
+    TEST_ASSERT_EQUAL(2, outQuickNorth.framesToRelease.len);
+    TEST_ASSERT_EQUAL(southLiveBFrameNdx, outQuickNorth.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_STANDARD, outQuickNorth.framesToRelease.list[0].type, "refresh frame release type");
+    TEST_ASSERT_EQUAL(northLiveBFrameNdx, outQuickNorth.framesToRelease.list[1].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, outQuickNorth.framesToRelease.list[1].type, "refresh frame release type");
+
+    resetSkipTestResources();
+}
+
+TEST_CASE("nightModeBeforeTypicalDataLatchesTypicalFrameBeforeIterating", TEST_GROUP)
+{
+    const uint32_t northLiveFrameNdx = 0;
+    const uint32_t typicalNorthFrameNdx = 1;
+    const uint32_t typicalSouthFrameNdx = 2;
+    const uint32_t southLiveFrameNdx = 3;
+
+    resetSkipTestResources();
+    fillSkipTestTypicalFrame(typicalNorthFrameNdx, 2);
+    fillSkipTestTypicalFrame(typicalSouthFrameNdx, 1);
+    fillSkipTestLiveFrame(northLiveFrameNdx, 4);
+    fillSkipTestLiveFrame(southLiveFrameNdx, 4);
+
+    RefreshFSMResources resources = skipTestResources();
+    refreshFSMInit(&resources);
+
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    RefreshFSMCommand cmdNightOn = { .type = REFRESH_CMD_NIGHT_MODE_ON };
+    RefreshFSMCommand cmdNightOff = { .type = REFRESH_CMD_NIGHT_MODE_OFF };
+    RefreshFSMCommand cmdRefresh = { .type = REFRESH_CMD_REFRESH, .dir = NORTH };
+    RefreshFSMCommand cmdNorth = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = northLiveFrameNdx, .frameLen = 4, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalNorth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalNorthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalSouth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalSouthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = SOUTH };
+    RefreshFSMCommand cmdSouth = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = southLiveFrameNdx, .frameLen = 4, .dir = SOUTH };
+
+    /* (1) night mode is on before any data arrives. Once everything has
+       arrived the FSM goes straight to the dark board without installing,
+       so the typical frames are still only queued, not latched. Nothing
+       may touch a frame while in this state. */
+    assertSkipTestOutput(refreshFSMTick(&cmdNightOn), REFRESH_ACTION_NONE, 0, true, 0, "night on while waiting");
+    assertSkipTestOutput(refreshFSMTick(&cmdNorth), REFRESH_ACTION_NONE, 0, true, 0, "north frame while waiting");
+    assertSkipTestOutput(refreshFSMTick(&cmdTypicalNorth), REFRESH_ACTION_NONE, 0, true, 0, "north typical while waiting");
+    assertSkipTestOutput(refreshFSMTick(&cmdTypicalSouth), REFRESH_ACTION_NONE, 0, true, 0, "south typical goes dark");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_NONE, 0, true, 0, "dark board idle");
+    assertSkipTestOutput(refreshFSMTick(&cmdRefresh), REFRESH_ACTION_NONE, 0, true, 0, "refresh while dark before typical latched");
+
+    /* (2) a SOUTH frame arrives while dark, so the direction the FSM will
+       install changes before any typical frame has been latched */
+    assertSkipTestOutput(refreshFSMTick(&cmdSouth), REFRESH_ACTION_NONE, 0, true, 0, "south frame while dark");
+
+    /* (3) night mode off latches the SOUTH frame and both typical frames,
+       releasing the NORTH frame. The install must skip per the SOUTH
+       typical frame: LED 1 skipped, LED 2 set */
+    RefreshFSMOutput outNightOff = refreshFSMTick(&cmdNightOff);
+    assertSkipTestOutput(outNightOff, REFRESH_ACTION_SET, 0, false, 1, "south install LED 0");
+    TEST_ASSERT_EQUAL(northLiveFrameNdx, outNightOff.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, outNightOff.framesToRelease.list[0].type, "refresh frame release type");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 2, false, 0, "south install skips LED 1");
+
+    /* (4) night mode back on mid-install clears what was set, still
+       skipping LED 1, and goes dark */
+    assertSkipTestOutput(refreshFSMTick(&cmdNightOn), REFRESH_ACTION_CLEAR, 2, false, 0, "south clear LED 2");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_CLEAR, 0, true, 0, "south clear skips LED 1");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_NONE, 0, true, 0, "dark board idle again");
+
+    resetSkipTestResources();
+}
+
 TEST_CASE("nightModeEnabledDuringInstallation", TEST_GROUP)
 {
     const uint32_t cmd1FrameNdx = 0;

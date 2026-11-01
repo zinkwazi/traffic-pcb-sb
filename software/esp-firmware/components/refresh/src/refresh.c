@@ -43,26 +43,91 @@
 
 #if CONFIG_HARDWARE_VERSION == 1
 
-// no static variables here
+/**
+ * @brief V1 has no no-refresh LEDs tracked by the refresh FSM.
+ *
+ * @returns false.
+ */
+static bool isNoRefreshLED(uint32_t ledNum)
+{
+    (void) ledNum;
+    return false;
+}
 
 #elif CONFIG_HARDWARE_VERSION == 2
 
-#define NUM_NO_REFRESH_LEDS 11
+/*
+ * The no-refresh LEDs are stored in a perfect hash table so that membership
+ * can be checked in O(1) instead of scanning the whole list. The hash is
+ * simply the low 5 bits of the LED number, which happens to be unique for
+ * every LED in the set (verified at compile time below). An LED is in the set
+ * iff the table entry at its hash equals the LED itself. Empty slots hold 0,
+ * which can only be looked up by ledNum 0; since 0 hashes to slot 0, that slot
+ * holds UINT16_MAX instead so that 0 is never reported as a no-refresh LED.
+ */
+#define NO_REFRESH_HASH_SIZE   (32)
+#define NO_REFRESH_HASH(ledNum) ((uint32_t) (ledNum) & (NO_REFRESH_HASH_SIZE - 1))
 
-/* The LEDs that are not refreshed, which are indicator LEDs */
-// TODO: have a way for typical data in refresh_task to handle this
-// static const int32_t noRefreshNums[NUM_NO_REFRESH_LEDS] = {WIFI_LED_NUM,
-//                                                         ERROR_LED_NUM,
-//                                                         OTA_LED_NUM,
-//                                                         NORTH_LED_NUM,
-//                                                         SOUTH_LED_NUM,
-//                                                         EAST_LED_NUM,
-//                                                         WEST_LED_NUM,
-//                                                         LIGHT_LED_NUM,
-//                                                         MEDIUM_LED_NUM,
-//                                                         HEAVY_LED_NUM,
-//                                                         46, // 46 does not exist for V2_0
-//                                                         };
+#define NO_REFRESH_LED_46 (46) // 46 does not exist for V2_0
+
+static const uint16_t noRefreshLEDTable[NO_REFRESH_HASH_SIZE] = {
+    [0]                                  = UINT16_MAX, // avoids cosidering LED '0' as a no refresh LED
+    [NO_REFRESH_HASH(WIFI_LED_NUM)]      = WIFI_LED_NUM,
+    [NO_REFRESH_HASH(ERROR_LED_NUM)]     = ERROR_LED_NUM,
+    [NO_REFRESH_HASH(OTA_LED_NUM)]       = OTA_LED_NUM,
+    [NO_REFRESH_HASH(NORTH_LED_NUM)]     = NORTH_LED_NUM,
+    [NO_REFRESH_HASH(SOUTH_LED_NUM)]     = SOUTH_LED_NUM,
+    [NO_REFRESH_HASH(EAST_LED_NUM)]      = EAST_LED_NUM,
+    [NO_REFRESH_HASH(WEST_LED_NUM)]      = WEST_LED_NUM,
+    [NO_REFRESH_HASH(LIGHT_LED_NUM)]     = LIGHT_LED_NUM,
+    [NO_REFRESH_HASH(MEDIUM_LED_NUM)]    = MEDIUM_LED_NUM,
+    [NO_REFRESH_HASH(HEAVY_LED_NUM)]     = HEAVY_LED_NUM,
+    [NO_REFRESH_HASH(NO_REFRESH_LED_46)] = NO_REFRESH_LED_46,
+};
+
+/* Collision check: a sum of powers of two equals their bitwise OR only if
+ * every power is distinct, i.e. no two LEDs share a hash slot. If this fails,
+ * a pinout change introduced a collision; increase NO_REFRESH_HASH_SIZE (to a
+ * larger power of two) or pick a different hash. */
+#define NO_REFRESH_BIT(ledNum) (1ULL << NO_REFRESH_HASH(ledNum))
+_Static_assert(
+    (NO_REFRESH_BIT(WIFI_LED_NUM) + NO_REFRESH_BIT(ERROR_LED_NUM) +
+     NO_REFRESH_BIT(OTA_LED_NUM) + NO_REFRESH_BIT(NORTH_LED_NUM) +
+     NO_REFRESH_BIT(SOUTH_LED_NUM) + NO_REFRESH_BIT(EAST_LED_NUM) +
+     NO_REFRESH_BIT(WEST_LED_NUM) + NO_REFRESH_BIT(LIGHT_LED_NUM) +
+     NO_REFRESH_BIT(MEDIUM_LED_NUM) + NO_REFRESH_BIT(HEAVY_LED_NUM) +
+     NO_REFRESH_BIT(NO_REFRESH_LED_46)) ==
+    (NO_REFRESH_BIT(WIFI_LED_NUM) | NO_REFRESH_BIT(ERROR_LED_NUM) |
+     NO_REFRESH_BIT(OTA_LED_NUM) | NO_REFRESH_BIT(NORTH_LED_NUM) |
+     NO_REFRESH_BIT(SOUTH_LED_NUM) | NO_REFRESH_BIT(EAST_LED_NUM) |
+     NO_REFRESH_BIT(WEST_LED_NUM) | NO_REFRESH_BIT(LIGHT_LED_NUM) |
+     NO_REFRESH_BIT(MEDIUM_LED_NUM) | NO_REFRESH_BIT(HEAVY_LED_NUM) |
+     NO_REFRESH_BIT(NO_REFRESH_LED_46)),
+    "noRefreshLEDTable hash collision");
+
+/* Slot 0 is reserved for the UINT16_MAX sentinel above, so no LED may hash
+ * to it. */
+_Static_assert(
+    (NO_REFRESH_BIT(WIFI_LED_NUM) | NO_REFRESH_BIT(ERROR_LED_NUM) |
+     NO_REFRESH_BIT(OTA_LED_NUM) | NO_REFRESH_BIT(NORTH_LED_NUM) |
+     NO_REFRESH_BIT(SOUTH_LED_NUM) | NO_REFRESH_BIT(EAST_LED_NUM) |
+     NO_REFRESH_BIT(WEST_LED_NUM) | NO_REFRESH_BIT(LIGHT_LED_NUM) |
+     NO_REFRESH_BIT(MEDIUM_LED_NUM) | NO_REFRESH_BIT(HEAVY_LED_NUM) |
+     NO_REFRESH_BIT(NO_REFRESH_LED_46)) % 2 == 0,
+    "noRefreshLEDTable slot 0 is reserved");
+
+/**
+ * @brief Returns whether an LED is one that should not be refreshed (e.g. an
+ * indicator LED), in constant time.
+ *
+ * @param[in] ledNum The KiCad LED number to look up.
+ *
+ * @returns true if ledNum is a no-refresh LED, otherwise false.
+ */
+static bool isNoRefreshLED(uint32_t ledNum)
+{
+    return noRefreshLEDTable[NO_REFRESH_HASH(ledNum)] == ledNum;
+}
 
 #else
 #error "Unsupported hardware version!"
@@ -302,6 +367,9 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
  * @note LEDs with missing typical data (a negative speed or a mismatched
  * LED number) are given a typical speed of 0, which the refresh task
  * treats as always flowing freely.
+ * 
+ * @note LEDs that should not be updated by the refresh FSM are given
+ * a typical speed of UINT8_MAX.
  *
  * @param[in] dir The direction of typical traffic data to send.
  * @param[in] ticksToWait The maximum number of ticks to block for while
@@ -339,7 +407,12 @@ esp_err_t refreshTypical(Direction dir, TickType_t ticksToWait)
     {
         const LEDData typical = typicalSpeeds[ledNum - 1];
         (*ledFrame)[ledNum].ledNum = ledNum;
-        if (typical.ledNum != ledNum || typical.speed < 0)
+
+        if (isNoRefreshLED(ledNum))
+        {
+            /* special LED that should be skipped by refresh FSM */
+            (*ledFrame)[ledNum].speed = UINT8_MAX;
+        } else if (typical.ledNum != ledNum || typical.speed < 0)
         {
             (*ledFrame)[ledNum].speed = 0;
         } else

@@ -87,6 +87,7 @@ typedef struct RefreshFSMAction {
         struct clearRange {
             uint32_t frameNdx;
             uint32_t startNdx;
+            uint32_t typicalFrameNdx; // used to identify LEDs to skip
         } clearRange;
     };
 } RefreshFSMAction;
@@ -131,7 +132,10 @@ typedef struct RefreshFSMOutput {
  * must exist for the duration of use of the FSM.
  */
 typedef struct {
-    /* the LED num to matrix register lookup table to determine if an LED is valid */
+    /* the LED num to matrix register lookup table to determine if an LED is valid.
+     * Indexed directly by LED number: LEDNumToReg[n] describes LED n. Note this
+     * differs from led_registers.h's global LEDNumToReg, where index i describes
+     * LED i + 1 (refresh_task.c builds a shifted copy for the FSM). */
     const LEDReg *LEDNumToReg;
     /* the length of LEDNumToReg */
     uint32_t LEDNumToRegLen;

@@ -50,6 +50,9 @@ typedef struct RefreshFSM {
     /* the frame index of the next LED frame to be installed. UINT32_MAX if none */
     uint32_t nextFrameNdx;
     uint32_t nextFrameLen;
+    /* the frame index of the current typical LED speeds frame which corresponds to currDir.
+     * Always equal to currTypicalNorthFrameNdx or currTypicalSouthFrameNdx (per currDir), UINT32_MAX if none */
+    uint32_t currTypicalFrameNdx;
     /* the frame index of the current north typical LED speeds frame, which must be max length. UINT32_MAX if none */
     uint32_t currTypicalNorthFrameNdx;
     /* the frame index of the next north typical LED speeds frame, which must be max length. UINT32_MAX if none */
@@ -89,6 +92,7 @@ static void handleCommandUpdateTypical(RefreshFSMOutput *out, uint32_t frameNdx,
 static void handleCommandNightModeOff(RefreshFSMOutput *out);
 static void handleCommandNightModeOn(void);
 static void handleStateWaitingForFrames(RefreshFSMOutput *out);
+static void updateCurrTypicalFrameNdx(void);
 static void handleStateInstallingFrame(RefreshFSMOutput *out);
 static void handleStateClearingFrame(RefreshFSMOutput *out);
 static void handleStateQuickClearingFrame(RefreshFSMOutput *out);
@@ -124,6 +128,7 @@ void refreshFSMInit(const RefreshFSMResources *resources)
     fsm.currFrameLen = 0;
     fsm.nextFrameNdx = UINT32_MAX;
     fsm.nextFrameLen = 0;
+    fsm.currTypicalFrameNdx = UINT32_MAX;
     fsm.currTypicalNorthFrameNdx = UINT32_MAX;
     fsm.nextTypicalNorthFrameNdx = UINT32_MAX;
     fsm.currTypicalSouthFrameNdx = UINT32_MAX;
@@ -273,9 +278,32 @@ static void transitionToInstallingFrame(RefreshFSMOutput *out)
         fsm.nextTypicalSouthFrameNdx = UINT32_MAX;
     }
 
+    updateCurrTypicalFrameNdx();
+
     /* start installing frame */
     fsm.currLEDNdx = 0;
     fsm.state = REFRESH_FSM_INSTALLING_FRAME;
+}
+
+/**
+ * Points currTypicalFrameNdx at the current typical frame matching
+ * currDir. Must be called whenever currDir or the current north/south
+ * typical frame indices change.
+ */
+static void updateCurrTypicalFrameNdx(void)
+{
+    switch (fsm.currDir)
+    {
+        case NORTH:
+            fsm.currTypicalFrameNdx = fsm.currTypicalNorthFrameNdx;
+            break;
+        case SOUTH:
+            fsm.currTypicalFrameNdx = fsm.currTypicalSouthFrameNdx;
+            break;
+        default:
+            fsm.currTypicalFrameNdx = UINT32_MAX;
+            break;
+    }
 }
 
 /**
@@ -316,6 +344,7 @@ static void handleCommandNewFrame(RefreshFSMOutput *out, uint32_t frameNdx, uint
 {
     assert(NULL != out);
     assert(UINT32_MAX != frameNdx);
+    assert(NORTH == dir || SOUTH == dir);
 
     /* buffer new frame */
     if (UINT32_MAX == fsm.currFrameNdx)
@@ -324,6 +353,7 @@ static void handleCommandNewFrame(RefreshFSMOutput *out, uint32_t frameNdx, uint
         fsm.currFrameNdx = frameNdx;
         fsm.currFrameLen = frameLen;
         fsm.currDir = dir;
+        updateCurrTypicalFrameNdx();
     } else
     {
         /* buffer new frame */
@@ -585,6 +615,7 @@ static void handleStateQuickClearingFrame(RefreshFSMOutput *out)
         out->action.type = REFRESH_ACTION_CLEAR_RANGE;
         out->action.clearRange.frameNdx = fsm.currFrameNdx;
         out->action.clearRange.startNdx = fsm.currLEDNdx - 1;
+        out->action.clearRange.typicalFrameNdx = fsm.currTypicalFrameNdx;
     }
 
     if (!fsm.nightMode)
@@ -637,6 +668,9 @@ static bool iterateFrame(RefreshFSMOutput *out, bool setLED)
     LEDSpeed speed;
     
     assert(NULL != out);
+    /* both typical frames are latched before any frame is iterated, so the
+       current direction always has one here */
+    assert(fsm.currTypicalFrameNdx < fsm.LEDFramesLen);
 
     /* find next LED */
     bool foundValidLED = false;
@@ -647,7 +681,8 @@ static bool iterateFrame(RefreshFSMOutput *out, bool setLED)
         {
             speed = fsm.LEDFrames[fsm.currFrameNdx][fsm.currLEDNdx];
             if (speed.ledNum >= fsm.LEDNumToRegLen) continue;
-            if (isLEDValid(fsm.LEDNumToReg[speed.ledNum]))
+            bool skipLED = (fsm.LEDFrames[fsm.currTypicalFrameNdx][speed.ledNum].speed == UINT8_MAX);
+            if (!skipLED && isLEDValid(fsm.LEDNumToReg[speed.ledNum]))
             {
                 foundValidLED = true;
                 break;
@@ -661,7 +696,8 @@ static bool iterateFrame(RefreshFSMOutput *out, bool setLED)
         {
             speed = fsm.LEDFrames[fsm.currFrameNdx][fsm.currLEDNdx];
             if (speed.ledNum >= fsm.LEDNumToRegLen) continue;
-            if (isLEDValid(fsm.LEDNumToReg[speed.ledNum]))
+            bool skipLED = (fsm.LEDFrames[fsm.currTypicalFrameNdx][speed.ledNum].speed == UINT8_MAX);
+            if (!skipLED && isLEDValid(fsm.LEDNumToReg[speed.ledNum]))
             {
                 foundValidLED = true;
                 break;

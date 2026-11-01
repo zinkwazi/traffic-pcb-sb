@@ -603,7 +603,7 @@ static esp_err_t handleRefreshFSMAction(RefreshFSMAction *action)
             err = setLEDColor(action->clear.ledNum, colorOff, DONT_SET_BRIGHTNESS);
             if (ESP_OK != err)
             {
-                ESP_LOGE(TAG, "Failed to clear LED %d.", action->set.ledNum);
+                ESP_LOGE(TAG, "Failed to clear LED %lu.", action->clear.ledNum);
             }
             break;
         case REFRESH_ACTION_CLEAR_RANGE:
@@ -612,6 +612,7 @@ static esp_err_t handleRefreshFSMAction(RefreshFSMAction *action)
                 LEDSpeed speed = ledFrames[action->clearRange.frameNdx][ndx];
                 /* LEDNumToReg[i] describes LED number i + 1 */
                 if (0 == speed.ledNum || speed.ledNum > MAX_NUM_LEDS_REG) continue;
+                if (ledFrames[action->clearRange.typicalFrameNdx][speed.ledNum].speed == UINT8_MAX) continue;
                 if (!isLEDValid(LEDNumToReg[speed.ledNum - 1])) continue;
 
                 err = setLEDColor(speed.ledNum, colorOff, DONT_SET_BRIGHTNESS);

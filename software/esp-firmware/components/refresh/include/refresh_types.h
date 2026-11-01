@@ -20,8 +20,11 @@
 #define MAX_FRAME_SIZE                  (512)
 
 typedef struct LEDSpeed {
-    uint16_t ledNum; /* The Kicad LED number this speed corresponds to */
-    uint8_t speed; /* The speed of the road segment of the LED */
+    /* The Kicad LED number this speed corresponds to */
+    uint16_t ledNum; 
+    /* The speed of the road segment of the LED. UINT8_MAX means 
+     * that this LED is invalid and should always be skipped */
+    uint8_t speed; 
 } LEDSpeed;
 
 #endif /* INC_REFRESH_TYPES_H_ */
