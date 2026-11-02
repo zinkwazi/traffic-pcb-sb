@@ -458,13 +458,12 @@ static void handleCommandNewFrame(RefreshFSMOutput *out, uint32_t frameNdx, uint
             tryTransitionFromWaitingForFrames(out);
             break;
         case REFRESH_FSM_INSTALLING_FRAME:
-            fsm.pendingCleared = cleared;
-            fsm.state = REFRESH_FSM_CLEARING_FRAME;
-            break;
+            /* falls through */
         case REFRESH_FSM_CLEARING_FRAME:
             /* falls through */
         case REFRESH_FSM_QUICK_CLEARING_FRAME:
-            /* the superseded command's frame was never installed, and the
+            /* the board is mid-transition, so skip the slow clear. Any
+               superseded command's frame was never installed, and the
                frame it was waiting on is quick-cleared later this tick */
             notifyCleared();
             fsm.pendingCleared = cleared;

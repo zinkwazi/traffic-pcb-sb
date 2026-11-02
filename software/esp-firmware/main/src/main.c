@@ -112,7 +112,7 @@ static void mainTask(void)
     esp_err_t err;
     bool currDirection = STARTUP_DIR;
     volatile bool prevRefreshDataReceived = true;
-    volatile bool prevRefreshFrameCleared = false;
+    volatile bool prevRefreshFrameCleared = true;
     volatile bool prevToggleNightModeReceived = true;
     bool nightModeActive = false;
     MainCommand command = MAIN_CMD_ERROR;

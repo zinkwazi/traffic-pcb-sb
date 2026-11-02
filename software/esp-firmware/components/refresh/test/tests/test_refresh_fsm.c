@@ -2292,11 +2292,10 @@ TEST_CASE("newFrameUpdateDuringInstallation", TEST_GROUP)
 
     /* (4) while outputting REFRESH_ACTION_SET, REFRESH_CMD_NEW_FRAME is
        sent with the same direction as frame (2) (frame C). The FSM stops
-       installing frame A and immediately begins clearing it in reverse
-       order, starting from the most recently set LED in (3) (ledNum 22,
-       the third LED installed). Only the LEDs already installed (22, 21,
-       20) need to be cleared. The final REFRESH_ACTION_CLEAR (for the
-       first LED of frame A) also releases frame A. */
+       installing frame A and quick-clears the LEDs already installed (22,
+       21, 20) in a single REFRESH_ACTION_CLEAR_RANGE, starting from the
+       most recently set LED (frame index 2). Frame A is released in the
+       same tick. */
     for (uint32_t i = 0; i < 8; i++)
     {
         ledFrames[cmd7FrameNdx][i].ledNum = 200 + i;
@@ -2308,24 +2307,14 @@ TEST_CASE("newFrameUpdateDuringInstallation", TEST_GROUP)
         .dir = NORTH,
     };
     RefreshFSMOutput out12 = refreshFSMTick(&cmd12);
-    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out12.action.type, "refresh action type");
-    TEST_ASSERT_EQUAL(22, out12.action.clear.ledNum);
-    TEST_ASSERT_EQUAL(0, out12.framesToRelease.len);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR_RANGE, out12.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(cmd6FrameNdx, out12.action.clearRange.frameNdx);
+    TEST_ASSERT_EQUAL(2, out12.action.clearRange.startNdx);
+    TEST_ASSERT_EQUAL(cmd2FrameNdx, out12.action.clearRange.typicalFrameNdx);
+    TEST_ASSERT_EQUAL(1, out12.framesToRelease.len);
+    TEST_ASSERT_EQUAL(cmd6FrameNdx, out12.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, out12.framesToRelease.list[0].type, "refresh frame release type");
     TEST_ASSERT_FALSE(out12.isIdle);
-
-    RefreshFSMOutput out13 = refreshFSMTick(&cmdNone);
-    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out13.action.type, "refresh action type");
-    TEST_ASSERT_EQUAL(21, out13.action.clear.ledNum);
-    TEST_ASSERT_EQUAL(0, out13.framesToRelease.len);
-    TEST_ASSERT_FALSE(out13.isIdle);
-
-    RefreshFSMOutput out14 = refreshFSMTick(&cmdNone);
-    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out14.action.type, "refresh action type");
-    TEST_ASSERT_EQUAL(20, out14.action.clear.ledNum);
-    TEST_ASSERT_EQUAL(1, out14.framesToRelease.len);
-    TEST_ASSERT_EQUAL(cmd6FrameNdx, out14.framesToRelease.list[0].index);
-    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, out14.framesToRelease.list[0].type, "refresh frame release type");
-    TEST_ASSERT_FALSE(out14.isIdle);
 
     /* (5) the FSM outputs REFRESH_ACTION_SET in the order of frame C until
        all LEDs are set. The FSM is now idle. */
@@ -2796,18 +2785,14 @@ TEST_CASE("quickClearCarriesTypicalFrameOfCurrentDirection", TEST_GROUP)
     const uint32_t typicalNorthFrameNdx = 1;
     const uint32_t typicalSouthFrameNdx = 2;
     const uint32_t northLiveAFrameNdx = 3;
-    const uint32_t northLiveBFrameNdx = 4;
-    const uint32_t southLiveBFrameNdx = 5;
-    const uint32_t southLiveCFrameNdx = 6;
+    const uint32_t southLiveBFrameNdx = 4;
 
     resetSkipTestResources();
     fillSkipTestTypicalFrame(typicalNorthFrameNdx, UINT32_MAX);
     fillSkipTestTypicalFrame(typicalSouthFrameNdx, UINT32_MAX);
     fillSkipTestLiveFrame(southLiveAFrameNdx, 4);
     fillSkipTestLiveFrame(northLiveAFrameNdx, 4);
-    fillSkipTestLiveFrame(northLiveBFrameNdx, 4);
     fillSkipTestLiveFrame(southLiveBFrameNdx, 4);
-    fillSkipTestLiveFrame(southLiveCFrameNdx, 4);
 
     RefreshFSMResources resources = skipTestResources();
     refreshFSMInit(&resources);
@@ -2817,9 +2802,7 @@ TEST_CASE("quickClearCarriesTypicalFrameOfCurrentDirection", TEST_GROUP)
     RefreshFSMCommand cmdTypicalNorth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalNorthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = NORTH };
     RefreshFSMCommand cmdTypicalSouth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalSouthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = SOUTH };
     RefreshFSMCommand cmdNorthA = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = northLiveAFrameNdx, .frameLen = 4, .dir = NORTH };
-    RefreshFSMCommand cmdNorthB = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = northLiveBFrameNdx, .frameLen = 4, .dir = NORTH };
     RefreshFSMCommand cmdSouthB = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = southLiveBFrameNdx, .frameLen = 4, .dir = SOUTH };
-    RefreshFSMCommand cmdSouthC = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = southLiveCFrameNdx, .frameLen = 4, .dir = SOUTH };
 
     /* (1) start installing SOUTH frame A: LEDs 0 and 1 are set */
     assertSkipTestOutput(refreshFSMTick(&cmdSouthA), REFRESH_ACTION_NONE, 0, true, 0, "south A while waiting");
@@ -2827,43 +2810,35 @@ TEST_CASE("quickClearCarriesTypicalFrameOfCurrentDirection", TEST_GROUP)
     assertSkipTestOutput(refreshFSMTick(&cmdTypicalSouth), REFRESH_ACTION_SET, 0, false, 0, "south A install LED 0");
     assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 1, false, 0, "south A install LED 1");
 
-    /* (2) NORTH frame A interrupts the install, so the FSM starts clearing */
-    assertSkipTestOutput(refreshFSMTick(&cmdNorthA), REFRESH_ACTION_CLEAR, 1, false, 0, "south A clear LED 1");
-
-    /* (3) NORTH frame B interrupts the clear, so the rest of SOUTH frame A
-       is quick-cleared in one tick. The task needs the SOUTH typical frame
-       to know which LEDs to skip, since SOUTH frame A is the one on the
-       board. NORTH frame A is superseded and SOUTH frame A is released. */
-    RefreshFSMOutput outQuickSouth = refreshFSMTick(&cmdNorthB);
+    /* (2) NORTH frame A interrupts the install, so the LEDs of SOUTH frame
+       A already set are quick-cleared in one tick. The task needs the SOUTH
+       typical frame to know which LEDs to skip, since SOUTH frame A is the
+       one on the board. SOUTH frame A is released. */
+    RefreshFSMOutput outQuickSouth = refreshFSMTick(&cmdNorthA);
     TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR_RANGE, outQuickSouth.action.type, "refresh action type");
     TEST_ASSERT_EQUAL(southLiveAFrameNdx, outQuickSouth.action.clearRange.frameNdx);
-    TEST_ASSERT_EQUAL(0, outQuickSouth.action.clearRange.startNdx);
+    TEST_ASSERT_EQUAL(1, outQuickSouth.action.clearRange.startNdx);
     TEST_ASSERT_EQUAL_MESSAGE(typicalSouthFrameNdx, outQuickSouth.action.clearRange.typicalFrameNdx, "quick clear of a SOUTH frame uses the SOUTH typical frame");
     TEST_ASSERT_FALSE(outQuickSouth.isIdle);
-    TEST_ASSERT_EQUAL(2, outQuickSouth.framesToRelease.len);
-    TEST_ASSERT_EQUAL(northLiveAFrameNdx, outQuickSouth.framesToRelease.list[0].index);
-    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_STANDARD, outQuickSouth.framesToRelease.list[0].type, "refresh frame release type");
-    TEST_ASSERT_EQUAL(southLiveAFrameNdx, outQuickSouth.framesToRelease.list[1].index);
-    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, outQuickSouth.framesToRelease.list[1].type, "refresh frame release type");
+    TEST_ASSERT_EQUAL(1, outQuickSouth.framesToRelease.len);
+    TEST_ASSERT_EQUAL(southLiveAFrameNdx, outQuickSouth.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, outQuickSouth.framesToRelease.list[0].type, "refresh frame release type");
 
-    /* (4) NORTH frame B starts installing: LEDs 0 and 1 are set */
-    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 0, false, 0, "north B install LED 0");
-    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 1, false, 0, "north B install LED 1");
+    /* (3) NORTH frame A starts installing: LEDs 0 and 1 are set */
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 0, false, 0, "north A install LED 0");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 1, false, 0, "north A install LED 1");
 
-    /* (5) the same interruption sequence again, now with a NORTH frame on
-       the board: the quick clear must switch to the NORTH typical frame */
-    assertSkipTestOutput(refreshFSMTick(&cmdSouthB), REFRESH_ACTION_CLEAR, 1, false, 0, "north B clear LED 1");
-    RefreshFSMOutput outQuickNorth = refreshFSMTick(&cmdSouthC);
+    /* (4) the same interruption again, now with a NORTH frame on the
+       board: the quick clear must switch to the NORTH typical frame */
+    RefreshFSMOutput outQuickNorth = refreshFSMTick(&cmdSouthB);
     TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR_RANGE, outQuickNorth.action.type, "refresh action type");
-    TEST_ASSERT_EQUAL(northLiveBFrameNdx, outQuickNorth.action.clearRange.frameNdx);
-    TEST_ASSERT_EQUAL(0, outQuickNorth.action.clearRange.startNdx);
+    TEST_ASSERT_EQUAL(northLiveAFrameNdx, outQuickNorth.action.clearRange.frameNdx);
+    TEST_ASSERT_EQUAL(1, outQuickNorth.action.clearRange.startNdx);
     TEST_ASSERT_EQUAL_MESSAGE(typicalNorthFrameNdx, outQuickNorth.action.clearRange.typicalFrameNdx, "quick clear of a NORTH frame uses the NORTH typical frame");
     TEST_ASSERT_FALSE(outQuickNorth.isIdle);
-    TEST_ASSERT_EQUAL(2, outQuickNorth.framesToRelease.len);
-    TEST_ASSERT_EQUAL(southLiveBFrameNdx, outQuickNorth.framesToRelease.list[0].index);
-    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_STANDARD, outQuickNorth.framesToRelease.list[0].type, "refresh frame release type");
-    TEST_ASSERT_EQUAL(northLiveBFrameNdx, outQuickNorth.framesToRelease.list[1].index);
-    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, outQuickNorth.framesToRelease.list[1].type, "refresh frame release type");
+    TEST_ASSERT_EQUAL(1, outQuickNorth.framesToRelease.len);
+    TEST_ASSERT_EQUAL(northLiveAFrameNdx, outQuickNorth.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, outQuickNorth.framesToRelease.list[0].type, "refresh frame release type");
 
     resetSkipTestResources();
 }
@@ -3090,9 +3065,10 @@ TEST_CASE("nightModeEnabledDuringInstallation", TEST_GROUP)
        sent. Night mode must darken the board regardless of what the FSM is
        doing, so the FSM should stop installing frame (2) and immediately
        start clearing the LEDs already set, in reverse order, starting from
-       the most recently set LED (ledNum 22) -- mirroring how a
-       REFRESH_CMD_NEW_FRAME sent mid-install interrupts installation (see
-       "New Frame Update During Installation"). No frame is released, since
+       the most recently set LED (ledNum 22). This differs from a
+       REFRESH_CMD_NEW_FRAME
+       sent mid-install, which quick-clears the board (see
+       "newFrameUpdateDuringInstallation"). No frame is released, since
        frame (2) is not being replaced. */
     RefreshFSMCommand cmd12 = { .type = REFRESH_CMD_NIGHT_MODE_ON };
     RefreshFSMOutput out12 = refreshFSMTick(&cmd12);
@@ -6343,8 +6319,8 @@ TEST_CASE("directionIndicatorFollowsDisplayedFrame", TEST_GROUP)
     TEST_ASSERT_TRUE(out.indicator.update);
     TEST_ASSERT_EQUAL(SOUTH, out.indicator.dir);
 
-    /* new north frame mid-install: the single lit south LED clears and the
-       north frame starts in the same tick, along with the indicators */
+    /* new north frame mid-install: the single lit south LED is
+       quick-cleared and the indicators switch to north in the same tick */
     for (uint32_t i = 0; i < 2; i++)
     {
         ledFrames[north2FrameNdx][i].ledNum = i + 20;
@@ -6357,8 +6333,9 @@ TEST_CASE("directionIndicatorFollowsDisplayedFrame", TEST_GROUP)
         .dir = NORTH,
     };
     out = refreshFSMTick(&cmdNorth2);
-    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out.action.type, "refresh action type");
-    TEST_ASSERT_EQUAL(10, out.action.clear.ledNum);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR_RANGE, out.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(southFrameNdx, out.action.clearRange.frameNdx);
+    TEST_ASSERT_EQUAL(0, out.action.clearRange.startNdx);
     TEST_ASSERT_EQUAL(1, out.framesToRelease.len);
     TEST_ASSERT_EQUAL(southFrameNdx, out.framesToRelease.list[0].index);
     TEST_ASSERT_TRUE(out.indicator.update);
