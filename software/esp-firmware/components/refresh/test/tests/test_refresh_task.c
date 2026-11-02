@@ -93,7 +93,7 @@ static bool fillCommandQueue(void)
 {
     for (int i = 0; i < TEST_NUM_LED_FRAMES; i++)
     {
-        if (ESP_OK != refreshTaskDisableNightMode(0)) return false;
+        if (ESP_OK != refreshTaskDisableNightMode(NULL, 0)) return false;
     }
     return true;
 }
@@ -201,19 +201,19 @@ TEST_CASE("refreshTaskReleaseFrame_returnsFrameToPool_whenReserved", TEST_GROUP)
 
 TEST_CASE("refreshTaskRefreshLEDs_returnsInvalidArg_whenFrameNdxOutOfRange", TEST_GROUP)
 {
-    esp_err_t err = refreshTaskRefreshLEDs(TEST_NUM_LED_FRAMES, 1, NORTH, 0);
+    esp_err_t err = refreshTaskRefreshLEDs(TEST_NUM_LED_FRAMES, 1, NORTH, NULL, NULL, 0);
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 }
 
 TEST_CASE("refreshTaskRefreshLEDs_returnsInvalidArg_whenDirIsNoDir", TEST_GROUP)
 {
-    esp_err_t err = refreshTaskRefreshLEDs(0, 1, NO_DIR, 0);
+    esp_err_t err = refreshTaskRefreshLEDs(0, 1, NO_DIR, NULL, NULL, 0);
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 }
 
 TEST_CASE("refreshTaskRefreshLEDs_returnsInvalidArg_whenFrameLenExceedsMax", TEST_GROUP)
 {
-    esp_err_t err = refreshTaskRefreshLEDs(0, MAX_FRAME_SIZE + 1, NORTH, 0);
+    esp_err_t err = refreshTaskRefreshLEDs(0, MAX_FRAME_SIZE + 1, NORTH, NULL, NULL, 0);
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 }
 
@@ -227,7 +227,7 @@ TEST_CASE("refreshTaskRefreshLEDs_acceptsZeroLengthFrame", TEST_GROUP)
 
     /* frameLen == 0 is the lower boundary: the frame holds no LEDs, but
        the command should still be queued successfully */
-    esp_err_t ledsErr = refreshTaskRefreshLEDs(frameNdx, 0, NORTH, 0);
+    esp_err_t ledsErr = refreshTaskRefreshLEDs(frameNdx, 0, NORTH, NULL, NULL, 0);
 
     refreshTaskResetResources();
 
@@ -255,7 +255,7 @@ TEST_CASE("refreshTaskRefreshLEDs_acceptsFrameAtMaxSize", TEST_GROUP)
     /* frameLen == MAX_FRAME_SIZE is the upper boundary: contrast with
        refreshTaskRefreshLEDs_returnsInvalidArg_whenFrameLenExceedsMax, which checks
        MAX_FRAME_SIZE + 1 is rejected */
-    esp_err_t ledsErr = refreshTaskRefreshLEDs(frameNdx, MAX_FRAME_SIZE, NORTH, 0);
+    esp_err_t ledsErr = refreshTaskRefreshLEDs(frameNdx, MAX_FRAME_SIZE, NORTH, NULL, NULL, 0);
 
     refreshTaskResetResources();
 
@@ -266,20 +266,20 @@ TEST_CASE("refreshTaskRefreshLEDs_acceptsFrameAtMaxSize", TEST_GROUP)
 
 TEST_CASE("refreshTaskUpdateTypical_returnsInvalidArg_whenFrameNdxOutOfRange", TEST_GROUP)
 {
-    esp_err_t err = refreshTaskUpdateTypical(TEST_NUM_LED_FRAMES, MAX_NUM_LEDS_REG + 1, NORTH, 0);
+    esp_err_t err = refreshTaskUpdateTypical(TEST_NUM_LED_FRAMES, MAX_NUM_LEDS_REG + 1, NORTH, NULL, 0);
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 }
 
 TEST_CASE("refreshTaskUpdateTypical_returnsInvalidArg_whenDirIsNoDir", TEST_GROUP)
 {
-    esp_err_t err = refreshTaskUpdateTypical(0, MAX_NUM_LEDS_REG + 1, NO_DIR, 0);
+    esp_err_t err = refreshTaskUpdateTypical(0, MAX_NUM_LEDS_REG + 1, NO_DIR, NULL, 0);
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, err);
 }
 
 TEST_CASE("refreshTaskUpdateTypical_returnsInvalidArg_whenFrameLenIsNotLEDCountPlusOne", TEST_GROUP)
 {
-    esp_err_t errShort = refreshTaskUpdateTypical(0, MAX_NUM_LEDS_REG, NORTH, 0);
-    esp_err_t errLong = refreshTaskUpdateTypical(0, MAX_NUM_LEDS_REG + 2, NORTH, 0);
+    esp_err_t errShort = refreshTaskUpdateTypical(0, MAX_NUM_LEDS_REG, NORTH, NULL, 0);
+    esp_err_t errLong = refreshTaskUpdateTypical(0, MAX_NUM_LEDS_REG + 2, NORTH, NULL, 0);
     TEST_ASSERT_EQUAL_MESSAGE(ESP_ERR_INVALID_ARG, errShort, "frameLen one short");
     TEST_ASSERT_EQUAL_MESSAGE(ESP_ERR_INVALID_ARG, errLong, "frameLen one long");
 }
@@ -300,7 +300,7 @@ TEST_CASE("refreshTaskUpdateTypical_acceptsFullTypicalFrame", TEST_GROUP)
         }
     }
 
-    esp_err_t typicalErr = refreshTaskUpdateTypical(frameNdx, MAX_NUM_LEDS_REG + 1, NORTH, 0);
+    esp_err_t typicalErr = refreshTaskUpdateTypical(frameNdx, MAX_NUM_LEDS_REG + 1, NORTH, NULL, 0);
 
     refreshTaskResetResources();
 
@@ -364,7 +364,7 @@ TEST_CASE("refreshTaskRefreshLEDs_returnsTimeout_whenCommandQueueIsFull", TEST_G
     {
         (*frame)[0].ledNum = 5;
         (*frame)[0].speed = 10;
-        overflowErr = refreshTaskRefreshLEDs(frameNdx, 1, NORTH, 0);
+        overflowErr = refreshTaskRefreshLEDs(frameNdx, 1, NORTH, NULL, NULL, 0);
         /* on failure the caller keeps ownership of the frame */
         stillReserved = refreshTaskIsFrameReserved(frameNdx);
     }
@@ -396,7 +396,7 @@ TEST_CASE("refreshTaskEnableNightMode_returnsTimeout_whenQueueIsFull", TEST_GROU
     esp_err_t overflowErr = ESP_FAIL;
     if (ESP_OK == err && fillOk)
     {
-        overflowErr = refreshTaskEnableNightMode(0);
+        overflowErr = refreshTaskEnableNightMode(NULL, 0);
     }
 
     bool deleted = teardownRefreshTask(handle);
@@ -424,7 +424,7 @@ TEST_CASE("refreshTaskDisableNightMode_returnsTimeout_whenQueueIsFull", TEST_GRO
     esp_err_t overflowErr = ESP_FAIL;
     if (ESP_OK == err && fillOk)
     {
-        overflowErr = refreshTaskDisableNightMode(0);
+        overflowErr = refreshTaskDisableNightMode(NULL, 0);
     }
 
     bool deleted = teardownRefreshTask(handle);
@@ -446,7 +446,7 @@ TEST_CASE("refreshTaskEnableNightMode_returnsOk_whenQueueHasSpace", TEST_GROUP)
     esp_err_t nightModeErr = ESP_FAIL;
     if (ESP_OK == err)
     {
-        nightModeErr = refreshTaskEnableNightMode(0);
+        nightModeErr = refreshTaskEnableNightMode(NULL, 0);
     }
 
     bool deleted = teardownRefreshTask(handle);
@@ -467,7 +467,7 @@ TEST_CASE("refreshTaskDisableNightMode_returnsOk_whenQueueHasSpace", TEST_GROUP)
     esp_err_t nightModeErr = ESP_FAIL;
     if (ESP_OK == err)
     {
-        nightModeErr = refreshTaskDisableNightMode(0);
+        nightModeErr = refreshTaskDisableNightMode(NULL, 0);
     }
 
     bool deleted = teardownRefreshTask(handle);
@@ -544,6 +544,52 @@ TEST_CASE("refreshTaskHandleCommand_releasesNothing_forFirstFrame", TEST_GROUP)
     TEST_ASSERT_TRUE_MESSAGE(initOk, "refreshTaskInit return value");
     TEST_ASSERT_EQUAL_MESSAGE(0, out.framesToRelease.len, "no frame should be released for the first frame received");
     TEST_ASSERT_EQUAL_MESSAGE(availableBefore, availableAfter, "frame pool should be untouched");
+}
+
+TEST_CASE("refreshTaskHandleCommand_setsReceived_onceDisplacedFrameIsReleased", TEST_GROUP)
+{
+    esp_err_t setupErr = setUpResourcesWithoutRunningTask();
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, setupErr, "resource setup");
+
+    bool initOk = refreshTaskInit();
+
+    LEDSpeed (*frame0)[MAX_FRAME_SIZE], (*frame1)[MAX_FRAME_SIZE], (*frame2)[MAX_FRAME_SIZE];
+    uint32_t ndx0 = UINT32_MAX, ndx1 = UINT32_MAX, ndx2 = UINT32_MAX;
+    esp_err_t reserve0 = refreshTaskReserveFrame(&frame0, &ndx0, 0);
+    esp_err_t reserve1 = refreshTaskReserveFrame(&frame1, &ndx1, 0);
+    esp_err_t reserve2 = refreshTaskReserveFrame(&frame2, &ndx2, 0);
+
+    /* the second frame is only buffered behind the first, and the third
+       displaces it; each is received as soon as it is handled */
+    volatile bool received1 = false, received2 = false, received3 = false, receivedNightOn = false;
+    RefreshFSMCommand cmd1 = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = ndx0, .frameLen = 0, .dir = NORTH, .received = &received1 };
+    RefreshFSMCommand cmd2 = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = ndx1, .frameLen = 0, .dir = NORTH, .received = &received2 };
+    RefreshFSMCommand cmd3 = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = ndx2, .frameLen = 0, .dir = NORTH, .received = &received3 };
+    RefreshFSMCommand cmdNightOn = { .type = REFRESH_CMD_NIGHT_MODE_ON, .received = &receivedNightOn };
+    RefreshFSMOutput out1, out2, out3, outNightOn;
+
+    refreshTaskHandleCommand(&cmd1, &out1);
+    bool received1AfterCmd1 = received1;
+    refreshTaskHandleCommand(&cmd2, &out2);
+    bool received2AfterCmd2 = received2;
+    refreshTaskHandleCommand(&cmd3, &out3);
+    bool received3AfterCmd3 = received3;
+    bool displacedStillReserved = refreshTaskIsFrameReserved(ndx1);
+    refreshTaskHandleCommand(&cmdNightOn, &outNightOn);
+    bool receivedNightOnAfter = receivedNightOn;
+
+    refreshTaskResetResources();
+
+    TEST_ASSERT_TRUE_MESSAGE(initOk, "refreshTaskInit return value");
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, reserve0, "reserving frame 0");
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, reserve1, "reserving frame 1");
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, reserve2, "reserving frame 2");
+    TEST_ASSERT_TRUE_MESSAGE(received1AfterCmd1, "first frame received when handled");
+    TEST_ASSERT_TRUE_MESSAGE(received2AfterCmd2, "buffered frame received when handled, not when latched");
+    TEST_ASSERT_EQUAL_MESSAGE(1, out3.framesToRelease.len, "third frame should displace the second");
+    TEST_ASSERT_TRUE_MESSAGE(received3AfterCmd3, "displacing frame received when handled");
+    TEST_ASSERT_FALSE_MESSAGE(displacedStillReserved, "displaced frame is back in the pool by the time received is set");
+    TEST_ASSERT_TRUE_MESSAGE(receivedNightOnAfter, "frameless command received when handled");
 }
 
 TEST_CASE("refreshTaskHandleCommand_releasesSupersededQueuedFrame_toPool", TEST_GROUP)

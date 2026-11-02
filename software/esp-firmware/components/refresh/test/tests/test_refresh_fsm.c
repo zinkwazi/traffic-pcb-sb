@@ -6186,3 +6186,297 @@ TEST_CASE("frameQueueCollapseWhileNightModeIsOn", TEST_GROUP)
     TEST_ASSERT_EQUAL(0, fOutLast2.framesToRelease.len);
     TEST_ASSERT_TRUE(fOutLast2.isIdle);
 }
+
+TEST_CASE("directionIndicatorFollowsDisplayedFrame", TEST_GROUP)
+{
+    const uint32_t northFrameNdx = 0;
+    const uint32_t typicalNorthFrameNdx = 1;
+    const uint32_t typicalSouthFrameNdx = 2;
+    const uint32_t southFrameNdx = 3;
+    const uint32_t north2FrameNdx = 4;
+    RefreshFSMOutput out;
+
+    /* initialize variables */
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledNumToReg[i].matrix = MAT1_PAGE0;
+        ledNumToReg[i].red = 0x44;
+        ledNumToReg[i].blue = 0x55;
+        ledNumToReg[i].green = 0x66;
+    }
+
+    /* initialize FSM */
+    RefreshFSMResources resources = {
+        .LEDNumToReg = ledNumToReg,
+        .LEDNumToRegLen = MAX_FRAME_SIZE,
+        .LEDFrames = ledFrames,
+        .LEDFramesLen = NUM_TEST_FRAMES,
+        .slowLEDColor = { 0 },
+        .mediumLEDColor = { 0 },
+        .fastLEDColor = { 0 },
+    };
+
+    refreshFSMInit(&resources);
+
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+
+    /* no frame on the board: indicators untouched */
+    out = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_FALSE(out.indicator.update);
+
+    /* north frame of LEDs 1, 2, 3 waits for typical data */
+    for (uint32_t i = 0; i < 3; i++)
+    {
+        ledFrames[northFrameNdx][i].ledNum = i + 1;
+        ledFrames[northFrameNdx][i].speed = 50;
+    }
+    RefreshFSMCommand cmdNorth = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = northFrameNdx,
+        .frameLen = 3,
+        .dir = NORTH,
+    };
+    out = refreshFSMTick(&cmdNorth);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out.action.type, "refresh action type");
+    TEST_ASSERT_FALSE(out.indicator.update);
+
+    for (uint32_t i = 0; i < MAX_FRAME_SIZE; i++)
+    {
+        ledFrames[typicalNorthFrameNdx][i].ledNum = i;
+        ledFrames[typicalNorthFrameNdx][i].speed = 50;
+        ledFrames[typicalSouthFrameNdx][i].ledNum = i;
+        ledFrames[typicalSouthFrameNdx][i].speed = 50;
+    }
+    RefreshFSMCommand cmdTypicalNorth = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalNorthFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = NORTH,
+    };
+    out = refreshFSMTick(&cmdTypicalNorth);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out.action.type, "refresh action type");
+    TEST_ASSERT_FALSE(out.indicator.update);
+
+    /* installation begins: indicators switch to north with the first LED */
+    RefreshFSMCommand cmdTypicalSouth = {
+        .type = REFRESH_CMD_UPDATE_TYPICAL,
+        .frameNdx = typicalSouthFrameNdx,
+        .frameLen = MAX_FRAME_SIZE,
+        .dir = SOUTH,
+    };
+    out = refreshFSMTick(&cmdTypicalSouth);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(1, out.action.set.ledNum);
+    TEST_ASSERT_TRUE(out.indicator.update);
+    TEST_ASSERT_EQUAL(NORTH, out.indicator.dir);
+
+    /* finish installing: indicators already correct */
+    out = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL(2, out.action.set.ledNum);
+    TEST_ASSERT_FALSE(out.indicator.update);
+    out = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL(3, out.action.set.ledNum);
+    TEST_ASSERT_TRUE(out.isIdle);
+    TEST_ASSERT_FALSE(out.indicator.update);
+    out = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_FALSE(out.indicator.update);
+
+    /* new south frame: north stays indicated while the north frame clears */
+    for (uint32_t i = 0; i < 2; i++)
+    {
+        ledFrames[southFrameNdx][i].ledNum = i + 10;
+        ledFrames[southFrameNdx][i].speed = 50;
+    }
+    RefreshFSMCommand cmdSouth = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = southFrameNdx,
+        .frameLen = 2,
+        .dir = SOUTH,
+    };
+    out = refreshFSMTick(&cmdSouth);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(3, out.action.clear.ledNum);
+    TEST_ASSERT_FALSE(out.indicator.update);
+    out = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(2, out.action.clear.ledNum);
+    TEST_ASSERT_FALSE(out.indicator.update);
+
+    /* last north LED cleared: indicators switch to south in the same tick */
+    out = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(1, out.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(1, out.framesToRelease.len);
+    TEST_ASSERT_EQUAL(northFrameNdx, out.framesToRelease.list[0].index);
+    TEST_ASSERT_TRUE(out.indicator.update);
+    TEST_ASSERT_EQUAL(SOUTH, out.indicator.dir);
+
+    out = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(10, out.action.set.ledNum);
+    TEST_ASSERT_FALSE(out.indicator.update);
+    out = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL(11, out.action.set.ledNum);
+    TEST_ASSERT_TRUE(out.isIdle);
+    TEST_ASSERT_FALSE(out.indicator.update);
+
+    /* night mode: indicators stay on while clearing, then turn off */
+    RefreshFSMCommand cmdNightOn = { .type = REFRESH_CMD_NIGHT_MODE_ON, .dir = NO_DIR };
+    out = refreshFSMTick(&cmdNightOn);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(11, out.action.clear.ledNum);
+    TEST_ASSERT_FALSE(out.indicator.update);
+    out = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(10, out.action.clear.ledNum);
+    TEST_ASSERT_TRUE(out.isIdle);
+    TEST_ASSERT_TRUE(out.indicator.update);
+    TEST_ASSERT_EQUAL(NO_DIR, out.indicator.dir);
+    out = refreshFSMTick(&cmdNone);
+    TEST_ASSERT_FALSE(out.indicator.update);
+
+    /* night mode off: indicators return with the reinstalled frame */
+    RefreshFSMCommand cmdNightOff = { .type = REFRESH_CMD_NIGHT_MODE_OFF, .dir = NO_DIR };
+    out = refreshFSMTick(&cmdNightOff);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_SET, out.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(10, out.action.set.ledNum);
+    TEST_ASSERT_TRUE(out.indicator.update);
+    TEST_ASSERT_EQUAL(SOUTH, out.indicator.dir);
+
+    /* new north frame mid-install: the single lit south LED clears and the
+       north frame starts in the same tick, along with the indicators */
+    for (uint32_t i = 0; i < 2; i++)
+    {
+        ledFrames[north2FrameNdx][i].ledNum = i + 20;
+        ledFrames[north2FrameNdx][i].speed = 50;
+    }
+    RefreshFSMCommand cmdNorth2 = {
+        .type = REFRESH_CMD_NEW_FRAME,
+        .frameNdx = north2FrameNdx,
+        .frameLen = 2,
+        .dir = NORTH,
+    };
+    out = refreshFSMTick(&cmdNorth2);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR, out.action.type, "refresh action type");
+    TEST_ASSERT_EQUAL(10, out.action.clear.ledNum);
+    TEST_ASSERT_EQUAL(1, out.framesToRelease.len);
+    TEST_ASSERT_EQUAL(southFrameNdx, out.framesToRelease.list[0].index);
+    TEST_ASSERT_TRUE(out.indicator.update);
+    TEST_ASSERT_EQUAL(NORTH, out.indicator.dir);
+}
+
+TEST_CASE("clearedFlagSetOnceBoardIsDark", TEST_GROUP)
+{
+    const uint32_t liveAFrameNdx = 0;
+    const uint32_t typicalNorthFrameNdx = 1;
+    const uint32_t typicalSouthFrameNdx = 2;
+    const uint32_t liveBFrameNdx = 3;
+    const uint32_t liveCFrameNdx = 4;
+    const uint32_t liveDFrameNdx = 5;
+
+    resetSkipTestResources();
+    fillSkipTestTypicalFrame(typicalNorthFrameNdx, UINT32_MAX);
+    fillSkipTestTypicalFrame(typicalSouthFrameNdx, UINT32_MAX);
+    fillSkipTestLiveFrame(liveAFrameNdx, 3);
+    fillSkipTestLiveFrame(liveBFrameNdx, 3);
+    fillSkipTestLiveFrame(liveCFrameNdx, 3);
+    fillSkipTestLiveFrame(liveDFrameNdx, 3);
+
+    RefreshFSMResources resources = skipTestResources();
+    refreshFSMInit(&resources);
+
+    bool clearedA = false, clearedB = false, clearedC = false, clearedD = false;
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    RefreshFSMCommand cmdA = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = liveAFrameNdx, .frameLen = 3, .dir = NORTH, .cleared = &clearedA };
+    RefreshFSMCommand cmdTypicalNorth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalNorthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalSouth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalSouthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = SOUTH };
+    RefreshFSMCommand cmdB = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = liveBFrameNdx, .frameLen = 3, .dir = NORTH, .cleared = &clearedB };
+    RefreshFSMCommand cmdC = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = liveCFrameNdx, .frameLen = 3, .dir = NORTH, .cleared = &clearedC };
+    RefreshFSMCommand cmdD = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = liveDFrameNdx, .frameLen = 3, .dir = NORTH, .cleared = &clearedD };
+
+    /* (1) the board is dark while waiting for frames, so A is cleared at once */
+    assertSkipTestOutput(refreshFSMTick(&cmdA), REFRESH_ACTION_NONE, 0, true, 0, "A while waiting");
+    TEST_ASSERT_TRUE_MESSAGE(clearedA, "board is dark while waiting for frames");
+    assertSkipTestOutput(refreshFSMTick(&cmdTypicalNorth), REFRESH_ACTION_NONE, 0, true, 0, "north typical while waiting");
+    assertSkipTestOutput(refreshFSMTick(&cmdTypicalSouth), REFRESH_ACTION_SET, 0, false, 0, "A install LED 0");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 1, false, 0, "A install LED 1");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 2, true, 0, "A install LED 2");
+
+    /* (2) B arrives with A installed: only set on the tick of the last clear */
+    assertSkipTestOutput(refreshFSMTick(&cmdB), REFRESH_ACTION_CLEAR, 2, false, 0, "A clear LED 2");
+    TEST_ASSERT_FALSE_MESSAGE(clearedB, "A is still being cleared (LED 2)");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_CLEAR, 1, false, 0, "A clear LED 1");
+    TEST_ASSERT_FALSE_MESSAGE(clearedB, "A is still being cleared (LED 1)");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_CLEAR, 0, false, 1, "A clear LED 0");
+    TEST_ASSERT_TRUE_MESSAGE(clearedB, "A finished clearing");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 0, false, 0, "B install LED 0");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 1, false, 0, "B install LED 1");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 2, true, 0, "B install LED 2");
+
+    /* (3) C starts clearing B, then D supersedes C: the rest of B is
+       quick-cleared in the same tick, so both C and D are notified */
+    assertSkipTestOutput(refreshFSMTick(&cmdC), REFRESH_ACTION_CLEAR, 2, false, 0, "B clear LED 2");
+    TEST_ASSERT_FALSE_MESSAGE(clearedC, "B is still being cleared");
+    RefreshFSMOutput outQuick = refreshFSMTick(&cmdD);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_CLEAR_RANGE, outQuick.action.type, "refresh action type");
+    TEST_ASSERT_TRUE_MESSAGE(clearedC, "superseded C notified once B is quick-cleared");
+    TEST_ASSERT_TRUE_MESSAGE(clearedD, "D notified once B is quick-cleared");
+
+    /* (4) a refresh with no NEW_FRAME does not rewrite an old flag */
+    clearedD = false;
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 0, false, 0, "D install LED 0");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 1, false, 0, "D install LED 1");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 2, true, 0, "D install LED 2");
+    RefreshFSMCommand cmdRefresh = { .type = REFRESH_CMD_REFRESH, .dir = NORTH };
+    (void) refreshFSMTick(&cmdRefresh);
+    for (uint32_t i = 0; i < 8; i++) (void) refreshFSMTick(&cmdNone);
+    TEST_ASSERT_FALSE_MESSAGE(clearedD, "flag is only written for its own command");
+
+    resetSkipTestResources();
+}
+
+TEST_CASE("clearedFlagWithNightMode", TEST_GROUP)
+{
+    const uint32_t liveAFrameNdx = 0;
+    const uint32_t typicalNorthFrameNdx = 1;
+    const uint32_t typicalSouthFrameNdx = 2;
+    const uint32_t liveBFrameNdx = 3;
+    const uint32_t liveCFrameNdx = 4;
+
+    resetSkipTestResources();
+    fillSkipTestTypicalFrame(typicalNorthFrameNdx, UINT32_MAX);
+    fillSkipTestTypicalFrame(typicalSouthFrameNdx, UINT32_MAX);
+    fillSkipTestLiveFrame(liveAFrameNdx, 2);
+    fillSkipTestLiveFrame(liveBFrameNdx, 2);
+    fillSkipTestLiveFrame(liveCFrameNdx, 2);
+
+    RefreshFSMResources resources = skipTestResources();
+    refreshFSMInit(&resources);
+
+    bool clearedB = false, clearedC = false;
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    RefreshFSMCommand cmdA = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = liveAFrameNdx, .frameLen = 2, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalNorth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalNorthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalSouth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalSouthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = SOUTH };
+    RefreshFSMCommand cmdB = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = liveBFrameNdx, .frameLen = 2, .dir = NORTH, .cleared = &clearedB };
+    RefreshFSMCommand cmdC = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = liveCFrameNdx, .frameLen = 2, .dir = NORTH, .cleared = &clearedC };
+    RefreshFSMCommand cmdNightOn = { .type = REFRESH_CMD_NIGHT_MODE_ON };
+
+    (void) refreshFSMTick(&cmdA);
+    (void) refreshFSMTick(&cmdTypicalNorth);
+    assertSkipTestOutput(refreshFSMTick(&cmdTypicalSouth), REFRESH_ACTION_SET, 0, false, 0, "A install LED 0");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 1, true, 0, "A install LED 1");
+
+    /* (1) B is queued, then night mode takes over the clear: B is notified
+       when the board goes dark even though B is not installed */
+    assertSkipTestOutput(refreshFSMTick(&cmdB), REFRESH_ACTION_CLEAR, 1, false, 0, "A clear LED 1");
+    assertSkipTestOutput(refreshFSMTick(&cmdNightOn), REFRESH_ACTION_CLEAR, 0, true, 0, "A clear LED 0 into night mode");
+    TEST_ASSERT_TRUE_MESSAGE(clearedB, "board went dark for night mode");
+
+    /* (2) a new frame while dark in night mode is notified immediately */
+    RefreshFSMOutput outC = refreshFSMTick(&cmdC);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, outC.action.type, "refresh action type");
+    TEST_ASSERT_TRUE_MESSAGE(clearedC, "board is already dark");
+
+    resetSkipTestResources();
+}

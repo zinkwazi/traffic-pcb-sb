@@ -82,11 +82,17 @@ typedef struct RefreshFSM {
     Direction nextDir;
     /* whether night mode is currently active */
     bool nightMode;
+    /* the direction the indicators were last told to display. NO_DIR if off */
+    Direction indicatorDir;
+    /* the cleared flag of the latest NEW_FRAME command still waiting for the
+       frame on the board to be cleared. Set true, then NULLed, once the board
+       is dark. NULL if none */
+    volatile bool *pendingCleared;
 } RefreshFSM;
 
 static RefreshFSM fsm;
 
-static void handleCommandNewFrame(RefreshFSMOutput *out, uint32_t frameNdx, uint32_t frameLen, Direction dir);
+static void handleCommandNewFrame(RefreshFSMOutput *out, uint32_t frameNdx, uint32_t frameLen, Direction dir, volatile bool *cleared);
 static void handleCommandRefresh(RefreshFSMOutput *out, Direction dir);
 static void handleCommandUpdateTypical(RefreshFSMOutput *out, uint32_t frameNdx, uint32_t frameLen, Direction dir);
 static void handleCommandNightModeOff(RefreshFSMOutput *out);
@@ -99,6 +105,9 @@ static void handleStateQuickClearingFrame(RefreshFSMOutput *out);
 static bool releaseFrame(RefreshFSMFrameReleaseList *framesToRelease, uint32_t index, RefreshFSMFrameReleaseType type);
 static bool iterateFrame(RefreshFSMOutput *out, bool setLED);
 static Color ledSpeedToColor(LEDSpeed speed, Direction dir);
+static void updateIndicator(RefreshFSMOutput *out);
+static void notifyCleared(void);
+static void setFlag(volatile bool **flag);
 static char *refreshFSMStateName(RefreshFSMState state);
 
 /**
@@ -144,6 +153,8 @@ void refreshFSMInit(const RefreshFSMResources *resources)
     fsm.currDir = NO_DIR;
     fsm.nextDir = NO_DIR;
     fsm.nightMode = false;
+    fsm.indicatorDir = NO_DIR;
+    fsm.pendingCleared = NULL;
 }
 
 /**
@@ -166,6 +177,8 @@ RefreshFSMOutput refreshFSMTick(const RefreshFSMCommand *cmd)
         .isIdle = false,
         .framesToRelease.len = 0,
         .action.type = REFRESH_ACTION_NONE,
+        .indicator.update = false,
+        .indicator.dir = NO_DIR,
     };
 
     /* handle command */
@@ -177,7 +190,7 @@ RefreshFSMOutput refreshFSMTick(const RefreshFSMCommand *cmd)
     switch (cmd->type)
     {
         case REFRESH_CMD_NEW_FRAME:
-            handleCommandNewFrame(&out, cmd->frameNdx, cmd->frameLen, cmd->dir);
+            handleCommandNewFrame(&out, cmd->frameNdx, cmd->frameLen, cmd->dir, cmd->cleared);
             break;
         case REFRESH_CMD_REFRESH:
             handleCommandRefresh(&out, cmd->dir);
@@ -228,7 +241,73 @@ RefreshFSMOutput refreshFSMTick(const RefreshFSMCommand *cmd)
             break;
     }
 
+    updateIndicator(&out);
     return out;
+}
+
+/**
+ * Requests a direction indicator update if the direction of the frame
+ * on the board differs from what the indicators were last told to show.
+ *
+ * @note Must run after the state handlers, since the displayed direction
+ * is determined by the state the FSM is left in at the end of the tick.
+ */
+static void updateIndicator(RefreshFSMOutput *out)
+{
+    assert(NULL != out);
+
+    Direction displayedDir;
+    switch (fsm.state)
+    {
+        case REFRESH_FSM_INSTALLING_FRAME:
+            /* falls through */
+        case REFRESH_FSM_CLEARING_FRAME:
+            /* falls through */
+        case REFRESH_FSM_QUICK_CLEARING_FRAME:
+            /* falls through */
+        case REFRESH_FSM_FRAME_INSTALLED:
+            /* currDir is only replaced by nextDir once the old frame is
+               cleared, so it is the direction of what is on the board */
+            displayedDir = fsm.currDir;
+            break;
+        default:
+            /* the board is dark */
+            displayedDir = NO_DIR;
+            break;
+    }
+
+    if (displayedDir != fsm.indicatorDir)
+    {
+        fsm.indicatorDir = displayedDir;
+        out->indicator.update = true;
+        out->indicator.dir = displayedDir;
+    }
+}
+
+/**
+ * Signals the pending NEW_FRAME command, if any, that the frame which was
+ * on the board when it arrived has been cleared.
+ *
+ * @note Called from the tick that emits the final clear action. This is
+ * safe because the task performs that action before handling any command
+ * a caller could queue in response to the flag.
+ */
+static void notifyCleared(void)
+{
+    setFlag(&fsm.pendingCleared);
+}
+
+/**
+ * Sets a pending flag true, if any, and forgets it.
+ */
+static void setFlag(volatile bool **flag)
+{
+    assert(NULL != flag);
+    if (NULL != *flag)
+    {
+        **flag = true;
+        *flag = NULL;
+    }
 }
 
 /**
@@ -339,8 +418,11 @@ static void tryTransitionFromWaitingForFrames(RefreshFSMOutput *out)
  * @param frameNdx The index in LEDFrames of the new frame.
  * @param frameLen The length of the new frame.
  * @param dir The traffic direction of the new frame.
+ * @param cleared Set true once the frame on the board when this command
+ * arrived has been cleared, or immediately if the board is already dark.
+ * NULL if unused.
  */
-static void handleCommandNewFrame(RefreshFSMOutput *out, uint32_t frameNdx, uint32_t frameLen, Direction dir)
+static void handleCommandNewFrame(RefreshFSMOutput *out, uint32_t frameNdx, uint32_t frameLen, Direction dir, volatile bool *cleared)
 {
     assert(NULL != out);
     assert(UINT32_MAX != frameNdx);
@@ -367,29 +449,37 @@ static void handleCommandNewFrame(RefreshFSMOutput *out, uint32_t frameNdx, uint
         fsm.nextDir = dir;
     }
 
-
-
     /* manage FSM state */
     switch (fsm.state)
     {
         case REFRESH_FSM_WAITING_FOR_FRAMES:
+            /* board is dark */
+            if (NULL != cleared) *cleared = true;
             tryTransitionFromWaitingForFrames(out);
             break;
         case REFRESH_FSM_INSTALLING_FRAME:
+            fsm.pendingCleared = cleared;
             fsm.state = REFRESH_FSM_CLEARING_FRAME;
             break;
         case REFRESH_FSM_CLEARING_FRAME:
             /* falls through */
         case REFRESH_FSM_QUICK_CLEARING_FRAME:
+            /* the superseded command's frame was never installed, and the
+               frame it was waiting on is quick-cleared later this tick */
+            notifyCleared();
+            fsm.pendingCleared = cleared;
             fsm.state = REFRESH_FSM_QUICK_CLEARING_FRAME;
             break;
         case REFRESH_FSM_CLEARED:
+            /* board is dark */
+            if (NULL != cleared) *cleared = true;
             if (!fsm.nightMode)
             {
                 transitionToInstallingFrame(out);
             }
             break;
         case REFRESH_FSM_FRAME_INSTALLED:
+            fsm.pendingCleared = cleared;
             fsm.state = REFRESH_FSM_CLEARING_FRAME;
             break;
         default:
@@ -580,6 +670,7 @@ static void handleStateClearingFrame(RefreshFSMOutput *out)
 
     if (!done) return;
 
+    notifyCleared();
     if (!fsm.nightMode)
     {
         transitionToInstallingFrame(out);
@@ -618,6 +709,7 @@ static void handleStateQuickClearingFrame(RefreshFSMOutput *out)
         out->action.clearRange.typicalFrameNdx = fsm.currTypicalFrameNdx;
     }
 
+    notifyCleared();
     if (!fsm.nightMode)
     {
         transitionToInstallingFrame(out);

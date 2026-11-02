@@ -241,12 +241,12 @@ STATIC_IF_NOT_TEST esp_err_t handleActionQueryOTA(void)
  */
 STATIC_IF_NOT_TEST esp_err_t handleActionStartNighttimeMode(void)
 {
-    return refreshEnableNightMode(portMAX_DELAY);
+    return refreshEnableNightMode(NULL, portMAX_DELAY);
 }
 
 STATIC_IF_NOT_TEST esp_err_t handleActionEndNighttimeMode(void)
 {
-    return refreshDisableNightMode(portMAX_DELAY);
+    return refreshDisableNightMode(NULL, portMAX_DELAY);
 }
 
 #else

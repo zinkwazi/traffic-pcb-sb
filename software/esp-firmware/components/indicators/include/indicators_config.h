@@ -117,8 +117,7 @@ extern uint8_t V2_0_OTA_UPDATE_COLOR_RED;
 extern uint8_t V2_0_OTA_UPDATE_COLOR_GREEN;
 extern uint8_t V2_0_OTA_UPDATE_COLOR_BLUE;
 
-extern uint8_t V2_0_NORTHBOUND_COLOR_RED;youtube
-
+extern uint8_t V2_0_NORTHBOUND_COLOR_RED;
 extern uint8_t V2_0_NORTHBOUND_COLOR_GREEN;
 extern uint8_t V2_0_NORTHBOUND_COLOR_BLUE;
 

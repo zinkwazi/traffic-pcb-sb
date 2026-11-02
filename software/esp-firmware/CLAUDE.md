@@ -195,6 +195,7 @@ void refreshTaskResetResources(void);
 ```
 refresh_task  →  refresh_fsm  (ticks the FSM)
 refresh_task  →  led_matrix   (executes FSM actions)
+refresh_task  →  indicators   (sets N/S direction LEDs from FSM output.indicator)
 refresh_task  →  led_registers (LEDNumToReg lookup table)
 refresh_task  →  animations   (LED ordering)
 refresh_fsm   →  main_types   (Color, Direction)

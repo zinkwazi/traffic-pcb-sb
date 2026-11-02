@@ -24,6 +24,7 @@
 #include "freertos/queue.h"
 
 #include "app_err.h"
+#include "indicators.h"
 #include "main_types.h"
 #include "led_registers.h"
 #include "led_matrix.h"
@@ -232,6 +233,11 @@ esp_err_t refreshTaskReleaseFrame(uint32_t frameNdx, TickType_t ticksToWait)
  * @param frameLen The length of the frame stored in the frame reserved
  * at frameNdx.
  * @param dir The direction to refresh LEDs in.
+ * @param received True when the queued command has been received. This is 
+ * useful to avoid adding queueing more than one of a particular command
+ * type at once. Set to NULL if unused.
+ * @param cleared True when the previously installed frame has finished being
+ * cleared.
  * @param ticksToWait The maximum number of ticks to block for.
  * 
  * @returns ESP_OK if successful.
@@ -239,7 +245,7 @@ esp_err_t refreshTaskReleaseFrame(uint32_t frameNdx, TickType_t ticksToWait)
  * ESP_ERR_TIMEOUT if block time exceeded waiting for resources.
  * ESP_FAIL if a logical error occurred.
  */
-esp_err_t refreshTaskRefreshLEDs(uint32_t frameNdx, uint32_t frameLen, Direction dir, TickType_t ticksToWait)
+esp_err_t refreshTaskRefreshLEDs(uint32_t frameNdx, uint32_t frameLen, Direction dir, volatile bool *received, volatile bool *cleared, TickType_t ticksToWait)
 {
     if (frameNdx >= NUM_LED_FRAMES) return ESP_ERR_INVALID_ARG;
     if (frameLen > MAX_FRAME_SIZE) return ESP_ERR_INVALID_ARG;
@@ -250,9 +256,23 @@ esp_err_t refreshTaskRefreshLEDs(uint32_t frameNdx, uint32_t frameLen, Direction
         .frameNdx = frameNdx,
         .frameLen = frameLen,
         .dir = dir,
+        .received = received,
+        .cleared = cleared,
     };
+
+    /* reset before queueing, since the refresh task may set them first */
+    const bool prevReceived = (NULL != received) ? *received : false;
+    const bool prevCleared = (NULL != cleared) ? *cleared : false;
+    if (NULL != received) *received = false;
+    if (NULL != cleared) *cleared = false;
     BaseType_t success = xQueueSend(commandQueue, &cmd, ticksToWait);
-    if (pdPASS != success) return ESP_ERR_TIMEOUT;
+    if (pdPASS != success)
+    {
+        /* the command was never queued */
+        if (NULL != received) *received = prevReceived;
+        if (NULL != cleared) *cleared = prevCleared;
+        return ESP_ERR_TIMEOUT;
+    }
     return ESP_OK;
 }
 
@@ -276,6 +296,9 @@ esp_err_t refreshTaskRefreshLEDs(uint32_t frameNdx, uint32_t frameLen, Direction
  * @param frameLen The length of the frame stored in the frame reserved
  * at frameNdx. Should be exactly MAX_NUM_LEDS_REG + 1.
  * @param dir The traffic direction the typical speeds correspond to.
+ * @param received True when the queued command has been received. This is 
+ * useful to avoid adding queueing more than one of a particular command
+ * type at once. Set to NULL if unused.
  * @param ticksToWait The maximum number of ticks to block for.
  *
  * @returns ESP_OK if successful.
@@ -283,7 +306,7 @@ esp_err_t refreshTaskRefreshLEDs(uint32_t frameNdx, uint32_t frameLen, Direction
  * ESP_ERR_TIMEOUT if block time exceeded waiting for resources.
  * ESP_FAIL if a logical error occurred.
  */
-esp_err_t refreshTaskUpdateTypical(uint32_t frameNdx, uint32_t frameLen, Direction dir, TickType_t ticksToWait)
+esp_err_t refreshTaskUpdateTypical(uint32_t frameNdx, uint32_t frameLen, Direction dir, volatile bool *received, TickType_t ticksToWait)
 {
     if (frameNdx >= NUM_LED_FRAMES) return ESP_ERR_INVALID_ARG;
     if (frameLen != MAX_NUM_LEDS_REG + 1) return ESP_ERR_INVALID_ARG;
@@ -294,9 +317,20 @@ esp_err_t refreshTaskUpdateTypical(uint32_t frameNdx, uint32_t frameLen, Directi
         .frameNdx = frameNdx,
         .frameLen = frameLen,
         .dir = dir,
+        .received = received,
+        .cleared = NULL,
     };
+
+    /* reset before queueing, since the refresh task may set it first */
+    const bool prevReceived = (NULL != received) ? *received : false;
+    if (NULL != received) *received = false;
     BaseType_t success = xQueueSend(commandQueue, &cmd, ticksToWait);
-    if (pdPASS != success) return ESP_ERR_TIMEOUT;
+    if (pdPASS != success)
+    {
+        /* the command was never queued */
+        if (NULL != received) *received = prevReceived;
+        return ESP_ERR_TIMEOUT;
+    }
     return ESP_OK;
 }
 
@@ -306,21 +340,35 @@ esp_err_t refreshTaskUpdateTypical(uint32_t frameNdx, uint32_t frameLen, Directi
  * @note Night mode turns off traffic and direction indicator
  * LEDs until night mode is disabled.
  * 
+ * @param received True when the queued command has been received. This is 
+ * useful to avoid adding queueing more than one of a particular command
+ * type at once. Set to NULL if unused.
  * @param ticksToWait The maximum number of ticks to block for.
  * 
  * @returns ESP_OK if successful.
  * ESP_ERR_TIMEOUT if block time exceeded waiting for resources.
  */
-esp_err_t refreshTaskEnableNightMode(TickType_t ticksToWait)
+esp_err_t refreshTaskEnableNightMode(volatile bool *received, TickType_t ticksToWait)
 {
     RefreshFSMCommand cmd = {
         .type = REFRESH_CMD_NIGHT_MODE_ON,
         .frameNdx = MAX_NUM_LEDS_REG,
         .frameLen = 0,
         .dir = NO_DIR,
+        .received = received,
+        .cleared = NULL,
     };
+
+    /* reset before queueing, since the refresh task may set it first */
+    const bool prevReceived = (NULL != received) ? *received : false;
+    if (NULL != received) *received = false;
     BaseType_t success = xQueueSend(commandQueue, &cmd, ticksToWait);
-    if (pdPASS != success) return ESP_ERR_TIMEOUT;
+    if (pdPASS != success)
+    {
+        /* the command was never queued */
+        if (NULL != received) *received = prevReceived;
+        return ESP_ERR_TIMEOUT;
+    }
     return ESP_OK;
 }
 
@@ -330,21 +378,35 @@ esp_err_t refreshTaskEnableNightMode(TickType_t ticksToWait)
  * @note Night mode turns off traffic and direction indicator
  * LEDs until night mode is disabled.
  * 
+ * @param received True when the queued command has been received. This is 
+ * useful to avoid adding queueing more than one of a particular command
+ * type at once. Set to NULL if unused.
  * @param ticksToWait The maximum number of ticks to block for.
  * 
  * @returns ESP_OK if successful.
  * ESP_ERR_TIMEOUT if block time exceeded waiting for resources.
  */
-esp_err_t refreshTaskDisableNightMode(TickType_t ticksToWait)
+esp_err_t refreshTaskDisableNightMode(volatile bool *received, TickType_t ticksToWait)
 {
     RefreshFSMCommand cmd = {
         .type = REFRESH_CMD_NIGHT_MODE_OFF,
         .frameNdx = MAX_NUM_LEDS_REG,
         .frameLen = 0,
         .dir = NO_DIR,
+        .received = received,
+        .cleared = NULL,
     };
+
+    /* reset before queueing, since the refresh task may set it first */
+    const bool prevReceived = (NULL != received) ? *received : false;
+    if (NULL != received) *received = false;
     BaseType_t success = xQueueSend(commandQueue, &cmd, ticksToWait);
-    if (pdPASS != success) return ESP_ERR_TIMEOUT;
+    if (pdPASS != success)
+    {
+        /* the command was never queued */
+        if (NULL != received) *received = prevReceived;
+        return ESP_ERR_TIMEOUT;
+    }
     return ESP_OK;
 }
 
@@ -433,7 +495,7 @@ static void refreshTask(void *params)
         BaseType_t success = xQueueReceive(commandQueue, (void *) &cmd, sleepTicks);
         if (pdTRUE != success)
         {
-            cmd.type = REFRESH_CMD_NONE;
+            cmd = (RefreshFSMCommand) { .type = REFRESH_CMD_NONE };
         }
 
         refreshTaskHandleCommand(&cmd, &out);
@@ -564,6 +626,15 @@ STATIC_IF_NOT_TEST void refreshTaskHandleCommand(RefreshFSMCommand *cmd, Refresh
     *out = refreshFSMTick(cmd);
     err = handleRefreshFSMAction(&out->action); // must process action before frames are released
     assert(ESP_OK == err);
+    if (out->indicator.update)
+    {
+        /* after the action, so indicators change once the old frame is gone */
+        err = indicateDirection(out->indicator.dir);
+        if (ESP_OK != err)
+        {
+            ESP_LOGE(TAG, "Failed to set direction indicators to %d: %d", out->indicator.dir, err);
+        }
+    }
     if (0 != out->framesToRelease.len)
     {
         for (uint32_t i = 0; i < out->framesToRelease.len; i++)
@@ -574,6 +645,10 @@ STATIC_IF_NOT_TEST void refreshTaskHandleCommand(RefreshFSMCommand *cmd, Refresh
 
         }
     }
+
+    /* only after any displaced frame is back in the pool, so a caller
+       waiting on this can reserve a frame */
+    if (REFRESH_CMD_NONE != cmd->type && NULL != cmd->received) *cmd->received = true;
 }
 
 /**

@@ -20,6 +20,7 @@ idf_component_register(SRCS ${srcs}
                                 app_errors
                                 app_nvs
                                 led_matrix
+                                indicators
                                 input
                                 esp_http_client
                                 esp_http_client_wrapper

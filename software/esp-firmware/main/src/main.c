@@ -45,6 +45,8 @@
 #define STARTUP_DIR         (SOUTH)
 #define STARTUP_ANIM        (CURVED_LINE_SOUTH)
 
+static void mainTask(void);
+
 /**
  * @brief The entrypoint task of the application.
  * 
@@ -83,16 +85,13 @@ void app_main(void)
 
     /* the refresh task waits for typical data in both directions before
     displaying any live data */
-    err = refreshTypical(NORTH, portMAX_DELAY);
+    err = refreshTypical(NORTH, NULL, portMAX_DELAY);
     if (err != ESP_OK) throwFatalError();
-    err = refreshTypical(SOUTH, portMAX_DELAY);
+    err = refreshTypical(SOUTH, NULL, portMAX_DELAY);
     if (err != ESP_OK) throwFatalError();
 
-    /* display live data */
-    err = indicateDirection(STARTUP_DIR);
-    if (err != ESP_OK) throwFatalError();
-    err = refreshBoard(STARTUP_DIR, STARTUP_ANIM);
-    if (err != ESP_OK) throwFatalError();
+    /* run main task */
+    mainTask();
 
     /* block rather than spin so lower priority tasks can run */
     while (true)
@@ -103,4 +102,107 @@ void app_main(void)
     /* emergency handling */
     ESP_LOGE(TAG, "Main task is exiting!");
     throwFatalError();
+}
+
+/**
+ * Retrieves input from the main input queue and handles them.
+ */
+static void mainTask(void)
+{
+    esp_err_t err;
+    bool currDirection = STARTUP_DIR;
+    volatile bool prevRefreshDataReceived = true;
+    volatile bool prevRefreshFrameCleared = false;
+    volatile bool prevToggleNightModeReceived = true;
+    bool nightModeActive = false;
+    MainCommand command = MAIN_CMD_ERROR;
+
+    err = refreshDisableNightMode(&prevToggleNightModeReceived, portMAX_DELAY);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to disable night mode: err = 0x%x", err);
+    }
+
+    err = refreshBoard(STARTUP_DIR, STARTUP_ANIM, &prevRefreshDataReceived, NULL, portMAX_DELAY);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to initially refresh board: err = 0x%x", err);
+    }
+
+    while (true)
+    {
+        xQueueReceive(mainInputQueue, &command, portMAX_DELAY);
+
+        switch (command)
+        {
+            case MAIN_CMD_SCHEDULED:
+                if (!prevRefreshDataReceived) break;
+                switch (currDirection)
+                {
+                    case NORTH:
+                        err = refreshBoard(NORTH, CURVED_LINE_NORTH, &prevRefreshDataReceived, &prevRefreshFrameCleared, 0);
+                        break;
+                    case SOUTH:
+                        err = refreshBoard(SOUTH, CURVED_LINE_SOUTH, &prevRefreshDataReceived, &prevRefreshFrameCleared, 0);
+                        break;
+                }
+                if (err != ESP_OK)
+                {
+                    ESP_LOGE(TAG, "Failed to execute scheduled refresh: err = 0x%x", err);
+                }
+                break;
+            case MAIN_CMD_QUICK_DIR_BTN:
+                if (!prevRefreshDataReceived) break;
+                if (!prevRefreshFrameCleared)
+                {
+                    /* keep the same direction */
+                    currDirection = (currDirection == NORTH) ? SOUTH : NORTH;
+                }
+
+                switch (currDirection)
+                {
+                    case NORTH:
+                        currDirection = SOUTH;
+                        err = refreshBoard(SOUTH, CURVED_LINE_SOUTH, &prevRefreshDataReceived, &prevRefreshFrameCleared, 0);
+                        break;
+                    case SOUTH:
+                        currDirection = NORTH;
+                        err = refreshBoard(NORTH, CURVED_LINE_NORTH, &prevRefreshDataReceived, &prevRefreshFrameCleared, 0);
+                        break;
+                }
+                if (err != ESP_OK)
+                {
+                    ESP_LOGE(TAG, "Failed to execute button refresh: err = 0x%x", err);
+                }
+                break;
+            case MAIN_CMD_HOLD_DIR_BTN:
+                if (nightModeActive)
+                {
+                    err = refreshDisableNightMode(&prevToggleNightModeReceived, portMAX_DELAY);
+                    if (err != ESP_OK)
+                    {
+                        ESP_LOGE(TAG, "Failed to disable night mode: err = 0x%x", err);
+                    } else
+                    {
+                        nightModeActive = false;
+                    }
+                } else
+                {
+                    err = refreshEnableNightMode(&prevToggleNightModeReceived, portMAX_DELAY);
+                    if (err != ESP_OK)
+                    {
+                        ESP_LOGE(TAG, "Failed to enable night mode: err = 0x%x", err);
+                    } else
+                    {
+                        nightModeActive = true;
+                    }
+                }
+                break;
+            case MAIN_CMD_TIMEOUT:
+                break;
+            case MAIN_CMD_ERROR:
+                ESP_LOGW(TAG, "Main FSM received MAIN_CMD_ERROR");
+                break;
+        }
+    }
 }

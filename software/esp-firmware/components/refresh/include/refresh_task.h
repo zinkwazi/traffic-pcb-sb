@@ -25,10 +25,10 @@
 esp_err_t createRefreshTask(TaskHandle_t *handle, const UBaseType_t prio);
 esp_err_t refreshTaskReserveFrame(LEDSpeed (**frame)[MAX_FRAME_SIZE], uint32_t *frameNdx, TickType_t ticksToWait);
 esp_err_t refreshTaskReleaseFrame(uint32_t frameNdx, TickType_t ticksToWait);
-esp_err_t refreshTaskRefreshLEDs(uint32_t frameNdx, uint32_t frameLen, Direction dir, TickType_t ticksToWait);
-esp_err_t refreshTaskUpdateTypical(uint32_t frameNdx, uint32_t frameLen, Direction dir, TickType_t ticksToWait);
-esp_err_t refreshTaskEnableNightMode(TickType_t ticksToWait);
-esp_err_t refreshTaskDisableNightMode(TickType_t ticksToWait);
+esp_err_t refreshTaskRefreshLEDs(uint32_t frameNdx, uint32_t frameLen, Direction dir, volatile bool *received, volatile bool *cleared, TickType_t ticksToWait);
+esp_err_t refreshTaskUpdateTypical(uint32_t frameNdx, uint32_t frameLen, Direction dir, volatile bool *received, TickType_t ticksToWait);
+esp_err_t refreshTaskEnableNightMode(volatile bool *received, TickType_t ticksToWait);
+esp_err_t refreshTaskDisableNightMode(volatile bool *received, TickType_t ticksToWait);
 
 #ifdef CONFIG_TEST_REFRESH
 

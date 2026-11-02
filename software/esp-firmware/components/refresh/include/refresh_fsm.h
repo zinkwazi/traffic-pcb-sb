@@ -50,6 +50,24 @@ typedef struct {
     uint32_t frameLen;
     /* The animation and display direction */
     Direction dir;
+    /**
+     * The location to set true once the command has been taken by the
+     * FSM and any frame it displaced has been released to the frame pool.
+     * Set by the task running the FSM, not the FSM itself, since the
+     * release happens after the tick. Waiting on this before queueing
+     * another command of the same type keeps reserved frames from piling
+     * up in the command queue. Set to NULL if unused.
+     */
+    volatile bool *received;
+    /**
+     * The location to set true once the frame on the board when this
+     * command arrived has been cleared (immediately if the board is
+     * already dark). Only honored for REFRESH_CMD_NEW_FRAME, and the FSM
+     * never writes false, so user code must reset it before queueing.
+     * If a later NEW_FRAME supersedes this one before it is installed,
+     * this is still set once the board is cleared. Set to NULL if unused.
+     */
+    volatile bool *cleared;
 } RefreshFSMCommand;
 
 /**
@@ -125,6 +143,20 @@ typedef struct RefreshFSMOutput {
     RefreshFSMFrameReleaseList framesToRelease;
     /* The action user code should take based on FSM logic */
     RefreshFSMAction action;
+    /**
+     * The direction indicator state user code should display, kept in
+     * sync with the frame on the board: the direction of the frame being
+     * installed, shown, or cleared, or NO_DIR (indicators off) while the
+     * board is dark. Only acted on when update is true, which happens
+     * on the tick the displayed direction changes. User code should
+     * perform this after the action, as both may be requested in the
+     * same tick (e.g. a final clear of the old frame followed by the
+     * start of a new frame in a different direction).
+     */
+    struct {
+        bool update;
+        Direction dir;
+    } indicator;
 } RefreshFSMOutput;
 
 /**

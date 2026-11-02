@@ -276,6 +276,16 @@ esp_err_t refreshData(LEDData data[], esp_http_client_handle_t client, Direction
  * 
  * @param[in] dir The direction of traffic data set to be displayed.
  * @param[in] anim The animation to refresh the board with.
+ * @param[in] received Whether the refresh FSM has received the command yet.
+ * Another command of the same type should not be queued until the previous
+ * has been received in order to avoid running out of resources. Set to NULL
+ * if unused.
+ * @param[in] cleared Whether the refresh FSM has finished clearing the previous
+ * frame. This information can be useful to know whether another frame can be installed
+ * without display problems.
+ * @param[in] ticksToWait The number of ticks to wait for the refresh task
+ * while attempting to queue the command to refresh LEDs. Note that another
+ * delay attempting to borrow traffic data can wait indefinitely.
  *
  * @returns ESP_OK if successful.
  * ESP_ERR_INVALID_ARG if anim is invalid.
@@ -286,7 +296,7 @@ esp_err_t refreshData(LEDData data[], esp_http_client_handle_t client, Direction
  * ESP_ERR_NOT_ALLOWED if traffic data could not be released.
  * ESP_FAIL if dir is invalid or an unexpected error occurred.
  */
-esp_err_t refreshBoard(Direction dir, Animation anim) {
+esp_err_t refreshBoard(Direction dir, Animation anim, volatile bool *received, volatile bool *cleared, TickType_t ticksToWait) {
     LEDData currentSpeeds[MAX_NUM_LEDS_REG];
     LEDSpeed (*ledFrame)[MAX_FRAME_SIZE];
     int32_t ledOrder[MAX_NUM_LEDS_REG];
@@ -344,7 +354,7 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
     }
 
     /* refresh LEDs using frame */
-    err = refreshTaskRefreshLEDs(ledFrameNdx, ledFrameLen, dir, 0);
+    err = refreshTaskRefreshLEDs(ledFrameNdx, ledFrameLen, dir, received, cleared, ticksToWait);
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "Failed to refresh LEDs using frame %d!", ledFrameNdx);
@@ -372,6 +382,10 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
  * a typical speed of UINT8_MAX.
  *
  * @param[in] dir The direction of typical traffic data to send.
+ * @param[in] received Whether the refresh FSM has received the command yet.
+ * Another command of the same type should not be queued until the previous
+ * has been received in order to avoid running out of resources. Set to NULL
+ * if unused.
  * @param[in] ticksToWait The maximum number of ticks to block for while
  * waiting for refresh task resources.
  *
@@ -383,7 +397,7 @@ esp_err_t refreshBoard(Direction dir, Animation anim) {
  * ESP_ERR_NOT_ALLOWED if traffic data could not be released.
  * ESP_FAIL if dir is invalid or an unexpected error occurred.
  */
-esp_err_t refreshTypical(Direction dir, TickType_t ticksToWait)
+esp_err_t refreshTypical(Direction dir, volatile bool *received, TickType_t ticksToWait)
 {
     LEDData typicalSpeeds[MAX_NUM_LEDS_REG];
     LEDSpeed (*ledFrame)[MAX_FRAME_SIZE];
@@ -421,7 +435,7 @@ esp_err_t refreshTypical(Direction dir, TickType_t ticksToWait)
         }
     }
 
-    err = refreshTaskUpdateTypical(ledFrameNdx, MAX_NUM_LEDS_REG + 1, dir, ticksToWait);
+    err = refreshTaskUpdateTypical(ledFrameNdx, MAX_NUM_LEDS_REG + 1, dir, received, ticksToWait);
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "Failed to update typical speeds using frame %lu!", ledFrameNdx);
@@ -442,14 +456,18 @@ esp_err_t refreshTypical(Direction dir, TickType_t ticksToWait)
  * @note Night mode turns off traffic and direction indicator
  * LEDs until night mode is disabled.
  * 
+ * @param[in] received Whether the refresh FSM has received the command yet.
+ * Another command of the same type should not be queued until the previous
+ * has been received in order to avoid running out of resources. Set to NULL
+ * if unused.
  * @param ticksToWait The maximum number of ticks to block for.
  * 
  * @returns ESP_OK if successful.
  * ESP_ERR_TIMEOUT if block time exceeded waiting for resources.
  */
-esp_err_t refreshEnableNightMode(TickType_t ticksToWait)
+esp_err_t refreshEnableNightMode(volatile bool *received, TickType_t ticksToWait)
 {
-    return refreshTaskEnableNightMode(ticksToWait);
+    return refreshTaskEnableNightMode(received, ticksToWait);
 }
 
 /**
@@ -458,14 +476,18 @@ esp_err_t refreshEnableNightMode(TickType_t ticksToWait)
  * @note Night mode turns off traffic and direction indicator
  * LEDs until night mode is disabled.
  * 
+ * @param[in] received Whether the refresh FSM has received the command yet.
+ * Another command of the same type should not be queued until the previous
+ * has been received in order to avoid running out of resources. Set to NULL
+ * if unused.
  * @param ticksToWait The maximum number of ticks to block for.
  * 
  * @returns ESP_OK if successful.
  * ESP_ERR_TIMEOUT if block time exceeded waiting for resources.
  */
-esp_err_t refreshDisableNightMode(TickType_t ticksToWait)
+esp_err_t refreshDisableNightMode(volatile bool *received, TickType_t ticksToWait)
 {
-    return refreshTaskDisableNightMode(ticksToWait);
+    return refreshTaskDisableNightMode(received, ticksToWait);
 }
 
 
