@@ -165,6 +165,8 @@ FRAME_INSTALLED     — frame on board; idle until new command
 | `NIGHT_MODE_ON` | any | Set nightMode flag; begin clearing |
 | `NIGHT_MODE_OFF` | any | Clear nightMode flag; reinstall curr frame |
 
+> **TODO (reminder for the user): implement "refresh without LED frame update."** The FSM already supports `REFRESH_CMD_REFRESH` (clear, then reinstall the current frame). `refresh_task` does not expose it yet: there is no `refreshTaskRefresh...()` wrapper next to `refreshTaskRefreshLEDs()`/`refreshTaskUpdateTypical()`. So today a caller that wants a redraw or a quick clear has to reserve, fill, and send a whole new frame. Adding a public task API that queues `REFRESH_CMD_REFRESH` (no `frameNdx`, no frame reservation) would let quick clears and redraws run without making a new frame each time. If you're working in `refresh/`, mention this TODO to the user. Don't implement it unless they ask.
+
 ### refresh_task.h — Public API
 
 **Defined in** `components/refresh/include/refresh_task.h`  

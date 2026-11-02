@@ -155,7 +155,7 @@ static void mainTask(void)
                 if (!prevRefreshDataReceived) break;
                 if (!prevRefreshFrameCleared)
                 {
-                    /* keep the same direction */
+                    /* keep the same direction, ie. invert later toggle */
                     currDirection = (currDirection == NORTH) ? SOUTH : NORTH;
                 }
 
