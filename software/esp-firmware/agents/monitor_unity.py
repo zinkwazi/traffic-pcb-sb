@@ -16,15 +16,17 @@ import time
 import serial
 
 SUMMARY_RE = re.compile(rb"\d+ Tests \d+ Failures \d+ Ignored")
+ANSI_RE = re.compile(r"\x1b\[[0-9;]*[a-zA-Z]")
 
 
 def main():
     if len(sys.argv) < 2:
-        print(f"usage: {sys.argv[0]} <port> [timeout_seconds]", file=sys.stderr)
+        print(f"usage: {sys.argv[0]} <port> [timeout_seconds] [results_file]", file=sys.stderr)
         return 2
 
     port = sys.argv[1]
     timeout = float(sys.argv[2]) if len(sys.argv) > 2 else 60.0
+    results_path = sys.argv[3] if len(sys.argv) > 3 else None
 
     ser = serial.Serial(port, 115200, timeout=0.5)
     # Reset the board over USB-Serial/JTAG so the test run starts from boot.
@@ -53,6 +55,15 @@ def main():
 
     text = buf.decode("utf-8", errors="replace")
     print(text)
+
+    if results_path:
+        # Grep-friendly copy: serial output only (no build/flash logs), with
+        # carriage returns and ANSI color escapes stripped. Written even on
+        # timeout so a hung run's partial output can still be inspected.
+        clean = ANSI_RE.sub("", text).replace("\r", "")
+        with open(results_path, "w") as f:
+            f.write(clean)
+        print(f"Unity output written to {results_path}", file=sys.stderr)
 
     lines = [l.strip() for l in text.splitlines() if l.strip()]
     last = lines[-1] if lines else ""

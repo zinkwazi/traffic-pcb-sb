@@ -11,17 +11,19 @@ Version-specific code lives in `versions/V1_0/` and `versions/V2_0/`. All active
 
 ## Build System
 
-Build variants are defined in `esp_idf_project_configuration.json`, keyed by name (e.g. `test_refresh`, `test_hardware`, `production_V2_1`, `test_nonmock`, `test_manual`, `test_ota`, `test_actions1`, `test_actions2`). This JSON is a **VS Code ESP-IDF extension format only** — plain `idf.py` never reads it. Building the same variant from a bare CLI invocation requires reproducing two things from that JSON entry yourself, or the build silently uses the wrong config:
+Build variants are defined as `configurePresets` in `CMakePresets.json`, keyed by `"name"` (e.g. `test_refresh`, `test_hardware`, `production_V2_1`, `test_nonmock`, `test_manual`, `test_ota`, `test_actions1`, `test_actions2`). (This replaced the older `esp_idf_project_configuration.json` when the project migrated to VS Code ESP-IDF extension v2.2.0.) Building a variant from a bare CLI invocation requires reproducing two things from that preset yourself, or the build silently uses the wrong config:
 
-1. **The `executable` env var** selects which branch of the root `CMakeLists.txt` runs (`$ENV{executable}`, lowercase) — this picks `TEST_COMPONENTS`, which sources get compiled, etc. It comes from the variant's `"env": {"executable": "..."}` in `esp_idf_project_configuration.json`.
+1. **The `executable` env var** selects which branch of the root `CMakeLists.txt` runs (`$ENV{executable}`, lowercase) — this picks `TEST_COMPONENTS`, which sources get compiled, etc. It comes from the preset's `"environment": {"executable": "..."}`.
    **`idf.py -DEXECUTABLE=<name>` does NOT work** — that sets an unused CMake cache variable named `EXECUTABLE`; nothing reads it. Always `export executable=<name>` first.
-2. **`sdkconfigDefaults` and `sdkconfigFilePath`** select which Kconfig options actually land in the build (`CONFIG_HARDWARE_VERSION`, `CONFIG_TEST_REFRESH`, etc.). These must be passed explicitly as `-DSDKCONFIG_DEFAULTS=...` (semicolon-joined) and `-DSDKCONFIG=...` — copy them verbatim from the variant's `"build"` block in `esp_idf_project_configuration.json`.
+2. **`SDKCONFIG_DEFAULTS` and `SDKCONFIG`** select which Kconfig options actually land in the build (`CONFIG_HARDWARE_VERSION`, `CONFIG_TEST_REFRESH`, etc.). Pass them explicitly as `-DSDKCONFIG_DEFAULTS=...` (semicolon-joined) and `-DSDKCONFIG=...`, copied from the preset's `"cacheVariables"` (drop the `${sourceDir}/` prefix).
+
+**`IDF_PRESET` and `-B`:** ESP-IDF 6's `idf.py` *does* read `CMakePresets.json` when the `IDF_PRESET` env var is set — and terminals opened by the VS Code extension set it (e.g. `IDF_PRESET=test_refresh`). It does **not** expand the `${sourceDir}` macro in the preset's `binaryDir`, so without `-B` it configures into a literal `./${sourceDir}/builds/<variant>` directory, which then fails in CMake's compiler checks (`Cannot find source file ... TryCompile-*/src.c`). **Always pass `-B builds/<variant>`**, and make sure `IDF_PRESET` (if set) matches the variant you're building. If a stray `${sourceDir}` directory appears, remove it with single quotes: `rm -rf './${sourceDir}'`.
 
 Skipping step 2 doesn't fail the build — it silently falls back to `<project_dir>/sdkconfig` (creating one from bare Kconfig defaults if absent), which does **not** set `CONFIG_HARDWARE_VERSION=2` or `CONFIG_TEST_REFRESH=y` etc. This is invisible until either a `CONFIG_HARDWARE_VERSION`-gated file fails to compile, or (worse) it compiles a materially different, half-configured build that looks fine at a glance. It's most likely to bite right after `idf.py fullclean`, since the build directory's cached sdkconfig association (set up once by the extension) is gone at that point and every subsequent plain `idf.py build` regenerates the fallback.
 
 Locate ESP-IDF first — `<path-to-esp-idf>` below is not a project-relative path; on this machine it's `~/.espressif/v6.0.1/esp-idf` (find it generically with `cat ~/.espressif/idf-env.json` — the `idfInstalled` keys are the install paths — or `find ~/.espressif -maxdepth 3 -path "*/esp-idf" -type d`).
 
-Full working example for `test_refresh` (read the values from `esp_idf_project_configuration.json` for any other variant — e.g. swap `test_refresh` for `test_hardware` everywhere below, including inside `-DSDKCONFIG_DEFAULTS`/`-DSDKCONFIG`, to build/run `led_matrix`'s own hardware tests instead):
+Full working example for `test_refresh` (read the values from `CMakePresets.json` for any other variant — e.g. swap `test_refresh` for `test_hardware` everywhere below, including inside `-DSDKCONFIG_DEFAULTS`/`-DSDKCONFIG`, to build/run `led_matrix`'s own hardware tests instead):
 ```sh
 source ~/.espressif/v6.0.1/esp-idf/export.sh
 export executable=test_refresh
@@ -247,7 +249,32 @@ TEST_CASE("description", "groupName")
 
 **Building tests:** see the full `test_refresh` example (env var + `-DSDKCONFIG_DEFAULTS`/`-DSDKCONFIG`) under **Build System** above — a bare `export executable=test_refresh && idf.py -B builds/test_refresh build` only works if the build directory already has a cached sdkconfig association from a prior extension-driven configure; after `fullclean` it silently produces a broken config.
 
-**Fast path for agents:** `agents/run_test.sh <variant>`** builds, flashes, and reads back results for a test variant (e.g. `test_refresh`, `test_hardware`) in one command, deriving the env var/sdkconfig args from `esp_idf_project_configuration.json` itself and exiting as soon as the Unity summary line appears instead of polling on a fixed sleep. See `agents/README.md`. Prefer this over the manual steps below unless you're debugging the build/flash process itself.
+**Fast path for agents:** `agents/run_test.sh <variant>` builds, flashes, and reads back results for a test variant (e.g. `test_refresh`, `test_hardware`) in one command, deriving the env var/sdkconfig args from `CMakePresets.json` itself and exiting as soon as the Unity summary line appears instead of polling on a fixed sleep. Exit code: 0 = all passed, 1 = failures, 2 = timed out with no summary line. See `agents/README.md`. Prefer this over the manual steps below unless you're debugging the build/flash process itself.
+
+The script's stdout mixes hundreds of lines of build/flash output with the test output, so **don't read stdout for results** — discard it and query the results file instead. The serial (Unity) output alone, with `\r` and ANSI escapes stripped, is written to `builds/<variant>/test/test_results.txt` (overwritten every run, including on timeout):
+```sh
+agents/run_test.sh test_refresh > /dev/null 2>&1; echo "exit=$?"
+grep -E ':(PASS|FAIL)' builds/test_refresh/test/test_results.txt   # per-test results
+grep ':FAIL' builds/test_refresh/test/test_results.txt             # failures only
+grep -E 'Tests [0-9]+ Failures' builds/test_refresh/test/test_results.txt  # summary
+```
+If the exit code is non-zero and the results file has no `:PASS`/`:FAIL` lines, the failure was in build/flash — rerun without discarding stdout to see why. A full build+flash+run can exceed a 2-minute shell timeout; allow longer, or use `--no-build`/`--app-only` when only the app changed.
+
+**Code coverage.** For variants whose sources are compiled with `--coverage` (currently only `test_refresh`, which instruments every file in `components/refresh/src/`), `run_test.sh` also collects gcov coverage after the tests finish. It runs an on-the-fly `esp gcov` dump through OpenOCD (reusing a running OpenOCD on port 6666, otherwise starting and stopping its own), then runs `gcovr`. Outputs, all regenerated every run, are in `builds/<variant>/test/`:
+
+| File | Contents |
+|------|----------|
+| `coverage_summary.txt` | Per-file line coverage; `Missing` column = line numbers never executed |
+| `coverage_branches.txt` | Per-file branch coverage; `Missing` column = lines with at least one branch never taken |
+| `coverage_report/index.html` | gcovr HTML: summary table + one line-annotated page per source file (`index.<file>.c.<hash>.html`) |
+
+**Read the two text files first.** They are small and give exact line numbers, which you can then look up in the source (e.g. `sed -n 205,212p components/refresh/src/refresh_fsm.c`). The HTML pages are large (~0.5 MB for `refresh_fsm.c`), so read them only when you need per-branch detail for a specific line, and only the relevant part. In the HTML, line rows carry the CSS classes `coveredLine`, `partialCoveredLine` (some branches not taken), or `uncoveredLine`.
+
+Notes:
+- `refresh.c` and `traffic_data.c` at 0% are expected; they're the legacy implementation with no tests in this suite. Judge suite comprehensiveness on `refresh_fsm.c`, `refresh_task.c`, and `refresh_utilities.c`.
+- The exit code reflects **test results only**. If coverage fails, `run_test.sh` prints `coverage: FAILED` (with a reason) on stderr and the coverage files are absent. They are deleted at the start of every run, so a stale report never masquerades as fresh. `--no-coverage` skips the step.
+- Coverage is skipped automatically if the variant's sdkconfig lacks `CONFIG_ESP_GCOV_ENABLE=y` or nothing in the build produced `.gcno` files. To instrument another component, add `target_compile_options(${COMPONENT_LIB} PRIVATE --coverage)` (or `set_source_files_properties(... COMPILE_FLAGS --coverage)`) to its `CMakeLists.txt`, gated on its test Kconfig option as `refresh` does. The `espressif/esp_gcov` runtime dependency is already pulled in via `components/refresh/idf_component.yml`.
+- Don't run `idf.py monitor` or another OpenOCD-driven debugging session during the dump.
 
 **Flashing tests to hardware:**
 ```sh
@@ -266,7 +293,7 @@ Then read `/path/to/log.txt`, stripping ANSI escapes and carriage returns:
 cat -v /path/to/log.txt | sed 's/\^\[\[[0-9;]*[a-zA-Z]//g; s/\^M//g'
 ```
 
-Each test prints `path/to/file.c:LINE:test_name:PASS` or `:FAIL:<message>` (the message is sometimes empty — a bare `:FAIL` with nothing after it is normal, not truncated output). The run ends with a Unity summary line — `N Tests M Failures K Ignored` followed by `OK` or `FAIL`. A raw `pyserial` read on the port (without `idf.py monitor`) is unreliable here and reliably returned zero bytes in practice — use the `script`-wrapped `monitor` approach instead.
+Each test prints `path/to/file.c:LINE:test_name:PASS` or `:FAIL:<message>` (the message is sometimes empty — a bare `:FAIL` with nothing after it is normal, not truncated output). The run ends with a Unity summary line — `N Tests M Failures K Ignored` followed by `OK` or `FAIL`. A bare `pyserial` read on the port that doesn't reset the board first returned zero bytes in practice (the test binary prints once at boot and then spins silently). `agents/monitor_unity.py`, used by `run_test.sh`, toggles RTS to reset the board before reading for this reason. For manual reads, use the `script`-wrapped `monitor` approach above.
 
 **Don't confuse `THROW_ERR` noise with a failure.** Negative-path tests (invalid-argument checks, "rejects null", etc.) deliberately trigger real `THROW_ERR` calls, which print an `E (...) tag: ...` line and a `Backtrace: ...` line — this is expected, passing behavior, not a crash. `led_matrix`'s hardware test suite in particular produces many of these. When scanning output programmatically, match on `:FAIL` / `:PASS` (or the final summary line) specifically — don't treat the presence of `E (...)` or `Backtrace` lines alone as a sign anything failed.
 

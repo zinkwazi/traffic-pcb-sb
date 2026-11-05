@@ -29,3 +29,8 @@ else()
 endif()
 
 project(esp-firmware)
+
+if (COMMAND idf_create_coverage_report)
+    idf_create_coverage_report(${CMAKE_CURRENT_BINARY_DIR}/coverage_report)
+    idf_clean_coverage_report(${CMAKE_CURRENT_BINARY_DIR}/coverage_report)
+endif ()

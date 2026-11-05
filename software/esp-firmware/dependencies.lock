@@ -1,0 +1,20 @@
+dependencies:
+  espressif/esp_gcov:
+    component_hash: f9fc66382e8bce275bd5bd0ce54e8b169e98b50ee31146dec54aa39615aea65b
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=6.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.0.5
+  idf:
+    source:
+      type: idf
+    version: 6.0.1
+direct_dependencies:
+- espressif/esp_gcov
+manifest_hash: 9941f0020f394ca2d58d1f790ead03914afc6793f7aec8201e1c7ca14e449672
+target: esp32s3
+version: 3.0.0

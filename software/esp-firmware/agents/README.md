@@ -26,6 +26,31 @@ Prints the full serial output and exits 0/1/2 (pass/fail/timeout) based on
 the Unity summary line, so it's safe to use directly in a script:
 `agents/run_test.sh test_refresh || echo "tests failed"`.
 
+The serial output alone (no build/flash logs; `\r` and ANSI escapes
+stripped) is also written to `builds/<variant>/test/test_results.txt`,
+overwritten every run, so results can be queried without wading through
+stdout:
+
+```sh
+agents/run_test.sh test_refresh > /dev/null 2>&1; echo "exit=$?"
+grep -E ':(PASS|FAIL)' builds/test_refresh/test/test_results.txt
+```
+
+For variants built with `--coverage` (currently `test_refresh`), it then
+dumps gcov data through OpenOCD (`esp gcov`, reusing a running OpenOCD or
+starting its own) and runs `gcovr`, writing to the same `test/` folder:
+`coverage_summary.txt` (line coverage + uncovered line numbers),
+`coverage_branches.txt` (branch coverage + lines with untaken branches), and
+`coverage_report/index.html`. Skip with `--no-coverage`. Coverage failures
+are reported on stderr and never change the exit code. See CLAUDE.md's
+"Code coverage" section.
+
+## openocd_cmd.py
+
+Sends one command to a running OpenOCD over its Tcl RPC port (6666) and
+prints the reply: `agents/openocd_cmd.py "esp gcov"`. Used by `run_test.sh`
+for the coverage dump.
+
 ## monitor_unity.py
 
 The serial half of `run_test.sh`, usable standalone if you've already

@@ -6457,3 +6457,421 @@ TEST_CASE("clearedFlagWithNightMode", TEST_GROUP)
 
     resetSkipTestResources();
 }
+
+TEST_CASE("typicalDataBeforeAnyLiveFrameWaitsForLiveFrame", TEST_GROUP)
+{
+    const uint32_t typicalNorthAFrameNdx = 0;
+    const uint32_t typicalSouthFrameNdx = 1;
+    const uint32_t typicalNorthBFrameNdx = 2;
+    const uint32_t northLiveFrameNdx = 3;
+
+    resetSkipTestResources();
+    /* typical A and B for NORTH skip different LEDs, so the install shows
+       which of the two NORTH typical frames the FSM ended up using */
+    fillSkipTestTypicalFrame(typicalNorthAFrameNdx, 1);
+    fillSkipTestTypicalFrame(typicalSouthFrameNdx, UINT32_MAX);
+    fillSkipTestTypicalFrame(typicalNorthBFrameNdx, 2);
+    fillSkipTestLiveFrame(northLiveFrameNdx, 4);
+
+    RefreshFSMResources resources = skipTestResources();
+    refreshFSMInit(&resources);
+
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    RefreshFSMCommand cmdRefresh = { .type = REFRESH_CMD_REFRESH, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalNorthA = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalNorthAFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalSouth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalSouthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = SOUTH };
+    RefreshFSMCommand cmdTypicalNorthB = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalNorthBFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = NORTH };
+    RefreshFSMCommand cmdNorth = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = northLiveFrameNdx, .frameLen = 4, .dir = NORTH };
+
+    /* (1) typical data for both directions arrives before any live frame.
+       Having typical data alone is not enough to install anything, so the
+       FSM stays idle and touches no LEDs */
+    assertSkipTestOutput(refreshFSMTick(&cmdTypicalNorthA), REFRESH_ACTION_NONE, 0, true, 0, "north typical A while waiting");
+    assertSkipTestOutput(refreshFSMTick(&cmdTypicalSouth), REFRESH_ACTION_NONE, 0, true, 0, "both typicals but no live frame");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_NONE, 0, true, 0, "still waiting for a live frame");
+    assertSkipTestOutput(refreshFSMTick(&cmdRefresh), REFRESH_ACTION_NONE, 0, true, 0, "refresh with no live frame");
+
+    /* (2) a newer NORTH typical frame arrives while still waiting. Typical
+       A was never used, so it is released as a queued typical and typical
+       B replaces it. The FSM keeps waiting. */
+    RefreshFSMOutput outTypicalNorthB = refreshFSMTick(&cmdTypicalNorthB);
+    assertSkipTestOutput(outTypicalNorthB, REFRESH_ACTION_NONE, 0, true, 1, "north typical B while waiting");
+    TEST_ASSERT_EQUAL(typicalNorthAFrameNdx, outTypicalNorthB.framesToRelease.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_QUEUED_TYPICAL, outTypicalNorthB.framesToRelease.list[0].type, "refresh frame release type");
+
+    /* (3) the first live frame arrives last, completing the data the FSM
+       needs, so it starts installing on that same tick. The install skips
+       per typical B: LED 1 is set, LED 2 is skipped. */
+    assertSkipTestOutput(refreshFSMTick(&cmdNorth), REFRESH_ACTION_SET, 0, false, 0, "north install LED 0");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 1, false, 0, "north install LED 1 per typical B");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 3, true, 0, "north install skips LED 2 per typical B");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_NONE, 0, true, 0, "frame installed idle");
+
+    resetSkipTestResources();
+}
+
+TEST_CASE("typicalDataBeforeAnyLiveFrameWithNightModeOn", TEST_GROUP)
+{
+    const uint32_t typicalNorthFrameNdx = 0;
+    const uint32_t typicalSouthFrameNdx = 1;
+    const uint32_t northLiveFrameNdx = 2;
+
+    resetSkipTestResources();
+    fillSkipTestTypicalFrame(typicalNorthFrameNdx, 2);
+    fillSkipTestTypicalFrame(typicalSouthFrameNdx, UINT32_MAX);
+    fillSkipTestLiveFrame(northLiveFrameNdx, 4);
+
+    RefreshFSMResources resources = skipTestResources();
+    refreshFSMInit(&resources);
+
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    RefreshFSMCommand cmdNightOn = { .type = REFRESH_CMD_NIGHT_MODE_ON };
+    RefreshFSMCommand cmdNightOff = { .type = REFRESH_CMD_NIGHT_MODE_OFF };
+    RefreshFSMCommand cmdTypicalNorth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalNorthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalSouth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalSouthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = SOUTH };
+    RefreshFSMCommand cmdNorth = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = northLiveFrameNdx, .frameLen = 4, .dir = NORTH };
+
+    /* (1) night mode is on, then typical data for both directions arrives
+       before any live frame. Nothing is installed. */
+    assertSkipTestOutput(refreshFSMTick(&cmdNightOn), REFRESH_ACTION_NONE, 0, true, 0, "night on while waiting");
+    assertSkipTestOutput(refreshFSMTick(&cmdTypicalNorth), REFRESH_ACTION_NONE, 0, true, 0, "north typical while waiting");
+    assertSkipTestOutput(refreshFSMTick(&cmdTypicalSouth), REFRESH_ACTION_NONE, 0, true, 0, "both typicals but no live frame");
+
+    /* (2) the first live frame arrives last. Night mode keeps the board
+       dark, so nothing is installed. */
+    assertSkipTestOutput(refreshFSMTick(&cmdNorth), REFRESH_ACTION_NONE, 0, true, 0, "live frame while night mode on");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_NONE, 0, true, 0, "board stays dark");
+
+    /* (3) night mode off installs the live frame, skipping per the NORTH
+       typical frame. Nothing was displaced, so nothing is released. */
+    assertSkipTestOutput(refreshFSMTick(&cmdNightOff), REFRESH_ACTION_SET, 0, false, 0, "north install LED 0");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 1, false, 0, "north install LED 1");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 3, true, 0, "north install skips LED 2");
+
+    resetSkipTestResources();
+}
+
+/* ---- frame-edge tests: frames whose first or last LEDs can't be shown
+   (skipped by the typical frame, an invalid register, or an LED number
+   out of range). The FSM still has to finish installing or clearing such
+   a frame, and must never touch an LED it can't show. ---- */
+
+#define EDGE_TEST_MAX_RELEASES  (8)
+#define EDGE_TEST_MAX_TICKS     (4)
+
+typedef struct {
+    RefreshFSMFrameRelease list[EDGE_TEST_MAX_RELEASES];
+    uint32_t len;
+} EdgeTestReleaseLog;
+
+/* Ticks the FSM, sending cmd on the first tick and REFRESH_CMD_NONE after,
+   until it emits an LED action or goes idle. Ticks with no LED action do
+   nothing to the board, so how many the FSM needs is an implementation
+   detail. This lets the tests assert only the sequence of LED actions and
+   frame releases. The releases of every tick are appended to log. */
+static RefreshFSMOutput tickUntilLEDActionOrIdle(RefreshFSMCommand *cmd, EdgeTestReleaseLog *log, const char *msg)
+{
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    RefreshFSMCommand *next = cmd;
+    for (uint32_t tick = 0; tick < EDGE_TEST_MAX_TICKS; tick++)
+    {
+        RefreshFSMOutput out = refreshFSMTick(next);
+        next = &cmdNone;
+        for (uint32_t i = 0; i < out.framesToRelease.len; i++)
+        {
+            TEST_ASSERT_LESS_THAN_MESSAGE(EDGE_TEST_MAX_RELEASES, log->len, msg);
+            log->list[log->len++] = out.framesToRelease.list[i];
+        }
+        if (REFRESH_ACTION_NONE != out.action.type || out.isIdle) return out;
+    }
+    TEST_FAIL_MESSAGE(msg);
+    return (RefreshFSMOutput) { 0 };
+}
+
+static void assertEdgeTestAction(RefreshFSMOutput out, RefreshFSMActionType type, uint32_t ledNum, const char *msg)
+{
+    TEST_ASSERT_EQUAL_MESSAGE(type, out.action.type, msg);
+    if (REFRESH_ACTION_SET == type)
+    {
+        TEST_ASSERT_EQUAL_MESSAGE(ledNum, out.action.set.ledNum, msg);
+    } else if (REFRESH_ACTION_CLEAR == type)
+    {
+        TEST_ASSERT_EQUAL_MESSAGE(ledNum, out.action.clear.ledNum, msg);
+    }
+}
+
+/* Asserts the FSM has nothing left to do: idle with no LED action */
+static void assertEdgeTestIdle(RefreshFSMOutput out, const char *msg)
+{
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out.action.type, msg);
+    TEST_ASSERT_TRUE_MESSAGE(out.isIdle, msg);
+}
+
+TEST_CASE("skippedLEDsAtFrameEdgesAreNeverTouched", TEST_GROUP)
+{
+    const uint32_t northLiveFrameNdx = 0;
+    const uint32_t typicalNorthFrameNdx = 1;
+    const uint32_t typicalSouthFrameNdx = 2;
+    const uint32_t southLiveFrameNdx = 3;
+
+    resetSkipTestResources();
+    /* NORTH skips the first and last LED of the frame, SOUTH skips none */
+    fillSkipTestTypicalFrame(typicalNorthFrameNdx, 0);
+    ledFrames[typicalNorthFrameNdx][3].speed = UINT8_MAX;
+    fillSkipTestTypicalFrame(typicalSouthFrameNdx, UINT32_MAX);
+    fillSkipTestLiveFrame(northLiveFrameNdx, 4);
+    fillSkipTestLiveFrame(southLiveFrameNdx, 4);
+
+    RefreshFSMResources resources = skipTestResources();
+    refreshFSMInit(&resources);
+
+    bool clearedSouth = false;
+    EdgeTestReleaseLog log = { 0 };
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    RefreshFSMCommand cmdNorth = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = northLiveFrameNdx, .frameLen = 4, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalNorth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalNorthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalSouth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalSouthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = SOUTH };
+    RefreshFSMCommand cmdSouth = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = southLiveFrameNdx, .frameLen = 4, .dir = SOUTH, .cleared = &clearedSouth };
+
+    /* (1) installing the NORTH frame sets only LEDs 1 and 2. The install
+       still completes even though the frame ends on a skipped LED. */
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdNorth, &log, "north frame while waiting"), "north frame while waiting");
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdTypicalNorth, &log, "north typical while waiting"), "north typical while waiting");
+    assertEdgeTestAction(tickUntilLEDActionOrIdle(&cmdTypicalSouth, &log, "north install"), REFRESH_ACTION_SET, 1, "north install skips LED 0");
+    assertEdgeTestAction(tickUntilLEDActionOrIdle(&cmdNone, &log, "north install"), REFRESH_ACTION_SET, 2, "north install LED 2");
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdNone, &log, "north install"), "north install complete without setting LED 3");
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdNone, &log, "north installed"), "north frame stays installed");
+    TEST_ASSERT_EQUAL_MESSAGE(0, log.len, "nothing released while installing the first frame");
+
+    /* (2) a SOUTH frame arrives. The NORTH frame is cleared in reverse,
+       clearing only LEDs 2 and 1. The clear still completes even though
+       the frame starts on a skipped LED: the NORTH frame is released and
+       the SOUTH frame's cleared flag is set. */
+    assertEdgeTestAction(tickUntilLEDActionOrIdle(&cmdSouth, &log, "north clear"), REFRESH_ACTION_CLEAR, 2, "north clear skips LED 3");
+    TEST_ASSERT_FALSE_MESSAGE(clearedSouth, "north frame not yet cleared");
+    assertEdgeTestAction(tickUntilLEDActionOrIdle(&cmdNone, &log, "north clear"), REFRESH_ACTION_CLEAR, 1, "north clear LED 1");
+    TEST_ASSERT_EQUAL_MESSAGE(0, log.len, "north frame still on the board");
+
+    /* (3) the SOUTH frame installs in full, starting from its first LED */
+    assertEdgeTestAction(tickUntilLEDActionOrIdle(&cmdNone, &log, "south install"), REFRESH_ACTION_SET, 0, "south install LED 0, north LED 0 never cleared");
+    TEST_ASSERT_TRUE_MESSAGE(clearedSouth, "north frame cleared");
+    TEST_ASSERT_EQUAL_MESSAGE(1, log.len, "north frame released");
+    TEST_ASSERT_EQUAL(northLiveFrameNdx, log.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, log.list[0].type, "refresh frame release type");
+    assertEdgeTestAction(tickUntilLEDActionOrIdle(&cmdNone, &log, "south install"), REFRESH_ACTION_SET, 1, "south install LED 1");
+    assertEdgeTestAction(tickUntilLEDActionOrIdle(&cmdNone, &log, "south install"), REFRESH_ACTION_SET, 2, "south install LED 2");
+    RefreshFSMOutput outLast = tickUntilLEDActionOrIdle(&cmdNone, &log, "south install");
+    assertEdgeTestAction(outLast, REFRESH_ACTION_SET, 3, "south install LED 3");
+    TEST_ASSERT_TRUE_MESSAGE(outLast.isIdle, "south frame installed");
+    TEST_ASSERT_EQUAL_MESSAGE(1, log.len, "no further releases");
+
+    resetSkipTestResources();
+}
+
+TEST_CASE("skippedLEDsAtFrameEdgesWithNightMode", TEST_GROUP)
+{
+    const uint32_t northLiveFrameNdx = 0;
+    const uint32_t typicalNorthFrameNdx = 1;
+    const uint32_t typicalSouthFrameNdx = 2;
+
+    resetSkipTestResources();
+    /* NORTH skips the first and last LED of the frame */
+    fillSkipTestTypicalFrame(typicalNorthFrameNdx, 0);
+    ledFrames[typicalNorthFrameNdx][3].speed = UINT8_MAX;
+    fillSkipTestTypicalFrame(typicalSouthFrameNdx, UINT32_MAX);
+    fillSkipTestLiveFrame(northLiveFrameNdx, 4);
+
+    RefreshFSMResources resources = skipTestResources();
+    refreshFSMInit(&resources);
+
+    EdgeTestReleaseLog log = { 0 };
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    RefreshFSMCommand cmdNightOn = { .type = REFRESH_CMD_NIGHT_MODE_ON };
+    RefreshFSMCommand cmdNightOff = { .type = REFRESH_CMD_NIGHT_MODE_OFF };
+    RefreshFSMCommand cmdRefresh = { .type = REFRESH_CMD_REFRESH, .dir = NORTH };
+    RefreshFSMCommand cmdNorth = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = northLiveFrameNdx, .frameLen = 4, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalNorth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalNorthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalSouth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalSouthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = SOUTH };
+
+    /* (1) install the NORTH frame: only LEDs 1 and 2 are set */
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdNorth, &log, "north frame while waiting"), "north frame while waiting");
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdTypicalNorth, &log, "north typical while waiting"), "north typical while waiting");
+    assertEdgeTestAction(tickUntilLEDActionOrIdle(&cmdTypicalSouth, &log, "north install"), REFRESH_ACTION_SET, 1, "north install skips LED 0");
+    assertEdgeTestAction(tickUntilLEDActionOrIdle(&cmdNone, &log, "north install"), REFRESH_ACTION_SET, 2, "north install LED 2");
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdNone, &log, "north install"), "north install complete without setting LED 3");
+
+    /* (2) night mode clears only LEDs 2 and 1, then the board goes dark
+       even though the frame starts on a skipped LED */
+    assertEdgeTestAction(tickUntilLEDActionOrIdle(&cmdNightOn, &log, "night clear"), REFRESH_ACTION_CLEAR, 2, "night clear skips LED 3");
+    assertEdgeTestAction(tickUntilLEDActionOrIdle(&cmdNone, &log, "night clear"), REFRESH_ACTION_CLEAR, 1, "night clear LED 1");
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdNone, &log, "night clear"), "board dark without clearing LED 0");
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdNone, &log, "dark"), "board stays dark");
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdRefresh, &log, "dark"), "refresh while dark does nothing");
+
+    /* (3) night mode off reinstalls the same frame from its start, still
+       skipping its first and last LED. The frame is kept, so nothing is
+       released at any point. */
+    assertEdgeTestAction(tickUntilLEDActionOrIdle(&cmdNightOff, &log, "reinstall"), REFRESH_ACTION_SET, 1, "reinstall skips LED 0");
+    assertEdgeTestAction(tickUntilLEDActionOrIdle(&cmdNone, &log, "reinstall"), REFRESH_ACTION_SET, 2, "reinstall LED 2");
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdNone, &log, "reinstall"), "reinstall complete without setting LED 3");
+    TEST_ASSERT_EQUAL_MESSAGE(0, log.len, "nothing released");
+
+    resetSkipTestResources();
+}
+
+TEST_CASE("frameWithNoDisplayableLEDs", TEST_GROUP)
+{
+    const uint32_t emptyLiveFrameNdx = 0;
+    const uint32_t typicalNorthFrameNdx = 1;
+    const uint32_t typicalSouthFrameNdx = 2;
+    const uint32_t northLiveFrameNdx = 3;
+    const uint32_t invalidLEDNum = 10; /* not in the NORTH frame */
+    const uint32_t outOfRangeLEDNum = MAX_FRAME_SIZE + 10;
+
+    resetSkipTestResources();
+    fillSkipTestTypicalFrame(typicalNorthFrameNdx, 0);
+    fillSkipTestTypicalFrame(typicalSouthFrameNdx, UINT32_MAX);
+    fillSkipTestLiveFrame(northLiveFrameNdx, 4);
+    /* every LED of this frame is undisplayable, each for a different
+       reason: skipped by the typical frame, an invalid register, and an
+       LED number past the end of the lookup table */
+    ledNumToReg[invalidLEDNum].matrix = MAT_NONE;
+    ledFrames[emptyLiveFrameNdx][0] = (LEDSpeed) { .ledNum = 0, .speed = SKIP_TEST_LIVE_SPEED };
+    ledFrames[emptyLiveFrameNdx][1] = (LEDSpeed) { .ledNum = invalidLEDNum, .speed = SKIP_TEST_LIVE_SPEED };
+    ledFrames[emptyLiveFrameNdx][2] = (LEDSpeed) { .ledNum = outOfRangeLEDNum, .speed = SKIP_TEST_LIVE_SPEED };
+
+    RefreshFSMResources resources = skipTestResources();
+    refreshFSMInit(&resources);
+
+    bool clearedNorth = false;
+    EdgeTestReleaseLog log = { 0 };
+    RefreshFSMCommand cmdNone = { .type = REFRESH_CMD_NONE };
+    RefreshFSMCommand cmdNightOn = { .type = REFRESH_CMD_NIGHT_MODE_ON };
+    RefreshFSMCommand cmdNightOff = { .type = REFRESH_CMD_NIGHT_MODE_OFF };
+    RefreshFSMCommand cmdRefresh = { .type = REFRESH_CMD_REFRESH, .dir = NORTH };
+    RefreshFSMCommand cmdEmpty = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = emptyLiveFrameNdx, .frameLen = 3, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalNorth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalNorthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalSouth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalSouthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = SOUTH };
+    RefreshFSMCommand cmdNorth = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = northLiveFrameNdx, .frameLen = 4, .dir = NORTH, .cleared = &clearedNorth };
+
+    /* (1) installing the frame touches no LED and completes */
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdEmpty, &log, "empty frame while waiting"), "empty frame while waiting");
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdTypicalNorth, &log, "north typical while waiting"), "north typical while waiting");
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdTypicalSouth, &log, "empty install"), "empty install touches no LED");
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdNone, &log, "empty installed"), "empty frame stays installed");
+
+    /* (2) refreshing it and toggling night mode touch no LED either */
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdRefresh, &log, "empty refresh"), "empty refresh touches no LED");
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdNightOn, &log, "empty night clear"), "empty night clear touches no LED");
+    assertEdgeTestIdle(tickUntilLEDActionOrIdle(&cmdNightOff, &log, "empty reinstall"), "empty reinstall touches no LED");
+    TEST_ASSERT_EQUAL_MESSAGE(0, log.len, "empty frame kept throughout");
+
+    /* (3) a real frame replaces it: no LED is cleared, the empty frame is
+       released, and the real frame installs (skipping LED 0) */
+    assertEdgeTestAction(tickUntilLEDActionOrIdle(&cmdNorth, &log, "north install"), REFRESH_ACTION_SET, 1, "north install skips LED 0, nothing cleared first");
+    TEST_ASSERT_TRUE_MESSAGE(clearedNorth, "empty frame cleared");
+    TEST_ASSERT_EQUAL_MESSAGE(1, log.len, "empty frame released");
+    TEST_ASSERT_EQUAL(emptyLiveFrameNdx, log.list[0].index);
+    TEST_ASSERT_EQUAL_MESSAGE(REFRESH_FSM_FRAME_RELEASE_STANDARD, log.list[0].type, "refresh frame release type");
+    assertEdgeTestAction(tickUntilLEDActionOrIdle(&cmdNone, &log, "north install"), REFRESH_ACTION_SET, 2, "north install LED 2");
+    RefreshFSMOutput outLast = tickUntilLEDActionOrIdle(&cmdNone, &log, "north install");
+    assertEdgeTestAction(outLast, REFRESH_ACTION_SET, 3, "north install LED 3");
+    TEST_ASSERT_TRUE_MESSAGE(outLast.isIdle, "north frame installed");
+
+    resetSkipTestResources();
+}
+
+/* Ticks the FSM numTicks times with cmd, asserting every tick is idle with
+   no LED action, no release, and no indicator change */
+static void assertIdleTicks(const RefreshFSMCommand *cmd, uint32_t numTicks, const char *msg)
+{
+    for (uint32_t i = 0; i < numTicks; i++)
+    {
+        RefreshFSMOutput out = refreshFSMTick(cmd);
+        TEST_ASSERT_EQUAL_MESSAGE(REFRESH_ACTION_NONE, out.action.type, msg);
+        TEST_ASSERT_TRUE_MESSAGE(out.isIdle, msg);
+        TEST_ASSERT_EQUAL_MESSAGE(0, out.framesToRelease.len, msg);
+        TEST_ASSERT_FALSE_MESSAGE(out.indicator.update, msg);
+    }
+}
+
+TEST_CASE("commandNoneOnlyAdvancesTheFSM", TEST_GROUP)
+{
+    const uint32_t northLiveFrameNdx = 0;
+    const uint32_t typicalNorthFrameNdx = 1;
+    const uint32_t typicalSouthFrameNdx = 2;
+    const uint32_t numIdleTicks = 5;
+
+    resetSkipTestResources();
+    fillSkipTestTypicalFrame(typicalNorthFrameNdx, UINT32_MAX);
+    fillSkipTestTypicalFrame(typicalSouthFrameNdx, UINT32_MAX);
+    fillSkipTestLiveFrame(northLiveFrameNdx, 3);
+
+    RefreshFSMResources resources = skipTestResources();
+    refreshFSMInit(&resources);
+
+    /* every tick uses a NONE whose other fields are filled in as if it were
+       a NEW_FRAME for the frame on the board in the other direction. A NONE
+       must ignore them: no frame released, no direction change, and the
+       cleared flag never set. */
+    bool noneCleared = false;
+    RefreshFSMCommand cmdNone = {
+        .type = REFRESH_CMD_NONE,
+        .frameNdx = northLiveFrameNdx,
+        .frameLen = 1,
+        .dir = SOUTH,
+        .cleared = &noneCleared,
+    };
+    RefreshFSMCommand cmdNightOn = { .type = REFRESH_CMD_NIGHT_MODE_ON };
+    RefreshFSMCommand cmdNightOff = { .type = REFRESH_CMD_NIGHT_MODE_OFF };
+    RefreshFSMCommand cmdNorth = { .type = REFRESH_CMD_NEW_FRAME, .frameNdx = northLiveFrameNdx, .frameLen = 3, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalNorth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalNorthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = NORTH };
+    RefreshFSMCommand cmdTypicalSouth = { .type = REFRESH_CMD_UPDATE_TYPICAL, .frameNdx = typicalSouthFrameNdx, .frameLen = MAX_FRAME_SIZE, .dir = SOUTH };
+
+    /* (1) waiting with no data: NONE keeps the FSM idle and the board dark */
+    assertIdleTicks(&cmdNone, numIdleTicks, "waiting with no data");
+
+    /* (2) waiting with only some data: NONE does not start an install */
+    assertIdleTicks(&cmdNorth, 1, "north frame while waiting");
+    assertIdleTicks(&cmdNone, numIdleTicks, "waiting with live frame only");
+    assertIdleTicks(&cmdTypicalNorth, 1, "north typical while waiting");
+    assertIdleTicks(&cmdNone, numIdleTicks, "waiting without south typical");
+
+    /* (3) installing: each NONE sets exactly the next LED, in order, and
+       the frame keeps the NORTH direction it arrived with */
+    RefreshFSMOutput outFirst = refreshFSMTick(&cmdTypicalSouth);
+    assertSkipTestOutput(outFirst, REFRESH_ACTION_SET, 0, false, 0, "install LED 0");
+    TEST_ASSERT_TRUE_MESSAGE(outFirst.indicator.update, "indicator shows the installing frame");
+    TEST_ASSERT_EQUAL_MESSAGE(NORTH, outFirst.indicator.dir, "indicator direction");
+    for (uint32_t i = 1; i < 3; i++)
+    {
+        RefreshFSMOutput out = refreshFSMTick(&cmdNone);
+        assertSkipTestOutput(out, REFRESH_ACTION_SET, i, (2 == i), 0, "install with NONE");
+        TEST_ASSERT_FALSE_MESSAGE(out.indicator.update, "NONE does not change the indicator while installing");
+    }
+
+    /* (4) installed: NONE leaves the frame alone */
+    assertIdleTicks(&cmdNone, numIdleTicks, "frame installed");
+
+    /* (5) clearing: each NONE clears exactly the next LED, in reverse */
+    assertSkipTestOutput(refreshFSMTick(&cmdNightOn), REFRESH_ACTION_CLEAR, 2, false, 0, "night clear LED 2");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_CLEAR, 1, false, 0, "night clear LED 1 with NONE");
+    RefreshFSMOutput outDark = refreshFSMTick(&cmdNone);
+    assertSkipTestOutput(outDark, REFRESH_ACTION_CLEAR, 0, true, 0, "night clear LED 0 with NONE");
+    TEST_ASSERT_TRUE_MESSAGE(outDark.indicator.update, "indicator goes dark with the board");
+    TEST_ASSERT_EQUAL_MESSAGE(NO_DIR, outDark.indicator.dir, "indicator direction");
+
+    /* (6) dark: NONE does not bring the board back */
+    assertIdleTicks(&cmdNone, numIdleTicks, "board dark");
+
+    /* (7) the frame was never released by any NONE, so night mode off
+       reinstalls it in full */
+    assertSkipTestOutput(refreshFSMTick(&cmdNightOff), REFRESH_ACTION_SET, 0, false, 0, "reinstall LED 0");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 1, false, 0, "reinstall LED 1");
+    assertSkipTestOutput(refreshFSMTick(&cmdNone), REFRESH_ACTION_SET, 2, true, 0, "reinstall LED 2");
+    assertIdleTicks(&cmdNone, numIdleTicks, "frame reinstalled");
+
+    TEST_ASSERT_FALSE_MESSAGE(noneCleared, "NONE never sets its cleared flag");
+
+    resetSkipTestResources();
+}

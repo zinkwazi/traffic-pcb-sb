@@ -1,0 +1,10 @@
+dependencies:
+  idf: '>=6.0'
+description: Gcov (Source Code Coverage) component for ESP-IDF
+issues: https://github.com/espressif/idf-extra-components/issues
+repository: git://github.com/espressif/idf-extra-components.git
+repository_info:
+  commit_sha: 5ba8d624ded361a08d81e8f2317d91397840ae19
+  path: esp_gcov
+url: https://github.com/espressif/idf-extra-components/tree/master/esp_gcov
+version: 1.0.5
