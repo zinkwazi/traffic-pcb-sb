@@ -527,91 +527,107 @@ esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
  */
 esp_err_t getNvsEntriesFromUser(nvs_handle_t nvsHandle) {
     const unsigned short bufLen = CONFIG_NVS_ENTRY_BUFFER_LENGTH;
-    char c;
     char *str;
     char buf[bufLen];
     int numBytes;
     esp_err_t err;
     str = "\nWifi SSID: ";
+    numBytes = 0; // bytes sent so far; resume after a partial write
     do {
-        numBytes = usb_serial_jtag_write_bytes(str, strlen(str), INT_MAX);
-    } while (numBytes == 0);
-    if (numBytes != strlen(str)) return ESP_FAIL;
+        numBytes += usb_serial_jtag_write_bytes(str + numBytes, strlen(str) - numBytes, INT_MAX);
+    } while (numBytes < strlen(str));
 
     /* read user input into buffer */
-    for (int i = 0; i < bufLen; i++) {
+    int32_t i = 0;
+    while (true)
+    {
+        char ch;
         do {
-            numBytes = usb_serial_jtag_read_bytes(&buf[i], 1, INT_MAX);
-        } while (numBytes == 0);
-        if (numBytes != 1) return ESP_FAIL;
-    
-        if (buf[i] == '\n' || buf[i] == '\r') {
-            c = buf[i];
-            do {
-                numBytes = usb_serial_jtag_write_bytes("\r", 1, INT_MAX);
-            } while (numBytes == 0);
-            if (numBytes != 1) return ESP_FAIL;
+            numBytes = usb_serial_jtag_read_bytes(&ch, 1, portMAX_DELAY);
+        } while (0 == numBytes);
+
+        if (ch == '\b' || ch == 0x7F) { // backspace or delete
             buf[i] = '\0';
+            if (i > 0) {
+                i--;
+                const char *erase = "\b \b";
+                numBytes = 0; // bytes sent so far; resume after a partial write
+                do {
+                    numBytes += usb_serial_jtag_write_bytes(erase + numBytes, strlen(erase) - numBytes, portMAX_DELAY);
+                } while (numBytes < strlen(erase));
+            }
+            continue;
+        }
+
+        if (ch == '\n' || ch == '\r') { // enter
+            const char *done = "\r\n";
+            numBytes = 0; // bytes sent so far; resume after a partial write
+            do {
+                numBytes += usb_serial_jtag_write_bytes(done + numBytes, strlen(done) - numBytes, portMAX_DELAY);
+            } while (numBytes < strlen(done));
             break;
         }
-        do {
-            numBytes = usb_serial_jtag_write_bytes(&buf[i], 1, INT_MAX);
-        } while (numBytes == 0);
-        if (numBytes != 1) return ESP_FAIL;
 
-        c = buf[i];
+        if (i < bufLen - 1) {
+            buf[i++] = ch;
+            do {
+                numBytes = usb_serial_jtag_write_bytes(&buf[i - 1], 1, portMAX_DELAY);
+            } while (numBytes == 0);
+        }
     }
-    /* ignore the rest of what the user is typing */
-    while (c != '\n' && c != '\r')
-    {
-        do {
-            numBytes = usb_serial_jtag_read_bytes(&c, 1, INT_MAX);
-        } while (numBytes == 0);
-        if (numBytes != 1) return ESP_FAIL;
-    }
-    buf[bufLen - 1] = '\0'; // in case the user writes too much
+    buf[i] = '\0'; // terminate string
+
     ESP_RETURN_ON_ERROR(
         nvs_set_str(nvsHandle, WIFI_SSID_NVS_NAME, buf),
         TAG, "failed to write wifi SSID to non-volatile storage"
     );
 
     str = "\nWifi Password: ";
+    numBytes = 0; // bytes sent so far; resume after a partial write
     do {
-        numBytes = usb_serial_jtag_write_bytes(str, strlen(str), INT_MAX);
-    } while (numBytes == 0);
-    if (numBytes != strlen(str)) return ESP_FAIL;
+        numBytes += usb_serial_jtag_write_bytes(str + numBytes, strlen(str) - numBytes, INT_MAX);
+    } while (numBytes < strlen(str));
 
     /* read user input into buffer */
-    for (int i = 0; i < bufLen; i++) {
+    i = 0;
+    while (true)
+    {
+        char ch;
         do {
-            numBytes = usb_serial_jtag_read_bytes(&buf[i], 1, INT_MAX);
-        } while (numBytes == 0);
-        if (numBytes != 1) return ESP_FAIL;
-    
-        if (buf[i] == '\n'|| buf[i] == '\r') {
-            c = buf[i];
-            do {
-                numBytes = usb_serial_jtag_write_bytes("\r", 1, INT_MAX);
-            } while (numBytes == 0);
-            if (numBytes != 1) return ESP_FAIL;
+            numBytes = usb_serial_jtag_read_bytes(&ch, 1, portMAX_DELAY);
+        } while (0 == numBytes);
+
+        if (ch == '\b' || ch == 0x7F) { // backspace or delete
             buf[i] = '\0';
+            if (i > 0) {
+                i--;
+                const char *erase = "\b \b";
+                numBytes = 0; // bytes sent so far; resume after a partial write
+                do {
+                    numBytes += usb_serial_jtag_write_bytes(erase + numBytes, strlen(erase) - numBytes, portMAX_DELAY);
+                } while (numBytes < strlen(erase));
+            }
+            continue;
+        }
+
+        if (ch == '\n' || ch == '\r') { // enter
+            const char *done = "\r\n";
+            numBytes = 0; // bytes sent so far; resume after a partial write
+            do {
+                numBytes += usb_serial_jtag_write_bytes(done + numBytes, strlen(done) - numBytes, portMAX_DELAY);
+            } while (numBytes < strlen(done));
             break;
         }
-        do {
-            numBytes = usb_serial_jtag_write_bytes(&buf[i], 1, INT_MAX);
-        } while (numBytes == 0);
-        if (numBytes != 1) return ESP_FAIL;
-        c = buf[i];
+
+        if (i < bufLen - 1) {
+            buf[i++] = ch;
+            do {
+                numBytes = usb_serial_jtag_write_bytes(&buf[i - 1], 1, portMAX_DELAY);
+            } while (numBytes == 0);
+        }
     }
-    /* ignore the rest of what the user is typing */
-    while (c != '\n' && c != '\r')
-    {
-        do {
-            numBytes = usb_serial_jtag_read_bytes(&c, 1, INT_MAX);
-        } while (numBytes == 0);
-        if (numBytes != 1) return ESP_FAIL;
-    }
-    buf[bufLen - 1] = '\0'; // in case the user writes too much
+    buf[i] = '\0'; // terminate string
+
     err = nvs_set_str(nvsHandle, WIFI_PASS_NVS_NAME, buf);
     if (err != ESP_OK) THROW_ERR(err);
     err = nvs_commit(nvsHandle);
