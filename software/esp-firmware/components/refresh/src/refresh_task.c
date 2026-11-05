@@ -493,13 +493,22 @@ static void refreshTask(void *params)
 
         /* sleep while waiting for command */
         BaseType_t success = xQueueReceive(commandQueue, (void *) &cmd, sleepTicks);
+        TickType_t startTimestamp = xTaskGetTickCount();
         if (pdTRUE != success)
         {
             cmd = (RefreshFSMCommand) { .type = REFRESH_CMD_NONE };
         }
 
         refreshTaskHandleCommand(&cmd, &out);
-        sleepTicks = (out.isIdle) ? portMAX_DELAY : pdMS_TO_TICKS(CONFIG_LED_UPDATE_PERIOD);
+        TickType_t endTimestamp = xTaskGetTickCount();
+        if (out.isIdle)
+        {
+            sleepTicks = portMAX_DELAY;
+        } else
+        {
+            int32_t nextSleepTicks = pdMS_TO_TICKS(CONFIG_LED_UPDATE_PERIOD) - (endTimestamp - startTimestamp);
+            sleepTicks = (nextSleepTicks > 0) ? nextSleepTicks : 0;
+        }
     }
 
     ESP_LOGE(TAG, "Refresh task is exiting unexpectedly.");
